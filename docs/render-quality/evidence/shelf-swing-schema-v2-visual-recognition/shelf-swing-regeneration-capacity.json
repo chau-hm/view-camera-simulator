@@ -1,0 +1,156 @@
+{
+  "initialSeed": 284719,
+  "regeneratedSeeds": [
+    1355037909,
+    663767112,
+    1788215546,
+    173421098,
+    2364015095,
+    2299665873,
+    1896916706,
+    2644872913,
+    1473530792,
+    3744108146
+  ],
+  "regenerationCount": 10,
+  "historyBackRestoredCapacity": {
+    "subject": {
+      "observer": {
+        "objectCount": 226,
+        "meshCount": 191,
+        "renderableMeshCount": 191,
+        "instancedMeshCount": 0,
+        "lightCount": 0,
+        "lineCount": 0,
+        "pointsCount": 0,
+        "uniqueGeometryCount": 176,
+        "uniqueMaterialCount": 107,
+        "uniqueTextureCount": 3,
+        "triangleCount": 2170,
+        "instancedTriangleCount": 0,
+        "effectiveTriangleCount": 2170,
+        "renderableEffectiveTriangleCount": 2170
+      },
+      "groundGlass": {
+        "objectCount": 225,
+        "meshCount": 191,
+        "renderableMeshCount": 191,
+        "instancedMeshCount": 0,
+        "lightCount": 0,
+        "lineCount": 0,
+        "pointsCount": 0,
+        "uniqueGeometryCount": 176,
+        "uniqueMaterialCount": 107,
+        "uniqueTextureCount": 3,
+        "triangleCount": 2170,
+        "instancedTriangleCount": 0,
+        "effectiveTriangleCount": 2170,
+        "renderableEffectiveTriangleCount": 2170
+      }
+    },
+    "renderer": {
+      "geometries": 177,
+      "textures": 12
+    }
+  },
+  "historyForwardRestoredCapacity": {
+    "subject": {
+      "observer": {
+        "objectCount": 225,
+        "meshCount": 190,
+        "renderableMeshCount": 190,
+        "instancedMeshCount": 0,
+        "lightCount": 0,
+        "lineCount": 0,
+        "pointsCount": 0,
+        "uniqueGeometryCount": 175,
+        "uniqueMaterialCount": 106,
+        "uniqueTextureCount": 3,
+        "triangleCount": 2470,
+        "instancedTriangleCount": 0,
+        "effectiveTriangleCount": 2470,
+        "renderableEffectiveTriangleCount": 2470
+      },
+      "groundGlass": {
+        "objectCount": 224,
+        "meshCount": 190,
+        "renderableMeshCount": 190,
+        "instancedMeshCount": 0,
+        "lightCount": 0,
+        "lineCount": 0,
+        "pointsCount": 0,
+        "uniqueGeometryCount": 175,
+        "uniqueMaterialCount": 106,
+        "uniqueTextureCount": 3,
+        "triangleCount": 2470,
+        "instancedTriangleCount": 0,
+        "effectiveTriangleCount": 2470,
+        "renderableEffectiveTriangleCount": 2470
+      }
+    },
+    "renderer": {
+      "geometries": 176,
+      "textures": 12
+    }
+  },
+  "resourceCounts": [
+    {
+      "geometries": 177,
+      "textures": 12
+    },
+    {
+      "geometries": 176,
+      "textures": 12
+    },
+    {
+      "geometries": 175,
+      "textures": 12
+    },
+    {
+      "geometries": 177,
+      "textures": 12
+    },
+    {
+      "geometries": 177,
+      "textures": 12
+    },
+    {
+      "geometries": 177,
+      "textures": 12
+    },
+    {
+      "geometries": 177,
+      "textures": 12
+    },
+    {
+      "geometries": 177,
+      "textures": 12
+    },
+    {
+      "geometries": 175,
+      "textures": 12
+    },
+    {
+      "geometries": 178,
+      "textures": 12
+    },
+    {
+      "geometries": 176,
+      "textures": 12
+    }
+  ],
+  "distinctSubjectCapacities": 10,
+  "distinctObserverImages": 11,
+  "cameraPosition": "5.027278,-0.242329,4.590365",
+  "orbitTarget": "0.000000,-0.040000,3.850000",
+  "preservedFocusDistanceMm": 3400,
+  "preservedFrontSwingDeg": -4,
+  "preservedAperture": 11,
+  "preservedPreviewMode": "upright",
+  "preservedCleanObserver": true,
+  "rendererGenerationStable": true,
+  "rttResourceGenerationStable": true,
+  "copyUrl": "http://127.0.0.1:4188/simulator/free/shelf-swing?keep=one&rttDiagnostics=1&sceneCapacityProfiling=1&dofProfiling=1&seed=1355037909&sv=2#pilot",
+  "groundGlassFrameCount": 60,
+  "pageErrors": []
+}

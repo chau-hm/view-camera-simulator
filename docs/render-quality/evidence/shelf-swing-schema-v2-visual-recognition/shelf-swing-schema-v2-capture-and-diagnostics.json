@@ -1,0 +1,2814 @@
+{
+  "seedSample": [
+    0,
+    1,
+    284719,
+    4294967295,
+    3079748268,
+    654013979,
+    4041585854,
+    2762659077,
+    2004402848,
+    1824298367,
+    2130322642,
+    4065361417
+  ],
+  "schemaVersion": 2,
+  "implicitFreePracticeSchemaVersion": 1,
+  "seedOnlyLegacySchemaVersion": 1,
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "devicePixelRatio": 1,
+  "renderer": "Chromium production Vite preview · WebGL2",
+  "observerCssCanvas": {
+    "width": 514,
+    "height": 410.39
+  },
+  "observerCapturePixels": {
+    "width": 514,
+    "height": 411
+  },
+  "renderQuality": "standard",
+  "focusDistanceMm": 3400,
+  "aperture": 11,
+  "frontSwingDeg": -4,
+  "riseMm": 0,
+  "cameraPosition": "4.200000,1.450000,1.400000",
+  "orbitTarget": "0.000000,-0.040000,3.850000",
+  "overlays": "clean Observer; optical, focus, and DOF overlays disabled",
+  "historicalV1Source": {
+    "file": "docs/render-quality/evidence/scene-variation-visual-audit/shelf-swing-schema-v1-seed-grid.png",
+    "sourceSha256": "7b000f650ed9455e2c58b032b2167466eb80cde3049758a270f57c0a2f39c7db",
+    "method": "native 514×411 cells cropped from the accepted PR #345 3×4 grid; title bands excluded",
+    "canonicalSource": "docs/render-quality/evidence/scene-variation-visual-audit/shelf-swing-canonical-seed-284719.png"
+  },
+  "implicitRoute": {
+    "schemaVersion": 1,
+    "seedGeneratedAndNormalized": true,
+    "behaviorVerifiedByFinalProductionRun": true
+  },
+  "legacySeedOnlyRoute": {
+    "requested": "/simulator/free/shelf-swing?seed=284719",
+    "normalizedUrl": "/simulator/free/shelf-swing?seed=284719&sv=1",
+    "schemaVersion": 1
+  },
+  "fixedSeedReplayPixelIdentical": true,
+  "fallbackCount": 0,
+  "familyCounts": {
+    "bowl": 16,
+    "necked-vessel": 13,
+    "cylinder": 3,
+    "faceted": 19,
+    "box": 3,
+    "vessel": 2
+  },
+  "compositionCounts": {
+    "paired": 20,
+    "single": 16
+  },
+  "captures": [
+    {
+      "seed": 0,
+      "route": "/simulator/free/shelf-swing?seed=0&sv=2&rttDiagnostics=1&sceneCapacityProfiling=1&dofProfiling=1",
+      "cameraPosition": "4.200000,1.450000,1.400000",
+      "orbitTarget": "0.000000,-0.040000,3.850000",
+      "canvasSize": {
+        "width": 514,
+        "height": 411
+      },
+      "cssCanvasBounds": {
+        "x": 31,
+        "y": 217.390625,
+        "width": 514,
+        "height": 410.390625
+      },
+      "devicePixelRatio": 1,
+      "renderQuality": "standard",
+      "focusDistanceMm": 3400,
+      "frontSwingDeg": -4,
+      "riseMm": 0,
+      "aperture": 11,
+      "activeSchema": 2,
+      "fallbackUsed": false,
+      "stations": [
+        {
+          "stationId": "shelf-front",
+          "composition": "paired"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "paired"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "single"
+        }
+      ],
+      "props": [
+        {
+          "stationId": "shelf-front",
+          "composition": "paired",
+          "id": "shelf-front-display-pair-left",
+          "family": "bowl",
+          "dimensionsMm": {
+            "width": 78,
+            "height": 39,
+            "depth": 78
+          },
+          "positionMm": {
+            "x": -41,
+            "y": 57.5,
+            "z": 125.86250230669975
+          },
+          "bodyColor": "#cfc7ae"
+        },
+        {
+          "stationId": "shelf-front",
+          "composition": "paired",
+          "id": "shelf-front-display-pair-right",
+          "family": "necked-vessel",
+          "dimensionsMm": {
+            "width": 62,
+            "height": 103,
+            "depth": 62
+          },
+          "positionMm": {
+            "x": 41,
+            "y": 89.5,
+            "z": 125.86250230669975
+          },
+          "bodyColor": "#b77e67"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "paired",
+          "id": "shelf-middle-display-pair-left",
+          "family": "bowl",
+          "dimensionsMm": {
+            "width": 78,
+            "height": 43,
+            "depth": 78
+          },
+          "positionMm": {
+            "x": -42.5,
+            "y": 59.5,
+            "z": 116.46948389429599
+          },
+          "bodyColor": "#8ca3ad"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "paired",
+          "id": "shelf-middle-display-pair-right",
+          "family": "necked-vessel",
+          "dimensionsMm": {
+            "width": 68,
+            "height": 91,
+            "depth": 68
+          },
+          "positionMm": {
+            "x": 42.5,
+            "y": 83.5,
+            "z": 116.46948389429599
+          },
+          "bodyColor": "#8ca3ad"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "single",
+          "id": "shelf-back-display-hero",
+          "family": "necked-vessel",
+          "dimensionsMm": {
+            "width": 90,
+            "height": 137,
+            "depth": 90
+          },
+          "positionMm": {
+            "x": 5.28657465800643,
+            "y": 106.5,
+            "z": 124.39014420728199
+          },
+          "bodyColor": "#c0a86f"
+        }
+      ]
+    },
+    {
+      "seed": 1,
+      "route": "/simulator/free/shelf-swing?seed=1&sv=2&rttDiagnostics=1&sceneCapacityProfiling=1&dofProfiling=1",
+      "cameraPosition": "4.200000,1.450000,1.400000",
+      "orbitTarget": "0.000000,-0.040000,3.850000",
+      "canvasSize": {
+        "width": 514,
+        "height": 411
+      },
+      "cssCanvasBounds": {
+        "x": 31,
+        "y": 217.390625,
+        "width": 514,
+        "height": 410.390625
+      },
+      "devicePixelRatio": 1,
+      "renderQuality": "standard",
+      "focusDistanceMm": 3400,
+      "frontSwingDeg": -4,
+      "riseMm": 0,
+      "aperture": 11,
+      "activeSchema": 2,
+      "fallbackUsed": false,
+      "stations": [
+        {
+          "stationId": "shelf-front",
+          "composition": "single"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "single"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired"
+        }
+      ],
+      "props": [
+        {
+          "stationId": "shelf-front",
+          "composition": "single",
+          "id": "shelf-front-display-hero",
+          "family": "cylinder",
+          "dimensionsMm": {
+            "width": 90,
+            "height": 147,
+            "depth": 90
+          },
+          "positionMm": {
+            "x": 8.990410826168954,
+            "y": 111.5,
+            "z": 123.0171498877462
+          },
+          "bodyColor": "#cfc7ae"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "single",
+          "id": "shelf-middle-display-hero",
+          "family": "faceted",
+          "dimensionsMm": {
+            "width": 109,
+            "height": 110,
+            "depth": 86
+          },
+          "positionMm": {
+            "x": -3.669457331299782,
+            "y": 93,
+            "z": 129.28068527020514
+          },
+          "bodyColor": "#a5ad97"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired",
+          "id": "shelf-back-display-pair-left",
+          "family": "bowl",
+          "dimensionsMm": {
+            "width": 85,
+            "height": 51,
+            "depth": 85
+          },
+          "positionMm": {
+            "x": -44,
+            "y": 63.5,
+            "z": 113.95442847302184
+          },
+          "bodyColor": "#aab6b3"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired",
+          "id": "shelf-back-display-pair-right",
+          "family": "necked-vessel",
+          "dimensionsMm": {
+            "width": 67,
+            "height": 92,
+            "depth": 67
+          },
+          "positionMm": {
+            "x": 44,
+            "y": 84,
+            "z": 113.95442847302184
+          },
+          "bodyColor": "#c0a86f"
+        }
+      ]
+    },
+    {
+      "seed": 284719,
+      "route": "/simulator/free/shelf-swing?seed=284719&sv=2&rttDiagnostics=1&sceneCapacityProfiling=1&dofProfiling=1",
+      "cameraPosition": "4.200000,1.450000,1.400000",
+      "orbitTarget": "0.000000,-0.040000,3.850000",
+      "canvasSize": {
+        "width": 514,
+        "height": 411
+      },
+      "cssCanvasBounds": {
+        "x": 31,
+        "y": 236.390625,
+        "width": 514,
+        "height": 410.390625
+      },
+      "devicePixelRatio": 1,
+      "renderQuality": "standard",
+      "focusDistanceMm": 3400,
+      "frontSwingDeg": -4,
+      "riseMm": 0,
+      "aperture": 11,
+      "activeSchema": 2,
+      "fallbackUsed": false,
+      "stations": [
+        {
+          "stationId": "shelf-front",
+          "composition": "single"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "paired"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired"
+        }
+      ],
+      "props": [
+        {
+          "stationId": "shelf-front",
+          "composition": "single",
+          "id": "shelf-front-display-hero",
+          "family": "faceted",
+          "dimensionsMm": {
+            "width": 90,
+            "height": 108,
+            "depth": 89
+          },
+          "positionMm": {
+            "x": 16.45879856776446,
+            "y": 92,
+            "z": 132.23240164574236
+          },
+          "bodyColor": "#91a79a"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "paired",
+          "id": "shelf-middle-display-pair-left",
+          "family": "bowl",
+          "dimensionsMm": {
+            "width": 93,
+            "height": 41,
+            "depth": 93
+          },
+          "positionMm": {
+            "x": -48.07738860743618,
+            "y": 58.5,
+            "z": 113.82609399175271
+          },
+          "bodyColor": "#8ca3ad"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "paired",
+          "id": "shelf-middle-display-pair-right",
+          "family": "faceted",
+          "dimensionsMm": {
+            "width": 62,
+            "height": 62,
+            "depth": 57
+          },
+          "positionMm": {
+            "x": 48.07738860743618,
+            "y": 69,
+            "z": 113.82609399175271
+          },
+          "bodyColor": "#8ca3ad"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired",
+          "id": "shelf-back-display-pair-left",
+          "family": "faceted",
+          "dimensionsMm": {
+            "width": 70,
+            "height": 62,
+            "depth": 66
+          },
+          "positionMm": {
+            "x": -41.513168530415385,
+            "y": 69,
+            "z": 127.94661596463993
+          },
+          "bodyColor": "#b67c68"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired",
+          "id": "shelf-back-display-pair-right",
+          "family": "necked-vessel",
+          "dimensionsMm": {
+            "width": 59,
+            "height": 103,
+            "depth": 59
+          },
+          "positionMm": {
+            "x": 41.513168530415385,
+            "y": 89.5,
+            "z": 127.94661596463993
+          },
+          "bodyColor": "#c0a86f"
+        }
+      ]
+    },
+    {
+      "seed": 4294967295,
+      "route": "/simulator/free/shelf-swing?seed=4294967295&sv=2&rttDiagnostics=1&sceneCapacityProfiling=1&dofProfiling=1",
+      "cameraPosition": "4.200000,1.450000,1.400000",
+      "orbitTarget": "0.000000,-0.040000,3.850000",
+      "canvasSize": {
+        "width": 514,
+        "height": 411
+      },
+      "cssCanvasBounds": {
+        "x": 31,
+        "y": 236.390625,
+        "width": 514,
+        "height": 410.390625
+      },
+      "devicePixelRatio": 1,
+      "renderQuality": "standard",
+      "focusDistanceMm": 3400,
+      "frontSwingDeg": -4,
+      "riseMm": 0,
+      "aperture": 11,
+      "activeSchema": 2,
+      "fallbackUsed": false,
+      "stations": [
+        {
+          "stationId": "shelf-front",
+          "composition": "paired"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "paired"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired"
+        }
+      ],
+      "props": [
+        {
+          "stationId": "shelf-front",
+          "composition": "paired",
+          "id": "shelf-front-display-pair-left",
+          "family": "faceted",
+          "dimensionsMm": {
+            "width": 60,
+            "height": 58,
+            "depth": 60
+          },
+          "positionMm": {
+            "x": -35.75980786005924,
+            "y": 67,
+            "z": 116.17458436312154
+          },
+          "bodyColor": "#91a79a"
+        },
+        {
+          "stationId": "shelf-front",
+          "composition": "paired",
+          "id": "shelf-front-display-pair-right",
+          "family": "necked-vessel",
+          "dimensionsMm": {
+            "width": 55,
+            "height": 99,
+            "depth": 55
+          },
+          "positionMm": {
+            "x": 35.75980786005924,
+            "y": 87.5,
+            "z": 116.17458436312154
+          },
+          "bodyColor": "#cfc7ae"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "paired",
+          "id": "shelf-middle-display-pair-left",
+          "family": "bowl",
+          "dimensionsMm": {
+            "width": 91,
+            "height": 40,
+            "depth": 91
+          },
+          "positionMm": {
+            "x": -42.75,
+            "y": 58,
+            "z": 122.70424046507105
+          },
+          "bodyColor": "#d1c4a8"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "paired",
+          "id": "shelf-middle-display-pair-right",
+          "family": "necked-vessel",
+          "dimensionsMm": {
+            "width": 56,
+            "height": 84,
+            "depth": 56
+          },
+          "positionMm": {
+            "x": 42.75,
+            "y": 80,
+            "z": 122.70424046507105
+          },
+          "bodyColor": "#d1c4a8"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired",
+          "id": "shelf-back-display-pair-left",
+          "family": "bowl",
+          "dimensionsMm": {
+            "width": 96,
+            "height": 40,
+            "depth": 96
+          },
+          "positionMm": {
+            "x": -44.535794362193755,
+            "y": 58,
+            "z": 110.50386861665174
+          },
+          "bodyColor": "#b67c68"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired",
+          "id": "shelf-back-display-pair-right",
+          "family": "faceted",
+          "dimensionsMm": {
+            "width": 57,
+            "height": 80,
+            "depth": 66
+          },
+          "positionMm": {
+            "x": 44.535794362193755,
+            "y": 78,
+            "z": 110.50386861665174
+          },
+          "bodyColor": "#b67c68"
+        }
+      ]
+    },
+    {
+      "seed": 3079748268,
+      "route": "/simulator/free/shelf-swing?seed=3079748268&sv=2&rttDiagnostics=1&sceneCapacityProfiling=1&dofProfiling=1",
+      "cameraPosition": "4.200000,1.450000,1.400000",
+      "orbitTarget": "0.000000,-0.040000,3.850000",
+      "canvasSize": {
+        "width": 514,
+        "height": 411
+      },
+      "cssCanvasBounds": {
+        "x": 31,
+        "y": 236.390625,
+        "width": 514,
+        "height": 410.390625
+      },
+      "devicePixelRatio": 1,
+      "renderQuality": "standard",
+      "focusDistanceMm": 3400,
+      "frontSwingDeg": -4,
+      "riseMm": 0,
+      "aperture": 11,
+      "activeSchema": 2,
+      "fallbackUsed": false,
+      "stations": [
+        {
+          "stationId": "shelf-front",
+          "composition": "single"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "single"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired"
+        }
+      ],
+      "props": [
+        {
+          "stationId": "shelf-front",
+          "composition": "single",
+          "id": "shelf-front-display-hero",
+          "family": "cylinder",
+          "dimensionsMm": {
+            "width": 92,
+            "height": 148,
+            "depth": 92
+          },
+          "positionMm": {
+            "x": -11.54273746535182,
+            "y": 112,
+            "z": 135.31583605566993
+          },
+          "bodyColor": "#cfc7ae"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "single",
+          "id": "shelf-middle-display-hero",
+          "family": "box",
+          "dimensionsMm": {
+            "width": 100,
+            "height": 128,
+            "depth": 82
+          },
+          "positionMm": {
+            "x": 3.218420499935746,
+            "y": 102,
+            "z": 131.1559504282195
+          },
+          "bodyColor": "#a5ad97"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired",
+          "id": "shelf-back-display-pair-left",
+          "family": "bowl",
+          "dimensionsMm": {
+            "width": 85,
+            "height": 47,
+            "depth": 85
+          },
+          "positionMm": {
+            "x": -46.9239341560097,
+            "y": 61.5,
+            "z": 122.42560770595446
+          },
+          "bodyColor": "#aab6b3"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired",
+          "id": "shelf-back-display-pair-right",
+          "family": "faceted",
+          "dimensionsMm": {
+            "width": 66,
+            "height": 73,
+            "depth": 68
+          },
+          "positionMm": {
+            "x": 46.9239341560097,
+            "y": 74.5,
+            "z": 122.42560770595446
+          },
+          "bodyColor": "#b67c68"
+        }
+      ]
+    },
+    {
+      "seed": 654013979,
+      "route": "/simulator/free/shelf-swing?seed=654013979&sv=2&rttDiagnostics=1&sceneCapacityProfiling=1&dofProfiling=1",
+      "cameraPosition": "4.200000,1.450000,1.400000",
+      "orbitTarget": "0.000000,-0.040000,3.850000",
+      "canvasSize": {
+        "width": 514,
+        "height": 411
+      },
+      "cssCanvasBounds": {
+        "x": 31,
+        "y": 236.390625,
+        "width": 514,
+        "height": 410.390625
+      },
+      "devicePixelRatio": 1,
+      "renderQuality": "standard",
+      "focusDistanceMm": 3400,
+      "frontSwingDeg": -4,
+      "riseMm": 0,
+      "aperture": 11,
+      "activeSchema": 2,
+      "fallbackUsed": false,
+      "stations": [
+        {
+          "stationId": "shelf-front",
+          "composition": "paired"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "paired"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "single"
+        }
+      ],
+      "props": [
+        {
+          "stationId": "shelf-front",
+          "composition": "paired",
+          "id": "shelf-front-display-pair-left",
+          "family": "bowl",
+          "dimensionsMm": {
+            "width": 79,
+            "height": 50,
+            "depth": 79
+          },
+          "positionMm": {
+            "x": -45.43600824414963,
+            "y": 63,
+            "z": 118.02564772358164
+          },
+          "bodyColor": "#cfc7ae"
+        },
+        {
+          "stationId": "shelf-front",
+          "composition": "paired",
+          "id": "shelf-front-display-pair-right",
+          "family": "faceted",
+          "dimensionsMm": {
+            "width": 67,
+            "height": 76,
+            "depth": 68
+          },
+          "positionMm": {
+            "x": 45.43600824414963,
+            "y": 76,
+            "z": 118.02564772358164
+          },
+          "bodyColor": "#cfc7ae"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "paired",
+          "id": "shelf-middle-display-pair-left",
+          "family": "faceted",
+          "dimensionsMm": {
+            "width": 66,
+            "height": 71,
+            "depth": 56
+          },
+          "positionMm": {
+            "x": -39.11817446215808,
+            "y": 73.5,
+            "z": 114.98895975900814
+          },
+          "bodyColor": "#d1c4a8"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "paired",
+          "id": "shelf-middle-display-pair-right",
+          "family": "necked-vessel",
+          "dimensionsMm": {
+            "width": 57,
+            "height": 101,
+            "depth": 57
+          },
+          "positionMm": {
+            "x": 39.11817446215808,
+            "y": 88.5,
+            "z": 114.98895975900814
+          },
+          "bodyColor": "#a5ad97"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "single",
+          "id": "shelf-back-display-hero",
+          "family": "vessel",
+          "dimensionsMm": {
+            "width": 89,
+            "height": 129,
+            "depth": 89
+          },
+          "positionMm": {
+            "x": 6.501589223742485,
+            "y": 102.5,
+            "z": 123.6726171139162
+          },
+          "bodyColor": "#aab6b3"
+        }
+      ]
+    },
+    {
+      "seed": 4041585854,
+      "route": "/simulator/free/shelf-swing?seed=4041585854&sv=2&rttDiagnostics=1&sceneCapacityProfiling=1&dofProfiling=1",
+      "cameraPosition": "4.200000,1.450000,1.400000",
+      "orbitTarget": "0.000000,-0.040000,3.850000",
+      "canvasSize": {
+        "width": 514,
+        "height": 411
+      },
+      "cssCanvasBounds": {
+        "x": 31,
+        "y": 236.390625,
+        "width": 514,
+        "height": 410.390625
+      },
+      "devicePixelRatio": 1,
+      "renderQuality": "standard",
+      "focusDistanceMm": 3400,
+      "frontSwingDeg": -4,
+      "riseMm": 0,
+      "aperture": 11,
+      "activeSchema": 2,
+      "fallbackUsed": false,
+      "stations": [
+        {
+          "stationId": "shelf-front",
+          "composition": "paired"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "single"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "single"
+        }
+      ],
+      "props": [
+        {
+          "stationId": "shelf-front",
+          "composition": "paired",
+          "id": "shelf-front-display-pair-left",
+          "family": "faceted",
+          "dimensionsMm": {
+            "width": 61,
+            "height": 72,
+            "depth": 67
+          },
+          "positionMm": {
+            "x": -37.177640314566375,
+            "y": 74,
+            "z": 125.88040688587353
+          },
+          "bodyColor": "#91a79a"
+        },
+        {
+          "stationId": "shelf-front",
+          "composition": "paired",
+          "id": "shelf-front-display-pair-right",
+          "family": "necked-vessel",
+          "dimensionsMm": {
+            "width": 56,
+            "height": 91,
+            "depth": 56
+          },
+          "positionMm": {
+            "x": 37.177640314566375,
+            "y": 83.5,
+            "z": 125.88040688587353
+          },
+          "bodyColor": "#91a79a"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "single",
+          "id": "shelf-middle-display-hero",
+          "family": "box",
+          "dimensionsMm": {
+            "width": 92,
+            "height": 109,
+            "depth": 79
+          },
+          "positionMm": {
+            "x": 6.177827845327556,
+            "y": 92.5,
+            "z": 136.26207511755638
+          },
+          "bodyColor": "#a5ad97"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "single",
+          "id": "shelf-back-display-hero",
+          "family": "necked-vessel",
+          "dimensionsMm": {
+            "width": 96,
+            "height": 144,
+            "depth": 96
+          },
+          "positionMm": {
+            "x": 8.473935588262975,
+            "y": 110,
+            "z": 115.60422879760154
+          },
+          "bodyColor": "#c0a86f"
+        }
+      ]
+    },
+    {
+      "seed": 2762659077,
+      "route": "/simulator/free/shelf-swing?seed=2762659077&sv=2&rttDiagnostics=1&sceneCapacityProfiling=1&dofProfiling=1",
+      "cameraPosition": "4.200000,1.450000,1.400000",
+      "orbitTarget": "0.000000,-0.040000,3.850000",
+      "canvasSize": {
+        "width": 514,
+        "height": 411
+      },
+      "cssCanvasBounds": {
+        "x": 31,
+        "y": 236.390625,
+        "width": 514,
+        "height": 410.390625
+      },
+      "devicePixelRatio": 1,
+      "renderQuality": "standard",
+      "focusDistanceMm": 3400,
+      "frontSwingDeg": -4,
+      "riseMm": 0,
+      "aperture": 11,
+      "activeSchema": 2,
+      "fallbackUsed": false,
+      "stations": [
+        {
+          "stationId": "shelf-front",
+          "composition": "single"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "single"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired"
+        }
+      ],
+      "props": [
+        {
+          "stationId": "shelf-front",
+          "composition": "single",
+          "id": "shelf-front-display-hero",
+          "family": "faceted",
+          "dimensionsMm": {
+            "width": 96,
+            "height": 100,
+            "depth": 84
+          },
+          "positionMm": {
+            "x": 15.91238178871572,
+            "y": 88,
+            "z": 115.9110365761444
+          },
+          "bodyColor": "#91a79a"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "single",
+          "id": "shelf-middle-display-hero",
+          "family": "necked-vessel",
+          "dimensionsMm": {
+            "width": 85,
+            "height": 166,
+            "depth": 85
+          },
+          "positionMm": {
+            "x": 2.6112136160954833,
+            "y": 121,
+            "z": 120.82232434535399
+          },
+          "bodyColor": "#8ca3ad"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired",
+          "id": "shelf-back-display-pair-left",
+          "family": "bowl",
+          "dimensionsMm": {
+            "width": 89,
+            "height": 49,
+            "depth": 89
+          },
+          "positionMm": {
+            "x": -42.25,
+            "y": 62.5,
+            "z": 116.72270009526983
+          },
+          "bodyColor": "#aab6b3"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired",
+          "id": "shelf-back-display-pair-right",
+          "family": "necked-vessel",
+          "dimensionsMm": {
+            "width": 56,
+            "height": 95,
+            "depth": 56
+          },
+          "positionMm": {
+            "x": 42.25,
+            "y": 85.5,
+            "z": 116.72270009526983
+          },
+          "bodyColor": "#c0a86f"
+        }
+      ]
+    },
+    {
+      "seed": 2004402848,
+      "route": "/simulator/free/shelf-swing?seed=2004402848&sv=2&rttDiagnostics=1&sceneCapacityProfiling=1&dofProfiling=1",
+      "cameraPosition": "4.200000,1.450000,1.400000",
+      "orbitTarget": "0.000000,-0.040000,3.850000",
+      "canvasSize": {
+        "width": 514,
+        "height": 411
+      },
+      "cssCanvasBounds": {
+        "x": 31,
+        "y": 236.390625,
+        "width": 514,
+        "height": 410.390625
+      },
+      "devicePixelRatio": 1,
+      "renderQuality": "standard",
+      "focusDistanceMm": 3400,
+      "frontSwingDeg": -4,
+      "riseMm": 0,
+      "aperture": 11,
+      "activeSchema": 2,
+      "fallbackUsed": false,
+      "stations": [
+        {
+          "stationId": "shelf-front",
+          "composition": "paired"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "paired"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "single"
+        }
+      ],
+      "props": [
+        {
+          "stationId": "shelf-front",
+          "composition": "paired",
+          "id": "shelf-front-display-pair-left",
+          "family": "bowl",
+          "dimensionsMm": {
+            "width": 79,
+            "height": 42,
+            "depth": 79
+          },
+          "positionMm": {
+            "x": -44.168167567637155,
+            "y": 59,
+            "z": 125.7892472599633
+          },
+          "bodyColor": "#b77e67"
+        },
+        {
+          "stationId": "shelf-front",
+          "composition": "paired",
+          "id": "shelf-front-display-pair-right",
+          "family": "faceted",
+          "dimensionsMm": {
+            "width": 63,
+            "height": 76,
+            "depth": 62
+          },
+          "positionMm": {
+            "x": 44.168167567637155,
+            "y": 76,
+            "z": 125.7892472599633
+          },
+          "bodyColor": "#cfc7ae"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "paired",
+          "id": "shelf-middle-display-pair-left",
+          "family": "bowl",
+          "dimensionsMm": {
+            "width": 96,
+            "height": 44,
+            "depth": 96
+          },
+          "positionMm": {
+            "x": -50.4881973149743,
+            "y": 60,
+            "z": 122.96753371693194
+          },
+          "bodyColor": "#d1c4a8"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "paired",
+          "id": "shelf-middle-display-pair-right",
+          "family": "faceted",
+          "dimensionsMm": {
+            "width": 67,
+            "height": 62,
+            "depth": 59
+          },
+          "positionMm": {
+            "x": 50.4881973149743,
+            "y": 69,
+            "z": 122.96753371693194
+          },
+          "bodyColor": "#a5ad97"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "single",
+          "id": "shelf-back-display-hero",
+          "family": "bowl",
+          "dimensionsMm": {
+            "width": 118,
+            "height": 54,
+            "depth": 118
+          },
+          "positionMm": {
+            "x": 1.045064589008689,
+            "y": 65,
+            "z": 128.30386218614876
+          },
+          "bodyColor": "#b67c68"
+        }
+      ]
+    },
+    {
+      "seed": 1824298367,
+      "route": "/simulator/free/shelf-swing?seed=1824298367&sv=2&rttDiagnostics=1&sceneCapacityProfiling=1&dofProfiling=1",
+      "cameraPosition": "4.200000,1.450000,1.400000",
+      "orbitTarget": "0.000000,-0.040000,3.850000",
+      "canvasSize": {
+        "width": 514,
+        "height": 411
+      },
+      "cssCanvasBounds": {
+        "x": 31,
+        "y": 236.390625,
+        "width": 514,
+        "height": 410.390625
+      },
+      "devicePixelRatio": 1,
+      "renderQuality": "standard",
+      "focusDistanceMm": 3400,
+      "frontSwingDeg": -4,
+      "riseMm": 0,
+      "aperture": 11,
+      "activeSchema": 2,
+      "fallbackUsed": false,
+      "stations": [
+        {
+          "stationId": "shelf-front",
+          "composition": "single"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "single"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired"
+        }
+      ],
+      "props": [
+        {
+          "stationId": "shelf-front",
+          "composition": "single",
+          "id": "shelf-front-display-hero",
+          "family": "vessel",
+          "dimensionsMm": {
+            "width": 96,
+            "height": 127,
+            "depth": 96
+          },
+          "positionMm": {
+            "x": 2.83059739228338,
+            "y": 101.5,
+            "z": 118.41472761938348
+          },
+          "bodyColor": "#b77e67"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "single",
+          "id": "shelf-middle-display-hero",
+          "family": "cylinder",
+          "dimensionsMm": {
+            "width": 98,
+            "height": 121,
+            "depth": 98
+          },
+          "positionMm": {
+            "x": 6.002475136891007,
+            "y": 98.5,
+            "z": 127.11725467001088
+          },
+          "bodyColor": "#a5ad97"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired",
+          "id": "shelf-back-display-pair-left",
+          "family": "bowl",
+          "dimensionsMm": {
+            "width": 79,
+            "height": 43,
+            "depth": 79
+          },
+          "positionMm": {
+            "x": -45.13263230149167,
+            "y": 59.5,
+            "z": 123.85023493645713
+          },
+          "bodyColor": "#c0a86f"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired",
+          "id": "shelf-back-display-pair-right",
+          "family": "faceted",
+          "dimensionsMm": {
+            "width": 63,
+            "height": 58,
+            "depth": 57
+          },
+          "positionMm": {
+            "x": 45.13263230149167,
+            "y": 67,
+            "z": 123.85023493645713
+          },
+          "bodyColor": "#c0a86f"
+        }
+      ]
+    },
+    {
+      "seed": 2130322642,
+      "route": "/simulator/free/shelf-swing?seed=2130322642&sv=2&rttDiagnostics=1&sceneCapacityProfiling=1&dofProfiling=1",
+      "cameraPosition": "4.200000,1.450000,1.400000",
+      "orbitTarget": "0.000000,-0.040000,3.850000",
+      "canvasSize": {
+        "width": 514,
+        "height": 411
+      },
+      "cssCanvasBounds": {
+        "x": 31,
+        "y": 236.390625,
+        "width": 514,
+        "height": 410.390625
+      },
+      "devicePixelRatio": 1,
+      "renderQuality": "standard",
+      "focusDistanceMm": 3400,
+      "frontSwingDeg": -4,
+      "riseMm": 0,
+      "aperture": 11,
+      "activeSchema": 2,
+      "fallbackUsed": false,
+      "stations": [
+        {
+          "stationId": "shelf-front",
+          "composition": "paired"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "paired"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "single"
+        }
+      ],
+      "props": [
+        {
+          "stationId": "shelf-front",
+          "composition": "paired",
+          "id": "shelf-front-display-pair-left",
+          "family": "bowl",
+          "dimensionsMm": {
+            "width": 93,
+            "height": 52,
+            "depth": 93
+          },
+          "positionMm": {
+            "x": -48.887403845610294,
+            "y": 64,
+            "z": 126.77787853591144
+          },
+          "bodyColor": "#91a79a"
+        },
+        {
+          "stationId": "shelf-front",
+          "composition": "paired",
+          "id": "shelf-front-display-pair-right",
+          "family": "faceted",
+          "dimensionsMm": {
+            "width": 64,
+            "height": 58,
+            "depth": 68
+          },
+          "positionMm": {
+            "x": 48.887403845610294,
+            "y": 67,
+            "z": 126.77787853591144
+          },
+          "bodyColor": "#b77e67"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "paired",
+          "id": "shelf-middle-display-pair-left",
+          "family": "faceted",
+          "dimensionsMm": {
+            "width": 60,
+            "height": 67,
+            "depth": 61
+          },
+          "positionMm": {
+            "x": -36.950950700790585,
+            "y": 71.5,
+            "z": 110.69801040459424
+          },
+          "bodyColor": "#d1c4a8"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "paired",
+          "id": "shelf-middle-display-pair-right",
+          "family": "necked-vessel",
+          "dimensionsMm": {
+            "width": 55,
+            "height": 88,
+            "depth": 55
+          },
+          "positionMm": {
+            "x": 36.950950700790585,
+            "y": 82,
+            "z": 110.69801040459424
+          },
+          "bodyColor": "#8ca3ad"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "single",
+          "id": "shelf-back-display-hero",
+          "family": "box",
+          "dimensionsMm": {
+            "width": 90,
+            "height": 113,
+            "depth": 88
+          },
+          "positionMm": {
+            "x": -4.5678207110613585,
+            "y": 94.5,
+            "z": 125.24446976953186
+          },
+          "bodyColor": "#aab6b3"
+        }
+      ]
+    },
+    {
+      "seed": 4065361417,
+      "route": "/simulator/free/shelf-swing?seed=4065361417&sv=2&rttDiagnostics=1&sceneCapacityProfiling=1&dofProfiling=1",
+      "cameraPosition": "4.200000,1.450000,1.400000",
+      "orbitTarget": "0.000000,-0.040000,3.850000",
+      "canvasSize": {
+        "width": 514,
+        "height": 411
+      },
+      "cssCanvasBounds": {
+        "x": 31,
+        "y": 236.390625,
+        "width": 514,
+        "height": 410.390625
+      },
+      "devicePixelRatio": 1,
+      "renderQuality": "standard",
+      "focusDistanceMm": 3400,
+      "frontSwingDeg": -4,
+      "riseMm": 0,
+      "aperture": 11,
+      "activeSchema": 2,
+      "fallbackUsed": false,
+      "stations": [
+        {
+          "stationId": "shelf-front",
+          "composition": "paired"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "single"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired"
+        }
+      ],
+      "props": [
+        {
+          "stationId": "shelf-front",
+          "composition": "paired",
+          "id": "shelf-front-display-pair-left",
+          "family": "bowl",
+          "dimensionsMm": {
+            "width": 81,
+            "height": 42,
+            "depth": 81
+          },
+          "positionMm": {
+            "x": -44.45003658061647,
+            "y": 59,
+            "z": 127.04666452435777
+          },
+          "bodyColor": "#b77e67"
+        },
+        {
+          "stationId": "shelf-front",
+          "composition": "paired",
+          "id": "shelf-front-display-pair-right",
+          "family": "faceted",
+          "dimensionsMm": {
+            "width": 67,
+            "height": 59,
+            "depth": 59
+          },
+          "positionMm": {
+            "x": 44.45003658061647,
+            "y": 67.5,
+            "z": 127.04666452435777
+          },
+          "bodyColor": "#b77e67"
+        },
+        {
+          "stationId": "shelf-middle",
+          "composition": "single",
+          "id": "shelf-middle-display-hero",
+          "family": "faceted",
+          "dimensionsMm": {
+            "width": 105,
+            "height": 101,
+            "depth": 85
+          },
+          "positionMm": {
+            "x": 14.374516638927162,
+            "y": 88.5,
+            "z": 139.30547500844114
+          },
+          "bodyColor": "#d1c4a8"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired",
+          "id": "shelf-back-display-pair-left",
+          "family": "bowl",
+          "dimensionsMm": {
+            "width": 78,
+            "height": 48,
+            "depth": 78
+          },
+          "positionMm": {
+            "x": -41.2903771851056,
+            "y": 62,
+            "z": 119.7953257295303
+          },
+          "bodyColor": "#b67c68"
+        },
+        {
+          "stationId": "shelf-back",
+          "composition": "paired",
+          "id": "shelf-back-display-pair-right",
+          "family": "faceted",
+          "dimensionsMm": {
+            "width": 61,
+            "height": 68,
+            "depth": 63
+          },
+          "positionMm": {
+            "x": 41.2903771851056,
+            "y": 72,
+            "z": 119.7953257295303
+          },
+          "bodyColor": "#b67c68"
+        }
+      ]
+    }
+  ],
+  "groundGlass": {
+    "frameStatus": "completed",
+    "frameRequestId": "gg-mwk0dl8m-zcffvdqihc-default-request-5",
+    "lastCompletedRequestId": "gg-mwk0dl8m-zcffvdqihc-default-request-5",
+    "finalContentful": null,
+    "actualCanvasPixels": {
+      "width": 514,
+      "height": 412
+    },
+    "representativeState": "schema v2 seed 284719 · focus 3400 mm · aperture f/11 · Front Swing -4° · Raw preview orientation · processed WebGL2 path"
+  },
+  "imageDiagnostics": {
+    "canvas": {
+      "width": 514,
+      "height": 411
+    },
+    "historicalRoi": {
+      "xSegments": [
+        [
+          70,
+          145
+        ],
+        [
+          232,
+          296
+        ],
+        [
+          382,
+          456
+        ]
+      ],
+      "y": [
+        224,
+        264
+      ],
+      "canvasFraction": 0.04033059729046551
+    },
+    "paired": [
+      {
+        "seed": 0,
+        "sameSeedV1V2": {
+          "changedPixels": 6495,
+          "changedPixelFraction": 0.0307449799767105,
+          "meanAbsoluteChannelDifference": 0.368048257863362,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 1994,
+            "changedPixelFraction": 0.234037558685446,
+            "meanAbsoluteChannelDifference": 6.19358372456964,
+            "maxChannelDifference": 164,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        },
+        "v1VsCanonical": {
+          "changedPixels": 1528,
+          "changedPixelFraction": 0.007232999138477851,
+          "meanAbsoluteChannelDifference": 0.2975517623334943,
+          "maxChannelDifference": 183,
+          "historicalRoi": {
+            "changedPixels": 1528,
+            "changedPixelFraction": 0.17934272300469484,
+            "meanAbsoluteChannelDifference": 7.377816901408451,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 91,
+              "minY": 224,
+              "maxX": 435,
+              "maxY": 247,
+              "width": 345,
+              "height": 24
+            }
+          }
+        },
+        "v2VsCanonical": {
+          "changedPixels": 6922,
+          "changedPixelFraction": 0.032766243479413405,
+          "meanAbsoluteChannelDifference": 0.4140134624669829,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 2421,
+            "changedPixelFraction": 0.2841549295774648,
+            "meanAbsoluteChannelDifference": 7.33329420970266,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        }
+      },
+      {
+        "seed": 1,
+        "sameSeedV1V2": {
+          "changedPixels": 6531,
+          "changedPixelFraction": 0.030915390951177256,
+          "meanAbsoluteChannelDifference": 0.3950394627636242,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 2030,
+            "changedPixelFraction": 0.23826291079812206,
+            "meanAbsoluteChannelDifference": 6.86283255086072,
+            "maxChannelDifference": 166,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        },
+        "v1VsCanonical": {
+          "changedPixels": 1545,
+          "changedPixelFraction": 0.007313470987531597,
+          "meanAbsoluteChannelDifference": 0.27189228764110185,
+          "maxChannelDifference": 183,
+          "historicalRoi": {
+            "changedPixels": 1545,
+            "changedPixelFraction": 0.1813380281690141,
+            "meanAbsoluteChannelDifference": 6.74158841940532,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 91,
+              "minY": 224,
+              "maxX": 435,
+              "maxY": 248,
+              "width": 345,
+              "height": 25
+            }
+          }
+        },
+        "v2VsCanonical": {
+          "changedPixels": 6964,
+          "changedPixelFraction": 0.032965056282957955,
+          "meanAbsoluteChannelDifference": 0.42816388486529644,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 2463,
+            "changedPixelFraction": 0.2890845070422535,
+            "meanAbsoluteChannelDifference": 7.684154929577465,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        }
+      },
+      {
+        "seed": 284719,
+        "sameSeedV1V2": {
+          "changedPixels": 6263,
+          "changedPixelFraction": 0.02964677591903585,
+          "meanAbsoluteChannelDifference": 0.3117605662693566,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 1762,
+            "changedPixelFraction": 0.2068075117370892,
+            "meanAbsoluteChannelDifference": 4.797926447574335,
+            "maxChannelDifference": 167,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        },
+        "v1VsCanonical": {
+          "changedPixels": 1487,
+          "changedPixelFraction": 0.007038919973112935,
+          "meanAbsoluteChannelDifference": 0.27808230850066745,
+          "maxChannelDifference": 183,
+          "historicalRoi": {
+            "changedPixels": 1487,
+            "changedPixelFraction": 0.17453051643192488,
+            "meanAbsoluteChannelDifference": 6.895070422535211,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 91,
+              "minY": 224,
+              "maxX": 435,
+              "maxY": 246,
+              "width": 345,
+              "height": 23
+            }
+          }
+        },
+        "v2VsCanonical": {
+          "changedPixels": 6875,
+          "changedPixelFraction": 0.0325437624849707,
+          "meanAbsoluteChannelDifference": 0.40186063538047406,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 2374,
+            "changedPixelFraction": 0.27863849765258214,
+            "meanAbsoluteChannelDifference": 7.031964006259781,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        }
+      },
+      {
+        "seed": 4294967295,
+        "sameSeedV1V2": {
+          "changedPixels": 6304,
+          "changedPixelFraction": 0.029840855084400767,
+          "meanAbsoluteChannelDifference": 0.2945032993458112,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 1803,
+            "changedPixelFraction": 0.21161971830985915,
+            "meanAbsoluteChannelDifference": 4.3700312989045385,
+            "maxChannelDifference": 167,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        },
+        "v1VsCanonical": {
+          "changedPixels": 1442,
+          "changedPixelFraction": 0.00682590625502949,
+          "meanAbsoluteChannelDifference": 0.24631012903897678,
+          "maxChannelDifference": 183,
+          "historicalRoi": {
+            "changedPixels": 1442,
+            "changedPixelFraction": 0.16924882629107982,
+            "meanAbsoluteChannelDifference": 6.107276995305164,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 91,
+              "minY": 224,
+              "maxX": 435,
+              "maxY": 247,
+              "width": 345,
+              "height": 24
+            }
+          }
+        },
+        "v2VsCanonical": {
+          "changedPixels": 6905,
+          "changedPixelFraction": 0.03268577163035966,
+          "meanAbsoluteChannelDifference": 0.40284681000123074,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 2404,
+            "changedPixelFraction": 0.2821596244131455,
+            "meanAbsoluteChannelDifference": 7.05641627543036,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        }
+      },
+      {
+        "seed": 3079748268,
+        "sameSeedV1V2": {
+          "changedPixels": 6547,
+          "changedPixelFraction": 0.030991129162051368,
+          "meanAbsoluteChannelDifference": 0.3674896885581654,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 2046,
+            "changedPixelFraction": 0.24014084507042255,
+            "meanAbsoluteChannelDifference": 6.179733959311424,
+            "maxChannelDifference": 173,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        },
+        "v1VsCanonical": {
+          "changedPixels": 1487,
+          "changedPixelFraction": 0.007038919973112935,
+          "meanAbsoluteChannelDifference": 0.2620131847602097,
+          "maxChannelDifference": 183,
+          "historicalRoi": {
+            "changedPixels": 1487,
+            "changedPixelFraction": 0.17453051643192488,
+            "meanAbsoluteChannelDifference": 6.496635367762129,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 91,
+              "minY": 224,
+              "maxX": 435,
+              "maxY": 247,
+              "width": 345,
+              "height": 24
+            }
+          }
+        },
+        "v2VsCanonical": {
+          "changedPixels": 7045,
+          "changedPixelFraction": 0.03334848097550815,
+          "meanAbsoluteChannelDifference": 0.4417983407020301,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 2544,
+            "changedPixelFraction": 0.29859154929577464,
+            "meanAbsoluteChannelDifference": 8.022222222222222,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        }
+      },
+      {
+        "seed": 654013979,
+        "sameSeedV1V2": {
+          "changedPixels": 6381,
+          "changedPixelFraction": 0.03020534522423244,
+          "meanAbsoluteChannelDifference": 0.3174756454315658,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 1880,
+            "changedPixelFraction": 0.22065727699530516,
+            "meanAbsoluteChannelDifference": 4.939632237871675,
+            "maxChannelDifference": 160,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        },
+        "v1VsCanonical": {
+          "changedPixels": 1514,
+          "changedPixelFraction": 0.007166728203963002,
+          "meanAbsoluteChannelDifference": 0.25907832908883777,
+          "maxChannelDifference": 183,
+          "historicalRoi": {
+            "changedPixels": 1514,
+            "changedPixelFraction": 0.17769953051643192,
+            "meanAbsoluteChannelDifference": 6.423865414710485,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 91,
+              "minY": 224,
+              "maxX": 435,
+              "maxY": 247,
+              "width": 345,
+              "height": 24
+            }
+          }
+        },
+        "v2VsCanonical": {
+          "changedPixels": 6910,
+          "changedPixelFraction": 0.032709439821257826,
+          "meanAbsoluteChannelDifference": 0.4037667136874726,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 2409,
+            "changedPixelFraction": 0.28274647887323945,
+            "meanAbsoluteChannelDifference": 7.079225352112676,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        }
+      },
+      {
+        "seed": 4041585854,
+        "sameSeedV1V2": {
+          "changedPixels": 6338,
+          "changedPixelFraction": 0.03000179878250826,
+          "meanAbsoluteChannelDifference": 0.31624963314304105,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 1837,
+            "changedPixelFraction": 0.21561032863849766,
+            "meanAbsoluteChannelDifference": 4.909233176838811,
+            "maxChannelDifference": 167,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        },
+        "v1VsCanonical": {
+          "changedPixels": 1429,
+          "changedPixelFraction": 0.006764368958694273,
+          "meanAbsoluteChannelDifference": 0.2714425920140368,
+          "maxChannelDifference": 183,
+          "historicalRoi": {
+            "changedPixels": 1429,
+            "changedPixelFraction": 0.16772300469483567,
+            "meanAbsoluteChannelDifference": 6.730438184663536,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 91,
+              "minY": 224,
+              "maxX": 435,
+              "maxY": 247,
+              "width": 345,
+              "height": 24
+            }
+          }
+        },
+        "v2VsCanonical": {
+          "changedPixels": 6955,
+          "changedPixelFraction": 0.03292245353934126,
+          "meanAbsoluteChannelDifference": 0.42454265165787786,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 2454,
+            "changedPixelFraction": 0.2880281690140845,
+            "meanAbsoluteChannelDifference": 7.594366197183098,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        }
+      },
+      {
+        "seed": 2762659077,
+        "sameSeedV1V2": {
+          "changedPixels": 6440,
+          "changedPixelFraction": 0.030484629876830736,
+          "meanAbsoluteChannelDifference": 0.3763826168183009,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 1939,
+            "changedPixelFraction": 0.22758215962441314,
+            "meanAbsoluteChannelDifference": 6.400234741784038,
+            "maxChannelDifference": 167,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        },
+        "v1VsCanonical": {
+          "changedPixels": 1529,
+          "changedPixelFraction": 0.007237732776657483,
+          "meanAbsoluteChannelDifference": 0.291641026126527,
+          "maxChannelDifference": 183,
+          "historicalRoi": {
+            "changedPixels": 1529,
+            "changedPixelFraction": 0.1794600938967136,
+            "meanAbsoluteChannelDifference": 7.231259780907668,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 91,
+              "minY": 224,
+              "maxX": 435,
+              "maxY": 248,
+              "width": 345,
+              "height": 25
+            }
+          }
+        },
+        "v2VsCanonical": {
+          "changedPixels": 6906,
+          "changedPixelFraction": 0.0326905052685393,
+          "meanAbsoluteChannelDifference": 0.4097090074823041,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 2405,
+            "changedPixelFraction": 0.2822769953051643,
+            "meanAbsoluteChannelDifference": 7.226564945226917,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        }
+      },
+      {
+        "seed": 2004402848,
+        "sameSeedV1V2": {
+          "changedPixels": 6359,
+          "changedPixelFraction": 0.030101205184280534,
+          "meanAbsoluteChannelDifference": 0.33883855453624545,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 1858,
+            "changedPixelFraction": 0.21807511737089202,
+            "meanAbsoluteChannelDifference": 5.469327073552425,
+            "maxChannelDifference": 166,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        },
+        "v1VsCanonical": {
+          "changedPixels": 1512,
+          "changedPixelFraction": 0.007157260927603738,
+          "meanAbsoluteChannelDifference": 0.27553245540123894,
+          "maxChannelDifference": 183,
+          "historicalRoi": {
+            "changedPixels": 1512,
+            "changedPixelFraction": 0.17746478873239438,
+            "meanAbsoluteChannelDifference": 6.8318466353677625,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 91,
+              "minY": 224,
+              "maxX": 435,
+              "maxY": 247,
+              "width": 345,
+              "height": 24
+            }
+          }
+        },
+        "v2VsCanonical": {
+          "changedPixels": 6878,
+          "changedPixelFraction": 0.032557963399509594,
+          "meanAbsoluteChannelDifference": 0.40691773883571436,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 2377,
+            "changedPixelFraction": 0.2789906103286385,
+            "meanAbsoluteChannelDifference": 7.15735524256651,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        }
+      },
+      {
+        "seed": 1824298367,
+        "sameSeedV1V2": {
+          "changedPixels": 6326,
+          "changedPixelFraction": 0.029944995124352676,
+          "meanAbsoluteChannelDifference": 0.32805848252182995,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 1825,
+            "changedPixelFraction": 0.2142018779342723,
+            "meanAbsoluteChannelDifference": 5.202034428794992,
+            "maxChannelDifference": 173,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        },
+        "v1VsCanonical": {
+          "changedPixels": 1503,
+          "changedPixelFraction": 0.007114658183987049,
+          "meanAbsoluteChannelDifference": 0.2988393119183542,
+          "maxChannelDifference": 183,
+          "historicalRoi": {
+            "changedPixels": 1503,
+            "changedPixelFraction": 0.17640845070422534,
+            "meanAbsoluteChannelDifference": 7.409741784037559,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 91,
+              "minY": 224,
+              "maxX": 435,
+              "maxY": 247,
+              "width": 345,
+              "height": 24
+            }
+          }
+        },
+        "v2VsCanonical": {
+          "changedPixels": 6947,
+          "changedPixelFraction": 0.03288458443390421,
+          "meanAbsoluteChannelDifference": 0.4182011543765641,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 2446,
+            "changedPixelFraction": 0.2870892018779343,
+            "meanAbsoluteChannelDifference": 7.437128325508607,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        }
+      },
+      {
+        "seed": 2130322642,
+        "sameSeedV1V2": {
+          "changedPixels": 6409,
+          "changedPixelFraction": 0.03033788709326214,
+          "meanAbsoluteChannelDifference": 0.33844881832612245,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 1908,
+            "changedPixelFraction": 0.223943661971831,
+            "meanAbsoluteChannelDifference": 5.459663536776213,
+            "maxChannelDifference": 173,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        },
+        "v1VsCanonical": {
+          "changedPixels": 1461,
+          "changedPixelFraction": 0.006915845380442501,
+          "meanAbsoluteChannelDifference": 0.26951442339553333,
+          "maxChannelDifference": 183,
+          "historicalRoi": {
+            "changedPixels": 1461,
+            "changedPixelFraction": 0.1714788732394366,
+            "meanAbsoluteChannelDifference": 6.682629107981221,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 91,
+              "minY": 224,
+              "maxX": 435,
+              "maxY": 247,
+              "width": 345,
+              "height": 24
+            }
+          }
+        },
+        "v2VsCanonical": {
+          "changedPixels": 6937,
+          "changedPixelFraction": 0.03283724805210789,
+          "meanAbsoluteChannelDifference": 0.4238089377400349,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 2436,
+            "changedPixelFraction": 0.2859154929577465,
+            "meanAbsoluteChannelDifference": 7.576173708920188,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        }
+      },
+      {
+        "seed": 4065361417,
+        "sameSeedV1V2": {
+          "changedPixels": 6206,
+          "changedPixelFraction": 0.029376958542796823,
+          "meanAbsoluteChannelDifference": 0.3088935594118928,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 1705,
+            "changedPixelFraction": 0.20011737089201878,
+            "meanAbsoluteChannelDifference": 4.7268388106416275,
+            "maxChannelDifference": 173,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        },
+        "v1VsCanonical": {
+          "changedPixels": 1502,
+          "changedPixelFraction": 0.007109924545807417,
+          "meanAbsoluteChannelDifference": 0.25304136253041365,
+          "maxChannelDifference": 183,
+          "historicalRoi": {
+            "changedPixels": 1502,
+            "changedPixelFraction": 0.17629107981220657,
+            "meanAbsoluteChannelDifference": 6.274178403755869,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 91,
+              "minY": 224,
+              "maxX": 435,
+              "maxY": 247,
+              "width": 345,
+              "height": 24
+            }
+          }
+        },
+        "v2VsCanonical": {
+          "changedPixels": 6861,
+          "changedPixelFraction": 0.03247749155045585,
+          "meanAbsoluteChannelDifference": 0.4030329997696296,
+          "maxChannelDifference": 235,
+          "historicalRoi": {
+            "changedPixels": 2360,
+            "changedPixelFraction": 0.27699530516431925,
+            "meanAbsoluteChannelDifference": 7.061032863849765,
+            "maxChannelDifference": 183,
+            "changedBounds": {
+              "minX": 70,
+              "minY": 224,
+              "maxX": 442,
+              "maxY": 263,
+              "width": 373,
+              "height": 40
+            }
+          }
+        }
+      }
+    ],
+    "withinSchemaAgainstSeed284719": {
+      "v1": [
+        {
+          "seed": 0,
+          "vsReferenceSeed": {
+            "changedPixels": 896,
+            "changedPixelFraction": 0.004241339808950363,
+            "meanAbsoluteChannelDifference": 0.21206225680933852,
+            "maxChannelDifference": 176,
+            "historicalRoi": {
+              "changedPixels": 896,
+              "changedPixelFraction": 0.10516431924882629,
+              "meanAbsoluteChannelDifference": 5.258098591549296,
+              "maxChannelDifference": 176,
+              "changedBounds": {
+                "minX": 94,
+                "minY": 231,
+                "maxX": 428,
+                "maxY": 247,
+                "width": 335,
+                "height": 17
+              }
+            }
+          }
+        },
+        {
+          "seed": 1,
+          "vsReferenceSeed": {
+            "changedPixels": 861,
+            "changedPixelFraction": 0.004075662472663239,
+            "meanAbsoluteChannelDifference": 0.19307405619144094,
+            "maxChannelDifference": 180,
+            "historicalRoi": {
+              "changedPixels": 861,
+              "changedPixelFraction": 0.10105633802816902,
+              "meanAbsoluteChannelDifference": 4.7872848200312985,
+              "maxChannelDifference": 180,
+              "changedBounds": {
+                "minX": 94,
+                "minY": 232,
+                "maxX": 430,
+                "maxY": 248,
+                "width": 337,
+                "height": 17
+              }
+            }
+          }
+        },
+        {
+          "seed": 4294967295,
+          "vsReferenceSeed": {
+            "changedPixels": 828,
+            "changedPixelFraction": 0.00391945241273538,
+            "meanAbsoluteChannelDifference": 0.15933110536763012,
+            "maxChannelDifference": 171,
+            "historicalRoi": {
+              "changedPixels": 828,
+              "changedPixelFraction": 0.09718309859154929,
+              "meanAbsoluteChannelDifference": 3.9506259780907667,
+              "maxChannelDifference": 171,
+              "changedBounds": {
+                "minX": 95,
+                "minY": 230,
+                "maxX": 428,
+                "maxY": 247,
+                "width": 334,
+                "height": 18
+              }
+            }
+          }
+        },
+        {
+          "seed": 3079748268,
+          "vsReferenceSeed": {
+            "changedPixels": 803,
+            "changedPixelFraction": 0.0038011114582445775,
+            "meanAbsoluteChannelDifference": 0.1473991813961708,
+            "maxChannelDifference": 173,
+            "historicalRoi": {
+              "changedPixels": 803,
+              "changedPixelFraction": 0.0942488262910798,
+              "meanAbsoluteChannelDifference": 3.6547730829420972,
+              "maxChannelDifference": 173,
+              "changedBounds": {
+                "minX": 93,
+                "minY": 232,
+                "maxX": 428,
+                "maxY": 247,
+                "width": 336,
+                "height": 16
+              }
+            }
+          }
+        },
+        {
+          "seed": 654013979,
+          "vsReferenceSeed": {
+            "changedPixels": 859,
+            "changedPixelFraction": 0.0040661951963039756,
+            "meanAbsoluteChannelDifference": 0.19332493901496145,
+            "maxChannelDifference": 161,
+            "historicalRoi": {
+              "changedPixels": 859,
+              "changedPixelFraction": 0.10082159624413145,
+              "meanAbsoluteChannelDifference": 4.793505477308294,
+              "maxChannelDifference": 161,
+              "changedBounds": {
+                "minX": 94,
+                "minY": 232,
+                "maxX": 428,
+                "maxY": 247,
+                "width": 335,
+                "height": 16
+              }
+            }
+          }
+        },
+        {
+          "seed": 4041585854,
+          "vsReferenceSeed": {
+            "changedPixels": 776,
+            "changedPixelFraction": 0.003673303227394511,
+            "meanAbsoluteChannelDifference": 0.14532900363227835,
+            "maxChannelDifference": 164,
+            "historicalRoi": {
+              "changedPixels": 776,
+              "changedPixelFraction": 0.09107981220657277,
+              "meanAbsoluteChannelDifference": 3.6034428794992177,
+              "maxChannelDifference": 164,
+              "changedBounds": {
+                "minX": 95,
+                "minY": 230,
+                "maxX": 429,
+                "maxY": 247,
+                "width": 335,
+                "height": 18
+              }
+            }
+          }
+        },
+        {
+          "seed": 2762659077,
+          "vsReferenceSeed": {
+            "changedPixels": 829,
+            "changedPixelFraction": 0.003924186050915012,
+            "meanAbsoluteChannelDifference": 0.13008195505568337,
+            "maxChannelDifference": 166,
+            "historicalRoi": {
+              "changedPixels": 829,
+              "changedPixelFraction": 0.09730046948356808,
+              "meanAbsoluteChannelDifference": 3.2253912363067294,
+              "maxChannelDifference": 166,
+              "changedBounds": {
+                "minX": 94,
+                "minY": 230,
+                "maxX": 429,
+                "maxY": 248,
+                "width": 336,
+                "height": 19
+              }
+            }
+          }
+        },
+        {
+          "seed": 2004402848,
+          "vsReferenceSeed": {
+            "changedPixels": 825,
+            "changedPixelFraction": 0.003905251498196484,
+            "meanAbsoluteChannelDifference": 0.13886600963768733,
+            "maxChannelDifference": 166,
+            "historicalRoi": {
+              "changedPixels": 825,
+              "changedPixelFraction": 0.09683098591549295,
+              "meanAbsoluteChannelDifference": 3.443192488262911,
+              "maxChannelDifference": 166,
+              "changedBounds": {
+                "minX": 95,
+                "minY": 230,
+                "maxX": 427,
+                "maxY": 247,
+                "width": 333,
+                "height": 18
+              }
+            }
+          }
+        },
+        {
+          "seed": 1824298367,
+          "vsReferenceSeed": {
+            "changedPixels": 633,
+            "changedPixelFraction": 0.0029963929677071202,
+            "meanAbsoluteChannelDifference": 0.1384163140106223,
+            "maxChannelDifference": 177,
+            "historicalRoi": {
+              "changedPixels": 633,
+              "changedPixelFraction": 0.07429577464788732,
+              "meanAbsoluteChannelDifference": 3.432042253521127,
+              "maxChannelDifference": 177,
+              "changedBounds": {
+                "minX": 95,
+                "minY": 230,
+                "maxX": 405,
+                "maxY": 247,
+                "width": 311,
+                "height": 18
+              }
+            }
+          }
+        },
+        {
+          "seed": 2130322642,
+          "vsReferenceSeed": {
+            "changedPixels": 799,
+            "changedPixelFraction": 0.003782176905526049,
+            "meanAbsoluteChannelDifference": 0.14248250920692626,
+            "maxChannelDifference": 169,
+            "historicalRoi": {
+              "changedPixels": 799,
+              "changedPixelFraction": 0.0937793427230047,
+              "meanAbsoluteChannelDifference": 3.532863849765258,
+              "maxChannelDifference": 169,
+              "changedBounds": {
+                "minX": 94,
+                "minY": 231,
+                "maxX": 429,
+                "maxY": 247,
+                "width": 336,
+                "height": 17
+              }
+            }
+          }
+        },
+        {
+          "seed": 4065361417,
+          "vsReferenceSeed": {
+            "changedPixels": 711,
+            "changedPixelFraction": 0.003365616745718424,
+            "meanAbsoluteChannelDifference": 0.19702664407143375,
+            "maxChannelDifference": 176,
+            "historicalRoi": {
+              "changedPixels": 711,
+              "changedPixelFraction": 0.08345070422535211,
+              "meanAbsoluteChannelDifference": 4.8852895148669795,
+              "maxChannelDifference": 176,
+              "changedBounds": {
+                "minX": 94,
+                "minY": 232,
+                "maxX": 405,
+                "maxY": 247,
+                "width": 312,
+                "height": 16
+              }
+            }
+          }
+        }
+      ],
+      "v2": [
+        {
+          "seed": 0,
+          "vsReferenceSeed": {
+            "changedPixels": 364,
+            "changedPixelFraction": 0.001723044297386085,
+            "meanAbsoluteChannelDifference": 0.06137635263710983,
+            "maxChannelDifference": 163,
+            "historicalRoi": {
+              "changedPixels": 364,
+              "changedPixelFraction": 0.042723004694835684,
+              "meanAbsoluteChannelDifference": 1.521830985915493,
+              "maxChannelDifference": 163,
+              "changedBounds": {
+                "minX": 104,
+                "minY": 232,
+                "maxX": 419,
+                "maxY": 247,
+                "width": 316,
+                "height": 16
+              }
+            }
+          }
+        },
+        {
+          "seed": 1,
+          "vsReferenceSeed": {
+            "changedPixels": 405,
+            "changedPixelFraction": 0.001917123462751001,
+            "meanAbsoluteChannelDifference": 0.07320413656861724,
+            "maxChannelDifference": 155,
+            "historicalRoi": {
+              "changedPixels": 405,
+              "changedPixelFraction": 0.04753521126760563,
+              "meanAbsoluteChannelDifference": 1.8151017214397496,
+              "maxChannelDifference": 155,
+              "changedBounds": {
+                "minX": 103,
+                "minY": 232,
+                "maxX": 416,
+                "maxY": 247,
+                "width": 314,
+                "height": 16
+              }
+            }
+          }
+        },
+        {
+          "seed": 4294967295,
+          "vsReferenceSeed": {
+            "changedPixels": 325,
+            "changedPixelFraction": 0.001538432408380433,
+            "meanAbsoluteChannelDifference": 0.046902464963188076,
+            "maxChannelDifference": 158,
+            "historicalRoi": {
+              "changedPixels": 325,
+              "changedPixelFraction": 0.03814553990610329,
+              "meanAbsoluteChannelDifference": 1.1629499217527386,
+              "maxChannelDifference": 158,
+              "changedBounds": {
+                "minX": 103,
+                "minY": 235,
+                "maxX": 418,
+                "maxY": 247,
+                "width": 316,
+                "height": 13
+              }
+            }
+          }
+        },
+        {
+          "seed": 3079748268,
+          "vsReferenceSeed": {
+            "changedPixels": 493,
+            "changedPixelFraction": 0.002333683622558626,
+            "meanAbsoluteChannelDifference": 0.08720466042457578,
+            "maxChannelDifference": 155,
+            "historicalRoi": {
+              "changedPixels": 493,
+              "changedPixelFraction": 0.05786384976525821,
+              "meanAbsoluteChannelDifference": 2.162245696400626,
+              "maxChannelDifference": 155,
+              "changedBounds": {
+                "minX": 103,
+                "minY": 231,
+                "maxX": 418,
+                "maxY": 247,
+                "width": 316,
+                "height": 17
+              }
+            }
+          }
+        },
+        {
+          "seed": 654013979,
+          "vsReferenceSeed": {
+            "changedPixels": 380,
+            "changedPixelFraction": 0.0017987825082601985,
+            "meanAbsoluteChannelDifference": 0.06938566843704734,
+            "maxChannelDifference": 154,
+            "historicalRoi": {
+              "changedPixels": 380,
+              "changedPixelFraction": 0.04460093896713615,
+              "meanAbsoluteChannelDifference": 1.7204225352112676,
+              "maxChannelDifference": 154,
+              "changedBounds": {
+                "minX": 104,
+                "minY": 233,
+                "maxX": 420,
+                "maxY": 247,
+                "width": 317,
+                "height": 15
+              }
+            }
+          }
+        },
+        {
+          "seed": 4041585854,
+          "vsReferenceSeed": {
+            "changedPixels": 429,
+            "changedPixelFraction": 0.0020307307790621717,
+            "meanAbsoluteChannelDifference": 0.08265721201334254,
+            "maxChannelDifference": 163,
+            "historicalRoi": {
+              "changedPixels": 429,
+              "changedPixelFraction": 0.05035211267605634,
+              "meanAbsoluteChannelDifference": 2.049491392801252,
+              "maxChannelDifference": 163,
+              "changedBounds": {
+                "minX": 104,
+                "minY": 232,
+                "maxX": 418,
+                "maxY": 247,
+                "width": 315,
+                "height": 16
+              }
+            }
+          }
+        },
+        {
+          "seed": 2762659077,
+          "vsReferenceSeed": {
+            "changedPixels": 359,
+            "changedPixelFraction": 0.0016993761064879244,
+            "meanAbsoluteChannelDifference": 0.05803124832350314,
+            "maxChannelDifference": 147,
+            "historicalRoi": {
+              "changedPixels": 359,
+              "changedPixelFraction": 0.042136150234741786,
+              "meanAbsoluteChannelDifference": 1.4388888888888889,
+              "maxChannelDifference": 147,
+              "changedBounds": {
+                "minX": 104,
+                "minY": 230,
+                "maxX": 415,
+                "maxY": 247,
+                "width": 312,
+                "height": 18
+              }
+            }
+          }
+        },
+        {
+          "seed": 2004402848,
+          "vsReferenceSeed": {
+            "changedPixels": 328,
+            "changedPixelFraction": 0.0015526333229193294,
+            "meanAbsoluteChannelDifference": 0.05238401797520205,
+            "maxChannelDifference": 166,
+            "historicalRoi": {
+              "changedPixels": 328,
+              "changedPixelFraction": 0.038497652582159626,
+              "meanAbsoluteChannelDifference": 1.2988654147104852,
+              "maxChannelDifference": 166,
+              "changedBounds": {
+                "minX": 104,
+                "minY": 235,
+                "maxX": 419,
+                "maxY": 247,
+                "width": 316,
+                "height": 13
+              }
+            }
+          }
+        },
+        {
+          "seed": 1824298367,
+          "vsReferenceSeed": {
+            "changedPixels": 397,
+            "changedPixelFraction": 0.0018792543573139444,
+            "meanAbsoluteChannelDifference": 0.07270868243914907,
+            "maxChannelDifference": 162,
+            "historicalRoi": {
+              "changedPixels": 397,
+              "changedPixelFraction": 0.0465962441314554,
+              "meanAbsoluteChannelDifference": 1.8028169014084507,
+              "maxChannelDifference": 162,
+              "changedBounds": {
+                "minX": 104,
+                "minY": 233,
+                "maxX": 417,
+                "maxY": 247,
+                "width": 314,
+                "height": 15
+              }
+            }
+          }
+        },
+        {
+          "seed": 2130322642,
+          "vsReferenceSeed": {
+            "changedPixels": 409,
+            "changedPixelFraction": 0.0019360580154695296,
+            "meanAbsoluteChannelDifference": 0.08037086477258025,
+            "maxChannelDifference": 160,
+            "historicalRoi": {
+              "changedPixels": 409,
+              "changedPixelFraction": 0.048004694835680754,
+              "meanAbsoluteChannelDifference": 1.9928012519561815,
+              "maxChannelDifference": 160,
+              "changedBounds": {
+                "minX": 104,
+                "minY": 234,
+                "maxX": 421,
+                "maxY": 247,
+                "width": 318,
+                "height": 14
+              }
+            }
+          }
+        },
+        {
+          "seed": 4065361417,
+          "vsReferenceSeed": {
+            "changedPixels": 350,
+            "changedPixelFraction": 0.0016567733628712355,
+            "meanAbsoluteChannelDifference": 0.06582439464657079,
+            "maxChannelDifference": 162,
+            "historicalRoi": {
+              "changedPixels": 350,
+              "changedPixelFraction": 0.04107981220657277,
+              "meanAbsoluteChannelDifference": 1.6321205007824726,
+              "maxChannelDifference": 162,
+              "changedBounds": {
+                "minX": 104,
+                "minY": 235,
+                "maxX": 419,
+                "maxY": 247,
+                "width": 316,
+                "height": 13
+              }
+            }
+          }
+        }
+      ]
+    }
+  },
+  "pageErrors": []
+}
