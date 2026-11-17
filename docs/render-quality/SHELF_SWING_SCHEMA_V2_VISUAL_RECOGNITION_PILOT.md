@@ -213,8 +213,12 @@ sheets and image metrics above remain pre-fix experimental evidence.
 - Focused regression, canonical/v1 compatibility, v2 plan fingerprints,
   Observer/RTT parity, resource disposal, and Shelf Swing focus/calibration
   tests pass locally.
-- Full local gates and the final-head GitHub CI result are recorded in the
-  current PR implementation handoff after publication.
+- Full local gates passed. GitHub Actions PR CI
+  [run 44116935274](https://github.com/chau-hm/view-camera-simulator/actions/runs/44116935274)
+  passed on correction commit `a3f8e6fa5f89ae74a30b9e2d1b9ba68755f38f49`:
+  lint, typecheck, unit/integration tests, Chromium smoke, production WebGL
+  isolation, and evidence-integrity checks all passed. Its deploy job was
+  skipped.
 - **Technical qualification: PASS.**
 - **Visual qualification: INCONCLUSIVE.** The correction does not establish a
   normal-size recognition improvement; original measurements and interpretation
@@ -248,4 +252,5 @@ The detailed mode matrix is in [`shelf-swing-focus-aperture-matrix.json`](eviden
 - `npm run build` passed for the root-path production preview used by the corrected capture.
 - Production WebGL2 browser check passed on seed `284719`: v2 identity active, Observer and Ground Glass canvases rendered, the RTT frame completed, all three charts stayed visible, camera pose matched the pilot, and no page errors or unexpected console warnings occurred.
 - The production preview omits development-only `finalContentful` and finite-uniform readbacks; they remain unavailable for this capture.
-- Final `git diff --check` and the current-head GitHub CI result are recorded in the PR handoff after publication.
+- `git diff --check` passed before publication. The current-head CI run and PR
+  review-thread status are maintained in the PR implementation handoff.
