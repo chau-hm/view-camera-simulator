@@ -29,7 +29,7 @@ export const scenePublication = {
   "macro-compound-movements": true,
 
   // Free Practice
-  "still-life-studio": false,
+  "still-life-studio": true,
 } as const satisfies Record<string, boolean>;
 
 export type ScenePublicationConfig = Readonly<Record<string, boolean>>;

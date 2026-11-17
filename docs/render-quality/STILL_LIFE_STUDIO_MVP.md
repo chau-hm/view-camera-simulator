@@ -87,7 +87,7 @@ Also see the [four representative captures](evidence/still-life-studio/still-lif
 
 ## 20. Publication recommendation
 
-Technical qualification passed: deterministic plans, zero fallback in the 256-seed sweep, actual mesh support checks, independent subject ownership/disposal, Observer/RTT parity checks, URL/history replay, current Ground Glass frame completion, and bounded resource samples. The visual assessment meets the requested minimum of ACCEPTABLE. Catalog metadata, English and Traditional Chinese labels, and the actual browser-derived WebP thumbnail are complete. The final publication-decision commit enables the manual scene-publication flag in source. This is not a deployment or merge.
+Technical qualification passed: deterministic plans, zero fallback in the 256-seed sweep, actual mesh support checks, independent subject ownership/disposal, Observer/RTT parity checks, URL/history replay, current Ground Glass frame completion, and bounded resource samples. The visual assessment meets the requested minimum of ACCEPTABLE. Catalog metadata, English and Traditional Chinese labels, and the actual browser-derived WebP thumbnail are complete. The manual scene-publication flag is enabled in source after these gates passed. This is not a deployment or merge.
 
 The thumbnail is a real Observer capture from frozen seed 4294967295: [still-life-studio.webp](../../public/assets/still-life-studio.webp).
 

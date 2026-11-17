@@ -73,10 +73,10 @@ describe("public scene catalog integrity", () => {
     expect(Object.values(scenePublication).every((value) => typeof value === "boolean")).toBe(true);
   });
 
-  it("keeps Still-Life Studio hidden until visual qualification is complete", () => {
+  it("publishes Still-Life Studio as qualified Free Practice", () => {
     const entry = publicSceneCatalog.find(({ id }) => id === "still-life-studio")!;
 
-    expect(scenePublication["still-life-studio"]).toBe(false);
+    expect(scenePublication["still-life-studio"]).toBe(true);
     expect(entry).toMatchObject({
       id: "still-life-studio",
       groupId: "free-practice",
@@ -88,7 +88,7 @@ describe("public scene catalog integrity", () => {
     expect(entry.guidedTaskIds).toBeUndefined();
     expect(entry.guidedLesson).toBeUndefined();
     expect(entry.lesson).toBeUndefined();
-    expect(getPublicSceneEntryById("still-life-studio")).toBeUndefined();
+    expect(getPublicSceneEntryById("still-life-studio")).toMatchObject(entry);
     expect(isValidSimulatorRoute({ mode: "free", sceneId: entry.id, publicEntry: entry })).toBe(true);
     expect(isValidSimulatorRoute({
       mode: "guided",
@@ -96,7 +96,7 @@ describe("public scene catalog integrity", () => {
       taskId: "future-task",
       publicEntry: entry,
     })).toBe(false);
-    expect(resolveScenePublication("production")["still-life-studio"]).toBe(false);
+    expect(resolveScenePublication("production")["still-life-studio"]).toBe(true);
     expect(resolveScenePublication("still-life-studio-qualification")["still-life-studio"]).toBe(true);
   });
 
