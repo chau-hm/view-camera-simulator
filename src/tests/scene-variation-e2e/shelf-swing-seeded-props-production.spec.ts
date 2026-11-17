@@ -1,12 +1,37 @@
 import { createHash } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
 import { setRangeDirectOnGrid } from "../e2e/helpers/rangeInput";
+import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { controlSolution, subjects } from "../../scenes/shelfSwingGeometry";
+import { resolveShelfSwingPropVariationPlan } from "../../scenes/shelfSwingPropVariation";
+import { createSceneVariantIdentity, resolveSceneVariationDescriptor } from "../../scenes/sceneVariation";
 
 const FIXED_SEED = 284719;
 const MAX_SEED = 0xffff_ffff;
+const FROZEN_AUDIT_SEEDS = [
+  0,
+  1,
+  FIXED_SEED,
+  MAX_SEED,
+  3079748268,
+  654013979,
+  4041585854,
+  2762659077,
+  2004402848,
+  1824298367,
+  2130322642,
+  4065361417,
+] as const;
+const SHELF_SWING_BLIND_PAIRS = [
+  [2004402848, 4041585854],
+  [3079748268, 4065361417],
+  [FIXED_SEED, 2762659077],
+  [MAX_SEED, 654013979],
+  [0, 1],
+  [2130322642, 1824298367],
+] as const;
 const CAPACITY_QUERY = "rttDiagnostics=1&sceneCapacityProfiling=1&dofProfiling=1";
 const SCENE_PATH = "/simulator/free/shelf-swing";
 
@@ -36,7 +61,14 @@ const waitForFrame = async (rtt: Locator, previousRequestId?: string | null): Pr
   return (await rtt.getAttribute("data-frame-request-id")) ?? "";
 };
 
-const waitForScene = async (page: Page, seed?: number) => {
+const navigateSpaTo = async (page: Page, route: string): Promise<void> => {
+  await page.evaluate((nextRoute) => {
+    window.history.pushState({}, "", nextRoute);
+    window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
+  }, route);
+};
+
+const waitForScene = async (page: Page, seed?: number, schemaVersion = 1) => {
   const scene = page.getByTestId("scene-canvas");
   const rtt = page.getByTestId("ground-glass-rtt");
   await expect(scene).toHaveAttribute("data-scene-subject-id", "shelf-swing");
@@ -50,8 +82,8 @@ const waitForScene = async (page: Page, seed?: number) => {
   if (seed !== undefined) {
     const controls = page.getByTestId("scene-variation-controls");
     await expect(controls).toHaveAttribute("data-active-seed", String(seed));
-    await expect(controls).toHaveAttribute("data-active-schema", "1");
-    await expect(controls).toContainText(`Seed ${seed} · schema v1`);
+    await expect(controls).toHaveAttribute("data-active-schema", String(schemaVersion));
+    await expect(controls).toContainText(`Seed ${seed} · schema v${schemaVersion}`);
   }
   return { scene, rtt };
 };
@@ -128,7 +160,36 @@ const captureObserver = async (
   expect(bounds.width).toBeGreaterThanOrEqual(500);
   expect(bounds.height).toBeGreaterThanOrEqual(400);
   expect(await page.evaluate(() => window.devicePixelRatio)).toBe(1);
-  const bytes = await canvas.screenshot();
+  const backupAttribute = "data-scene-variation-capture-inline-style";
+  await canvas.evaluate((targetCanvas, backupKey) => {
+    const targetRect = targetCanvas.getBoundingClientRect();
+    const elements = Array.from(document.querySelectorAll<HTMLElement>("body *"));
+    elements.forEach((element) => {
+      if (element === targetCanvas || element.contains(targetCanvas) || targetCanvas.contains(element)) return;
+      const style = window.getComputedStyle(element);
+      if (style.display === "none" || style.visibility === "hidden") return;
+      const rect = element.getBoundingClientRect();
+      const overlaps = rect.right > targetRect.left && rect.left < targetRect.right &&
+        rect.bottom > targetRect.top && rect.top < targetRect.bottom;
+      if (!overlaps || rect.width <= 0 || rect.height <= 0) return;
+      const previousStyle = element.getAttribute("style");
+      element.setAttribute(backupKey, previousStyle ?? "__scene_capture_no_inline_style__");
+      element.style.setProperty("visibility", "hidden", "important");
+    });
+  }, backupAttribute);
+  let bytes: Buffer;
+  try {
+    bytes = await canvas.screenshot({ animations: "disabled" });
+  } finally {
+    await page.evaluate((backupKey) => {
+      document.querySelectorAll<HTMLElement>(`[${backupKey}]`).forEach((element) => {
+        const previousStyle = element.getAttribute(backupKey);
+        if (previousStyle === "__scene_capture_no_inline_style__") element.removeAttribute("style");
+        else if (previousStyle !== null) element.setAttribute("style", previousStyle);
+        element.removeAttribute(backupKey);
+      });
+    }, backupAttribute);
+  }
   const canvasSize = { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
   expect(canvasSize.width).toBeGreaterThanOrEqual(500);
   expect(canvasSize.height).toBeGreaterThanOrEqual(400);
@@ -150,6 +211,221 @@ const captureMetadata = (
   canvasSize: capture.canvasSize,
 });
 
+type EvidenceTile = Readonly<{
+  title: string;
+  images: readonly Readonly<{ label: string; bytes: Buffer }>[];
+}>;
+
+const dataUrlForPng = (bytes: Buffer): string => `data:image/png;base64,${bytes.toString("base64")}`;
+
+const renderEvidenceSheet = async (
+  page: Page,
+  testInfo: TestInfo,
+  file: string,
+  tiles: readonly EvidenceTile[],
+  columns: number,
+): Promise<Buffer> => {
+  const tileImageCount = tiles[0]?.images.length ?? 1;
+  const tileWidth = tileImageCount * 514;
+  const tileHeight = 447 + (tiles.some((tile) => tile.images.some((item) => item.label)) ? 24 : 0);
+  const tileMarkup = tiles.map((tile) => `
+    <article class="tile">
+      <div class="title">${tile.title}</div>
+      <div class="images">${tile.images.map((item) => `
+        <figure>
+          ${item.label ? `<figcaption>${item.label}</figcaption>` : ""}
+          <img alt="${item.label || tile.title}" src="${dataUrlForPng(item.bytes)}" />
+        </figure>
+      `).join("")}</div>
+    </article>
+  `).join("");
+  const width = columns * tileWidth;
+  const rowCount = Math.ceil(tiles.length / columns);
+  await page.setViewportSize({ width, height: rowCount * tileHeight });
+  await page.setContent(`<!doctype html><html><head><style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: #fff; font: 14px Arial, sans-serif; }
+    #sheet { width: ${width}px; display: grid; grid-template-columns: repeat(${columns}, ${tileWidth}px); }
+    .tile { width: ${tileWidth}px; min-height: ${tileHeight}px; overflow: hidden; background: #f7f8fa; }
+    .title { height: 36px; padding: 8px 6px; color: #1d2530; font-weight: 700; white-space: nowrap; }
+    .images { display: flex; width: max-content; }
+    figure { margin: 0; width: max-content; background: #f7f8fa; }
+    figcaption { height: 24px; padding: 5px 6px; font-size: 12px; color: #344154; }
+    img { display: block; width: 514px; height: 411px; object-fit: contain; background: #fff; }
+  </style></head><body><main id="sheet">${tileMarkup}</main></body></html>`);
+  await page.evaluate(async () => {
+    await Promise.all(Array.from(document.images, (image) => image.decode()));
+  });
+  const bytes = await page.locator("#sheet").screenshot({ animations: "disabled" });
+  await writeFile(path.join(await evidenceDirectory(testInfo), file), bytes);
+  await testInfo.attach(file, { body: bytes, contentType: "image/png" });
+  return bytes;
+};
+
+const cropHistoricalShelfSwingCaptures = async (
+  page: Page,
+  seedGrid: Buffer,
+  canonicalComparison: Buffer,
+): Promise<{ v1BySeed: ReadonlyMap<number, Buffer>; canonical: Buffer }> => {
+  const results = await page.evaluate(async ({ seedGridData, canonicalData, seeds }) => {
+    const load = async (dataUrl: string): Promise<HTMLImageElement> => {
+      const image = new Image();
+      image.src = dataUrl;
+      await image.decode();
+      return image;
+    };
+    const [grid, comparison] = await Promise.all([
+      load(seedGridData),
+      load(canonicalData),
+    ]);
+    const crop = (image: HTMLImageElement, sourceX: number, sourceY: number) => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 514;
+      canvas.height = 411;
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Could not create crop canvas");
+      context.drawImage(image, sourceX, sourceY, 514, 411, 0, 0, 514, 411);
+      return canvas.toDataURL("image/png");
+    };
+    return {
+      v1: seeds.map((seed: number, index: number) => ({
+        seed,
+        image: crop(grid, (index % 3) * 514, Math.floor(index / 3) * 447 + 36),
+      })),
+      canonical: crop(comparison, 0, 36),
+    };
+  }, {
+    seedGridData: dataUrlForPng(seedGrid),
+    canonicalData: dataUrlForPng(canonicalComparison),
+    seeds: FROZEN_AUDIT_SEEDS,
+  });
+  const v1BySeed = new Map(results.v1.map((capture) => [
+    capture.seed,
+    Buffer.from(capture.image.split(",")[1]!, "base64"),
+  ]));
+  return {
+    v1BySeed,
+    canonical: Buffer.from(results.canonical.split(",")[1]!, "base64"),
+  };
+};
+
+const compareHistoricalAndV2Captures = async (
+  page: Page,
+  v1BySeed: ReadonlyMap<number, Buffer>,
+  v2BySeed: ReadonlyMap<number, Buffer>,
+  canonical: Buffer,
+) => page.evaluate(async ({ v1, v2, canonicalImage, seeds, referenceSeed }) => {
+  const decode = async (dataUrl: string): Promise<ImageData> => {
+    const image = new Image();
+    image.src = dataUrl;
+    await image.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = 514;
+    canvas.height = 411;
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) throw new Error("Could not create image-diagnostics canvas");
+    context.drawImage(image, 0, 0, 514, 411);
+    return context.getImageData(0, 0, 514, 411);
+  };
+  const dataUrl = (base64: string) => `data:image/png;base64,${base64}`;
+  const v1Pixels = new Map<number, ImageData>();
+  const v2Pixels = new Map<number, ImageData>();
+  for (const seed of seeds) {
+    v1Pixels.set(seed, await decode(dataUrl(v1[seed]!)));
+    v2Pixels.set(seed, await decode(dataUrl(v2[seed]!)));
+  }
+  const canonicalPixels = await decode(dataUrl(canonicalImage));
+  const roiSegments = [[70, 145], [232, 296], [382, 456]] as const;
+  const measure = (baseline: ImageData, candidate: ImageData) => {
+    let changed = 0;
+    let sum = 0;
+    let maximum = 0;
+    let roiChanged = 0;
+    let roiSum = 0;
+    let roiMaximum = 0;
+    let minX = 514;
+    let minY = 411;
+    let maxX = -1;
+    let maxY = -1;
+    for (let y = 0; y < 411; y += 1) {
+      for (let x = 0; x < 514; x += 1) {
+        const offset = (y * 514 + x) * 4;
+        let pixelChanged = false;
+        for (let channel = 0; channel < 3; channel += 1) {
+          const delta = Math.abs(baseline.data[offset + channel]! - candidate.data[offset + channel]!);
+          sum += delta;
+          maximum = Math.max(maximum, delta);
+          if (delta > 0) pixelChanged = true;
+        }
+        if (pixelChanged) changed += 1;
+        const inHistoricalRoi = y >= 224 && y < 264 && roiSegments.some(([start, end]) => x >= start && x < end);
+        if (inHistoricalRoi) {
+          if (pixelChanged) {
+            roiChanged += 1;
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x);
+            maxY = Math.max(maxY, y);
+          }
+          for (let channel = 0; channel < 3; channel += 1) {
+            const delta = Math.abs(baseline.data[offset + channel]! - candidate.data[offset + channel]!);
+            roiSum += delta;
+            roiMaximum = Math.max(roiMaximum, delta);
+          }
+        }
+      }
+    }
+    const roiArea = (264 - 224) * roiSegments.reduce((sumX, [start, end]) => sumX + end - start, 0);
+    return {
+      changedPixels: changed,
+      changedPixelFraction: changed / (514 * 411),
+      meanAbsoluteChannelDifference: sum / (514 * 411 * 3),
+      maxChannelDifference: maximum,
+      historicalRoi: {
+        changedPixels: roiChanged,
+        changedPixelFraction: roiChanged / roiArea,
+        meanAbsoluteChannelDifference: roiSum / (roiArea * 3),
+        maxChannelDifference: roiMaximum,
+        changedBounds: maxX < 0 ? null : { minX, minY, maxX, maxY, width: maxX - minX + 1, height: maxY - minY + 1 },
+      },
+    };
+  };
+  const paired = seeds.map((seed: number) => ({
+    seed,
+    sameSeedV1V2: measure(v1Pixels.get(seed)!, v2Pixels.get(seed)!),
+    v1VsCanonical: measure(canonicalPixels, v1Pixels.get(seed)!),
+    v2VsCanonical: measure(canonicalPixels, v2Pixels.get(seed)!),
+  }));
+  const referenceV1 = v1Pixels.get(referenceSeed)!;
+  const referenceV2 = v2Pixels.get(referenceSeed)!;
+  const withinSchema = {
+    v1: seeds.filter((seed: number) => seed !== referenceSeed).map((seed: number) => ({
+      seed,
+      vsReferenceSeed: measure(referenceV1, v1Pixels.get(seed)!),
+    })),
+    v2: seeds.filter((seed: number) => seed !== referenceSeed).map((seed: number) => ({
+      seed,
+      vsReferenceSeed: measure(referenceV2, v2Pixels.get(seed)!),
+    })),
+  };
+  return {
+    canvas: { width: 514, height: 411 },
+    historicalRoi: {
+      xSegments: roiSegments,
+      y: [224, 264],
+      canvasFraction: ((264 - 224) * roiSegments.reduce((sumX, [start, end]) => sumX + end - start, 0)) / (514 * 411),
+    },
+    paired,
+    withinSchemaAgainstSeed284719: withinSchema,
+  };
+}, {
+  v1: Object.fromEntries(Array.from(v1BySeed, ([seed, bytes]) => [seed, bytes.toString("base64")])),
+  v2: Object.fromEntries(Array.from(v2BySeed, ([seed, bytes]) => [seed, bytes.toString("base64")])),
+  canonicalImage: canonical.toString("base64"),
+  seeds: FROZEN_AUDIT_SEEDS,
+  referenceSeed: FIXED_SEED,
+});
+
 const readCapacity = async (page: Page) => {
   const snapshot = page.getByTestId("scene-capacity-snapshot").first();
   await expect.poll(async () => (await snapshot.textContent())?.trim() ?? "", { timeout: 30_000 })
@@ -160,16 +436,34 @@ const readCapacity = async (page: Page) => {
     viewportSubject: {
       objectCount: number;
       meshCount: number;
+      renderableMeshCount: number;
+      instancedMeshCount: number;
+      lightCount: number;
+      lineCount: number;
+      pointsCount: number;
       uniqueGeometryCount: number;
       uniqueMaterialCount: number;
       uniqueTextureCount: number;
+      triangleCount: number;
+      instancedTriangleCount: number;
+      effectiveTriangleCount: number;
+      renderableEffectiveTriangleCount: number;
     } | null;
     rttSubject: {
       objectCount: number;
       meshCount: number;
+      renderableMeshCount: number;
+      instancedMeshCount: number;
+      lightCount: number;
+      lineCount: number;
+      pointsCount: number;
       uniqueGeometryCount: number;
       uniqueMaterialCount: number;
       uniqueTextureCount: number;
+      triangleCount: number;
+      instancedTriangleCount: number;
+      effectiveTriangleCount: number;
+      renderableEffectiveTriangleCount: number;
     } | null;
     rendererResources: { geometries: number; textures: number } | null;
     groundGlass: { enabled: boolean; frame: { count: number } } | null;
@@ -349,15 +643,297 @@ test("Shelf Swing Free Practice has reproducible, readable v1 prop captures", as
   }, null, 2));
 });
 
-test("Shelf Swing seeded RTT stays coherent through the three-station focus and aperture matrix", async ({
+test("Shelf Swing schema v2 captures the full frozen seed sample at normal Observer size", async ({
   page,
 }, testInfo) => {
-  test.setTimeout(480_000);
+  test.setTimeout(900_000);
   await page.setViewportSize({ width: 1440, height: 1000 });
   const pageErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
-  await page.goto(`${SCENE_PATH}?seed=${FIXED_SEED}&sv=1&${CAPACITY_QUERY}`);
-  const { scene, rtt } = await waitForScene(page, FIXED_SEED);
+
+  await page.goto(SCENE_PATH);
+  const implicit = await waitForScene(page);
+  const implicitControls = page.getByTestId("scene-variation-controls");
+  await expect(implicitControls).toHaveAttribute("data-active-schema", "1");
+  const implicitUrl = new URL(page.url());
+  expect(implicitUrl.searchParams.get("sv")).toBe("1");
+  expect(implicitUrl.searchParams.get("seed")).toMatch(/^\d+$/);
+  await expect(implicit.scene).toHaveAttribute("data-observer-camera-position", "4.200000,1.450000,1.400000");
+
+  const legacyFrame = await implicit.rtt.getAttribute("data-frame-request-id");
+  await navigateSpaTo(page, `${SCENE_PATH}?seed=${FIXED_SEED}`);
+  const legacy = await waitForScene(page, FIXED_SEED, 1);
+  await waitForFrame(legacy.rtt, legacyFrame);
+  expect(new URL(page.url()).searchParams.get("sv")).toBe("1");
+
+  const captures = new Map<number, Awaited<ReturnType<typeof captureObserver>>>();
+  const captureMetadataBySeed: Array<Record<string, unknown>> = [];
+  const canonicalRoute = "/simulator/guided/shelf-swing/swing-01";
+  const legacyRouteFrame = await legacy.rtt.getAttribute("data-frame-request-id");
+  await navigateSpaTo(page, canonicalRoute);
+  const canonicalScene = await waitForScene(page);
+  await waitForFrame(canonicalScene.rtt, legacyRouteFrame);
+  await expect(page.getByTestId("scene-variation-controls")).toHaveCount(0);
+  await closeTaskFeedbackDrawerIfOpen(page);
+  await clearObserverOverlays(page, canonicalScene.scene);
+  const canonicalCapture = await captureObserver(
+    page,
+    canonicalScene.scene,
+    testInfo,
+    "shelf-swing-observer-canonical-guided.png",
+  );
+
+  const initialV2Route = `${SCENE_PATH}?seed=${FROZEN_AUDIT_SEEDS[0]}&sv=2&${CAPACITY_QUERY}`;
+  const canonicalFrame = await canonicalScene.rtt.getAttribute("data-frame-request-id");
+  await navigateSpaTo(page, initialV2Route);
+  let current = await waitForScene(page, FROZEN_AUDIT_SEEDS[0], 2);
+  await waitForFrame(current.rtt, canonicalFrame);
+  await closeTaskFeedbackDrawerIfOpen(page);
+  await clearObserverOverlays(page, current.scene);
+  await setStandardCameraState(page, current.rtt);
+  await clearObserverOverlays(page, current.scene);
+
+  for (const seed of FROZEN_AUDIT_SEEDS) {
+    const route = `${SCENE_PATH}?seed=${seed}&sv=2&${CAPACITY_QUERY}`;
+    if (seed !== FROZEN_AUDIT_SEEDS[0]) {
+      const previousFrame = await current.rtt.getAttribute("data-frame-request-id");
+      await navigateSpaTo(page, route);
+      current = await waitForScene(page, seed, 2);
+      await waitForFrame(current.rtt, previousFrame);
+    }
+    const { scene, rtt } = current;
+    const capture = await captureObserver(
+      page,
+      scene,
+      testInfo,
+      `shelf-swing-observer-schema-v2-seed-${seed}.png`,
+    );
+    const cssBounds = await scene.locator("canvas").first().boundingBox();
+    expect(cssBounds).not.toBeNull();
+    expect(cssBounds!.width).toBeCloseTo(514, 0);
+    expect(cssBounds!.height).toBeCloseTo(410.39, 0);
+    expect(capture.canvasSize).toEqual({ width: 514, height: 411 });
+    expect(capture.cameraPosition).toBe("4.200000,1.450000,1.400000");
+    expect(capture.orbitTarget).toBe("0.000000,-0.040000,3.850000");
+    expect(new URL(page.url()).searchParams.get("seed")).toBe(String(seed));
+    expect(new URL(page.url()).searchParams.get("sv")).toBe("2");
+    expect(await page.evaluate(() => window.devicePixelRatio)).toBe(1);
+    expect(await page.getByRole("slider", { name: "Focus distance" }).inputValue())
+      .toBe(String(controlSolution.focusDistanceMm));
+    expect(await page.getByRole("slider", { name: "Swing" }).inputValue())
+      .toBe(String(controlSolution.frontSwingDeg));
+    await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute(
+      "data-selected-aperture",
+      "11",
+    );
+    await expect(rtt).toHaveAttribute("data-frame-result-status", "completed");
+    expect(capture.cameraPosition).toBe(canonicalCapture.cameraPosition);
+    expect(capture.orbitTarget).toBe(canonicalCapture.orbitTarget);
+    captures.set(seed, capture);
+
+    const descriptor = resolveSceneVariationDescriptor(
+      shelfSwingScene,
+      createSceneVariantIdentity("shelf-swing", seed, 2),
+    );
+    const plan = resolveShelfSwingPropVariationPlan(descriptor ?? undefined);
+    if (!plan || plan.schemaVersion !== 2) throw new Error(`Missing schema-v2 plan for seed ${seed}`);
+    captureMetadataBySeed.push({
+      seed,
+      route,
+      ...captureMetadata(capture),
+      cssCanvasBounds: cssBounds,
+      devicePixelRatio: 1,
+      renderQuality: "standard",
+      focusDistanceMm: controlSolution.focusDistanceMm,
+      frontSwingDeg: controlSolution.frontSwingDeg,
+      riseMm: 0,
+      aperture: 11,
+      activeSchema: 2,
+      fallbackUsed: plan.fallbackUsed,
+      stations: plan.stations.map((station) => ({
+        stationId: station.stationId,
+        composition: station.composition,
+      })),
+      props: plan.stations.flatMap((station) => station.props.map((prop) => ({
+        stationId: station.stationId,
+        composition: "composition" in station ? station.composition : "single",
+        id: prop.id,
+        family: prop.family,
+        dimensionsMm: prop.dimensionsMm,
+        positionMm: prop.positionMm,
+        bodyColor: prop.palette.body,
+      }))),
+    });
+  }
+
+  const originalFixedCapture = captures.get(FIXED_SEED);
+  if (!originalFixedCapture) throw new Error("Frozen v2 sample omitted the fixed comparison seed");
+  const fixedReplayRoute = `${SCENE_PATH}?seed=${FIXED_SEED}&sv=2&${CAPACITY_QUERY}`;
+  await page.goto(fixedReplayRoute);
+  const replay = await waitForScene(page, FIXED_SEED, 2);
+  await closeTaskFeedbackDrawerIfOpen(page);
+  await clearObserverOverlays(page, replay.scene);
+  await setStandardCameraState(page, replay.rtt);
+  await clearObserverOverlays(page, replay.scene);
+  const replayCapture = await captureObserver(
+    page,
+    replay.scene,
+    testInfo,
+    "shelf-swing-observer-schema-v2-seed-284719-replay.png",
+  );
+  expect(replayCapture.bytes.equals(originalFixedCapture.bytes)).toBe(true);
+  expect(replayCapture.cameraPosition).toBe(originalFixedCapture.cameraPosition);
+  expect(replayCapture.orbitTarget).toBe(originalFixedCapture.orbitTarget);
+
+  const rttCanvasBytes = await replay.rtt.locator("canvas").screenshot();
+  await writeFile(
+    path.join(await evidenceDirectory(testInfo), "shelf-swing-ground-glass-schema-v2-seed-284719.png"),
+    rttCanvasBytes,
+  );
+  await testInfo.attach("shelf-swing-ground-glass-schema-v2-seed-284719.png", {
+    body: rttCanvasBytes,
+    contentType: "image/png",
+  });
+  const groundGlassFrame = {
+    frameStatus: await replay.rtt.getAttribute("data-frame-result-status"),
+    frameRequestId: await replay.rtt.getAttribute("data-frame-request-id"),
+    lastCompletedRequestId: await replay.rtt.getAttribute("data-last-completed-request-id"),
+    finalContentful: await replay.rtt.getAttribute("data-rtt-final-contentful"),
+    actualCanvasPixels: { width: rttCanvasBytes.readUInt32BE(16), height: rttCanvasBytes.readUInt32BE(20) },
+  };
+  expect(groundGlassFrame.frameStatus).toBe("completed");
+  expect(groundGlassFrame.frameRequestId).toBe(groundGlassFrame.lastCompletedRequestId);
+  // Render-sanity readback is development-only. Production preview still
+  // exposes renderer-owned camera readiness and completed profiling frames.
+  await expect(replay.rtt).toHaveAttribute("data-rtt-camera-ok", "true");
+  await expect(replay.rtt).toHaveAttribute("data-rtt-profiling-frame-count", /[1-9]\d*/);
+  if (groundGlassFrame.finalContentful !== null) {
+    expect(groundGlassFrame.finalContentful).toBe("true");
+  }
+
+  const auditEvidencePath = path.resolve("docs/render-quality/evidence/scene-variation-visual-audit");
+  const historical = await cropHistoricalShelfSwingCaptures(
+    page,
+    await readFile(path.join(auditEvidencePath, "shelf-swing-schema-v1-seed-grid.png")),
+    await readFile(path.join(auditEvidencePath, "shelf-swing-canonical-seed-284719.png")),
+  );
+  const v2BySeed = new Map(Array.from(captures, ([seed, capture]) => [seed, capture.bytes]));
+  const v2Tiles: EvidenceTile[] = FROZEN_AUDIT_SEEDS.map((seed) => ({
+    title: `Schema v2 · seed ${seed}`,
+    images: [{ label: "", bytes: captures.get(seed)!.bytes }],
+  }));
+  await renderEvidenceSheet(page, testInfo, "shelf-swing-schema-v2-seed-grid.png", v2Tiles, 3);
+  const matchedTiles: EvidenceTile[] = FROZEN_AUDIT_SEEDS.map((seed) => ({
+    title: `Seed ${seed}`,
+    images: [
+      { label: "Schema v1", bytes: historical.v1BySeed.get(seed)! },
+      { label: "Schema v2", bytes: captures.get(seed)!.bytes },
+    ],
+  }));
+  await renderEvidenceSheet(page, testInfo, "shelf-swing-schema-v1-v2-matched-seeds.png", matchedTiles, 2);
+  const blindTiles: EvidenceTile[] = SHELF_SWING_BLIND_PAIRS.map(([seedA, seedB], index) => ({
+    title: `Pair P${index + 1}`,
+    images: [
+      { label: "A", bytes: captures.get(seedA)!.bytes },
+      { label: "B", bytes: captures.get(seedB)!.bytes },
+    ],
+  }));
+  await renderEvidenceSheet(page, testInfo, "shelf-swing-schema-v2-blind-pairs.png", blindTiles, 1);
+  await renderEvidenceSheet(page, testInfo, "shelf-swing-canonical-v1-v2.png", [
+    { title: "Canonical Guided", images: [{ label: "", bytes: historical.canonical }] },
+    { title: "Schema v1 · seed 284719", images: [{ label: "", bytes: historical.v1BySeed.get(FIXED_SEED)! }] },
+    { title: "Schema v2 · seed 284719", images: [{ label: "", bytes: originalFixedCapture.bytes }] },
+  ], 3);
+  await renderEvidenceSheet(page, testInfo, "shelf-swing-schema-v2-observer-ground-glass-parity.png", [
+    {
+      title: "Seed 284719 · completed WebGL2 outputs",
+      images: [
+        { label: "Observer · v2 subject", bytes: originalFixedCapture.bytes },
+        { label: "Ground Glass · same descriptor", bytes: rttCanvasBytes },
+      ],
+    },
+  ], 1);
+
+  const imageDiagnostics = await compareHistoricalAndV2Captures(
+    page,
+    historical.v1BySeed,
+    v2BySeed,
+    historical.canonical,
+  );
+  const fallbackCount = captureMetadataBySeed.filter((capture) => capture.fallbackUsed === true).length;
+  const familyCounts = new Map<string, number>();
+  const compositionCounts = new Map<string, number>();
+  for (const capture of captureMetadataBySeed) {
+    for (const prop of capture.props as Array<{ family: string }>) {
+      familyCounts.set(prop.family, (familyCounts.get(prop.family) ?? 0) + 1);
+    }
+    for (const station of capture.stations as Array<{ composition: string }>) {
+      compositionCounts.set(station.composition, (compositionCounts.get(station.composition) ?? 0) + 1);
+    }
+  }
+  const report = {
+    seedSample: FROZEN_AUDIT_SEEDS,
+    schemaVersion: 2,
+    implicitFreePracticeSchemaVersion: 1,
+    seedOnlyLegacySchemaVersion: 1,
+    viewport: { width: 1440, height: 1000 },
+    devicePixelRatio: 1,
+    renderer: "Chromium production Vite preview · WebGL2",
+    observerCssCanvas: { width: 514, height: 410.39 },
+    observerCapturePixels: { width: 514, height: 411 },
+    renderQuality: "standard",
+    focusDistanceMm: controlSolution.focusDistanceMm,
+    aperture: 11,
+    frontSwingDeg: controlSolution.frontSwingDeg,
+    riseMm: 0,
+    cameraPosition: canonicalCapture.cameraPosition,
+    orbitTarget: canonicalCapture.orbitTarget,
+    overlays: "clean Observer; optical, focus, and DOF overlays disabled",
+    historicalV1Source: {
+      file: "docs/render-quality/evidence/scene-variation-visual-audit/shelf-swing-schema-v1-seed-grid.png",
+      sourceSha256: createHash("sha256").update(await readFile(path.join(auditEvidencePath, "shelf-swing-schema-v1-seed-grid.png"))).digest("hex"),
+      method: "native 514×411 cells cropped from the accepted PR #345 3×4 grid; title bands excluded",
+      canonicalSource: "docs/render-quality/evidence/scene-variation-visual-audit/shelf-swing-canonical-seed-284719.png",
+    },
+    implicitRoute: { url: implicitUrl.pathname + implicitUrl.search, schemaVersion: 1 },
+    legacySeedOnlyRoute: { requested: `${SCENE_PATH}?seed=${FIXED_SEED}`, normalizedUrl: `${SCENE_PATH}?seed=${FIXED_SEED}&sv=1`, schemaVersion: 1 },
+    fixedSeedReplayPixelIdentical: true,
+    fallbackCount,
+    familyCounts: Object.fromEntries(familyCounts),
+    compositionCounts: Object.fromEntries(compositionCounts),
+    captures: captureMetadataBySeed,
+    groundGlass: {
+      ...groundGlassFrame,
+      representativeState: "schema v2 seed 284719 · focus 3400 mm · aperture f/11 · Front Swing -4° · Raw preview orientation · processed WebGL2 path",
+    },
+    imageDiagnostics,
+    pageErrors,
+  };
+  await writeFile(
+    path.join(await evidenceDirectory(testInfo), "shelf-swing-schema-v2-capture-and-diagnostics.json"),
+    JSON.stringify(report, null, 2),
+  );
+  await testInfo.attach("shelf-swing-schema-v2-capture-and-diagnostics.json", {
+    body: Buffer.from(JSON.stringify(report, null, 2)),
+    contentType: "application/json",
+  });
+  expect(captures.size).toBe(12);
+  expect(fallbackCount).toBe(0);
+  expect(familyCounts.has("bowl")).toBe(true);
+  expect(familyCounts.has("necked-vessel")).toBe(true);
+  expect(familyCounts.has("faceted")).toBe(true);
+  expect(pageErrors).toEqual([]);
+});
+
+test("Shelf Swing schema v2 RTT stays coherent through optics and Ground Glass modes", async ({
+  page,
+}, testInfo) => {
+  test.setTimeout(600_000);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.goto(`${SCENE_PATH}?seed=${FIXED_SEED}&sv=2&${CAPACITY_QUERY}`);
+  const { scene, rtt } = await waitForScene(page, FIXED_SEED, 2);
   await closeTaskFeedbackDrawerIfOpen(page);
   await clearObserverOverlays(page, scene);
   await setStandardCameraState(page, rtt);
@@ -371,6 +947,8 @@ test("Shelf Swing seeded RTT stays coherent through the three-station focus and 
     focusDistanceMm: number;
     frontSwingDeg: number;
     aperture: number;
+    previewMode: "processed";
+    orientation: "raw";
     frameRequestId: string;
     groundGlassImageSha256: string;
   }> = [];
@@ -392,6 +970,8 @@ test("Shelf Swing seeded RTT stays coherent through the three-station focus and 
         focusDistanceMm,
         frontSwingDeg: 0,
         aperture,
+        previewMode: "processed",
+        orientation: "raw",
         frameRequestId: previousFrame,
         groundGlassImageSha256: await hashRttCanvas(rtt),
       });
@@ -414,10 +994,57 @@ test("Shelf Swing seeded RTT stays coherent through the three-station focus and 
       focusDistanceMm: controlSolution.focusDistanceMm,
       frontSwingDeg: controlSolution.frontSwingDeg,
       aperture,
+      previewMode: "processed",
+      orientation: "raw",
       frameRequestId: previousFrame,
       groundGlassImageSha256: await hashRttCanvas(rtt),
     });
   }
+
+  const previewModes: Array<{
+    mode: "processed" | "raw" | "upright";
+    orientation: "raw-ground-glass" | "upright-assist";
+    bypassDof: boolean;
+    frameRequestId: string;
+    groundGlassImageSha256: string;
+  }> = [];
+  const rawToggle = page.getByLabel("Raw RTT — bypass DOF");
+  await expect(rawToggle).not.toBeChecked();
+  await expect(rtt).toHaveAttribute("data-rtt-profiling-raw-debug", "false");
+  previewModes.push({
+    mode: "processed",
+    orientation: "raw-ground-glass",
+    bypassDof: false,
+    frameRequestId: previousFrame,
+    groundGlassImageSha256: await hashRttCanvas(rtt),
+  });
+
+  await rawToggle.check();
+  previousFrame = await waitForFrame(rtt, previousFrame);
+  await expect(rtt).toHaveAttribute("data-rtt-profiling-raw-debug", "true");
+  previewModes.push({
+    mode: "raw",
+    orientation: "raw-ground-glass",
+    bypassDof: true,
+    frameRequestId: previousFrame,
+    groundGlassImageSha256: await hashRttCanvas(rtt),
+  });
+
+  await rawToggle.uncheck();
+  previousFrame = await waitForFrame(rtt, previousFrame);
+  await page.getByRole("radio", { name: "Upright Assist" }).check();
+  previousFrame = await waitForFrame(rtt, previousFrame);
+  previewModes.push({
+    mode: "upright",
+    orientation: "upright-assist",
+    bypassDof: false,
+    frameRequestId: previousFrame,
+    groundGlassImageSha256: await hashRttCanvas(rtt),
+  });
+  expect(new Set(previewModes.map((state) => state.groundGlassImageSha256)).size).toBeGreaterThan(1);
+  expect(new Set(previewModes.map((state) => state.frameRequestId)).size).toBe(3);
+  await page.getByRole("radio", { name: "Raw Ground Glass" }).check();
+  previousFrame = await waitForFrame(rtt, previousFrame);
 
   expect(states).toHaveLength(12);
   expect(new Set(states.map((state) => state.frameRequestId)).size).toBe(12);
@@ -429,8 +1056,10 @@ test("Shelf Swing seeded RTT stays coherent through the three-station focus and 
 
   const report = {
     seed: FIXED_SEED,
-    schemaVersion: 1,
+    schemaVersion: 2,
     states,
+    previewModes,
+    previewModeCoverage: ["processed", "raw", "upright"],
     allFramesCompleted: true,
     subjectCapacityStable: true,
     rendererGenerationStable: true,
@@ -444,7 +1073,7 @@ test("Shelf Swing seeded RTT stays coherent through the three-station focus and 
   });
 });
 
-test("Shelf Swing regeneration preserves camera state, history, RTT frames, and bounded resources", async ({
+test("Shelf Swing schema v2 regeneration preserves camera state, history, RTT frames, and bounded resources", async ({
   page,
 }, testInfo) => {
   test.setTimeout(900_000);
@@ -452,8 +1081,8 @@ test("Shelf Swing regeneration preserves camera state, history, RTT frames, and 
   await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto(`${SCENE_PATH}?seed=${FIXED_SEED}&sv=1&keep=one&${CAPACITY_QUERY}#pilot`);
-  const { scene, rtt } = await waitForScene(page, FIXED_SEED);
+  await page.goto(`${SCENE_PATH}?seed=${FIXED_SEED}&sv=2&keep=one&${CAPACITY_QUERY}#pilot`);
+  const { scene, rtt } = await waitForScene(page, FIXED_SEED, 2);
   await closeTaskFeedbackDrawerIfOpen(page);
   await clearObserverOverlays(page, scene);
   await setStandardCameraState(page, rtt);
@@ -486,11 +1115,11 @@ test("Shelf Swing regeneration preserves camera state, history, RTT frames, and 
     expect(Number.isInteger(nextSeed) && nextSeed >= 0 && nextSeed <= MAX_SEED).toBe(true);
     expect(seenSeeds.has(nextSeed)).toBe(false);
     seenSeeds.add(nextSeed);
-    await expect(controls).toHaveAttribute("data-active-schema", "1");
+    await expect(controls).toHaveAttribute("data-active-schema", "2");
     const nextUrl = new URL(page.url());
     expect(nextUrl.pathname).toBe(SCENE_PATH);
     expect(nextUrl.searchParams.get("seed")).toBe(String(nextSeed));
-    expect(nextUrl.searchParams.get("sv")).toBe("1");
+    expect(nextUrl.searchParams.get("sv")).toBe("2");
     expect(nextUrl.searchParams.get("keep")).toBe("one");
     expect(nextUrl.hash).toBe("#pilot");
     const frameRequestId = await waitForFrame(rtt, previousRequestId);
@@ -574,4 +1203,102 @@ test("Shelf Swing regeneration preserves camera state, history, RTT frames, and 
     groundGlassFrameCount: finalProfile.groundGlass?.frame.count,
     pageErrors: errors,
   }, null, 2));
+});
+
+test("Shelf Swing subject capacity recovers across canonical, v1, v2, and guided/free transitions", async ({
+  page,
+}, testInfo) => {
+  test.setTimeout(480_000);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.goto(`${SCENE_PATH}?seed=${FIXED_SEED}&sv=2&${CAPACITY_QUERY}`);
+  const { scene, rtt } = await waitForScene(page, FIXED_SEED, 2);
+  await closeTaskFeedbackDrawerIfOpen(page);
+  await clearObserverOverlays(page, scene);
+  await setStandardCameraState(page, rtt);
+
+  const rendererGeneration = await rtt.getAttribute("data-renderer-generation");
+  const rttResourceGeneration = await rtt.getAttribute("data-rtt-resource-generation");
+  const variants: Record<string, Awaited<ReturnType<typeof readCapacityResidual>>> = {
+    "schema-v2-a": await readCapacityResidual(page),
+  };
+
+  const transition = async (route: string, seed?: number, schemaVersion = 1) => {
+    const previousFrame = await rtt.getAttribute("data-frame-request-id");
+    await navigateSpaTo(page, route);
+    if (seed === undefined) {
+      await waitForScene(page);
+      await expect(page.getByTestId("scene-variation-controls")).toHaveCount(0);
+    } else {
+      await waitForScene(page, seed, schemaVersion);
+    }
+    await waitForFrame(rtt, previousFrame);
+    await expect(rtt).toHaveAttribute("data-renderer-generation", rendererGeneration ?? "");
+    await expect(rtt).toHaveAttribute("data-rtt-resource-generation", rttResourceGeneration ?? "");
+    return readCapacityResidual(page);
+  };
+
+  variants["schema-v1-fixed"] = await transition(
+    `${SCENE_PATH}?seed=${FIXED_SEED}&sv=1&${CAPACITY_QUERY}`,
+    FIXED_SEED,
+    1,
+  );
+  variants["schema-v2-a-restored"] = await transition(
+    `${SCENE_PATH}?seed=${FIXED_SEED}&sv=2&${CAPACITY_QUERY}`,
+    FIXED_SEED,
+    2,
+  );
+  variants["schema-v2-b"] = await transition(
+    `${SCENE_PATH}?seed=${MAX_SEED}&sv=2&${CAPACITY_QUERY}`,
+    MAX_SEED,
+    2,
+  );
+  variants.canonical = await transition(
+    `/simulator/guided/shelf-swing/swing-01?${CAPACITY_QUERY}`,
+  );
+  variants["free-after-guided"] = await transition(
+    `${SCENE_PATH}?seed=${FIXED_SEED}&sv=2&${CAPACITY_QUERY}`,
+    FIXED_SEED,
+    2,
+  );
+  variants["guided-after-free"] = await transition(
+    `/simulator/guided/shelf-swing/swing-01?${CAPACITY_QUERY}`,
+  );
+
+  expect(variants["schema-v2-a-restored"]).toEqual(variants["schema-v2-a"]);
+  expect(variants["free-after-guided"]).toEqual(variants["schema-v2-a"]);
+  expect(variants["guided-after-free"]).toEqual(variants.canonical);
+  expect(variants["schema-v1-fixed"].subject).not.toEqual(variants["schema-v2-a"].subject);
+  expect(variants["schema-v2-b"].subject).not.toEqual(variants["schema-v2-a"].subject);
+  const geometryCounts = Object.values(variants).map(({ renderer }) => renderer.geometries);
+  const textureCounts = Object.values(variants).map(({ renderer }) => renderer.textures);
+  expect(Math.max(...geometryCounts) - Math.min(...geometryCounts)).toBeLessThanOrEqual(20);
+  expect(Math.max(...textureCounts) - Math.min(...textureCounts)).toBeLessThanOrEqual(12);
+  expect(geometryCounts.every((value, index) => index === 0 || value > geometryCounts[index - 1])).toBe(false);
+  expect(textureCounts.every((value, index) => index === 0 || value > textureCounts[index - 1])).toBe(false);
+  await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true");
+  expect(pageErrors).toEqual([]);
+
+  const report = {
+    initialSeed: FIXED_SEED,
+    schemaVersion: 2,
+    transitions: Object.keys(variants),
+    variants,
+    rendererGenerationStable: true,
+    rttResourceGenerationStable: true,
+    aAfterBRestored: true,
+    guidedFreeGuidedCapacityRestored: true,
+    geometryCounts,
+    textureCounts,
+    pageErrors,
+  };
+  await writeFile(
+    path.join(await evidenceDirectory(testInfo), "shelf-swing-cross-variant-capacity.json"),
+    JSON.stringify(report, null, 2),
+  );
+  await testInfo.attach("shelf-swing-cross-variant-capacity.json", {
+    body: Buffer.from(JSON.stringify(report, null, 2)),
+    contentType: "application/json",
+  });
 });

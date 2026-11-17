@@ -9,13 +9,16 @@ criteria, and lesson/calibration semantics remain authoritative.
 
 Interior Corner and Shelf Swing are the two production opt-ins. Interior
 Corner's schema-v1 contract preserves the accepted material-only scene; schema
-v2 adds bounded decorative props and rug micro-layout. Shelf Swing uses its
-own schema-v1 contract for bounded decorative props. Schema numbers identify a
-scene-specific plan and do not imply the same catalog or output across scenes.
+v2 adds bounded decorative props and rug micro-layout. Shelf Swing schema v1
+remains its current bounded-prop contract. Schema v2 adds a separately
+addressable visual-recognition experiment, but its normal-size evidence did not
+establish a perceptual improvement, so new implicit Shelf Swing Free Practice
+sessions remain on v1 pending a stronger visual result. Schema numbers identify
+a scene-specific plan and do not imply the same catalog or output across scenes.
 Guided Mode, lesson Observe, other scenes, and all teaching contracts remain
-canonical. New implicit Interior Corner Free Practice sessions use v2; new
-Shelf Swing Free Practice sessions use v1. Historical seed-only links continue
-to resolve according to each scene's accepted v1 contract.
+canonical. New implicit Interior Corner Free Practice sessions use v2.
+Historical seed-only links continue to resolve according to each scene's
+accepted v1 contract.
 
 ## Capability and identity
 
@@ -23,8 +26,10 @@ A scene opts in through its existing `SceneDefinition`. Interior Corner
 declares `sceneVariation: { enabled: true, schemaVersion: 2,
 supportedSchemaVersions: [1, 2] }`: version 2 is current and version 1 is
 explicitly retained for historical links. Shelf Swing declares
-`sceneVariation: { enabled: true, schemaVersion: 1 }`. The route never infers
-support from the presence of a `seed` query parameter.
+`sceneVariation: { enabled: true, schemaVersion: 1,
+supportedSchemaVersions: [1, 2] }`: v1 stays current while v2 remains an
+explicit experiment. The route never infers support from the presence of a
+`seed` query parameter.
 
 `SceneVariantIdentity` is the serializable tuple:
 
@@ -41,10 +46,11 @@ task evaluation, and lesson state.
 Schema versions are scoped to their scene. Interior Corner schema v1 remains
 the accepted material-only variation contract, and schema v2 adds its
 deterministic decorative-prop plan without changing the v1 material maps or
-subject graph. Shelf Swing schema v1 is a separate props-only plan. These are
-the production contracts; Interior Corner supports both and declares v2
-current, while Shelf Swing supports v1 only. Unsupported versions fail closed
-and are never mapped to another algorithm.
+subject graph. Shelf Swing schema v1 is a separate props-only plan; schema v2
+adds a curated prop catalog as an explicit experiment. Interior Corner supports
+both and declares v2 current, while Shelf Swing supports v1 and v2 and declares
+v1 current until the visual acceptance gate is met. Unsupported versions fail
+closed and are never mapped to another algorithm.
 
 Both versions use a small Mulberry32 stream with explicit unsigned 32-bit
 arithmetic. `nextFloat()` returns `[0, 1)`, `nextInt(min, max)` returns an
@@ -74,8 +80,11 @@ For an opted-in Free Practice route:
 
 - Shelf Swing `?seed=284719&sv=1` reproduces the Shelf Swing schema-v1 prop
   arrangement; a legacy seed-only Shelf Swing link also resolves to v1.
-- A missing Shelf Swing seed generates an identity under schema v1 and
-  replace-normalizes both `seed` and `sv`.
+- Shelf Swing `?seed=284719&sv=2` explicitly selects the schema-v2 visual
+  experiment. Regeneration and history retain that version.
+- A missing Shelf Swing seed generates an identity under current schema v1 and
+  replace-normalizes both `seed` and `sv`. V2 remains opt-in until its
+  normal-size recognition evidence improves.
 - Interior Corner `?seed=284719&sv=1` reproduces the accepted material-only
   schema v1.
 - Interior Corner `?seed=284719&sv=2` reproduces the material-plus-props
@@ -85,7 +94,8 @@ For an opted-in Free Practice route:
 - A missing seed with an explicit supported `sv` generates a seed under that
   version.
 - A route with neither seed nor schema generates one seed under the current
-  version (v2 for Interior Corner) and replace-normalizes both `seed` and `sv`.
+  version (v2 for Interior Corner, v1 for Shelf Swing) and replace-normalizes
+  both `seed` and `sv`.
 - A malformed seed with no explicit schema generates a new seed under the
   current version; malformed values are never interpreted as zero.
 - A malformed, duplicated, mismatched, or unsupported `sv` does not activate a
@@ -129,19 +139,20 @@ console, bench, rug, room, and focus-target bounds, with a deterministic safe
 fallback. The existing registered factory constructs separate renderer-owned
 resources from that plan.
 
-Shelf Swing is the second production consumer. Its independent schema-v1
-planner varies one or two lower-shelf display objects per station using
-scene/station/slot semantic IDs and the station's existing material hints. The
-catalog is limited to boxes, 16-sided cylinders, and 12-segment ceramic-like
-vessels. The planner uses the shared yaw bounds, support-surface, containment,
-collision, and protected-region helpers while retaining Shelf Swing-specific
-station, frame, book, backdrop, chart, visibility, and fallback rules. It
-places objects in station-local millimetres, computes world bounds after the
-canonical station transform with station yaw applied once, and verifies the
-canonical camera remains on the chart-facing side. Without a variation
-descriptor, the factory keeps the accepted canonical subject signature. With a
-descriptor, it replaces only the authored display objects; station structure,
-books, charts, probes, samples, and calibration remain fixed.
+Shelf Swing is the second production consumer. Its schema-v1 planner varies one
+or two lower-shelf display objects per station using scene/station/slot semantic
+IDs and the station's existing material hints. The v2 experiment adds bowls,
+necked vessels, and faceted forms with restrained station palettes and
+single/paired groupings. Both planners use the shared yaw bounds,
+support-surface, containment, collision, and protected-region helpers while
+retaining Shelf Swing-specific station, frame, book, backdrop, chart, visibility,
+and fallback rules. They place objects in station-local millimetres, compute
+world bounds after the canonical station transform with station yaw applied
+once, and verify the canonical camera remains on the chart-facing side.
+Without a variation descriptor, the factory keeps the accepted canonical
+subject signature. With a descriptor, it replaces only the authored display
+objects; station structure, books, charts, probes, samples, and calibration
+remain fixed.
 
 Observer and Ground Glass receive the same descriptor through the existing
 registered-subject seams and independently create and dispose their own Three.js
@@ -149,6 +160,9 @@ resources. Seed changes replace the subject while keeping the WebGL Ground
 Glass renderer and render targets mounted. The Shelf Swing pilot and browser
 captures are documented in
 [`render-quality/SHELF_SWING_SEEDED_PROPS_PILOT.md`](render-quality/SHELF_SWING_SEEDED_PROPS_PILOT.md).
+The v2 experiment, its separate technical/visual verdicts, and reviewer-visible
+evidence are documented in
+[`render-quality/SHELF_SWING_SCHEMA_V2_VISUAL_RECOGNITION_PILOT.md`](render-quality/SHELF_SWING_SCHEMA_V2_VISUAL_RECOGNITION_PILOT.md).
 
 A seed change replaces the owned subject while keeping the WebGL Ground Glass
 renderer/targets mounted. Focus/aperture changes do not change the variant
@@ -175,7 +189,7 @@ renderers.
   `src/scenes/interiorCornerMaterialVariation.ts`
 - Interior Corner v2 prop planner:
   `src/scenes/interiorCornerPropVariation.ts`
-- Shelf Swing schema-v1 prop planner:
+- Shelf Swing schema-v1/v2 prop planner:
   `src/scenes/shelfSwingPropVariation.ts`
 - Shared canonical support surfaces:
   `src/scenes/interiorCornerGeometry.ts`
