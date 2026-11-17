@@ -28,32 +28,67 @@ import {
 } from "./variation/placementGeometry";
 
 export const SHELF_SWING_PROP_VARIATION_SCHEMA_VERSION = 1 as const;
+export const SHELF_SWING_PROP_VARIATION_SCHEMA_V2 = 2 as const;
 
-export type ShelfSwingPropFamily = "box" | "cylinder" | "vessel";
+export type ShelfSwingPropFamilyV1 = "box" | "cylinder" | "vessel";
+export type ShelfSwingPropFamily = ShelfSwingPropFamilyV1 | "bowl" | "necked-vessel" | "faceted";
 
-export type ShelfSwingPropVariation = Readonly<{
+type ShelfSwingPropVariationBase = Readonly<{
   id: string;
-  family: ShelfSwingPropFamily;
   dimensionsMm: BoxDimensionsMm;
   positionMm: ShelfSwingVec3;
   rotationYDeg: number;
   palette: Readonly<{ body: string }>;
 }>;
 
-export type ShelfSwingStationVariation = Readonly<{
+export type ShelfSwingPropVariation = ShelfSwingPropVariationBase & Readonly<{
+  family: ShelfSwingPropFamily;
+}>;
+
+type ShelfSwingPropVariationV1 = ShelfSwingPropVariationBase & Readonly<{
+  family: ShelfSwingPropFamilyV1;
+}>;
+
+export type ShelfSwingStationVariationV1 = Readonly<{
   stationId: ShelfSwingSubjectDefinition["id"];
+  props: readonly ShelfSwingPropVariationV1[];
+}>;
+
+export type ShelfSwingStationVariationV2 = Readonly<{
+  stationId: ShelfSwingSubjectDefinition["id"];
+  composition: "single" | "paired";
   props: readonly ShelfSwingPropVariation[];
 }>;
 
+export type ShelfSwingStationVariation = ShelfSwingStationVariationV1 | ShelfSwingStationVariationV2;
+
 export type ShelfSwingPropVariationCandidate = Readonly<{
   schemaVersion: typeof SHELF_SWING_PROP_VARIATION_SCHEMA_VERSION;
-  stations: readonly ShelfSwingStationVariation[];
+  stations: readonly ShelfSwingStationVariationV1[];
 }>;
 
 export type ShelfSwingPropVariationPlan = ShelfSwingPropVariationCandidate & Readonly<{
   fallbackUsed: boolean;
   fallbackIssues: readonly string[];
 }>;
+
+export type ShelfSwingPropVariationCandidateV2 = Readonly<{
+  schemaVersion: typeof SHELF_SWING_PROP_VARIATION_SCHEMA_V2;
+  stations: readonly ShelfSwingStationVariationV2[];
+}>;
+
+export type ShelfSwingPropVariationPlanV2 = ShelfSwingPropVariationCandidateV2 & Readonly<{
+  fallbackUsed: boolean;
+  fallbackIssues: readonly string[];
+}>;
+
+export type ResolvedShelfSwingPropVariationPlan =
+  | ShelfSwingPropVariationPlan
+  | ShelfSwingPropVariationPlanV2;
+
+type ShelfSwingPropVariationCandidateForValidation =
+  | ShelfSwingPropVariationCandidate
+  | ShelfSwingPropVariationCandidateV2;
 
 const LOWER_SHELF_TOP_Y_MM = detailGeometry.shelfThickness;
 const LOWER_SHELF_SUPPORT_TOLERANCE_MM = 1e-6;
@@ -238,7 +273,7 @@ const stationPositionId = (stationId: string, slot: "left" | "right"): string =>
 const generateStationProps = (
   descriptor: SceneVariationDescriptor,
   subject: ShelfSwingSubjectDefinition,
-): readonly ShelfSwingPropVariation[] => {
+): readonly ShelfSwingPropVariationV1[] => {
   const count = descriptor
     .createRandomStream("layout", `${subject.id}/display-count`)
     .nextInt(1, 2);
@@ -302,16 +337,19 @@ const generateStationProps = (
 };
 
 export const serializeShelfSwingPropVariationPlan = (
-  plan: ShelfSwingPropVariationPlan,
+  plan: ResolvedShelfSwingPropVariationPlan,
 ): string => JSON.stringify(plan);
 
 /** Return stable, scene-specific issue IDs for one candidate plan. */
 export const getShelfSwingPropVariationSafetyIssues = (
-  plan: ShelfSwingPropVariationCandidate,
+  plan: ShelfSwingPropVariationCandidateForValidation,
 ): readonly string[] => {
   const issues: string[] = [];
   const allIds = new Set<string>();
-  if (plan.schemaVersion !== SHELF_SWING_PROP_VARIATION_SCHEMA_VERSION) {
+  if (
+    plan.schemaVersion !== SHELF_SWING_PROP_VARIATION_SCHEMA_VERSION &&
+    plan.schemaVersion !== SHELF_SWING_PROP_VARIATION_SCHEMA_V2
+  ) {
     issues.push("unsupported-schema");
   }
   if (plan.stations.length !== subjects.length) issues.push("station-count");
@@ -321,6 +359,16 @@ export const getShelfSwingPropVariationSafetyIssues = (
     if (!station || station.stationId !== subject.id) {
       issues.push(`station-order:${subject.id}`);
       return;
+    }
+    if (plan.schemaVersion === SHELF_SWING_PROP_VARIATION_SCHEMA_V2) {
+      if (!("composition" in station)) {
+        issues.push(`composition-missing:${subject.id}`);
+      } else if (
+        (station.composition === "single" && station.props.length !== 1) ||
+        (station.composition === "paired" && station.props.length !== 2)
+      ) {
+        issues.push(`composition-count:${subject.id}`);
+      }
     }
 
     const localStationBounds = getYawRotatedBoxBoundsMm(
@@ -353,6 +401,12 @@ export const getShelfSwingPropVariationSafetyIssues = (
     for (const prop of station.props) {
       if (allIds.has(prop.id)) issues.push(`duplicate-id:${prop.id}`);
       allIds.add(prop.id);
+      const supportedFamilies: readonly ShelfSwingPropFamily[] = plan.schemaVersion === 1
+        ? ["box", "cylinder", "vessel"]
+        : ["box", "cylinder", "vessel", "bowl", "necked-vessel", "faceted"];
+      if (!supportedFamilies.includes(prop.family)) {
+        issues.push(`unsupported-family:${prop.id}`);
+      }
       if (!hasPositiveFiniteBoxDimensionsMm(prop.dimensionsMm)) {
         issues.push(`invalid-dimensions:${prop.id}`);
         continue;
@@ -475,15 +529,259 @@ export const resolveShelfSwingPropVariationCandidate = (
   });
 };
 
+const V2_SINGLE_FAMILIES = [
+  "box",
+  "cylinder",
+  "vessel",
+  "bowl",
+  "necked-vessel",
+  "faceted",
+] as const satisfies readonly ShelfSwingPropFamily[];
+
+const V2_PAIR_PROFILES = [
+  { families: ["bowl", "faceted"] },
+  { families: ["bowl", "necked-vessel"] },
+  { families: ["faceted", "necked-vessel"] },
+] as const satisfies readonly Readonly<{
+  families: readonly [ShelfSwingPropFamily, ShelfSwingPropFamily];
+}>[];
+
+const V2_PALETTE_BY_STATION: Readonly<Record<
+  ShelfSwingSubjectDefinition["id"],
+  readonly [string, string, string]
+>> = Object.freeze({
+  "shelf-front": ["#cfc7ae", "#91a79a", "#b77e67"],
+  "shelf-middle": ["#8ca3ad", "#a5ad97", "#d1c4a8"],
+  "shelf-back": ["#c0a86f", "#b67c68", "#aab6b3"],
+});
+
+const createV2PropDimensions = (
+  family: ShelfSwingPropFamily,
+  stream: ReturnType<SceneVariationDescriptor["createRandomStream"]>,
+  compact: boolean,
+): BoxDimensionsMm => {
+  switch (family) {
+    case "box":
+      return {
+        width: stream.nextInt(compact ? 58 : 82, compact ? 72 : 100),
+        height: stream.nextInt(compact ? 66 : 108, compact ? 88 : 142),
+        depth: stream.nextInt(compact ? 56 : 78, compact ? 70 : 96),
+      };
+    case "cylinder": {
+      const diameter = stream.nextInt(compact ? 58 : 82, compact ? 72 : 100);
+      return {
+        width: diameter,
+        height: stream.nextInt(compact ? 70 : 108, compact ? 92 : 150),
+        depth: diameter,
+      };
+    }
+    case "vessel": {
+      const diameter = stream.nextInt(compact ? 60 : 84, compact ? 74 : 102);
+      return {
+        width: diameter,
+        height: stream.nextInt(compact ? 76 : 126, compact ? 96 : 160),
+        depth: diameter,
+      };
+    }
+    case "bowl": {
+      const diameter = stream.nextInt(compact ? 78 : 112, compact ? 96 : 128);
+      return {
+        width: diameter,
+        height: stream.nextInt(compact ? 38 : 48, compact ? 52 : 64),
+        depth: diameter,
+      };
+    }
+    case "necked-vessel": {
+      const diameter = stream.nextInt(compact ? 54 : 82, compact ? 68 : 98);
+      return {
+        width: diameter,
+        height: stream.nextInt(compact ? 80 : 136, compact ? 104 : 172),
+        depth: diameter,
+      };
+    }
+    case "faceted":
+      return {
+        width: stream.nextInt(compact ? 56 : 90, compact ? 70 : 112),
+        height: stream.nextInt(compact ? 58 : 86, compact ? 80 : 112),
+        depth: stream.nextInt(compact ? 54 : 82, compact ? 68 : 108),
+      };
+  }
+};
+
+const getV2PropRotation = (
+  family: ShelfSwingPropFamily,
+  descriptor: SceneVariationDescriptor,
+  propId: string,
+): number => {
+  if (["cylinder", "vessel", "bowl", "necked-vessel"].includes(family)) return 0;
+  return descriptor
+    .createRandomStream("layout", `${propId}/orientation`)
+    .nextInt(-18, 18);
+};
+
+const createV2Prop = (
+  descriptor: SceneVariationDescriptor,
+  subject: ShelfSwingSubjectDefinition,
+  id: string,
+  family: ShelfSwingPropFamily,
+  dimensionsMm: BoxDimensionsMm,
+  positionMm: ShelfSwingVec3,
+): ShelfSwingPropVariation => {
+  const rotationYDeg = getV2PropRotation(family, descriptor, id);
+  const body = descriptor
+    .createRandomStream("materials", `${id}/palette`)
+    .pick(V2_PALETTE_BY_STATION[subject.id]);
+  return Object.freeze({
+    id,
+    family,
+    dimensionsMm: Object.freeze(dimensionsMm),
+    positionMm: Object.freeze(positionMm),
+    rotationYDeg,
+    palette: Object.freeze({ body }),
+  });
+};
+
+const generateV2StationVariation = (
+  descriptor: SceneVariationDescriptor,
+  subject: ShelfSwingSubjectDefinition,
+): ShelfSwingStationVariationV2 => {
+  const composition = descriptor
+    .createRandomStream("layout", `${subject.id}/display-composition`)
+    .pick(["single", "paired"] as const);
+
+  if (composition === "single") {
+    const propId = `${subject.id}-display-hero`;
+    const family = descriptor
+      .createRandomStream("props", `${subject.id}/single-family`)
+      .pick(V2_SINGLE_FAMILIES);
+    const dimensionsMm = createV2PropDimensions(
+      family,
+      descriptor.createRandomStream("props", `${propId}/dimensions`),
+      false,
+    );
+    const placement = descriptor.createRandomStream("layout", `${propId}/placement`);
+    return Object.freeze({
+      stationId: subject.id,
+      composition,
+      props: Object.freeze([createV2Prop(
+        descriptor,
+        subject,
+        propId,
+        family,
+        dimensionsMm,
+        {
+          x: placement.nextRange(-18, 18),
+          y: LOWER_SHELF_TOP_Y_MM + dimensionsMm.height / 2,
+          z: placement.nextRange(115, 140),
+        },
+      )]),
+    });
+  }
+
+  const profile = descriptor
+    .createRandomStream("props", `${subject.id}/paired-profile`)
+    .pick(V2_PAIR_PROFILES);
+  const ids = [`${subject.id}-display-pair-left`, `${subject.id}-display-pair-right`] as const;
+  const props = profile.families.map((family, index) => {
+    const propId = ids[index]!;
+    const dimensionsMm = createV2PropDimensions(
+      family,
+      descriptor.createRandomStream("props", `${propId}/dimensions`),
+      true,
+    );
+    return { family, propId, dimensionsMm };
+  });
+  const rotations = props.map(({ family, propId }) =>
+    getV2PropRotation(family, descriptor, propId));
+  const halfWidths = props.map(({ dimensionsMm }, index) =>
+    getYawRotatedBoxBoundsMm(
+      { x: 0, y: 0, z: 0 },
+      dimensionsMm,
+      rotations[index],
+    ).max.x);
+  const centerOffset = (halfWidths[0]! + halfWidths[1]! + 12) / 2;
+  const centerZ = descriptor
+    .createRandomStream("layout", `${subject.id}/paired-placement`)
+    .nextRange(110, 128);
+  return Object.freeze({
+    stationId: subject.id,
+    composition,
+    props: Object.freeze(props.map(({ family, propId, dimensionsMm }, index) =>
+      createV2Prop(
+        descriptor,
+        subject,
+        propId,
+        family,
+        dimensionsMm,
+        {
+          x: index === 0 ? -centerOffset : centerOffset,
+          y: LOWER_SHELF_TOP_Y_MM + dimensionsMm.height / 2,
+          z: centerZ,
+        },
+      ))),
+  });
+};
+
+const createV2FallbackCandidate = (): ShelfSwingPropVariationCandidateV2 => ({
+  schemaVersion: SHELF_SWING_PROP_VARIATION_SCHEMA_V2,
+  stations: subjects.map((subject) => ({
+    stationId: subject.id,
+    composition: "single",
+    props: [{
+      id: `${subject.id}-safe-v2-fallback-bowl`,
+      family: "bowl",
+      dimensionsMm: { width: 96, height: 48, depth: 96 },
+      positionMm: { x: 0, y: LOWER_SHELF_TOP_Y_MM + 24, z: 120 },
+      rotationYDeg: 0,
+      palette: { body: V2_PALETTE_BY_STATION[subject.id][0] },
+    }],
+  })),
+});
+
+/** Validate once, then use a fixed, separately validated schema-v2 fallback. */
+export const resolveShelfSwingPropVariationCandidateV2 = (
+  candidate: ShelfSwingPropVariationCandidateV2,
+): ShelfSwingPropVariationPlanV2 => {
+  const issues = getShelfSwingPropVariationSafetyIssues(candidate);
+  const resolvedCandidate = issues.length === 0 ? candidate : createV2FallbackCandidate();
+  const fallbackIssues = issues.length === 0
+    ? []
+    : getShelfSwingPropVariationSafetyIssues(resolvedCandidate);
+  if (fallbackIssues.length > 0) {
+    throw new Error(`Shelf Swing schema-v2 fallback is invalid: ${fallbackIssues.join(", ")}`);
+  }
+  return Object.freeze({
+    schemaVersion: SHELF_SWING_PROP_VARIATION_SCHEMA_V2,
+    stations: Object.freeze(resolvedCandidate.stations.map((station) => Object.freeze({
+      stationId: station.stationId,
+      composition: station.composition,
+      props: Object.freeze(station.props.map((prop) => Object.freeze({
+        ...prop,
+        dimensionsMm: Object.freeze({ ...prop.dimensionsMm }),
+        positionMm: Object.freeze({ ...prop.positionMm }),
+        palette: Object.freeze({ ...prop.palette }),
+      }))),
+    }))),
+    fallbackUsed: issues.length > 0,
+    fallbackIssues: Object.freeze(issues),
+  });
+};
+
 export const resolveShelfSwingPropVariationPlan = (
   descriptor: SceneVariationDescriptor | undefined,
-): ShelfSwingPropVariationPlan | null => {
+): ResolvedShelfSwingPropVariationPlan | null => {
   if (!descriptor) return null;
   if (descriptor.identity.sceneId !== "shelf-swing") {
     throw new RangeError("Shelf Swing prop variation requires the canonical Shelf Swing identity");
   }
+  if (descriptor.identity.schemaVersion === SHELF_SWING_PROP_VARIATION_SCHEMA_V2) {
+    return resolveShelfSwingPropVariationCandidateV2({
+      schemaVersion: SHELF_SWING_PROP_VARIATION_SCHEMA_V2,
+      stations: subjects.map((subject) => generateV2StationVariation(descriptor, subject)),
+    });
+  }
   if (descriptor.identity.schemaVersion !== SHELF_SWING_PROP_VARIATION_SCHEMA_VERSION) {
-    throw new RangeError("Shelf Swing prop variation supports schema version 1 only");
+    throw new RangeError("Shelf Swing prop variation supports schema versions 1 and 2 only");
   }
   const candidate: ShelfSwingPropVariationCandidate = {
     schemaVersion: SHELF_SWING_PROP_VARIATION_SCHEMA_VERSION,

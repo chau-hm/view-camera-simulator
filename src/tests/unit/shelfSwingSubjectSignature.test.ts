@@ -14,6 +14,7 @@ import {
   resolveSceneVariationDescriptor,
 } from "../../scenes/sceneVariation";
 import { toWorld } from "../../render/rttUtils";
+import { getYawRotatedBoxBoundsMm } from "../../scenes/variation/placementGeometry";
 
 const renderNodeSignature = (root: THREE.Group, excludeDisplayObjects = false): string => {
   const nodes: unknown[] = [];
@@ -112,6 +113,72 @@ describe("Shelf Swing canonical registered subject signature", () => {
             expect(actualWorld.x).toBeCloseTo(toWorld(expectedWorld.x), 9);
             expect(actualWorld.y).toBeCloseTo(toWorld(expectedWorld.y), 9);
             expect(actualWorld.z).toBeCloseTo(toWorld(expectedWorld.z), 9);
+          });
+        });
+      } finally {
+        disposeShelfSwingGroup(group);
+      }
+    },
+  );
+
+  it.each([0, 1, 284719, 0xffff_ffff])(
+    "keeps teaching geometry and contains actual schema-v2 meshes for seed %s",
+    (seed) => {
+      const descriptor = resolveSceneVariationDescriptor(
+        shelfSwingScene,
+        createSceneVariantIdentity("shelf-swing", seed, 2),
+      );
+      const plan = resolveShelfSwingPropVariationPlan(descriptor ?? undefined);
+      expect(plan?.schemaVersion).toBe(2);
+      if (!descriptor || !plan || plan.schemaVersion !== 2) {
+        throw new Error("Expected a Shelf Swing schema-v2 plan");
+      }
+      const group = createShelfSwingGroup({
+        presentation: SHELF_SWING_PRESENTATION,
+        variationDescriptor: descriptor,
+      });
+      try {
+        expect(renderNodeSignature(group, true)).toBe(
+          "40a0d583b6935b0325d1acb934d1e81a3aad32ce3d1a3b1e96a96986e936486e",
+        );
+        group.updateMatrixWorld(true);
+        geometry.subjects.forEach((subject) => {
+          const plannedStation = plan.stations.find((station) => station.stationId === subject.id)!;
+          plannedStation.props.forEach((prop) => {
+            const object = group.getObjectByName(
+              `${subject.semanticName}-variation-object-${prop.id}`,
+            );
+            expect(object).toBeInstanceOf(THREE.Mesh);
+            const mesh = object as THREE.Mesh;
+            mesh.geometry.computeBoundingBox();
+            const localBounds = mesh.geometry.boundingBox;
+            expect(localBounds).not.toBeNull();
+            const epsilon = 1e-8;
+            expect(localBounds!.min.x).toBeGreaterThanOrEqual(-toWorld(prop.dimensionsMm.width / 2) - epsilon);
+            expect(localBounds!.max.x).toBeLessThanOrEqual(toWorld(prop.dimensionsMm.width / 2) + epsilon);
+            expect(localBounds!.min.y).toBeGreaterThanOrEqual(-toWorld(prop.dimensionsMm.height / 2) - epsilon);
+            expect(localBounds!.max.y).toBeLessThanOrEqual(toWorld(prop.dimensionsMm.height / 2) + epsilon);
+            expect(localBounds!.min.z).toBeGreaterThanOrEqual(-toWorld(prop.dimensionsMm.depth / 2) - epsilon);
+            expect(localBounds!.max.z).toBeLessThanOrEqual(toWorld(prop.dimensionsMm.depth / 2) + epsilon);
+
+            const actualWorld = new THREE.Vector3();
+            mesh.getWorldPosition(actualWorld);
+            const expectedWorld = subjectLocalToWorld(subject, prop.positionMm);
+            expect(actualWorld.x).toBeCloseTo(toWorld(expectedWorld.x), 9);
+            expect(actualWorld.y).toBeCloseTo(toWorld(expectedWorld.y), 9);
+            expect(actualWorld.z).toBeCloseTo(toWorld(expectedWorld.z), 9);
+            const actualWorldBounds = new THREE.Box3().setFromObject(mesh);
+            const plannedWorldBounds = getYawRotatedBoxBoundsMm(
+              expectedWorld,
+              prop.dimensionsMm,
+              subject.yawDeg + prop.rotationYDeg,
+            );
+            expect(actualWorldBounds.min.x * 1000).toBeGreaterThanOrEqual(plannedWorldBounds.min.x - 1e-4);
+            expect(actualWorldBounds.max.x * 1000).toBeLessThanOrEqual(plannedWorldBounds.max.x + 1e-4);
+            expect(actualWorldBounds.min.y * 1000).toBeGreaterThanOrEqual(plannedWorldBounds.min.y - 1e-4);
+            expect(actualWorldBounds.max.y * 1000).toBeLessThanOrEqual(plannedWorldBounds.max.y + 1e-4);
+            expect(actualWorldBounds.min.z * 1000).toBeGreaterThanOrEqual(plannedWorldBounds.min.z - 1e-4);
+            expect(actualWorldBounds.max.z * 1000).toBeLessThanOrEqual(plannedWorldBounds.max.z + 1e-4);
           });
         });
       } finally {

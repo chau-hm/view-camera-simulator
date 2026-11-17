@@ -360,32 +360,40 @@ describe("scene subject registry", () => {
     disposeRegisteredRttSubject("shelf-swing", group!);
   });
 
-  it("routes the same Shelf Swing variation identity to independent Observer and RTT resources", () => {
+  it.each([1, 2])(
+    "routes Shelf Swing schema v%s to equivalent independent Observer and RTT resources",
+    (schemaVersion) => {
     const descriptorA = resolveSceneVariationDescriptor(
       shelfSwingScene,
-      createSceneVariantIdentity("shelf-swing", 284719, 1),
+      createSceneVariantIdentity("shelf-swing", 284719, schemaVersion),
     )!;
     const descriptorB = resolveSceneVariationDescriptor(
       shelfSwingScene,
-      createSceneVariantIdentity("shelf-swing", 4294967295, 1),
+      createSceneVariantIdentity("shelf-swing", 4294967295, schemaVersion),
     )!;
     const factory = vi.spyOn(shelfSwingAsset, "createShelfSwingGroup");
     const disposer = vi.spyOn(shelfSwingAsset, "disposeShelfSwingGroup");
     const collectVariation = (group: THREE.Group) => {
-      const variation: Array<{
-        id: string;
-        family: string;
-        position: number[];
-        color: string;
-      }> = [];
+      const variation: Array<Record<string, unknown>> = [];
       group.traverse((object) => {
         if (!(object instanceof THREE.Mesh) || !object.userData.variationPropId) return;
         const material = Array.isArray(object.material) ? object.material[0]! : object.material;
+        object.geometry.computeBoundingBox();
+        const bounds = object.geometry.boundingBox;
         variation.push({
           id: object.userData.variationPropId,
           family: object.userData.family,
           position: object.position.toArray(),
           color: (material as THREE.MeshStandardMaterial).color.getHexString(),
+          dimensionsMm: object.userData.dimensionsMm,
+          geometry: {
+            type: object.geometry.type,
+            parameters: object.geometry.parameters,
+            min: bounds?.min.toArray(),
+            max: bounds?.max.toArray(),
+          },
+          roughness: (material as THREE.MeshStandardMaterial).roughness,
+          flatShading: (material as THREE.MeshStandardMaterial).flatShading,
         });
       });
       return variation;
@@ -411,12 +419,11 @@ describe("scene subject registry", () => {
     rttA.traverse((object) => {
       if (object instanceof THREE.Mesh && object.userData.variationPropId) rttMeshesA.push(object);
     });
-    expect(observerMeshesA.map((mesh) => mesh.geometry)).not.toEqual(
-      rttMeshesA.map((mesh) => mesh.geometry),
-    );
-    expect(observerMeshesA.map((mesh) => mesh.material)).not.toEqual(
-      rttMeshesA.map((mesh) => mesh.material),
-    );
+    expect(observerMeshesA).toHaveLength(rttMeshesA.length);
+    observerMeshesA.forEach((mesh, index) => {
+      expect(mesh.geometry).not.toBe(rttMeshesA[index]?.geometry);
+      expect(mesh.material).not.toBe(rttMeshesA[index]?.material);
+    });
 
     disposeRegisteredRttSubject("shelf-swing", rttA);
     view.rerender(<ShelfSwingSubject variationDescriptor={descriptorB} />);
@@ -431,7 +438,8 @@ describe("scene subject registry", () => {
     disposeRegisteredRttSubject("shelf-swing", rttB);
     expect(disposer.mock.calls.some(([group]) => group === observerB)).toBe(true);
     expect(disposer.mock.calls.some(([group]) => group === rttB)).toBe(true);
-  });
+    },
+  );
 
   it("routes each migrated interactive subject and RTT through the same registered presentation factory", () => {
     const candidates = [

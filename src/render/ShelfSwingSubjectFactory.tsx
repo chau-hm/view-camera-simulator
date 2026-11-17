@@ -15,8 +15,8 @@ import {
 
 const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180;
 
-const standardMaterial = (color: string, roughness = 0.88) =>
-  new THREE.MeshStandardMaterial({ color, roughness, metalness: 0 });
+const standardMaterial = (color: string, roughness = 0.88, flatShading = false) =>
+  new THREE.MeshStandardMaterial({ color, roughness, metalness: 0, flatShading });
 
 const basicMaterial = (color: string) =>
   new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide });
@@ -204,7 +204,47 @@ const createVariationPropGeometry = (prop: ShelfSwingPropVariation): THREE.Buffe
     return new THREE.CylinderGeometry(radius, radius, toWorld(height), 16);
   }
 
+  if (prop.family === "faceted") {
+    const geometry = new THREE.DodecahedronGeometry(0.5, 0);
+    geometry.scale(toWorld(width), toWorld(height), toWorld(depth));
+    return geometry;
+  }
+
   const radius = Math.min(width, depth) / 2;
+  if (prop.family === "bowl") {
+    const points = [
+      new THREE.Vector2(0, -height / 2),
+      new THREE.Vector2(radius * 0.38, -height / 2),
+      new THREE.Vector2(radius * 0.66, -height * 0.3),
+      new THREE.Vector2(radius * 0.92, -height * 0.02),
+      new THREE.Vector2(radius, height * 0.33),
+      new THREE.Vector2(radius * 0.9, height / 2),
+      new THREE.Vector2(radius * 0.76, height * 0.46),
+      new THREE.Vector2(radius * 0.64, height * 0.2),
+      new THREE.Vector2(radius * 0.38, -height * 0.08),
+      new THREE.Vector2(0, -height * 0.08),
+    ].map((point) => new THREE.Vector2(toWorld(point.x), toWorld(point.y)));
+    return new THREE.LatheGeometry(points, 16);
+  }
+
+  if (prop.family === "necked-vessel") {
+    const points = [
+      new THREE.Vector2(0, -height / 2),
+      new THREE.Vector2(radius * 0.42, -height / 2),
+      new THREE.Vector2(radius * 0.72, -height * 0.34),
+      new THREE.Vector2(radius, -height * 0.08),
+      new THREE.Vector2(radius * 0.94, height * 0.08),
+      new THREE.Vector2(radius * 0.52, height * 0.25),
+      new THREE.Vector2(radius * 0.3, height * 0.3),
+      new THREE.Vector2(radius * 0.3, height * 0.46),
+      new THREE.Vector2(radius * 0.42, height / 2),
+      new THREE.Vector2(radius * 0.36, height * 0.44),
+      new THREE.Vector2(radius * 0.25, height * 0.3),
+      new THREE.Vector2(0, height * 0.27),
+    ].map((point) => new THREE.Vector2(toWorld(point.x), toWorld(point.y)));
+    return new THREE.LatheGeometry(points, 16);
+  }
+
   const points = [
     new THREE.Vector2(0, -height / 2),
     new THREE.Vector2(radius * 0.58, -height / 2),
@@ -224,7 +264,7 @@ const addVariationProps = (
   variation.props.forEach((prop) => {
     const displayObject = new THREE.Mesh(
       createVariationPropGeometry(prop),
-      standardMaterial(prop.palette.body, 0.76),
+      standardMaterial(prop.palette.body, 0.76, prop.family === "faceted"),
     );
     displayObject.name = `${subject.semanticName}-variation-object-${prop.id}`;
     displayObject.position.set(

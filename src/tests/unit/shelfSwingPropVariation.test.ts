@@ -4,12 +4,14 @@ import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import {
   getShelfSwingPropVariationSafetyIssues,
   resolveShelfSwingPropVariationCandidate,
+  resolveShelfSwingPropVariationCandidateV2,
   resolveShelfSwingPropVariationPlan,
   serializeShelfSwingPropVariationPlan,
   type ShelfSwingPropVariationCandidate,
 } from "../../scenes/shelfSwingPropVariation";
 import {
   createSceneVariantIdentity,
+  SCENE_VARIATION_SCHEMA_V2,
   resolveSceneVariationDescriptor,
 } from "../../scenes/sceneVariation";
 import type { SceneVariationDescriptor } from "../../types/sceneVariation";
@@ -21,7 +23,20 @@ const createPlan = (seed: number) => {
   );
   if (!descriptor) throw new Error("Expected a Shelf Swing schema-v1 descriptor");
   const plan = resolveShelfSwingPropVariationPlan(descriptor);
-  if (!plan) throw new Error("Expected a Shelf Swing schema-v1 prop plan");
+  if (!plan || plan.schemaVersion !== 1) throw new Error("Expected a Shelf Swing schema-v1 prop plan");
+  return { descriptor, plan };
+};
+
+const createPlanV2 = (seed: number) => {
+  const descriptor = resolveSceneVariationDescriptor(
+    shelfSwingScene,
+    createSceneVariantIdentity("shelf-swing", seed, SCENE_VARIATION_SCHEMA_V2),
+  );
+  if (!descriptor) throw new Error("Expected a Shelf Swing schema-v2 descriptor");
+  const plan = resolveShelfSwingPropVariationPlan(descriptor);
+  if (!plan || plan.schemaVersion !== SCENE_VARIATION_SCHEMA_V2) {
+    throw new Error("Expected a Shelf Swing schema-v2 prop plan");
+  }
   return { descriptor, plan };
 };
 
@@ -176,15 +191,122 @@ describe("Shelf Swing deterministic prop variation plan", () => {
     expect(firstFallback.stations.every((station) => station.props.length === 1)).toBe(true);
   });
 
-  it("fails closed for descriptors from another scene or schema", () => {
+  it.each([0, 1, 284719, 0xffff_ffff])(
+    "resolves deterministic, frozen, valid schema-v2 plans for seed %s",
+    (seed) => {
+      const first = createPlanV2(seed).plan;
+      const second = createPlanV2(seed).plan;
+      expect(second).toEqual(first);
+      expect(JSON.parse(JSON.stringify(first))).toEqual(first);
+      expect(Object.isFrozen(first)).toBe(true);
+      expect(first.schemaVersion).toBe(2);
+      expect(first.fallbackUsed).toBe(false);
+      expect(getShelfSwingPropVariationSafetyIssues(first)).toEqual([]);
+      first.stations.forEach((station) => {
+        expect(Object.isFrozen(station.props)).toBe(true);
+        expect(station.props.length).toBe(station.composition === "single" ? 1 : 2);
+        station.props.forEach((prop) => {
+          expect(Object.isFrozen(prop.dimensionsMm)).toBe(true);
+          expect(Object.isFrozen(prop.positionMm)).toBe(true);
+          expect(Object.isFrozen(prop.palette)).toBe(true);
+        });
+      });
+    },
+  );
+
+  it("uses distinct silhouette families and single/paired compositions across v2 seeds", () => {
+    const plans = [0, 1, 284719, 0xffff_ffff].map((seed) => createPlanV2(seed).plan);
+    const families = new Set(plans.flatMap((plan) =>
+      plan.stations.flatMap((station) => station.props.map((prop) => prop.family)),
+    ));
+    const compositions = new Set(plans.flatMap((plan) =>
+      plan.stations.map((station) => station.composition),
+    ));
+    expect(new Set(plans.map(serializeShelfSwingPropVariationPlan)).size).toBeGreaterThan(1);
+    expect(families).toContain("bowl");
+    expect(families).toContain("necked-vessel");
+    expect(families).toContain("faceted");
+    expect(compositions).toEqual(new Set(["single", "paired"]));
+  });
+
+  it("keeps schema-v2 station streams independent from new IDs and unrelated draws", () => {
+    const base = createPlanV2(284719).descriptor;
+    const alternate = createPlanV2(19).descriptor;
+    const frontOnlyChange: SceneVariationDescriptor = {
+      identity: base.identity,
+      createRandomStream: (domain, objectId) =>
+        objectId.startsWith("shelf-front/")
+          ? alternate.createRandomStream(domain, objectId)
+          : base.createRandomStream(domain, objectId),
+    };
+    const basePlan = resolveShelfSwingPropVariationPlan(base)!;
+    const changedPlan = resolveShelfSwingPropVariationPlan(frontOnlyChange)!;
+    expect(changedPlan.stations[0]).not.toEqual(basePlan.stations[0]);
+    expect(changedPlan.stations.slice(1)).toEqual(basePlan.stations.slice(1));
+
+    const extendedDescriptor: SceneVariationDescriptor = {
+      identity: base.identity,
+      createRandomStream: (domain, objectId) => {
+        if (domain === "props") {
+          base.createRandomStream("props", "unrelated-new-prop").nextUint32();
+          base.createRandomStream("materials", "unrelated-material").nextUint32();
+          base.createRandomStream("layout", "unrelated-layout").nextUint32();
+        }
+        return base.createRandomStream(domain, objectId);
+      },
+    };
+    expect(resolveShelfSwingPropVariationPlan(extendedDescriptor)).toEqual(basePlan);
+  });
+
+  it("keeps a 256-seed schema-v2 safety sweep valid and fallback-free", () => {
+    let fallbackCount = 0;
+    const familyCounts = new Map<string, number>();
+    for (let seed = 0; seed < 256; seed += 1) {
+      const plan = createPlanV2(seed).plan;
+      expect(getShelfSwingPropVariationSafetyIssues(plan), `seed ${seed}`).toEqual([]);
+      if (plan.fallbackUsed) fallbackCount += 1;
+      plan.stations.flatMap((station) => station.props).forEach((prop) => {
+        familyCounts.set(prop.family, (familyCounts.get(prop.family) ?? 0) + 1);
+      });
+    }
+    expect(fallbackCount).toBe(0);
+    expect(familyCounts.size).toBeGreaterThanOrEqual(5);
+  });
+
+  it("uses a validated schema-v2 fallback and never labels it as v1", () => {
+    const { plan } = createPlanV2(284719);
+    const firstStation = plan.stations[0]!;
+    const invalidCandidate = {
+      schemaVersion: 2 as const,
+      stations: plan.stations.map((station, index) => index === 0
+        ? { ...station, props: [{ ...station.props[0]!, positionMm: { x: 0, y: 20, z: 120 } }] }
+        : station),
+    };
+    const firstFallback = resolveShelfSwingPropVariationCandidateV2(invalidCandidate);
+    const secondFallback = resolveShelfSwingPropVariationCandidateV2(invalidCandidate);
+    expect(firstFallback).toEqual(secondFallback);
+    expect(firstFallback.schemaVersion).toBe(2);
+    expect(firstFallback.fallbackUsed).toBe(true);
+    expect(firstFallback.fallbackIssues).toContain(`unsupported:${firstStation.props[0]!.id}`);
+    expect(getShelfSwingPropVariationSafetyIssues(firstFallback)).toEqual([]);
+    expect(firstFallback.stations.every((station) =>
+      station.composition === "single" && station.props[0]?.family === "bowl",
+    )).toBe(true);
+  });
+
+  it("fails closed for descriptors from another scene or unsupported schemas", () => {
     const { descriptor } = createPlan(284719);
     expect(() => resolveShelfSwingPropVariationPlan({
       ...descriptor,
       identity: createSceneVariantIdentity("interior-corner", 284719, 1),
     })).toThrow(/canonical Shelf Swing identity/);
-    expect(() => resolveShelfSwingPropVariationPlan({
+    expect(resolveShelfSwingPropVariationPlan({
       ...descriptor,
       identity: createSceneVariantIdentity("shelf-swing", 284719, 2),
-    })).toThrow(/schema version 1 only/);
+    })?.schemaVersion).toBe(2);
+    expect(() => resolveShelfSwingPropVariationPlan({
+      ...descriptor,
+      identity: createSceneVariantIdentity("shelf-swing", 284719, 3),
+    })).toThrow(/schema versions 1 and 2 only/);
   });
 });
