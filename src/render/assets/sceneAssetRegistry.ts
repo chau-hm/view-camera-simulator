@@ -13,6 +13,8 @@ import type { ArchitectureForegroundAssetRequest } from "../ArchitectureForegrou
 import * as architectureForegroundAsset from "../ArchitectureForegroundSubjectFactory";
 import type { InteriorCornerAssetRequest } from "../InteriorCornerSubjectFactory";
 import * as interiorCornerAsset from "../InteriorCornerSubjectFactory";
+import type { StillLifeStudioAssetRequest } from "../StillLifeStudioSubjectFactory";
+import * as stillLifeStudioAsset from "../StillLifeStudioSubjectFactory";
 import type { ObliqueTabletopAssetRequest } from "../ObliqueTabletopSubjectFactory";
 import * as obliqueTabletopAsset from "../ObliqueTabletopSubjectFactory";
 import type { FocusFundamentalsAssetRequest } from "../FocusFundamentalsSubjectFactory";
@@ -42,6 +44,7 @@ export const SHELF_SWING_ASSET_KEY = "shelf-swing-subject" as const;
 export const ARCHITECTURE_FOREGROUND_ASSET_KEY =
   "architecture-foreground-subject" as const;
 export const INTERIOR_CORNER_ASSET_KEY = "interior-corner-subject" as const;
+export const STILL_LIFE_STUDIO_ASSET_KEY = "still-life-studio-subject" as const;
 export const OBLIQUE_TABLETOP_ASSET_KEY = "oblique-tabletop-subject" as const;
 export const FOCUS_FUNDAMENTALS_ASSET_KEY = "focus-fundamentals-subject" as const;
 export const VIEW_CAMERA_ANATOMY_ASSET_KEY = "view-camera-anatomy-subject" as const;
@@ -62,6 +65,7 @@ export type SceneAssetKey =
   | typeof SHELF_SWING_ASSET_KEY
   | typeof ARCHITECTURE_FOREGROUND_ASSET_KEY
   | typeof INTERIOR_CORNER_ASSET_KEY
+  | typeof STILL_LIFE_STUDIO_ASSET_KEY
   | typeof OBLIQUE_TABLETOP_ASSET_KEY
   | typeof FOCUS_FUNDAMENTALS_ASSET_KEY
   | typeof VIEW_CAMERA_ANATOMY_ASSET_KEY
@@ -84,6 +88,7 @@ export type SceneAssetRequestMap = {
   [SHELF_SWING_ASSET_KEY]: ShelfSwingAssetRequest;
   [ARCHITECTURE_FOREGROUND_ASSET_KEY]: ArchitectureForegroundAssetRequest;
   [INTERIOR_CORNER_ASSET_KEY]: InteriorCornerAssetRequest;
+  [STILL_LIFE_STUDIO_ASSET_KEY]: StillLifeStudioAssetRequest;
   [OBLIQUE_TABLETOP_ASSET_KEY]: ObliqueTabletopAssetRequest;
   [FOCUS_FUNDAMENTALS_ASSET_KEY]: FocusFundamentalsAssetRequest;
   [VIEW_CAMERA_ANATOMY_ASSET_KEY]: ViewCameraAnatomyAssetRequest;
@@ -103,6 +108,7 @@ export type SceneAssetResourceLifetimeByKey = {
   [SHELF_SWING_ASSET_KEY]: "instance-owned";
   [ARCHITECTURE_FOREGROUND_ASSET_KEY]: "instance-owned";
   [INTERIOR_CORNER_ASSET_KEY]: "instance-owned";
+  [STILL_LIFE_STUDIO_ASSET_KEY]: "instance-owned";
   [OBLIQUE_TABLETOP_ASSET_KEY]: "instance-owned";
   [FOCUS_FUNDAMENTALS_ASSET_KEY]: "module-shared";
   [VIEW_CAMERA_ANATOMY_ASSET_KEY]: "module-shared";
@@ -171,6 +177,7 @@ export const SHELF_SWING_IMPLEMENTATION_ID = "threejs-shelf-swing";
 export const ARCHITECTURE_FOREGROUND_IMPLEMENTATION_ID =
   "threejs-architecture-foreground";
 export const INTERIOR_CORNER_IMPLEMENTATION_ID = "threejs-interior-corner";
+export const STILL_LIFE_STUDIO_IMPLEMENTATION_ID = "threejs-still-life-studio";
 export const OBLIQUE_TABLETOP_IMPLEMENTATION_ID = "threejs-oblique-tabletop";
 export const FOCUS_FUNDAMENTALS_IMPLEMENTATION_ID = "threejs-focus-fundamentals";
 export const VIEW_CAMERA_ANATOMY_IMPLEMENTATION_ID = "threejs-view-camera-anatomy";
@@ -239,6 +246,14 @@ const interiorCornerRegistration: SceneAssetRegistration<typeof INTERIOR_CORNER_
     implementationId: INTERIOR_CORNER_IMPLEMENTATION_ID,
     create: (request) => interiorCornerAsset.createInteriorCornerGroup(request),
     dispose: (asset) => interiorCornerAsset.disposeInteriorCornerGroup(asset),
+  });
+
+const stillLifeStudioRegistration: SceneAssetRegistration<typeof STILL_LIFE_STUDIO_ASSET_KEY> =
+  Object.freeze({
+    assetKey: STILL_LIFE_STUDIO_ASSET_KEY,
+    implementationId: STILL_LIFE_STUDIO_IMPLEMENTATION_ID,
+    create: (request) => stillLifeStudioAsset.createStillLifeStudioGroup(request),
+    dispose: (asset) => stillLifeStudioAsset.disposeStillLifeStudioGroup(asset),
   });
 
 const obliqueTabletopRegistration: SceneAssetRegistration<typeof OBLIQUE_TABLETOP_ASSET_KEY> =
@@ -327,6 +342,7 @@ export const sceneAssetRegistry: CompleteSceneAssetRegistry = Object.freeze({
   [SHELF_SWING_ASSET_KEY]: shelfSwingRegistration,
   [ARCHITECTURE_FOREGROUND_ASSET_KEY]: architectureForegroundRegistration,
   [INTERIOR_CORNER_ASSET_KEY]: interiorCornerRegistration,
+  [STILL_LIFE_STUDIO_ASSET_KEY]: stillLifeStudioRegistration,
   [OBLIQUE_TABLETOP_ASSET_KEY]: obliqueTabletopRegistration,
   [FOCUS_FUNDAMENTALS_ASSET_KEY]: focusFundamentalsRegistration,
   [VIEW_CAMERA_ANATOMY_ASSET_KEY]: viewCameraAnatomyRegistration,
@@ -363,6 +379,7 @@ export function resolveSceneAsset(
     assetKey !== SHELF_SWING_ASSET_KEY &&
     assetKey !== ARCHITECTURE_FOREGROUND_ASSET_KEY &&
     assetKey !== INTERIOR_CORNER_ASSET_KEY &&
+    assetKey !== STILL_LIFE_STUDIO_ASSET_KEY &&
     assetKey !== OBLIQUE_TABLETOP_ASSET_KEY &&
     assetKey !== FOCUS_FUNDAMENTALS_ASSET_KEY &&
     assetKey !== VIEW_CAMERA_ANATOMY_ASSET_KEY &&

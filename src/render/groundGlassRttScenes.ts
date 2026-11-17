@@ -18,6 +18,7 @@ export const RTT_SCENES = [
   "understanding-camera-movements",
   "mirror-shift",
   "interior-corner",
+  "still-life-studio",
 ] as const;
 export type RttSceneId = (typeof RTT_SCENES)[number];
 

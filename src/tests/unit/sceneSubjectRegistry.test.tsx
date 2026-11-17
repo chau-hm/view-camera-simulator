@@ -72,6 +72,7 @@ import {
   ARCHITECTURE_FOREGROUND_ASSET_KEY,
   ARCHITECTURE_RISE_ASSET_KEY,
   INTERIOR_CORNER_ASSET_KEY,
+  STILL_LIFE_STUDIO_ASSET_KEY,
   OBLIQUE_TABLETOP_ASSET_KEY,
   OBLIQUE_ARCHITECTURE_ASSET_KEY,
   TABLE_TILT_ASSET_KEY,
@@ -129,6 +130,7 @@ const publicSceneAssetSlots = {
   "oblique-architecture": OBLIQUE_ARCHITECTURE_ASSET_KEY,
   "architecture-foreground": ARCHITECTURE_FOREGROUND_ASSET_KEY,
   "interior-corner": INTERIOR_CORNER_ASSET_KEY,
+  "still-life-studio": STILL_LIFE_STUDIO_ASSET_KEY,
   "macro-bellows-extension": MACRO_BELLOWS_EXTENSION_ASSET_KEY,
   "macro-depth-of-field": MACRO_DEPTH_OF_FIELD_ASSET_KEY,
   "macro-oblique-plane": MACRO_OBLIQUE_PLANE_ASSET_KEY,
@@ -234,6 +236,7 @@ describe("scene subject registry", () => {
     const hiddenSceneId: PublicSceneId = "macro-compound-movements";
     const isolatedPublication = {
       ...scenePublication,
+      "still-life-studio": true,
       [hiddenSceneId]: false,
     };
     const publishedIds = getPublishedPublicSceneEntries(isolatedPublication).map(
@@ -277,6 +280,7 @@ describe("scene subject registry", () => {
       "oblique-tabletop",
       "mirror-shift",
       "interior-corner",
+      "still-life-studio",
     ]);
     Object.keys(sceneSubjectRegistry).forEach((sceneId) => {
       expect(getSceneSubjectRegistration(sceneId)).toBeDefined();
