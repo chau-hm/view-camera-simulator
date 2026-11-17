@@ -558,6 +558,19 @@ const addArchitectureContext = (
     material: resources.base,
     parent: entryGroup,
   });
+  [-1, 1].forEach((sign) =>
+    addBox({
+      name: `architecture-rise-entry-stone-jamb-plinth-${sign < 0 ? "left" : "right"}`,
+      size: [96, 168, 124],
+      position: [
+        entry.centerXMm + sign * (entry.openingWidthMm / 2 + 56),
+        geometry.ground.y + 166,
+        front - 62,
+      ],
+      material: resources.base,
+      parent: entryGroup,
+    }),
+  );
   addBox({
     name: "architecture-rise-building-plinth",
     size: [geometry.building.width + 120, 68, 220],
@@ -769,6 +782,7 @@ export function createArchitectureRiseGroup(
   root.name = "architecture-rise-subject";
   root.userData.resources = resources;
   const front = geometry.facade.frontFacadeZ;
+  const baseStoneTopY = geometry.ground.y + 320;
   const frontWindows = layout.windows.filter((window): window is ArchitectureRiseFrontWindow =>
     window.elevation === "front",
   );
@@ -803,7 +817,7 @@ export function createArchitectureRiseGroup(
     openings: mainOpenings,
     horizontalAxis: "x",
     primaryMeshName: "architecture-rise-primary-facade",
-    baseStoneTopMm: 320,
+    baseStoneTopMm: baseStoneTopY,
   });
 
   const parapet = addBox({
@@ -837,10 +851,50 @@ export function createArchitectureRiseGroup(
     material: resources.trim,
     parent: masonryDetail,
   });
+  [-1, 1].forEach((sign) =>
+    addBox({
+      name: `architecture-rise-cornice-underband-return-${sign < 0 ? "west" : "east"}`,
+      size: [cornice.depth + 40, 30, geometry.building.depth + 40],
+      position: [
+        sign * (halfWidth + 30 - (cornice.depth + 40) / 2),
+        corniceY - cornice.height / 2 - 15,
+        geometry.building.center.z,
+      ],
+      material: resources.trim,
+      parent: masonryDetail,
+    }),
+  );
+  addBox({
+    name: "architecture-rise-cornice-underband-back",
+    size: [cornice.width + 60, 30, 100],
+    position: [0, corniceY - cornice.height / 2 - 15, geometry.facade.backFacadeZ + 20],
+    material: resources.trim,
+    parent: masonryDetail,
+  });
   addBox({
     name: "architecture-rise-cornice-cap",
     size: [cornice.width + 120, 32, cornice.depth + 60],
     position: [0, corniceY + cornice.height / 2 + 16, front + 20],
+    material: resources.trim,
+    parent: masonryDetail,
+  });
+  [-1, 1].forEach((sign) =>
+    addBox({
+      name: `architecture-rise-cornice-cap-return-${sign < 0 ? "west" : "east"}`,
+      size: [cornice.depth + 60, 32, geometry.building.depth + 60],
+      position: [
+        sign * (halfWidth + 60 - (cornice.depth + 60) / 2),
+        corniceY + cornice.height / 2 + 16,
+        geometry.building.center.z,
+      ],
+      material: resources.trim,
+      parent: masonryDetail,
+    }),
+  );
+  addBox({
+    name: "architecture-rise-cornice-cap-back",
+    size: [cornice.width + 120, 32, 120],
+    position: [0, corniceY + cornice.height / 2 + 16, geometry.facade.backFacadeZ + 40],
     material: resources.trim,
     parent: masonryDetail,
   });
@@ -919,7 +973,7 @@ export function createArchitectureRiseGroup(
       parent: masonryDetail,
     }),
   );
-  const stringCourseY = 240;
+  const stringCourseY = baseStoneTopY;
   [-1, 1].forEach((sign) =>
     addBox({
       name: `architecture-rise-base-string-course-${sign < 0 ? "left" : "right"}`,
@@ -929,13 +983,6 @@ export function createArchitectureRiseGroup(
       parent: masonryDetail,
     }),
   );
-  addBox({
-    name: "architecture-rise-ground-story-belt-course",
-    size: [geometry.building.width + 80, 40, 100],
-    position: [geometry.building.center.x, 320, front - 22],
-    material: resources.trim,
-    parent: masonryDetail,
-  });
   addBox({
     name: "architecture-rise-base-foot",
     size: [geometry.building.width + 120, 48, 240],
