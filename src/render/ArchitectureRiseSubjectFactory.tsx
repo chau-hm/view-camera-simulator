@@ -47,11 +47,11 @@ const createResources = (
   box: new THREE.BoxGeometry(1, 1, 1),
   ground: new THREE.PlaneGeometry(toWorld(geometry.ground.width), toWorld(geometry.ground.depth)),
   facade: createProceduralSurfaceMaterial({
-    color: "#a65e46",
+    color: "#9d513c",
     pattern: "limestone",
-    repeat: [5, 8],
+    repeat: [5, 12],
     roughness: 0.9,
-    normalStrength: 0.24,
+    normalStrength: 0.18,
   }),
   base: createProceduralSurfaceMaterial({
     color: "#d6c8ae",
@@ -68,7 +68,7 @@ const createResources = (
     normalStrength: 0.14,
   }),
   roof: createProceduralSurfaceMaterial({
-    color: "#8c9693",
+    color: "#c7b9a2",
     pattern: "cut-stone",
     repeat: [1, 1],
     roughness: 0.9,
@@ -145,6 +145,7 @@ const addSegmentedWall = (
     openings: readonly FacadeOpening[];
     horizontalAxis: "x" | "z";
     primaryMeshName?: string;
+    baseStoneTopMm?: number;
   },
 ): void => {
   const horizontalEdges = new Set([options.horizontalMinMm, options.horizontalMaxMm]);
@@ -163,6 +164,13 @@ const addSegmentedWall = (
       horizontalCenter < opening.centerHorizontalMm + opening.widthMm / 2,
     );
     const verticalEdges = new Set([options.verticalMinMm, options.verticalMaxMm]);
+    if (
+      options.baseStoneTopMm !== undefined &&
+      options.baseStoneTopMm > options.verticalMinMm &&
+      options.baseStoneTopMm < options.verticalMaxMm
+    ) {
+      verticalEdges.add(options.baseStoneTopMm);
+    }
     active.forEach((opening) => {
       verticalEdges.add(opening.centerVerticalMm - opening.heightMm / 2);
       verticalEdges.add(opening.centerVerticalMm + opening.heightMm / 2);
@@ -181,7 +189,7 @@ const addSegmentedWall = (
       const depthCenter = (options.depthMaxMm + options.depthMinMm) / 2;
       const horizontalSize = horizontalMax - horizontalMin;
       const verticalSize = verticalMax - verticalMin;
-      const isBaseStone = verticalCenter < 0;
+      const isBaseStone = verticalCenter < (options.baseStoneTopMm ?? 0);
       const position: [number, number, number] = options.horizontalAxis === "x"
         ? [horizontalCenter, verticalCenter, depthCenter]
         : [depthCenter, verticalCenter, horizontalCenter];
@@ -530,6 +538,13 @@ const addArchitectureContext = (
     parent: entryGroup,
   });
   addBox({
+    name: "architecture-rise-entry-stone-cap",
+    size: [entry.openingWidthMm + 200, 48, 136],
+    position: [entry.centerXMm, entry.centerYMm + entry.openingHeightMm / 2 + 96, front - 40],
+    material: resources.trim,
+    parent: entryGroup,
+  });
+  addBox({
     name: "architecture-rise-entry-threshold",
     size: [entry.openingWidthMm + 120, 34, 220],
     position: [entry.centerXMm, geometry.ground.y + 17, front - 76],
@@ -788,6 +803,7 @@ export function createArchitectureRiseGroup(
     openings: mainOpenings,
     horizontalAxis: "x",
     primaryMeshName: "architecture-rise-primary-facade",
+    baseStoneTopMm: 320,
   });
 
   const parapet = addBox({
@@ -811,6 +827,20 @@ export function createArchitectureRiseGroup(
     name: "architecture-rise-cornice-front",
     size: [cornice.width, cornice.height, cornice.depth],
     position: [0, corniceY, front + 20],
+    material: resources.trim,
+    parent: masonryDetail,
+  });
+  addBox({
+    name: "architecture-rise-cornice-underband",
+    size: [cornice.width + 60, 30, cornice.depth + 40],
+    position: [0, corniceY - cornice.height / 2 - 15, front + 20],
+    material: resources.trim,
+    parent: masonryDetail,
+  });
+  addBox({
+    name: "architecture-rise-cornice-cap",
+    size: [cornice.width + 120, 32, cornice.depth + 60],
+    position: [0, corniceY + cornice.height / 2 + 16, front + 20],
     material: resources.trim,
     parent: masonryDetail,
   });
@@ -899,6 +929,13 @@ export function createArchitectureRiseGroup(
       parent: masonryDetail,
     }),
   );
+  addBox({
+    name: "architecture-rise-ground-story-belt-course",
+    size: [geometry.building.width + 80, 40, 100],
+    position: [geometry.building.center.x, 320, front - 22],
+    material: resources.trim,
+    parent: masonryDetail,
+  });
   addBox({
     name: "architecture-rise-base-foot",
     size: [geometry.building.width + 120, 48, 240],
