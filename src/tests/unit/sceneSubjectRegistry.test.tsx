@@ -375,15 +375,33 @@ describe("scene subject registry", () => {
     const disposer = vi.spyOn(shelfSwingAsset, "disposeShelfSwingGroup");
     const collectVariation = (group: THREE.Group) => {
       const variation: Array<Record<string, unknown>> = [];
+      group.updateMatrixWorld(true);
       group.traverse((object) => {
         if (!(object instanceof THREE.Mesh) || !object.userData.variationPropId) return;
         const material = Array.isArray(object.material) ? object.material[0]! : object.material;
         object.geometry.computeBoundingBox();
         const bounds = object.geometry.boundingBox;
+        const stationName = object.parent?.name;
+        const shelf = stationName
+          ? group.getObjectByName(`${stationName}-shelf-lower`)
+          : undefined;
+        expect(shelf).toBeInstanceOf(THREE.Mesh);
+        const shelfBounds = new THREE.Box3().setFromObject(shelf!);
+        const worldBounds = new THREE.Box3().setFromObject(object);
+        const supportDelta = worldBounds.min.y - shelfBounds.max.y;
+        expect(Number.isFinite(supportDelta)).toBe(true);
+        expect(Math.abs(supportDelta)).toBeLessThanOrEqual(1e-7);
         variation.push({
           id: object.userData.variationPropId,
           family: object.userData.family,
           position: object.position.toArray(),
+          worldPosition: object.getWorldPosition(new THREE.Vector3()).toArray(),
+          worldBounds: {
+            min: worldBounds.min.toArray(),
+            max: worldBounds.max.toArray(),
+          },
+          shelfTopY: shelfBounds.max.y,
+          supportDelta,
           color: (material as THREE.MeshStandardMaterial).color.getHexString(),
           dimensionsMm: object.userData.dimensionsMm,
           geometry: {

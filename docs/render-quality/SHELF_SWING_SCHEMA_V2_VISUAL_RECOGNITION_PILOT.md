@@ -50,6 +50,12 @@ Historical v1 cells are cropped at native 514 × 411 pixels from the accepted PR
 
 ## Visual comparison
 
+**Historical evidence note:** The comparison sheets below were captured before
+Review-Fix Round 1 and retain the original experiment geometry. They are not
+pixel-exact evidence of the corrected meshes. The corrected contact capture
+added later in this report is limited to physical placement verification; the
+frozen visual measurements and their interpretation are unchanged.
+
 ### Full v2 sample
 
 ![Shelf Swing schema v2 frozen twelve-seed grid](evidence/shelf-swing-schema-v2-visual-recognition/shelf-swing-schema-v2-seed-grid.png)
@@ -111,9 +117,118 @@ The production lifecycle test performs ten v2 regenerations with an A → B → 
 - The next visual iteration should first improve silhouette and grouping visibility at the existing camera and shelf envelope, then repeat this same seed set and capture setup. Do not promote v2 as the default until normal-size reviewers can identify meaningful prop or grouping changes more consistently.
 - No changes were made to lighting, exposure, camera framing, or chart geometry to inflate the image difference.
 
+## Review-Fix Round 1 — Faceted Prop Support Contact
+
+### Defect and correction
+
+The schema-v2 faceted family used `THREE.DodecahedronGeometry(0.5, 0)` and
+scaled it to the planned dimensions. Its actual vertical bounds are not
+symmetric around the origin: for the 108 mm front prop at seed `284719`, the
+measured local minimum was `−50.445307046175 mm`, while the planned lower bound
+was `−54 mm`. Centering that geometry at the planned position left a
+`3.554692953825 mm` gap above the lower shelf.
+
+Only the faceted geometry construction changed. After applying the existing
+width/height/depth scale, the factory computes its bounding box, translates
+the vertices by `targetMinY − actualMinY`, then recomputes the box. For the
+108 mm example this is a `−0.003554692953825` world-unit local translation.
+The geometry now reaches the planned local lower bound while keeping the same
+prop identity, dimensions, planned position, rotation, material, and random
+plan. Bowl, necked-vessel, vessel, box, and cylinder construction is unchanged.
+
+### Measured support contact
+
+The regression builds the actual registered subject, updates world matrices,
+and compares `Box3.setFromObject(mesh).min.y` to the measured lower-shelf mesh
+top. The shelf top is checked against the canonical
+`detailGeometry.shelfThickness`; the regression compares values in Three.js
+world units, and the reported measurements below are converted to millimetres.
+The tolerance is
+`0.0001 mm` (`1e-7` world units), far below the original gap.
+
+For seed `284719`, the front faceted mesh bottom measured
+`−522.0000014007093 mm`; the lower-shelf top measured
+`−522.0000006109476 mm`. The resulting `−0.000000789762 mm` delta is a
+sub-micrometre floating-point penetration. Across the 20 planned props in
+seeds `0`, `1`, `284719`, and `4294967295`, the maximum absolute difference
+between mesh bottom and shelf top was `0.000003352762 mm`. No prop exceeded the
+contact tolerance or materially penetrated the shelf.
+
+The test also checks finite vertex positions, normals and bounds; valid
+standard materials; planned local X/Z and upper-Y bounds; actual transformed
+world bounds; and unchanged support height after adding a Y-axis rotation.
+Seed `284719` is explicitly required to contain a faceted front prop. Seed `1`
+includes faceted, bowl, and necked-vessel geometries, so their actual local
+bottom bounds and world contacts are measured rather than inferred from the
+plan.
+
+### Compatibility and parity
+
+- The accepted canonical no-variation signature remains
+  `c0e91bfcf2721d99ff12c06f748bda06fac6def672bda30b442c462a79ced43f`.
+- Schema-v1 teaching signatures remain
+  `40a0d583b6935b0325d1acb934d1e81a3aad32ce3d1a3b1e96a96986e936486e` for
+  seeds `0`, `1`, `284719`, and `4294967295`. The scene still declares schema
+  v1 as its default.
+- Schema-v2 plan signatures remain pinned for all four representative seeds:
+  `0` → `7d310425175413f1a2322d82b6cd10c274f2858100691e6735b473d005beb362`,
+  `1` → `2cea4201410cbcb469088fc69b41c85b3a3b92bc2ab7c96758b9eef6cce86cd5`,
+  `284719` → `9b02edf610abacab7f93b96f2e10b983906ba8372c96021b59d9282ac1accaf8`,
+  and `4294967295` →
+  `29d853b8df54cbf5cd7f32358c264aa0ae2ac4219c53feecacd99258d3cd7cfe`.
+- The schema-v2 planner, its serialization, seed derivation, and random
+  streams were not modified. No full v2 rendered-subject hash was refreshed;
+  the accepted teaching-only signatures continue to exclude variation props.
+- The registered-subject parity regression now compares Observer and RTT
+  prop IDs, local and world transforms, actual geometry bounds, material
+  values, measured shelf contact, and independent geometry/material ownership.
+  Its cleanup assertions confirm each registered subject is disposed through
+  its existing owner.
+- Existing focus, solved-calibration, route, and resource lifecycle code was
+  not changed.
+
+### Corrected browser evidence
+
+The production Vite preview opened
+`/simulator/free/shelf-swing?seed=284719&sv=2` in Chromium with WebGL2 at a
+1440 × 1000 viewport and DPR 1. The Observer canvas remained 514 × 411 with
+camera position `(4.2, 1.45, 1.4)` and orbit target `(0, −0.04, 3.85)`; the
+three-chart layout and camera framing remain unchanged. Focus was 3400 mm,
+Swing was −4°, aperture was f/11, and Ground Glass was set to Raw. Its
+production frame request completed and the Ground Glass canvas was 514 × 412.
+The production preview does not expose the development-only finite-uniform
+and contentful readbacks, so those fields remain unavailable. The browser
+reported no page errors or unexpected console problems; Chromium emitted the
+known `ReadPixels` performance and `THREE.Clock` deprecation warnings.
+
+![Corrected seed 284719 Observer, enlarged lower-shelf crop, and completed Ground Glass frame](evidence/shelf-swing-schema-v2-visual-recognition/shelf-swing-schema-v2-contact-seed-284719.png)
+
+The center panel is a labelled 4× crop of the same production Observer canvas.
+This capture documents physical contact and Observer/RTT rendering only; it
+does not qualify normal-size seed recognition. The historical twelve-seed
+sheets and image metrics above remain pre-fix experimental evidence.
+
+### Review-fix qualification
+
+- Focused regression, canonical/v1 compatibility, v2 plan fingerprints,
+  Observer/RTT parity, resource disposal, and Shelf Swing focus/calibration
+  tests pass locally.
+- Full local gates and the final-head GitHub CI result are recorded in the
+  current PR implementation handoff after publication.
+- **Technical qualification: PASS.**
+- **Visual qualification: INCONCLUSIVE.** The correction does not establish a
+  normal-size recognition improvement; original measurements and interpretation
+  are preserved.
+- **Promotion recommendation: EXPERIMENT_ONLY.** Schema v1 remains the default
+  and schema v2 remains explicitly selectable for experimentation.
+
 ## Validation
 
-The final local checks passed:
+### Earlier experiment qualification
+
+These results were collected on the pre-fix reviewed head
+`5ffed16867a3474c6f2c0591b82ef087914def5d`; they remain evidence for the
+original experiment, not a claim that the review fix reran those suites:
 
 - `npm test`: 340 test files, 4,217 tests passed.
 - Focused Shelf Swing/route suite: 9 files, 138 tests passed, including the v1 signatures and 256-seed v2 safety sweep.
@@ -124,3 +239,13 @@ The final local checks passed:
 - `git diff --check` passed.
 
 The detailed mode matrix is in [`shelf-swing-focus-aperture-matrix.json`](evidence/shelf-swing-schema-v2-visual-recognition/shelf-swing-focus-aperture-matrix.json); repeated-resource measurements are in [`shelf-swing-regeneration-capacity.json`](evidence/shelf-swing-schema-v2-visual-recognition/shelf-swing-regeneration-capacity.json); and the cross-variant restoration evidence is in [`shelf-swing-cross-variant-capacity.json`](evidence/shelf-swing-schema-v2-visual-recognition/shelf-swing-cross-variant-capacity.json). GitHub CI is checked after the PR is published.
+
+### Review-Fix Round 1
+
+- `npm test`: 340 test files, 4,218 tests passed.
+- Focused Shelf Swing geometry, planner, registry parity/disposal, and focus/calibration suite: 7 files, 132 tests passed.
+- `npm run typecheck`, `npm run lint`, and `npm run check:css` passed.
+- `npm run build` passed for the root-path production preview used by the corrected capture.
+- Production WebGL2 browser check passed on seed `284719`: v2 identity active, Observer and Ground Glass canvases rendered, the RTT frame completed, all three charts stayed visible, camera pose matched the pilot, and no page errors or unexpected console warnings occurred.
+- The production preview omits development-only `finalContentful` and finite-uniform readbacks; they remain unavailable for this capture.
+- Final `git diff --check` and the current-head GitHub CI result are recorded in the PR handoff after publication.

@@ -7,7 +7,7 @@ import {
 } from "../../render/ShelfSwingSubjectFactory";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
 import { SHELF_SWING_PRESENTATION } from "../../scenes/presentation/shelfSwing";
-import geometry, { subjectLocalToWorld } from "../../scenes/shelfSwingGeometry";
+import geometry, { detailGeometry, subjectLocalToWorld } from "../../scenes/shelfSwingGeometry";
 import { resolveShelfSwingPropVariationPlan } from "../../scenes/shelfSwingPropVariation";
 import {
   createSceneVariantIdentity,
@@ -71,6 +71,25 @@ describe("Shelf Swing canonical registered subject signature", () => {
       );
     } finally {
       disposeShelfSwingGroup(group);
+    }
+  });
+
+  it("preserves schema-v2 plan signatures for representative seeds", () => {
+    const expected: Readonly<Record<number, string>> = {
+      0: "7d310425175413f1a2322d82b6cd10c274f2858100691e6735b473d005beb362",
+      1: "2cea4201410cbcb469088fc69b41c85b3a3b92bc2ab7c96758b9eef6cce86cd5",
+      284719: "9b02edf610abacab7f93b96f2e10b983906ba8372c96021b59d9282ac1accaf8",
+      [0xffff_ffff]: "29d853b8df54cbf5cd7f32358c264aa0ae2ac4219c53feecacd99258d3cd7cfe",
+    };
+    for (const [seedText, expectedSignature] of Object.entries(expected)) {
+      const descriptor = resolveSceneVariationDescriptor(
+        shelfSwingScene,
+        createSceneVariantIdentity("shelf-swing", Number(seedText), 2),
+      );
+      const plan = resolveShelfSwingPropVariationPlan(descriptor ?? undefined);
+      expect(plan?.schemaVersion).toBe(2);
+      expect(createHash("sha256").update(JSON.stringify(plan ?? null)).digest("hex"))
+        .toBe(expectedSignature);
     }
   });
 
@@ -142,8 +161,27 @@ describe("Shelf Swing canonical registered subject signature", () => {
           "40a0d583b6935b0325d1acb934d1e81a3aad32ce3d1a3b1e96a96986e936486e",
         );
         group.updateMatrixWorld(true);
+        // 1e-7 world units is 0.0001 mm, far below the reported 3.55 mm gap.
+        const supportToleranceWorld = 1e-7;
         geometry.subjects.forEach((subject) => {
           const plannedStation = plan.stations.find((station) => station.stationId === subject.id)!;
+          const shelf = group.getObjectByName(`${subject.semanticName}-shelf-lower`);
+          expect(shelf).toBeInstanceOf(THREE.Mesh);
+          const shelfBounds = new THREE.Box3().setFromObject(shelf!);
+          const canonicalShelfTopWorld = toWorld(
+            subject.worldPosition.y + detailGeometry.shelfThickness,
+          );
+          expect([
+            shelfBounds.min.x,
+            shelfBounds.min.y,
+            shelfBounds.min.z,
+            shelfBounds.max.x,
+            shelfBounds.max.y,
+            shelfBounds.max.z,
+          ].every(Number.isFinite)).toBe(true);
+          expect(Math.abs(shelfBounds.max.y - canonicalShelfTopWorld)).toBeLessThanOrEqual(
+            supportToleranceWorld,
+          );
           plannedStation.props.forEach((prop) => {
             const object = group.getObjectByName(
               `${subject.semanticName}-variation-object-${prop.id}`,
@@ -154,9 +192,35 @@ describe("Shelf Swing canonical registered subject signature", () => {
             const localBounds = mesh.geometry.boundingBox;
             expect(localBounds).not.toBeNull();
             const epsilon = 1e-8;
+            expect([
+              localBounds!.min.x,
+              localBounds!.min.y,
+              localBounds!.min.z,
+              localBounds!.max.x,
+              localBounds!.max.y,
+              localBounds!.max.z,
+            ].every(Number.isFinite)).toBe(true);
+            const positionAttribute = mesh.geometry.getAttribute("position");
+            const normalAttribute = mesh.geometry.getAttribute("normal");
+            expect(positionAttribute.count).toBeGreaterThan(0);
+            expect(Array.from(positionAttribute.array).every(Number.isFinite)).toBe(true);
+            expect(normalAttribute).toBeDefined();
+            expect(Array.from(normalAttribute!.array).every(Number.isFinite)).toBe(true);
+            const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+            expect(materials.length).toBeGreaterThan(0);
+            materials.forEach((material) => {
+              expect(material).toBeInstanceOf(THREE.MeshStandardMaterial);
+              const standardMaterial = material as THREE.MeshStandardMaterial;
+              expect([
+                ...standardMaterial.color.toArray(),
+                standardMaterial.roughness,
+                standardMaterial.metalness,
+              ].every(Number.isFinite)).toBe(true);
+            });
             expect(localBounds!.min.x).toBeGreaterThanOrEqual(-toWorld(prop.dimensionsMm.width / 2) - epsilon);
             expect(localBounds!.max.x).toBeLessThanOrEqual(toWorld(prop.dimensionsMm.width / 2) + epsilon);
-            expect(localBounds!.min.y).toBeGreaterThanOrEqual(-toWorld(prop.dimensionsMm.height / 2) - epsilon);
+            expect(Math.abs(localBounds!.min.y + toWorld(prop.dimensionsMm.height / 2)))
+              .toBeLessThanOrEqual(epsilon);
             expect(localBounds!.max.y).toBeLessThanOrEqual(toWorld(prop.dimensionsMm.height / 2) + epsilon);
             expect(localBounds!.min.z).toBeGreaterThanOrEqual(-toWorld(prop.dimensionsMm.depth / 2) - epsilon);
             expect(localBounds!.max.z).toBeLessThanOrEqual(toWorld(prop.dimensionsMm.depth / 2) + epsilon);
@@ -168,6 +232,14 @@ describe("Shelf Swing canonical registered subject signature", () => {
             expect(actualWorld.y).toBeCloseTo(toWorld(expectedWorld.y), 9);
             expect(actualWorld.z).toBeCloseTo(toWorld(expectedWorld.z), 9);
             const actualWorldBounds = new THREE.Box3().setFromObject(mesh);
+            expect([
+              actualWorldBounds.min.x,
+              actualWorldBounds.min.y,
+              actualWorldBounds.min.z,
+              actualWorldBounds.max.x,
+              actualWorldBounds.max.y,
+              actualWorldBounds.max.z,
+            ].every(Number.isFinite)).toBe(true);
             const plannedWorldBounds = getYawRotatedBoxBoundsMm(
               expectedWorld,
               prop.dimensionsMm,
@@ -179,8 +251,37 @@ describe("Shelf Swing canonical registered subject signature", () => {
             expect(actualWorldBounds.max.y * 1000).toBeLessThanOrEqual(plannedWorldBounds.max.y + 1e-4);
             expect(actualWorldBounds.min.z * 1000).toBeGreaterThanOrEqual(plannedWorldBounds.min.z - 1e-4);
             expect(actualWorldBounds.max.z * 1000).toBeLessThanOrEqual(plannedWorldBounds.max.z + 1e-4);
+            expect(Number.isFinite(actualWorldBounds.min.y)).toBe(true);
+            expect(actualWorldBounds.min.y).toBeGreaterThanOrEqual(
+              shelfBounds.max.y - supportToleranceWorld,
+            );
+            expect(actualWorldBounds.min.y).toBeLessThanOrEqual(
+              shelfBounds.max.y + supportToleranceWorld,
+            );
+
+            const originalRotationY = mesh.rotation.y;
+            mesh.rotation.y += Math.PI / 4;
+            group.updateMatrixWorld(true);
+            const rotatedWorldBounds = new THREE.Box3().setFromObject(mesh);
+            expect(Math.abs(rotatedWorldBounds.min.y - actualWorldBounds.min.y))
+              .toBeLessThanOrEqual(1e-9);
+            mesh.rotation.y = originalRotationY;
+            group.updateMatrixWorld(true);
           });
         });
+        if (seed === 284719) {
+          expect(plan.stations[0]?.props.some((prop) => prop.family === "faceted")).toBe(true);
+        }
+        if (seed === 1) {
+          const families = new Set(plan.stations.flatMap((station) =>
+            station.props.map((prop) => prop.family),
+          ));
+          expect([...families]).toEqual(expect.arrayContaining([
+            "bowl",
+            "necked-vessel",
+            "faceted",
+          ]));
+        }
       } finally {
         disposeShelfSwingGroup(group);
       }

@@ -207,6 +207,11 @@ const createVariationPropGeometry = (prop: ShelfSwingPropVariation): THREE.Buffe
   if (prop.family === "faceted") {
     const geometry = new THREE.DodecahedronGeometry(0.5, 0);
     geometry.scale(toWorld(width), toWorld(height), toWorld(depth));
+    geometry.computeBoundingBox();
+    const targetMinY = -toWorld(height / 2);
+    const currentMinY = geometry.boundingBox!.min.y;
+    geometry.translate(0, targetMinY - currentMinY, 0);
+    geometry.computeBoundingBox();
     return geometry;
   }
 
