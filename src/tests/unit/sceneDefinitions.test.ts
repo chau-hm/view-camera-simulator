@@ -19,6 +19,7 @@ import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
 import { obliqueTabletopScene } from "../../scenes/definitions/oblique-tabletop";
 import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
+import { stillLifeStudioScene } from "../../scenes/definitions/still-life-studio";
 import shelfSwingGeometry from "../../scenes/shelfSwingGeometry";
 import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
 import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
@@ -44,11 +45,35 @@ describe("scene definitions", () => {
   });
 
   it("keeps canonical shift and rear swing dormant outside Lesson 0", () => {
-    for (const scene of getAllScenes().filter((candidate) => candidate.id !== viewCameraAnatomyScene.id)) {
+    for (const scene of getAllScenes().filter((candidate) =>
+      ![viewCameraAnatomyScene.id, stillLifeStudioScene.id].includes(candidate.id),
+    )) {
       expect(scene.movementCapabilities?.available ?? []).not.toContain("frontShiftMm");
       expect(scene.movementCapabilities?.available ?? []).not.toContain("rearShiftMm");
       expect(scene.movementCapabilities?.available ?? []).not.toContain("rearSwingDeg");
     }
+  });
+
+  it("defines Still-Life Studio as seeded Free Practice with front and rear movements", () => {
+    expect(stillLifeStudioScene.sceneVariation).toEqual({ enabled: true, schemaVersion: 1 });
+    expect(stillLifeStudioScene.movementCapabilities?.available).toEqual([
+      "frontRiseMm",
+      "frontShiftMm",
+      "frontTiltDeg",
+      "frontSwingDeg",
+      "rearRiseMm",
+      "rearShiftMm",
+      "rearTiltDeg",
+      "rearSwingDeg",
+    ]);
+    expect(stillLifeStudioScene.movementCapabilities?.selectionMode).toBe("single");
+    expect(stillLifeStudioScene.focusTargets.map(({ id }) => id)).toEqual([
+      "still-life-near",
+      "still-life-middle",
+      "still-life-far",
+    ]);
+    expect(stillLifeStudioScene.cameraPreset.focusDistanceMm).toBe(4100);
+    expect(stillLifeStudioScene.cameraPreset.aperture).toBe(11);
   });
 
   it("exposes only the front movement controls needed by Lesson 0", () => {

@@ -3,7 +3,7 @@ import type { SimulatorMode } from "../types/camera";
 import { getSceneById } from "../scenes/definitions";
 import {
   isScenePublished,
-  scenePublication,
+  resolveScenePublication,
   type ScenePublicationConfig,
 } from "../config/scenePublication";
 import {
@@ -19,6 +19,7 @@ import { INTERIOR_CORNER_GUIDED_TASK_IDS } from "../scenes/interiorCornerGuidedL
 
 export type PublicSceneGroupId =
   | "foundations"
+  | "free-practice"
   | "core-movements"
   | "combined-movements"
   | "macro-photography";
@@ -34,6 +35,11 @@ export const publicSceneGroups = [
     id: "foundations",
     titleKey: publicSceneGroupMessageKeys.foundations.title,
     descriptionKey: publicSceneGroupMessageKeys.foundations.description,
+  },
+  {
+    id: "free-practice",
+    titleKey: publicSceneGroupMessageKeys.freePractice.title,
+    descriptionKey: publicSceneGroupMessageKeys.freePractice.description,
   },
   {
     id: "core-movements",
@@ -56,6 +62,7 @@ export const publicSceneIds = [
   "view-camera-anatomy",
   "understanding-camera-movements",
   "focus-fundamentals-two-targets",
+  "still-life-studio",
   "architecture-rise",
   "table-tilt",
   "shelf-swing",
@@ -160,6 +167,20 @@ export const publicSceneCatalog: readonly PublicSceneEntry[] = [
     availability: "available",
     availableModes: ["free"],
     thumbnailAsset: "assets/two-targets-illustration.webp",
+  },
+  {
+    id: "still-life-studio",
+    groupId: "free-practice",
+    titleKey: publicSceneMessageKeys.stillLifeStudio.title,
+    descriptionKey: publicSceneMessageKeys.stillLifeStudio.description,
+    topicKeys: [
+      publicSceneMessageKeys.stillLifeStudio.topics.composition,
+      publicSceneMessageKeys.stillLifeStudio.topics.focus,
+      publicSceneMessageKeys.stillLifeStudio.topics.depthOfField,
+    ],
+    availability: "available",
+    availableModes: ["free"],
+    thumbnailAsset: "assets/still-life-studio.webp",
   },
   {
     id: "architecture-rise",
@@ -392,21 +413,21 @@ export type ImplementedPublicSceneEntry = {
 
 export const getPublicSceneEntryById = (
   sceneId: string,
-  publication: ScenePublicationConfig = scenePublication,
+  publication: ScenePublicationConfig = resolveScenePublication(),
 ): PublicSceneEntry | undefined =>
   publicSceneCatalog.find(
     (entry) => entry.id === sceneId && isScenePublished(entry.id, publication),
   );
 
 export const getPublishedPublicSceneEntries = (
-  publication: ScenePublicationConfig = scenePublication,
+  publication: ScenePublicationConfig = resolveScenePublication(),
 ): PublishedPublicSceneEntry[] =>
   publicSceneCatalog
     .filter((entry) => isScenePublished(entry.id, publication))
     .map((meta) => ({ scene: getSceneById(meta.id), meta }));
 
 export const getPublicSceneEntries = (
-  publication: ScenePublicationConfig = scenePublication,
+  publication: ScenePublicationConfig = resolveScenePublication(),
 ): ImplementedPublicSceneEntry[] =>
   getPublishedPublicSceneEntries(publication).filter(
     (entry): entry is ImplementedPublicSceneEntry =>
@@ -414,11 +435,11 @@ export const getPublicSceneEntries = (
   );
 
 export const getAvailablePublicSceneEntries = (
-  publication: ScenePublicationConfig = scenePublication,
+  publication: ScenePublicationConfig = resolveScenePublication(),
 ) => getPublicSceneEntries(publication).filter(({ meta }) => meta.availability === "available");
 
 export const getGroupedPublicSceneEntries = (
-  publication: ScenePublicationConfig = scenePublication,
+  publication: ScenePublicationConfig = resolveScenePublication(),
 ): Array<{
   group: (typeof publicSceneGroups)[number];
   entries: PublishedPublicSceneEntry[];
@@ -432,5 +453,5 @@ export const getGroupedPublicSceneEntries = (
 };
 
 export const getPublicScenes = (
-  publication: ScenePublicationConfig = scenePublication,
+  publication: ScenePublicationConfig = resolveScenePublication(),
 ): SceneDefinition[] => getAvailablePublicSceneEntries(publication).map((entry) => entry.scene);

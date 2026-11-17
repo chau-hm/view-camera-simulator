@@ -17,6 +17,7 @@ import { validatePublicSceneCatalog } from "../../app/publicSceneCatalogValidati
 import { isValidSimulatorRoute } from "../../app/simulatorRouteValidation";
 import {
   isScenePublished,
+  resolveScenePublication,
   scenePublication,
   type ScenePublicationConfig,
 } from "../../config/scenePublication";
@@ -72,11 +73,39 @@ describe("public scene catalog integrity", () => {
     expect(Object.values(scenePublication).every((value) => typeof value === "boolean")).toBe(true);
   });
 
+  it("keeps Still-Life Studio hidden until visual qualification is complete", () => {
+    const entry = publicSceneCatalog.find(({ id }) => id === "still-life-studio")!;
+
+    expect(scenePublication["still-life-studio"]).toBe(false);
+    expect(entry).toMatchObject({
+      id: "still-life-studio",
+      groupId: "free-practice",
+      availability: "available",
+      availableModes: ["free"],
+      thumbnailAsset: "assets/still-life-studio.webp",
+    });
+    expect(entry.guidedTaskId).toBeUndefined();
+    expect(entry.guidedTaskIds).toBeUndefined();
+    expect(entry.guidedLesson).toBeUndefined();
+    expect(entry.lesson).toBeUndefined();
+    expect(getPublicSceneEntryById("still-life-studio")).toBeUndefined();
+    expect(isValidSimulatorRoute({ mode: "free", sceneId: entry.id, publicEntry: entry })).toBe(true);
+    expect(isValidSimulatorRoute({
+      mode: "guided",
+      sceneId: entry.id,
+      taskId: "future-task",
+      publicEntry: entry,
+    })).toBe(false);
+    expect(resolveScenePublication("production")["still-life-studio"]).toBe(false);
+    expect(resolveScenePublication("still-life-studio-qualification")["still-life-studio"]).toBe(true);
+  });
+
   it("declares each scene in one registered group with deterministic group order", () => {
     const groupIds = publicSceneGroups.map(({ id }) => id);
 
     expect(groupIds).toEqual([
       "foundations",
+      "free-practice",
       "core-movements",
       "combined-movements",
       "macro-photography",
@@ -87,6 +116,7 @@ describe("public scene catalog integrity", () => {
       ["view-camera-anatomy", "foundations"],
       ["understanding-camera-movements", "foundations"],
       ["focus-fundamentals-two-targets", "foundations"],
+      ["still-life-studio", "free-practice"],
       ["architecture-rise", "core-movements"],
       ["table-tilt", "core-movements"],
       ["shelf-swing", "core-movements"],
@@ -264,6 +294,7 @@ describe("public scene catalog integrity", () => {
     const coreDisabledGroups = getGroupedPublicSceneEntries(coreMovementsDisabled);
     expect(coreDisabledGroups.map(({ group }) => group.id)).toEqual([
       "foundations",
+      "free-practice",
       "combined-movements",
       "macro-photography",
     ]);
