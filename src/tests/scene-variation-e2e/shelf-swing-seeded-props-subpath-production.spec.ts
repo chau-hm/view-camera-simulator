@@ -19,14 +19,14 @@ const waitForFrame = async (rtt: Locator, previousRequestId?: string | null): Pr
   return (await rtt.getAttribute("data-frame-request-id")) ?? "";
 };
 
-const waitForSeeded = async (page: Page, seed: number) => {
+const waitForSeeded = async (page: Page, seed: number, schemaVersion = 1) => {
   const scene = page.getByTestId("scene-canvas");
   const rtt = page.getByTestId("ground-glass-rtt");
   const controls = page.getByTestId("scene-variation-controls");
   await expect(new URL(page.url()).pathname).toBe(SCENE_PATH);
   await expect(controls).toHaveAttribute("data-active-seed", String(seed));
-  await expect(controls).toHaveAttribute("data-active-schema", "1");
-  await expect(controls).toContainText(`Seed ${seed} · schema v1`);
+  await expect(controls).toHaveAttribute("data-active-schema", String(schemaVersion));
+  await expect(controls).toContainText(`Seed ${seed} · schema v${schemaVersion}`);
   await expect(scene).toHaveAttribute("data-scene-subject-id", "shelf-swing");
   await expect(scene).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 90_000 });
   await expect(scene).toHaveAttribute("data-observer-renderer-family", "webgl-renderer");
@@ -79,7 +79,7 @@ const clearObserverOverlays = async (page: Page, scene: Locator): Promise<void> 
   }
 };
 
-const copyAndCheck = async (page: Page, seed: number): Promise<string> => {
+const copyAndCheck = async (page: Page, seed: number, schemaVersion = 1): Promise<string> => {
   const controls = page.getByTestId("scene-variation-controls");
   await page.getByRole("button", { name: "Copy share URL" }).click();
   await expect(controls.getByRole("status")).toContainText("Share URL copied");
@@ -91,7 +91,7 @@ const copyAndCheck = async (page: Page, seed: number): Promise<string> => {
   expect(copied.pathname).toBe(SCENE_PATH);
   expect(copied.pathname.split(DEPLOYMENT_BASE).length - 1).toBe(1);
   expect(copied.searchParams.getAll("seed")).toEqual([String(seed)]);
-  expect(copied.searchParams.getAll("sv")).toEqual(["1"]);
+  expect(copied.searchParams.getAll("sv")).toEqual([String(schemaVersion)]);
   expect(copied.searchParams.getAll("keep")).toEqual(["one"]);
   expect(copied.hash).toBe("#pilot");
   return copiedUrl;
@@ -152,6 +152,90 @@ test("Shelf Swing v1 share URLs replay, regenerate, and restore history under su
       fixedUrl,
       copiedFixedUrl,
       sameSeedRouteReplay: true,
+      regeneratedSeed,
+      regeneratedUrl,
+      backRestoredSeed: FIXED_SEED,
+      forwardRestoredSeed: regeneratedSeed,
+      basenameOccurrences: 1,
+      pageErrors,
+      status: "passed",
+    }, null, 2)),
+    contentType: "application/json",
+  });
+});
+
+test("Shelf Swing schema v2 routes and regeneration preserve the subpath deployment base", async ({
+  page,
+}, testInfo) => {
+  test.setTimeout(480_000);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+
+  await page.goto(SCENE_PATH);
+  const implicitControls = page.getByTestId("scene-variation-controls");
+  await expect(implicitControls).toHaveAttribute("data-active-schema", "1");
+  const implicitSeed = Number(await implicitControls.getAttribute("data-active-seed"));
+  const implicit = await waitForSeeded(page, implicitSeed, 1);
+  expect(new URL(page.url()).searchParams.get("sv")).toBe("1");
+  expect(implicitSeed).toBeGreaterThanOrEqual(0);
+  expect(implicitSeed).toBeLessThanOrEqual(0xffff_ffff);
+  await clearObserverOverlays(page, implicit.scene);
+  await setCanonicalControls(page, implicit.rtt);
+  await expect(implicit.controls).toHaveAttribute("data-active-schema", "1");
+
+  const legacyRoute = `${SCENE_PATH}?seed=${FIXED_SEED}`;
+  await page.goto(legacyRoute);
+  const legacy = await waitForSeeded(page, FIXED_SEED, 1);
+  expect(new URL(page.url()).searchParams.get("sv")).toBe("1");
+  await clearObserverOverlays(page, legacy.scene);
+  await setCanonicalControls(page, legacy.rtt);
+
+  const fixedUrl = `${SCENE_PATH}?seed=${FIXED_SEED}&sv=2&keep=one#pilot`;
+  await page.goto(fixedUrl);
+  const first = await waitForSeeded(page, FIXED_SEED, 2);
+  await clearObserverOverlays(page, first.scene);
+  await setCanonicalControls(page, first.rtt);
+  const copiedFixedUrl = await copyAndCheck(page, FIXED_SEED, 2);
+  expect(copiedFixedUrl).toBe(page.url());
+
+  await page.goto(copiedFixedUrl);
+  const replay = await waitForSeeded(page, FIXED_SEED, 2);
+  await clearObserverOverlays(page, replay.scene);
+  await setCanonicalControls(page, replay.rtt);
+  await expect(replay.controls).toHaveAttribute("data-active-schema", "2");
+  expect(page.url()).toBe(copiedFixedUrl);
+
+  await page.getByRole("button", { name: "Regenerate scene" }).click();
+  await expect(replay.controls).not.toHaveAttribute("data-active-seed", String(FIXED_SEED), { timeout: 90_000 });
+  const regeneratedSeed = Number(await replay.controls.getAttribute("data-active-seed"));
+  expect(Number.isInteger(regeneratedSeed) && regeneratedSeed >= 0 && regeneratedSeed <= 0xffff_ffff).toBe(true);
+  const regeneratedUrl = await copyAndCheck(page, regeneratedSeed, 2);
+  expect(new URL(regeneratedUrl).searchParams.get("keep")).toBe("one");
+  expect(new URL(regeneratedUrl).hash).toBe("#pilot");
+  await waitForSeeded(page, regeneratedSeed, 2);
+
+  await page.goBack();
+  const restored = await waitForSeeded(page, FIXED_SEED, 2);
+  expect(await copyAndCheck(page, FIXED_SEED, 2)).toBe(copiedFixedUrl);
+  await expect(restored.controls).toHaveAttribute("data-active-schema", "2");
+
+  await page.goForward();
+  await waitForSeeded(page, regeneratedSeed, 2);
+  expect(page.url()).toBe(regeneratedUrl);
+  const path = new URL(page.url()).pathname;
+  expect(path).toBe(SCENE_PATH);
+  expect(path.split(DEPLOYMENT_BASE).length - 1).toBe(1);
+  expect(pageErrors).toEqual([]);
+
+  await testInfo.attach("shelf-swing-v2-subpath-replay.json", {
+    body: Buffer.from(JSON.stringify({
+      buildBaseUrl: DEPLOYMENT_BASE,
+      implicitSchemaVersion: 1,
+      legacySeedOnlySchemaVersion: 1,
+      fixedUrl,
+      copiedFixedUrl,
       regeneratedSeed,
       regeneratedUrl,
       backRestoredSeed: FIXED_SEED,
