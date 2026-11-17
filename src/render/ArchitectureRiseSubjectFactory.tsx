@@ -2,11 +2,27 @@ import * as THREE from "three";
 import type { ArchitectureRisePresentation } from "../scenes/presentation/architectureRise";
 import {
   ARCHITECTURE_RISE_PRESENTATION_LAYOUT,
-  getArchitectureRiseGlazingBoundsMm,
   type ArchitectureRiseEastWindow,
   type ArchitectureRiseFrontWindow,
   type ArchitectureRiseWindow,
 } from "../scenes/presentation/architectureRiseLayout";
+import type { ArchitectureRiseDetailStyle } from "./architecture-rise/ArchitectureRiseDetailConfig";
+import { createArchitectureRiseBrickMaterial } from "./architecture-rise/ArchitectureRiseBrickMaterial";
+import {
+  addArchitectureRiseCorniceBrackets,
+  addArchitectureRiseParapetPierCaps,
+  createArchitectureRiseCorniceBracketGeometry,
+} from "./architecture-rise/ArchitectureRiseCornice";
+import { addArchitectureRiseEntrance } from "./architecture-rise/ArchitectureRiseEntrance";
+import {
+  addArchitectureRiseCornerQuoins,
+  addArchitectureRiseStoneBaseJoints,
+  collectCanonicalFacadeQuietZones,
+  createWorldAlignedBrickBoxGeometry,
+  isInsideArchitectureRiseQuietZone,
+  type ArchitectureRiseMmBounds,
+} from "./architecture-rise/ArchitectureRiseMasonry";
+import { addArchitectureRiseWindowAssembly } from "./architecture-rise/ArchitectureRiseWindowDetails";
 import {
   disposeTeachingSubjectResources,
 } from "./TeachingMaterials";
@@ -17,7 +33,9 @@ type ArchitectureRiseResources = {
   box: THREE.BoxGeometry;
   ground: THREE.PlaneGeometry;
   facade: THREE.MeshStandardMaterial;
+  quietFacade: THREE.MeshStandardMaterial;
   base: THREE.MeshStandardMaterial;
+  stoneJoint: THREE.MeshStandardMaterial;
   door: THREE.MeshStandardMaterial;
   roof: THREE.MeshStandardMaterial;
   trim: THREE.MeshStandardMaterial;
@@ -31,7 +49,48 @@ type ArchitectureRiseResources = {
   focusDark: THREE.MeshBasicMaterial;
   focusLight: THREE.MeshBasicMaterial;
   focusCrosshair: THREE.MeshBasicMaterial;
+  corniceBracketGeometry: THREE.BufferGeometry;
   adaptedOutputMaterials: Set<THREE.Material>;
+};
+
+/** Stable, bounded controls for later Architecture Rise appearance experiments. */
+export const ARCHITECTURE_RISE_DETAIL_STYLE: ArchitectureRiseDetailStyle = {
+  masonry: {
+    brickLengthMm: 220,
+    brickHeightMm: 68,
+    mortarJointMm: 8,
+    tileBrickPitches: 8,
+    tileCourses: 8,
+    seed: 3472,
+    quietZoneMarginMm: 100,
+  },
+  base: {
+    heightAboveGroundMm: 420,
+    blockCourseHeightMm: 140,
+    blockWidthMm: 420,
+    jointWidthMm: 8,
+  },
+  window: {
+    outerSillProjectionMm: 44,
+    outerSillThicknessMm: 26,
+    outerLintelProjectionMm: 38,
+    outerLintelThicknessMm: 24,
+    sillBracketWidthMm: 44,
+    sillBracketHeightMm: 48,
+    sillBracketDepthMm: 84,
+    surroundReliefMm: 38,
+    keystoneWidthMm: 44,
+  },
+  cornice: {
+    bandHeightMm: 120,
+    projectionMm: 280,
+    bracketWidthMm: 76,
+    bracketHeightMm: 70,
+    bracketDepthMm: 124,
+    bracketSpacingMm: 210,
+    bracketCornerClearanceMm: 110,
+    parapetCourseHeightMm: 110,
+  },
 };
 
 const standard = (
@@ -43,16 +102,12 @@ const standard = (
 
 const createResources = (
   geometry: ArchitectureRisePresentation["geometry"],
+  style: ArchitectureRiseDetailStyle,
 ): ArchitectureRiseResources => ({
   box: new THREE.BoxGeometry(1, 1, 1),
   ground: new THREE.PlaneGeometry(toWorld(geometry.ground.width), toWorld(geometry.ground.depth)),
-  facade: createProceduralSurfaceMaterial({
-    color: "#9d513c",
-    pattern: "limestone",
-    repeat: [5, 12],
-    roughness: 0.9,
-    normalStrength: 0.18,
-  }),
+  facade: createArchitectureRiseBrickMaterial(style.masonry),
+  quietFacade: standard("#98553f", 0.94),
   base: createProceduralSurfaceMaterial({
     color: "#d6c8ae",
     pattern: "limestone",
@@ -60,6 +115,7 @@ const createResources = (
     roughness: 0.92,
     normalStrength: 0.2,
   }),
+  stoneJoint: standard("#9b8b75", 0.97),
   door: createProceduralSurfaceMaterial({
     color: "#50352b",
     pattern: "wood",
@@ -102,6 +158,7 @@ const createResources = (
     polygonOffsetFactor: 1,
     polygonOffsetUnits: 1,
   }),
+  corniceBracketGeometry: createArchitectureRiseCorniceBracketGeometry(style.cornice),
   adaptedOutputMaterials: new Set<THREE.Material>(),
 });
 
@@ -146,6 +203,8 @@ const addSegmentedWall = (
     horizontalAxis: "x" | "z";
     primaryMeshName?: string;
     baseStoneTopMm?: number;
+    quietZones?: readonly ArchitectureRiseMmBounds[];
+    brickStyle?: ArchitectureRiseDetailStyle["masonry"];
   },
 ): void => {
   const horizontalEdges = new Set([options.horizontalMinMm, options.horizontalMaxMm]);
@@ -153,6 +212,16 @@ const addSegmentedWall = (
     horizontalEdges.add(opening.centerHorizontalMm - opening.widthMm / 2);
     horizontalEdges.add(opening.centerHorizontalMm + opening.widthMm / 2);
   });
+  if (options.horizontalAxis === "x") {
+    options.quietZones?.forEach((zone) => {
+      if (zone.minXMm > options.horizontalMinMm && zone.minXMm < options.horizontalMaxMm) {
+        horizontalEdges.add(zone.minXMm);
+      }
+      if (zone.maxXMm > options.horizontalMinMm && zone.maxXMm < options.horizontalMaxMm) {
+        horizontalEdges.add(zone.maxXMm);
+      }
+    });
+  }
   const sortedHorizontalEdges = [...horizontalEdges].sort((a, b) => a - b);
   let sectionIndex = 0;
   for (let horizontalIndex = 0; horizontalIndex < sortedHorizontalEdges.length - 1; horizontalIndex += 1) {
@@ -164,6 +233,16 @@ const addSegmentedWall = (
       horizontalCenter < opening.centerHorizontalMm + opening.widthMm / 2,
     );
     const verticalEdges = new Set([options.verticalMinMm, options.verticalMaxMm]);
+    if (options.horizontalAxis === "x") {
+      options.quietZones?.forEach((zone) => {
+        if (zone.minYMm > options.verticalMinMm && zone.minYMm < options.verticalMaxMm) {
+          verticalEdges.add(zone.minYMm);
+        }
+        if (zone.maxYMm > options.verticalMinMm && zone.maxYMm < options.verticalMaxMm) {
+          verticalEdges.add(zone.maxYMm);
+        }
+      });
+    }
     if (
       options.baseStoneTopMm !== undefined &&
       options.baseStoneTopMm > options.verticalMinMm &&
@@ -196,15 +275,35 @@ const addSegmentedWall = (
       const size: [number, number, number] = options.horizontalAxis === "x"
         ? [horizontalSize, verticalSize, depth]
         : [depth, verticalSize, horizontalSize];
-      const mesh = addBox({
-        name: sectionIndex === 0 && options.primaryMeshName
-          ? options.primaryMeshName
-          : `${options.name}-segment-${sectionIndex + 1}`,
-        size,
-        position,
-        material: isBaseStone ? resources.base : resources.facade,
-        parent: root,
-      });
+      const meshName = sectionIndex === 0 && options.primaryMeshName
+        ? options.primaryMeshName
+        : `${options.name}-segment-${sectionIndex + 1}`;
+      const isQuiet = !isBaseStone && options.horizontalAxis === "x" && isInsideArchitectureRiseQuietZone(
+        horizontalCenter,
+        verticalCenter,
+        options.quietZones ?? [],
+      );
+      const isBrick = !isBaseStone && !isQuiet;
+      const material = isBaseStone ? resources.base : isQuiet ? resources.quietFacade : resources.facade;
+      let mesh: THREE.Mesh;
+      if (isBrick) {
+        if (!options.brickStyle) throw new Error("Brick facade segments require physical masonry style data");
+        const brickGeometry = createWorldAlignedBrickBoxGeometry(size, position, options.brickStyle, options.horizontalAxis);
+        mesh = new THREE.Mesh(brickGeometry, material);
+        mesh.name = meshName;
+        mesh.position.set(toWorld(position[0]), toWorld(position[1]), toWorld(position[2]));
+        root.add(mesh);
+      } else {
+        mesh = addBox({ name: meshName, size, position, material, parent: root });
+      }
+      mesh.userData.architectureRole = isBaseStone ? "stone-base" : isQuiet ? "protected-quiet-facade" : "brick-facade";
+      mesh.userData.worldMmBounds = {
+        minHorizontal: horizontalMin,
+        maxHorizontal: horizontalMax,
+        minVertical: verticalMin,
+        maxVertical: verticalMax,
+        axis: options.horizontalAxis,
+      };
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       sectionIndex += 1;
@@ -212,170 +311,23 @@ const addSegmentedWall = (
   }
 };
 
-const addFrontWindow = (
-  parent: THREE.Group,
-  resources: ArchitectureRiseResources,
-  front: number,
-  window: ArchitectureRiseFrontWindow,
-): void => {
-  const name = `architecture-rise-window-${window.id}`;
-  const z = front + window.glazingInsetMm;
-  const glassWidth = window.openingWidthMm - 36;
-  const glassHeight = window.openingHeightMm - 36;
-  const revealDepth = window.glazingInsetMm - window.glazingDepthMm / 2;
-
-  addBox({
-    name: `${name}-glazing`,
-    size: [glassWidth, glassHeight, window.glazingDepthMm],
-    position: [window.centerXMm, window.centerYMm, z],
-    material: resources.glass,
-    parent,
-  });
-  [-1, 1].forEach((sign) => {
-    addBox({
-      name: `${name}-reveal-jamb-${sign < 0 ? "left" : "right"}`,
-      size: [18, window.openingHeightMm, revealDepth],
-      position: [window.centerXMm + sign * (window.openingWidthMm / 2 - 9), window.centerYMm, front + revealDepth / 2],
-      material: resources.trim,
-      parent,
-    });
-  });
-  [-1, 1].forEach((sign) => {
-    addBox({
-      name: `${name}-reveal-head-${sign < 0 ? "lower" : "upper"}`,
-      size: [window.openingWidthMm - 36, 18, revealDepth],
-      position: [window.centerXMm, window.centerYMm + sign * (window.openingHeightMm / 2 - 9), front + revealDepth / 2],
-      material: resources.trim,
-      parent,
-    });
-  });
-
-  const frameZ = z - window.glazingDepthMm / 2 - 4;
-  const frameDepth = 18;
-  const stoneDepth = 56;
-  const stoneZ = front - stoneDepth / 2 + 12;
-  [-1, 1].forEach((sign) => {
-    addBox({
-      name: `${name}-stone-jamb-${sign < 0 ? "left" : "right"}`,
-      size: [window.trimWidthMm, window.openingHeightMm, stoneDepth],
-      position: [window.centerXMm + sign * (window.openingWidthMm / 2 + window.trimWidthMm / 2), window.centerYMm, stoneZ],
-      material: resources.trim,
-      parent,
-    });
-  });
-  [
-    { id: "lintel", sign: 1 },
-    { id: "sill", sign: -1 },
-  ].forEach(({ id, sign }) =>
-    addBox({
-      name: `${name}-stone-${id}`,
-      size: [window.openingWidthMm + 2 * window.trimWidthMm, window.trimWidthMm, stoneDepth],
-      position: [window.centerXMm, window.centerYMm + sign * (window.openingHeightMm / 2 + window.trimWidthMm / 2), stoneZ],
-      material: resources.trim,
-      parent,
-    }),
-  );
-  addBox({
-    name: `${name}-mullion`,
-    size: [window.mullionWidthMm, glassHeight, frameDepth],
-    position: [window.centerXMm, window.centerYMm, frameZ],
-    material: resources.trim,
-    parent,
-  });
-  addBox({
-    name: `${name}-transom`,
-    size: [glassWidth, window.transomHeightMm, frameDepth],
-    position: [window.centerXMm, window.centerYMm + glassHeight * 0.2, frameZ],
-    material: resources.trim,
-    parent,
-  });
-};
-
-const addEastWindow = (
-  parent: THREE.Group,
-  resources: ArchitectureRiseResources,
-  eastFace: number,
-  window: ArchitectureRiseEastWindow,
-): void => {
-  const name = `architecture-rise-window-${window.id}`;
-  const x = eastFace - window.glazingInsetMm;
-  const glassWidth = window.openingWidthMm - 36;
-  const glassHeight = window.openingHeightMm - 36;
-  const revealDepth = window.glazingInsetMm - window.glazingDepthMm / 2;
-  addBox({
-    name: `${name}-glazing`,
-    size: [window.glazingDepthMm, glassHeight, glassWidth],
-    position: [x, window.centerYMm, window.centerZMm],
-    material: resources.glass,
-    parent,
-  });
-  [-1, 1].forEach((sign) => {
-    addBox({
-      name: `${name}-reveal-jamb-${sign < 0 ? "near" : "far"}`,
-      size: [revealDepth, window.openingHeightMm, 18],
-      position: [eastFace - revealDepth / 2, window.centerYMm, window.centerZMm + sign * (window.openingWidthMm / 2 - 9)],
-      material: resources.trim,
-      parent,
-    });
-  });
-  [-1, 1].forEach((sign) =>
-    addBox({
-      name: `${name}-reveal-${sign < 0 ? "sill" : "head"}`,
-      size: [revealDepth, 18, glassWidth],
-      position: [eastFace - revealDepth / 2, window.centerYMm + sign * (window.openingHeightMm / 2 - 9), window.centerZMm],
-      material: resources.trim,
-      parent,
-    }),
-  );
-  const stoneDepth = 56;
-  const stoneX = eastFace + stoneDepth / 2 - 12;
-  [-1, 1].forEach((sign) =>
-    addBox({
-      name: `${name}-stone-jamb-${sign < 0 ? "near" : "far"}`,
-      size: [stoneDepth, window.openingHeightMm, window.trimWidthMm],
-      position: [stoneX, window.centerYMm, window.centerZMm + sign * (window.openingWidthMm / 2 + window.trimWidthMm / 2)],
-      material: resources.trim,
-      parent,
-    }),
-  );
-  [-1, 1].forEach((sign) =>
-    addBox({
-      name: `${name}-stone-${sign < 0 ? "sill" : "lintel"}`,
-      size: [stoneDepth, window.trimWidthMm, window.openingWidthMm + 2 * window.trimWidthMm],
-      position: [stoneX, window.centerYMm + sign * (window.openingHeightMm / 2 + window.trimWidthMm / 2), window.centerZMm],
-      material: resources.trim,
-      parent,
-    }),
-  );
-  const mullionDepthMm = 18;
-  const mullionEngagementMm = 4;
-  const glassExteriorXmm = x + window.glazingDepthMm / 2;
-  const mullionCenterXmm = glassExteriorXmm + mullionDepthMm / 2 - mullionEngagementMm;
-  addBox({
-    name: `${name}-mullion`,
-    size: [mullionDepthMm, glassHeight, window.mullionWidthMm],
-    position: [mullionCenterXmm, window.centerYMm, window.centerZMm],
-    material: resources.trim,
-    parent,
-  });
-};
-
 const addWindow = (
   root: THREE.Group,
   resources: ArchitectureRiseResources,
   geometry: ArchitectureRisePresentation["geometry"],
   window: ArchitectureRiseWindow,
+  style: ArchitectureRiseDetailStyle,
 ): void => {
-  const group = new THREE.Group();
-  group.name = `architecture-rise-window-${window.id}`;
+  const group = addArchitectureRiseWindowAssembly({
+    root,
+    window,
+    frontFacadeZMm: geometry.facade.frontFacadeZ,
+    eastFacadeXMm: ARCHITECTURE_RISE_PRESENTATION_LAYOUT.serviceReturn.maxXMm,
+    materials: { glass: resources.glass, trim: resources.trim },
+    style: style.window,
+    addBox,
+  });
   group.userData.resources = resources;
-  group.userData.glazingBoundsMm = getArchitectureRiseGlazingBoundsMm(window);
-  root.add(group);
-  if (window.elevation === "front") {
-    addFrontWindow(group, resources, geometry.facade.frontFacadeZ, window);
-  } else {
-    addEastWindow(group, resources, ARCHITECTURE_RISE_PRESENTATION_LAYOUT.serviceReturn.maxXMm, window);
-  }
 };
 
 const addFacadeFineDetail = (
@@ -439,12 +391,14 @@ const addArchitectureContext = (
   resources: ArchitectureRiseResources,
   geometry: ArchitectureRisePresentation["geometry"],
   layout: ArchitectureRisePresentation["layout"],
+  style: ArchitectureRiseDetailStyle,
 ): void => {
   const context = new THREE.Group();
   context.name = "architecture-rise-context-details";
   context.userData.resources = resources;
   root.add(context);
 
+  const front = geometry.facade.frontFacadeZ;
   const { serviceReturn } = layout;
   const eastWindows = layout.windows.filter((window): window is ArchitectureRiseEastWindow =>
     window.elevation === "east",
@@ -471,6 +425,7 @@ const addArchitectureContext = (
     openings: wingOpenings,
     horizontalAxis: "z",
     primaryMeshName: "architecture-rise-side-return",
+    brickStyle: style.masonry,
   });
   addBox({
     name: "architecture-rise-service-return-roof",
@@ -483,94 +438,17 @@ const addArchitectureContext = (
     material: resources.roof,
     parent: returnGroup,
   });
-  eastWindows.forEach((window) => addWindow(returnGroup, resources, geometry, window));
+  eastWindows.forEach((window) => addWindow(returnGroup, resources, geometry, window, style));
 
-  const entry = layout.door;
-  const entryGroup = new THREE.Group();
-  entryGroup.name = "architecture-rise-entry-assembly";
+  const entryGroup = addArchitectureRiseEntrance({
+    parent: context,
+    door: layout.door,
+    groundYmm: geometry.ground.y,
+    frontFacadeZmm: geometry.facade.frontFacadeZ,
+    materials: { door: resources.door, stone: resources.trim, base: resources.base },
+    addBox,
+  });
   entryGroup.userData.resources = resources;
-  context.add(entryGroup);
-  const front = geometry.facade.frontFacadeZ;
-  const doorWidth = entry.openingWidthMm - 40;
-  const doorHeight = entry.openingHeightMm - 40;
-  const doorZ = front + 84;
-  addBox({
-    name: "architecture-rise-entry-door-leaf",
-    size: [doorWidth, doorHeight, 36],
-    position: [entry.centerXMm, entry.centerYMm, doorZ],
-    material: resources.door,
-    parent: entryGroup,
-  });
-  [-1, 1].forEach((sign) =>
-    addBox({
-      name: `architecture-rise-entry-door-stile-${sign < 0 ? "left" : "right"}`,
-      size: [20, doorHeight - 24, 14],
-      position: [entry.centerXMm + sign * (doorWidth / 2 - 28), entry.centerYMm, doorZ - 22],
-      material: resources.trim,
-      parent: entryGroup,
-    }),
-  );
-  [-1, 1].forEach((sign) =>
-    addBox({
-      name: `architecture-rise-entry-door-panel-${sign < 0 ? "lower" : "upper"}`,
-      size: [doorWidth - 92, doorHeight * 0.32, 20],
-      position: [entry.centerXMm, entry.centerYMm + sign * doorHeight * 0.24, doorZ - 18],
-      material: resources.door,
-      parent: entryGroup,
-    }),
-  );
-  const surroundDepth = 78;
-  const surroundZ = front - surroundDepth / 2 + 10;
-  [-1, 1].forEach((sign) =>
-    addBox({
-      name: `architecture-rise-entry-stone-jamb-${sign < 0 ? "left" : "right"}`,
-      size: [72, entry.openingHeightMm, surroundDepth],
-      position: [entry.centerXMm + sign * (entry.openingWidthMm / 2 + 36), entry.centerYMm, surroundZ],
-      material: resources.trim,
-      parent: entryGroup,
-    }),
-  );
-  addBox({
-    name: "architecture-rise-entry-stone-lintel",
-    size: [entry.openingWidthMm + 144, 72, surroundDepth],
-    position: [entry.centerXMm, entry.centerYMm + entry.openingHeightMm / 2 + 36, surroundZ],
-    material: resources.trim,
-    parent: entryGroup,
-  });
-  addBox({
-    name: "architecture-rise-entry-stone-cap",
-    size: [entry.openingWidthMm + 200, 48, 136],
-    position: [entry.centerXMm, entry.centerYMm + entry.openingHeightMm / 2 + 96, front - 40],
-    material: resources.trim,
-    parent: entryGroup,
-  });
-  addBox({
-    name: "architecture-rise-entry-threshold",
-    size: [entry.openingWidthMm + 120, 34, 220],
-    position: [entry.centerXMm, geometry.ground.y + 17, front - 76],
-    material: resources.trim,
-    parent: entryGroup,
-  });
-  addBox({
-    name: "architecture-rise-entry-step",
-    size: [entry.openingWidthMm + 210, 82, 360],
-    position: [entry.centerXMm, geometry.ground.y + 41, front - 230],
-    material: resources.base,
-    parent: entryGroup,
-  });
-  [-1, 1].forEach((sign) =>
-    addBox({
-      name: `architecture-rise-entry-stone-jamb-plinth-${sign < 0 ? "left" : "right"}`,
-      size: [96, 168, 124],
-      position: [
-        entry.centerXMm + sign * (entry.openingWidthMm / 2 + 56),
-        geometry.ground.y + 166,
-        front - 62,
-      ],
-      material: resources.base,
-      parent: entryGroup,
-    }),
-  );
   addBox({
     name: "architecture-rise-building-plinth",
     size: [geometry.building.width + 120, 68, 220],
@@ -769,6 +647,7 @@ const addReferenceObjects = (
 
 export type ArchitectureRiseAssetRequest = Readonly<{
   presentation: ArchitectureRisePresentation;
+  detailStyle?: ArchitectureRiseDetailStyle;
 }>;
 
 export function createArchitectureRiseGroup(
@@ -777,14 +656,27 @@ export function createArchitectureRiseGroup(
   const { presentation } = request;
   const { geometry } = presentation;
   const { layout } = presentation;
-  const resources = createResources(geometry);
+  const style = request.detailStyle ?? ARCHITECTURE_RISE_DETAIL_STYLE;
+  const resources = createResources(geometry, style);
   const root = new THREE.Group();
   root.name = "architecture-rise-subject";
   root.userData.resources = resources;
   const front = geometry.facade.frontFacadeZ;
-  const baseStoneTopY = geometry.ground.y + 320;
   const frontWindows = layout.windows.filter((window): window is ArchitectureRiseFrontWindow =>
     window.elevation === "front",
+  );
+  const lowestWindowSillY = Math.min(...frontWindows.map((window) =>
+    window.centerYMm - window.openingHeightMm / 2,
+  ));
+  const baseStoneTopY = Math.min(
+    geometry.ground.y + style.base.heightAboveGroundMm,
+    lowestWindowSillY - style.window.outerSillThicknessMm - 8,
+  );
+  const facadeQuietZones = collectCanonicalFacadeQuietZones(
+    geometry.getArchitectureFocusChartCells,
+    geometry.getArchitectureFocusChartBars,
+    geometry.getArchitectureFacadeFineDetailPieces,
+    style.masonry.quietZoneMarginMm,
   );
   const mainOpenings: FacadeOpening[] = [
     ...frontWindows.map((window) => ({
@@ -818,6 +710,8 @@ export function createArchitectureRiseGroup(
     horizontalAxis: "x",
     primaryMeshName: "architecture-rise-primary-facade",
     baseStoneTopMm: baseStoneTopY,
+    quietZones: facadeQuietZones,
+    brickStyle: style.masonry,
   });
 
   const parapet = addBox({
@@ -836,7 +730,11 @@ export function createArchitectureRiseGroup(
   root.add(masonryDetail);
   const halfWidth = geometry.building.width / 2;
   const corniceY = geometry.facade.mainBodyTopY - 20;
-  const cornice = { width: geometry.building.width, height: 120, depth: 280 };
+  const cornice = {
+    width: geometry.building.width,
+    height: style.cornice.bandHeightMm,
+    depth: style.cornice.projectionMm,
+  };
   addBox({
     name: "architecture-rise-cornice-front",
     size: [cornice.width, cornice.height, cornice.depth],
@@ -901,7 +799,7 @@ export function createArchitectureRiseGroup(
   [-1, 1].forEach((sign) =>
     addBox({
       name: `architecture-rise-cornice-return-${sign < 0 ? "west" : "east"}`,
-      size: [cornice.depth, cornice.height, geometry.building.depth],
+      size: [cornice.depth, cornice.height, geometry.building.depth + 32],
       position: [sign * (halfWidth - cornice.depth / 2), corniceY, geometry.building.center.z],
       material: resources.trim,
       parent: masonryDetail,
@@ -913,6 +811,17 @@ export function createArchitectureRiseGroup(
     position: [0, corniceY, geometry.facade.backFacadeZ + 40],
     material: resources.trim,
     parent: masonryDetail,
+  });
+  addArchitectureRiseCorniceBrackets({
+    parent: masonryDetail,
+    frontFacadeZMm: front,
+    facadeWidthMm: geometry.building.width,
+    corniceCenterYMm: corniceY,
+    layout,
+    style,
+    material: resources.trim,
+    bracketGeometry: resources.corniceBracketGeometry,
+    corniceDepthMm: cornice.depth,
   });
 
   const parapetCenterY = geometry.facade.mainBodyTopY + geometry.building.topHeight / 2;
@@ -963,6 +872,15 @@ export function createArchitectureRiseGroup(
       parent: masonryDetail,
     }),
   );
+  addArchitectureRiseParapetPierCaps({
+    parent: masonryDetail,
+    addBox,
+    facadeWidthMm: geometry.building.width,
+    parapetTopYMm: geometry.facade.parapetTopY,
+    frontFacadeZMm: front,
+    material: resources.trim,
+    style: style.cornice,
+  });
 
   [-1, 1].forEach((sign) =>
     addBox({
@@ -973,6 +891,15 @@ export function createArchitectureRiseGroup(
       parent: masonryDetail,
     }),
   );
+  addArchitectureRiseCornerQuoins({
+    parent: masonryDetail,
+    addBox,
+    geometry,
+    facadeFrontZmm: front,
+    baseTopYmm: baseStoneTopY,
+    material: resources.trim,
+    style: style.base,
+  });
   const stringCourseY = baseStoneTopY;
   [-1, 1].forEach((sign) =>
     addBox({
@@ -990,11 +917,23 @@ export function createArchitectureRiseGroup(
     material: resources.trim,
     parent: masonryDetail,
   });
+  addArchitectureRiseStoneBaseJoints({
+    parent: masonryDetail,
+    addBox,
+    layout,
+    groundYmm: geometry.ground.y,
+    baseTopYmm: baseStoneTopY,
+    facadeFrontZmm: layout.mainFacade.frontZMm,
+    facadeBackZmm: layout.mainFacade.backZMm,
+    facadeWidthMm: geometry.building.width,
+    material: resources.stoneJoint,
+    style: style.base,
+  });
 
-  frontWindows.forEach((window) => addWindow(root, resources, geometry, window));
+  frontWindows.forEach((window) => addWindow(root, resources, geometry, window, style));
   addFocusChart(root, resources, geometry);
   addFacadeFineDetail(root, resources, geometry);
-  addArchitectureContext(root, resources, geometry, layout);
+  addArchitectureContext(root, resources, geometry, layout, style);
   addStreetContext(root, resources, geometry);
 
   const ground = new THREE.Mesh(resources.ground, resources.groundMaterial);

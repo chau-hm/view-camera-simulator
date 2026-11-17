@@ -298,12 +298,12 @@ describe("procedural surface materials", () => {
     expect(disposed).toEqual([true, true, true]);
   });
 
-  it("keeps Architecture Rise recipe ownership and mapped surface shape", () => {
+  it("keeps Architecture Rise stone and physically mapped brick roles distinct", () => {
     const group = createArchitectureRiseGroup({
       presentation: ARCHITECTURE_RISE_PRESENTATION,
     });
     const expectedSurfaces = [
-      { name: "architecture-rise-primary-facade", repeat: [5, 8], normalStrength: 0.24 },
+      { name: "architecture-rise-primary-facade", role: "stone-base", repeat: [5, 4], normalStrength: 0.2 },
       { name: "architecture-rise-roof-parapet", repeat: [1, 1], normalStrength: 0.18 },
       { name: "architecture-rise-roof-coping-front", repeat: [1, 1], normalStrength: 0.09 },
       { name: "architecture-rise-sidewalk-slab", repeat: [12, 10], normalStrength: 0.14 },
@@ -311,10 +311,11 @@ describe("procedural surface materials", () => {
 
     try {
       const recipeMaterials = new Set<THREE.MeshStandardMaterial>();
-      expectedSurfaces.forEach(({ name, repeat, normalStrength }) => {
+      expectedSurfaces.forEach(({ name, repeat, normalStrength, ...expected }) => {
         const mesh = group.getObjectByName(name);
         expect(mesh).toBeInstanceOf(THREE.Mesh);
         if (!(mesh instanceof THREE.Mesh)) return;
+        if ("role" in expected) expect(mesh.userData.architectureRole).toBe(expected.role);
         expect(mesh.material).toBeInstanceOf(THREE.MeshStandardMaterial);
         if (!(mesh.material instanceof THREE.MeshStandardMaterial)) return;
         recipeMaterials.add(mesh.material);
@@ -325,6 +326,28 @@ describe("procedural surface materials", () => {
         expect(mesh.material.map?.repeat.y).toBe(repeat[1]);
         expect(mesh.material.normalScale.x).toBe(normalStrength);
         expect(mesh.material.normalScale.y).toBe(normalStrength);
+      });
+
+      let brickFacade: THREE.Mesh | undefined;
+      group.traverse((object) => {
+        if (object instanceof THREE.Mesh && object.userData.architectureRole === "brick-facade") {
+          brickFacade ??= object;
+        }
+      });
+      expect(brickFacade, "a true brick wall segment should carry semantic role metadata").toBeInstanceOf(THREE.Mesh);
+      if (!(brickFacade instanceof THREE.Mesh) || !(brickFacade.material instanceof THREE.MeshStandardMaterial)) return;
+      expect(brickFacade.material.map).toBeInstanceOf(THREE.DataTexture);
+      expect(brickFacade.material.roughnessMap).toBeInstanceOf(THREE.DataTexture);
+      expect(brickFacade.material.normalMap).toBeInstanceOf(THREE.DataTexture);
+      expect(brickFacade.material.map?.repeat.toArray()).toEqual([1, 1]);
+      expect(brickFacade.material.normalScale.x).toBeCloseTo(0.11);
+      expect(brickFacade.material.normalScale.y).toBeCloseTo(0.11);
+      expect(brickFacade.material.userData.architectureRiseBrick).toMatchObject({
+        brickLengthMm: 220,
+        brickHeightMm: 68,
+        mortarJointMm: 8,
+        tileWidthMm: 1824,
+        tileHeightMm: 608,
       });
 
       expect(recipeMaterials.size).toBe(4);

@@ -215,7 +215,8 @@ describe("Architecture Rise mounted geometry visibility", () => {
       expect(structuralReturnBounds.max.x).toBeCloseTo(toWorld(ARCHITECTURE_RISE_PRESENTATION_LAYOUT.serviceReturn.maxXMm), 6);
       expect(Math.min(mainBounds.max.z, serviceBounds.max.z) - Math.max(mainBounds.min.z, serviceBounds.min.z))
         .toBeGreaterThan(0);
-      expect(serviceBounds.max.y).toBeLessThanOrEqual(toWorld(1800));
+      // Allow sub-micron world-unit rounding at the exact authored roof height.
+      expect(serviceBounds.max.y).toBeLessThanOrEqual(toWorld(1800) + 1e-6);
 
       const eastWindows = ARCHITECTURE_RISE_PRESENTATION_LAYOUT.windows.filter((window) => window.elevation === "east");
       const serviceWallMeshes = mountedMeshes(serviceReturn).filter((mesh) =>
