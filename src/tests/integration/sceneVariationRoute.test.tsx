@@ -95,7 +95,7 @@ afterEach(() => {
 });
 
 describe("scene variation React Router lifecycle", () => {
-  it("normalizes implicit Shelf Swing Free Practice to schema v1 once under StrictMode", async () => {
+  it("keeps implicit Shelf Swing Free Practice on current schema v1 once under StrictMode", async () => {
     const createSeed = vi.fn(() => 284719);
     renderRoute(
       ["/simulator/free/shelf-swing?keep=one"],
@@ -114,7 +114,7 @@ describe("scene variation React Router lifecycle", () => {
     expect(createSeed).toHaveBeenCalledTimes(1);
   });
 
-  it("replays Shelf Swing seed-only and explicit schema-v1 URLs and rejects schema v2", async () => {
+  it("replays historical v1 and explicit v2 Shelf Swing URLs", async () => {
     const createSeed = vi.fn(() => 91);
     const view = renderRoute(
       ["/simulator/free/shelf-swing?seed=284719"],
@@ -146,10 +146,10 @@ describe("scene variation React Router lifecycle", () => {
       false,
       shelfSwingScene,
     );
-    await waitFor(() => {
-      expect(readRouteState().identity).toBeNull();
-      expect(readRouteState().status).toBe("unsupported-schema");
-    });
+    await waitFor(() => expect(readRouteState()).toMatchObject({
+      identity: { sceneId: "shelf-swing", seed: 284719, schemaVersion: 2 },
+      status: "resolved",
+    }));
     expect(createSeed).not.toHaveBeenCalled();
   });
 
@@ -184,6 +184,43 @@ describe("scene variation React Router lifecycle", () => {
     });
     fireEvent.click(screen.getByRole("button", { name: "forward" }));
     await waitFor(() => expect(readRouteState().identity?.seed).toBe(55));
+  });
+
+  it("keeps schema v2 on regeneration and restores its identity through browser history", async () => {
+    const createSeed = vi.fn(() => 92);
+    useAppStore.getState().initializeSimulatorRoute({ mode: "free", sceneId: "shelf-swing" });
+    renderRoute(
+      ["/simulator/free/shelf-swing?keep=two&seed=284719&sv=2#observer"],
+      createSeed,
+      false,
+      shelfSwingScene,
+    );
+    await waitFor(() => expect(readRouteState().identity).toEqual({
+      sceneId: "shelf-swing",
+      seed: 284719,
+      schemaVersion: 2,
+    }));
+
+    fireEvent.click(screen.getByRole("button", { name: "regenerate" }));
+    await waitFor(() => expect(readRouteState()).toMatchObject({
+      search: "?keep=two&seed=92&sv=2",
+      hash: "#observer",
+      identity: { sceneId: "shelf-swing", seed: 92, schemaVersion: 2 },
+    }));
+    expect(createSeed).toHaveBeenCalledTimes(1);
+
+    fireEvent.click(screen.getByRole("button", { name: "back" }));
+    await waitFor(() => expect(readRouteState().identity).toEqual({
+      sceneId: "shelf-swing",
+      seed: 284719,
+      schemaVersion: 2,
+    }));
+    fireEvent.click(screen.getByRole("button", { name: "forward" }));
+    await waitFor(() => expect(readRouteState().identity).toEqual({
+      sceneId: "shelf-swing",
+      seed: 92,
+      schemaVersion: 2,
+    }));
   });
 
   it("normalizes one implicit seed under StrictMode and preserves other query parameters", async () => {

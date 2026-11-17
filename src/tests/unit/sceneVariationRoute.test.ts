@@ -15,7 +15,7 @@ const capability = {
 const missingSeed: ParsedSceneSeed = { kind: "missing" };
 
 describe("scene variation route policy", () => {
-  it("uses Shelf Swing schema v1 for explicit, legacy, and implicit Free Practice identities", () => {
+  it("preserves legacy Shelf Swing v1 and keeps current v1 as the implicit identity", () => {
     const explicit = resolveSceneVariantRoute({
       mode: "free",
       sceneId: "shelf-swing",
@@ -47,26 +47,62 @@ describe("scene variation route policy", () => {
       previousRouteKey: null,
       createSeed: () => 9,
     });
-    expect(explicit.identity).toEqual({ sceneId: "shelf-swing", seed: 284719, schemaVersion: 1 });
-    expect(legacy.identity).toEqual({ sceneId: "shelf-swing", seed: 284719, schemaVersion: 1 });
-    expect(implicit.identity).toEqual({ sceneId: "shelf-swing", seed: 9, schemaVersion: 1 });
-  });
-
-  it("fails closed on Shelf Swing schema v2 and preserves other URL state on regeneration", () => {
-    const unsupported = resolveSceneVariantRoute({
+    const explicitV2 = resolveSceneVariantRoute({
       mode: "free",
       sceneId: "shelf-swing",
       capability: shelfSwingScene.sceneVariation,
-      routeKey: "shelf-unsupported",
+      routeKey: "shelf-explicit-v2",
       seed: { kind: "valid", seed: 284719 },
       schema: { kind: "valid", schemaVersion: 2 },
       previousIdentity: null,
       previousRouteKey: null,
       createSeed: () => 5,
     });
+    const generatedV1 = resolveSceneVariantRoute({
+      mode: "free",
+      sceneId: "shelf-swing",
+      capability: shelfSwingScene.sceneVariation,
+      routeKey: "shelf-generated-v1",
+      seed: missingSeed,
+      schema: { kind: "valid", schemaVersion: 1 },
+      previousIdentity: null,
+      previousRouteKey: null,
+      createSeed: () => 17,
+    });
+    const generatedV2 = resolveSceneVariantRoute({
+      mode: "free",
+      sceneId: "shelf-swing",
+      capability: shelfSwingScene.sceneVariation,
+      routeKey: "shelf-generated-v2",
+      seed: missingSeed,
+      schema: { kind: "valid", schemaVersion: 2 },
+      previousIdentity: null,
+      previousRouteKey: null,
+      createSeed: () => 19,
+    });
+    expect(explicit.identity).toEqual({ sceneId: "shelf-swing", seed: 284719, schemaVersion: 1 });
+    expect(legacy.identity).toEqual({ sceneId: "shelf-swing", seed: 284719, schemaVersion: 1 });
+    expect(explicitV2.identity).toEqual({ sceneId: "shelf-swing", seed: 284719, schemaVersion: 2 });
+    expect(implicit.identity).toEqual({ sceneId: "shelf-swing", seed: 9, schemaVersion: 1 });
+    expect(generatedV1.identity).toEqual({ sceneId: "shelf-swing", seed: 17, schemaVersion: 1 });
+    expect(generatedV2.identity).toEqual({ sceneId: "shelf-swing", seed: 19, schemaVersion: 2 });
+  });
+
+  it("fails closed on unsupported Shelf Swing schemas and preserves the active version on regeneration", () => {
+    const unsupported = resolveSceneVariantRoute({
+      mode: "free",
+      sceneId: "shelf-swing",
+      capability: shelfSwingScene.sceneVariation,
+      routeKey: "shelf-unsupported",
+      seed: { kind: "valid", seed: 284719 },
+      schema: { kind: "unsupported", schemaVersion: 3 },
+      previousIdentity: null,
+      previousRouteKey: null,
+      createSeed: () => 5,
+    });
     expect(unsupported).toEqual({ status: "unsupported-schema", identity: null });
 
-    const location = createSceneVariantRegenerationLocation({
+    const locationV1 = createSceneVariantRegenerationLocation({
       mode: "free",
       scene: shelfSwingScene,
       activeSchemaVersion: 1,
@@ -77,9 +113,25 @@ describe("scene variation route policy", () => {
       },
       createSeed: () => 91,
     });
-    expect(location).toEqual({
+    const locationV2 = createSceneVariantRegenerationLocation({
+      mode: "free",
+      scene: shelfSwingScene,
+      activeSchemaVersion: 2,
+      location: {
+        pathname: "/simulator/free/shelf-swing",
+        search: "?keep=two&seed=284719&sv=2",
+        hash: "#observer",
+      },
+      createSeed: () => 92,
+    });
+    expect(locationV1).toEqual({
       pathname: "/simulator/free/shelf-swing",
       search: "?keep=two&seed=91&sv=1",
+      hash: "#observer",
+    });
+    expect(locationV2).toEqual({
+      pathname: "/simulator/free/shelf-swing",
+      search: "?keep=two&seed=92&sv=2",
       hash: "#observer",
     });
   });
