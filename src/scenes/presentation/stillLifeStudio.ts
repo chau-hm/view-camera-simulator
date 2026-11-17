@@ -10,4 +10,3 @@ export const STILL_LIFE_STUDIO_PRESENTATION: StillLifeStudioPresentation = {
   sceneId: "still-life-studio",
   geometry,
 };
-

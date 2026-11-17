@@ -58,4 +58,3 @@ export const stillLifeStudioScene: SceneDefinition = {
     defaultMovement: "frontTiltDeg",
   },
 };
-

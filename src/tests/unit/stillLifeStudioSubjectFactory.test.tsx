@@ -182,4 +182,3 @@ describe("Still-Life Studio registered subject", () => {
   });
 
 });
-

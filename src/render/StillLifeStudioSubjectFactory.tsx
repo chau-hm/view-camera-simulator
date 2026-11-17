@@ -426,4 +426,3 @@ export const createStillLifeStudioGroup = (
 export const disposeStillLifeStudioGroup = (group: THREE.Group): void => {
   disposeTeachingSubjectResources(group);
 };
-

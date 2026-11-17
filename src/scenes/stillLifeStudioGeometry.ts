@@ -90,4 +90,3 @@ export default {
   stillLifeStudioCameraPlacement,
   stillLifeStudioCompositionBounds,
 };
-

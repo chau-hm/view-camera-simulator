@@ -373,4 +373,3 @@ export const resolveStillLifeStudioPlan = (
   }
   return Object.freeze({ ...fallback, fallbackUsed: true, fallbackIssues: Object.freeze(issues) });
 };
-

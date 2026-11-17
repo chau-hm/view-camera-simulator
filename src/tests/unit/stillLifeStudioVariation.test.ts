@@ -125,4 +125,3 @@ describe("Still-Life Studio schema-v1 variation", () => {
     expect(resolveStillLifeStudioPlan()).toEqual(first);
   });
 });
-
