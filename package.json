@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:still-life-studio-qualification": "tsc -b && vite build --mode still-life-studio-qualification",
     "evidence:replay:m7e": "node ./scripts/run-m7e-offline-replay.mjs",
     "evidence:replay:m7f": "node ./scripts/run-m7f-presentation-evidence-replay.mjs",
     "evidence:replay:m7g": "node ./scripts/run-m7g-consolidation.mjs",
@@ -63,6 +64,7 @@
     "test": "node ./scripts/test.mjs",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:still-life-studio": "playwright test --config=playwright.still-life-studio.config.ts",
     "test:e2e:m7j-renderer": "playwright test --project=chromium-renderer-serial --no-deps --workers=1 --retries=0 --reporter=list,json",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc -b",

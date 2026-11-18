@@ -72,6 +72,7 @@ import {
   ARCHITECTURE_FOREGROUND_ASSET_KEY,
   ARCHITECTURE_RISE_ASSET_KEY,
   INTERIOR_CORNER_ASSET_KEY,
+  STILL_LIFE_STUDIO_ASSET_KEY,
   OBLIQUE_TABLETOP_ASSET_KEY,
   OBLIQUE_ARCHITECTURE_ASSET_KEY,
   TABLE_TILT_ASSET_KEY,
@@ -104,6 +105,7 @@ import { MACRO_COMPOUND_MOVEMENTS_PRESENTATION } from "../../scenes/presentation
 import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
+import { createSceneVariantIdentity, resolveSceneVariationDescriptor } from "../../scenes/sceneVariation";
 import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
 import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
 import { obliqueTabletopScene } from "../../scenes/definitions/oblique-tabletop";
@@ -128,6 +130,7 @@ const publicSceneAssetSlots = {
   "oblique-architecture": OBLIQUE_ARCHITECTURE_ASSET_KEY,
   "architecture-foreground": ARCHITECTURE_FOREGROUND_ASSET_KEY,
   "interior-corner": INTERIOR_CORNER_ASSET_KEY,
+  "still-life-studio": STILL_LIFE_STUDIO_ASSET_KEY,
   "macro-bellows-extension": MACRO_BELLOWS_EXTENSION_ASSET_KEY,
   "macro-depth-of-field": MACRO_DEPTH_OF_FIELD_ASSET_KEY,
   "macro-oblique-plane": MACRO_OBLIQUE_PLANE_ASSET_KEY,
@@ -233,6 +236,7 @@ describe("scene subject registry", () => {
     const hiddenSceneId: PublicSceneId = "macro-compound-movements";
     const isolatedPublication = {
       ...scenePublication,
+      "still-life-studio": true,
       [hiddenSceneId]: false,
     };
     const publishedIds = getPublishedPublicSceneEntries(isolatedPublication).map(
@@ -276,6 +280,7 @@ describe("scene subject registry", () => {
       "oblique-tabletop",
       "mirror-shift",
       "interior-corner",
+      "still-life-studio",
     ]);
     Object.keys(sceneSubjectRegistry).forEach((sceneId) => {
       expect(getSceneSubjectRegistration(sceneId)).toBeDefined();
@@ -358,6 +363,105 @@ describe("scene subject registry", () => {
     });
     disposeRegisteredRttSubject("shelf-swing", group!);
   });
+
+  it.each([1, 2])(
+    "routes Shelf Swing schema v%s to equivalent independent Observer and RTT resources",
+    (schemaVersion) => {
+    const descriptorA = resolveSceneVariationDescriptor(
+      shelfSwingScene,
+      createSceneVariantIdentity("shelf-swing", 284719, schemaVersion),
+    )!;
+    const descriptorB = resolveSceneVariationDescriptor(
+      shelfSwingScene,
+      createSceneVariantIdentity("shelf-swing", 4294967295, schemaVersion),
+    )!;
+    const factory = vi.spyOn(shelfSwingAsset, "createShelfSwingGroup");
+    const disposer = vi.spyOn(shelfSwingAsset, "disposeShelfSwingGroup");
+    const collectVariation = (group: THREE.Group) => {
+      const variation: Array<Record<string, unknown>> = [];
+      group.updateMatrixWorld(true);
+      group.traverse((object) => {
+        if (!(object instanceof THREE.Mesh) || !object.userData.variationPropId) return;
+        const material = Array.isArray(object.material) ? object.material[0]! : object.material;
+        object.geometry.computeBoundingBox();
+        const bounds = object.geometry.boundingBox;
+        const stationName = object.parent?.name;
+        const shelf = stationName
+          ? group.getObjectByName(`${stationName}-shelf-lower`)
+          : undefined;
+        expect(shelf).toBeInstanceOf(THREE.Mesh);
+        const shelfBounds = new THREE.Box3().setFromObject(shelf!);
+        const worldBounds = new THREE.Box3().setFromObject(object);
+        const supportDelta = worldBounds.min.y - shelfBounds.max.y;
+        expect(Number.isFinite(supportDelta)).toBe(true);
+        expect(Math.abs(supportDelta)).toBeLessThanOrEqual(1e-7);
+        variation.push({
+          id: object.userData.variationPropId,
+          family: object.userData.family,
+          position: object.position.toArray(),
+          worldPosition: object.getWorldPosition(new THREE.Vector3()).toArray(),
+          worldBounds: {
+            min: worldBounds.min.toArray(),
+            max: worldBounds.max.toArray(),
+          },
+          shelfTopY: shelfBounds.max.y,
+          supportDelta,
+          color: (material as THREE.MeshStandardMaterial).color.getHexString(),
+          dimensionsMm: object.userData.dimensionsMm,
+          geometry: {
+            type: object.geometry.type,
+            parameters: object.geometry.parameters,
+            min: bounds?.min.toArray(),
+            max: bounds?.max.toArray(),
+          },
+          roughness: (material as THREE.MeshStandardMaterial).roughness,
+          flatShading: (material as THREE.MeshStandardMaterial).flatShading,
+        });
+      });
+      return variation;
+    };
+
+    const view = render(<ShelfSwingSubject variationDescriptor={descriptorA} />);
+    const observerA = factory.mock.results[0]?.value as THREE.Group;
+    view.rerender(<ShelfSwingSubject variationDescriptor={descriptorA} />);
+    expect(factory).toHaveBeenCalledTimes(1);
+    const rttA = createRegisteredRttSubject("shelf-swing", {
+      variationDescriptor: descriptorA,
+    })!;
+    expect(factory).toHaveBeenCalledTimes(2);
+    expect(factory.mock.calls[0]?.[0].variationDescriptor?.identity)
+      .toEqual(factory.mock.calls[1]?.[0].variationDescriptor?.identity);
+    expect(collectVariation(observerA)).toEqual(collectVariation(rttA));
+
+    const observerMeshesA: THREE.Mesh[] = [];
+    const rttMeshesA: THREE.Mesh[] = [];
+    observerA.traverse((object) => {
+      if (object instanceof THREE.Mesh && object.userData.variationPropId) observerMeshesA.push(object);
+    });
+    rttA.traverse((object) => {
+      if (object instanceof THREE.Mesh && object.userData.variationPropId) rttMeshesA.push(object);
+    });
+    expect(observerMeshesA).toHaveLength(rttMeshesA.length);
+    observerMeshesA.forEach((mesh, index) => {
+      expect(mesh.geometry).not.toBe(rttMeshesA[index]?.geometry);
+      expect(mesh.material).not.toBe(rttMeshesA[index]?.material);
+    });
+
+    disposeRegisteredRttSubject("shelf-swing", rttA);
+    view.rerender(<ShelfSwingSubject variationDescriptor={descriptorB} />);
+    const observerB = factory.mock.results[2]?.value as THREE.Group;
+    const rttB = createRegisteredRttSubject("shelf-swing", {
+      variationDescriptor: descriptorB,
+    })!;
+    expect(collectVariation(observerB)).toEqual(collectVariation(rttB));
+    expect(collectVariation(observerB)).not.toEqual(collectVariation(observerA));
+    expect(disposer.mock.calls.some(([group]) => group === observerA)).toBe(true);
+    view.unmount();
+    disposeRegisteredRttSubject("shelf-swing", rttB);
+    expect(disposer.mock.calls.some(([group]) => group === observerB)).toBe(true);
+    expect(disposer.mock.calls.some(([group]) => group === rttB)).toBe(true);
+    },
+  );
 
   it("routes each migrated interactive subject and RTT through the same registered presentation factory", () => {
     const candidates = [
@@ -915,6 +1019,7 @@ describe("scene subject registry", () => {
     "interior-corner",
     "macro-depth-of-field",
     "macro-oblique-plane",
+    "still-life-studio",
   ] as const)(
     "%s uses one presentation placement and recipe on Observer and Ground Glass",
     (sceneId) => {

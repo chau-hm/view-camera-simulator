@@ -9,6 +9,7 @@ import geometry from "../../scenes/shelfSwingGeometry";
 import { mirrorShiftScene } from "../../scenes/definitions/mirror-shift";
 import { viewCameraAnatomyScene } from "../../scenes/definitions/view-camera-anatomy";
 import { lessonZeroGroundGlassSubjectBoundsMm } from "../../scenes/lessonZeroGroundGlassSubject";
+import { stillLifeStudioScene } from "../../scenes/definitions/still-life-studio";
 
 describe("Ground Glass RTT scene registration", () => {
   it("includes Lesson 0 in the centralized RTT scene set", () => {
@@ -72,6 +73,13 @@ describe("Ground Glass RTT scene registration", () => {
   it("includes Macro Scene 4 in the centralized RTT scene set", () => {
     expect(RTT_SCENES).toContain("macro-compound-movements");
     expect(isGroundGlassRttScene("macro-compound-movements")).toBe(true);
+  });
+
+  it("includes Still-Life Studio with clipping sized for its canonical studio bounds", () => {
+    expect(RTT_SCENES).toContain("still-life-studio");
+    expect(isGroundGlassRttScene("still-life-studio")).toBe(true);
+    const clip = getGroundGlassClipRangeWorld(stillLifeStudioScene, { x: 0, y: 0, z: 0 });
+    expect(clip.far).toBeGreaterThan(stillLifeStudioScene.bounds.max.z * 0.001);
   });
 
   it("derives enough far clipping range for the back station and samples", () => {
