@@ -43,6 +43,56 @@ const requiredMesh = (root: THREE.Object3D, name: string): THREE.Mesh => {
 
 const bounds = (mesh: THREE.Object3D): THREE.Box3 => new THREE.Box3().setFromObject(mesh);
 
+type BrickTextureStyle = typeof ARCHITECTURE_RISE_DETAIL_STYLE.masonry;
+type BrickTextureEdgeSample = Readonly<{
+  row: number;
+  rawColumn: number;
+  periodicBrickIdentity: number | null;
+  isBrick: boolean;
+  albedo: readonly number[];
+  roughness: number;
+}>;
+
+const positiveMod = (value: number, modulus: number): number => ((value % modulus) + modulus) % modulus;
+
+const sampleBrickTextureEdge = (
+  textures: ReturnType<typeof createArchitectureRiseBrickTextures>,
+  style: BrickTextureStyle,
+  row: number,
+  edge: "left" | "right",
+): BrickTextureEdgeSample => {
+  const width = textures.map.image.width;
+  const height = textures.map.image.height;
+  const x = edge === "left" ? 2 : width - 3;
+  const coursePitchMm = style.brickHeightMm + style.mortarJointMm;
+  const y = Math.floor(
+    ((row * coursePitchMm + style.brickHeightMm / 2) / textures.tileHeightMm) * height,
+  );
+  const texelCenterXMm = ((x + 0.5) / width) * textures.tileWidthMm;
+  const texelCenterYMm = ((y + 0.5) / height) * textures.tileHeightMm;
+  const sampledRow = Math.floor(texelCenterYMm / coursePitchMm);
+  const staggerMm = sampledRow % 2 === 0 ? 0 : (style.brickLengthMm + style.mortarJointMm) / 2;
+  const brickPitchMm = style.brickLengthMm + style.mortarJointMm;
+  const localBrickXMm = positiveMod(texelCenterXMm - staggerMm, brickPitchMm);
+  const courseYMm = positiveMod(texelCenterYMm, coursePitchMm);
+  const isBrick = courseYMm < style.brickHeightMm && localBrickXMm < style.brickLengthMm;
+  const rawColumn = Math.floor((texelCenterXMm - staggerMm) / brickPitchMm);
+  const periodicBrickIdentity = isBrick
+    ? sampledRow * style.tileBrickPitches + positiveMod(rawColumn, style.tileBrickPitches)
+    : null;
+  const offset = (y * width + x) * 4;
+  const albedoData = textures.map.image.data as Uint8Array;
+  const roughnessData = textures.roughnessMap.image.data as Uint8Array;
+  return {
+    row: sampledRow,
+    rawColumn,
+    periodicBrickIdentity,
+    isBrick,
+    albedo: Array.from(albedoData.slice(offset, offset + 3)),
+    roughness: roughnessData[offset]!,
+  };
+};
+
 const frontFaceUvAt = (
   brickGeometry: THREE.BufferGeometry,
   centerMm: readonly [number, number, number],
@@ -99,8 +149,18 @@ describe("Architecture Rise procedural detail system", () => {
       expect(first.map.image.width / first.map.image.height).toBeCloseTo(first.tileWidthMm / first.tileHeightMm, 5);
       expect(first.map.colorSpace).toBe(THREE.SRGBColorSpace);
       expect(first.roughnessMap.colorSpace).toBe(THREE.NoColorSpace);
-      expect(first.map.wrapS).toBe(THREE.RepeatWrapping);
-      expect(first.map.wrapT).toBe(THREE.RepeatWrapping);
+      [first.map, first.roughnessMap, first.normalMap].forEach((texture) => {
+        expect(texture.wrapS).toBe(THREE.RepeatWrapping);
+        expect(texture.wrapT).toBe(THREE.RepeatWrapping);
+        expect(texture.image.width).toBe(first.map.image.width);
+        expect(texture.image.height).toBe(first.map.image.height);
+        expect((texture.image.data as Uint8Array).length).toBe(
+          texture.image.width * texture.image.height * 4,
+        );
+      });
+      expect(first.normalMap.colorSpace).toBe(THREE.NoColorSpace);
+      expect(first.map.image.width).toBeGreaterThan(0);
+      expect(first.map.image.height).toBeGreaterThan(0);
       expect(Array.from(first.map.image.data as Uint8Array)).toEqual(Array.from(second.map.image.data as Uint8Array));
       expect(Array.from(first.roughnessMap.image.data as Uint8Array)).toEqual(Array.from(second.roughnessMap.image.data as Uint8Array));
       expect(Array.from(first.normalMap.image.data as Uint8Array)).toEqual(Array.from(second.normalMap.image.data as Uint8Array));
@@ -117,6 +177,57 @@ describe("Architecture Rise procedural detail system", () => {
         roughnessMap.dispose();
         normalMap.dispose();
       });
+    }
+  });
+
+  it("keeps a staggered brick's albedo and roughness continuous across horizontal repeat seams", () => {
+    const defaultStyle = ARCHITECTURE_RISE_DETAIL_STYLE.masonry;
+    const styles: readonly [string, BrickTextureStyle][] = [
+      ["default", defaultStyle],
+      ["five-pitch tile", { ...defaultStyle, tileBrickPitches: 5 }],
+    ];
+    const staggeredCourse = 1;
+
+    styles.forEach(([configuration, style]) => {
+      const textures = createArchitectureRiseBrickTextures(style);
+      try {
+        const left = sampleBrickTextureEdge(textures, style, staggeredCourse, "left");
+        const right = sampleBrickTextureEdge(textures, style, staggeredCourse, "right");
+        expect(left.row, `${configuration} left sample course`).toBe(staggeredCourse);
+        expect(right.row, `${configuration} right sample course`).toBe(staggeredCourse);
+        expect(left.isBrick, `${configuration} left sample must be inside a brick`).toBe(true);
+        expect(right.isBrick, `${configuration} right sample must be inside a brick`).toBe(true);
+        expect(left.periodicBrickIdentity, `${configuration} periodic brick identity`).toBe(
+          right.periodicBrickIdentity,
+        );
+        expect(right.albedo, `${configuration} repeat-edge albedo: ${JSON.stringify({ left, right })}`).toEqual(
+          left.albedo,
+        );
+        expect(right.roughness, `${configuration} repeat-edge roughness: ${JSON.stringify({ left, right })}`).toBe(
+          left.roughness,
+        );
+      } finally {
+        textures.map.dispose();
+        textures.roughnessMap.dispose();
+        textures.normalMap.dispose();
+      }
+    });
+  });
+
+  it("keeps the non-staggered course's natural brick-to-mortar tile boundary", () => {
+    const style = ARCHITECTURE_RISE_DETAIL_STYLE.masonry;
+    const textures = createArchitectureRiseBrickTextures(style);
+    try {
+      const left = sampleBrickTextureEdge(textures, style, 0, "left");
+      const right = sampleBrickTextureEdge(textures, style, 0, "right");
+      expect(left.isBrick).toBe(true);
+      expect(left.periodicBrickIdentity).toBe(0);
+      expect(right.isBrick).toBe(false);
+      expect(right.periodicBrickIdentity).toBeNull();
+    } finally {
+      textures.map.dispose();
+      textures.roughnessMap.dispose();
+      textures.normalMap.dispose();
     }
   });
 

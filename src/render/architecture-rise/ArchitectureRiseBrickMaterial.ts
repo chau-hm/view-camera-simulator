@@ -79,7 +79,8 @@ export function createArchitectureRiseBrickTextures(
         continue;
       }
 
-      const value = hash(style.seed, row, column);
+      const wrappedColumn = positiveMod(column, style.tileBrickPitches);
+      const value = hash(style.seed, row, wrappedColumn);
       const palette = BRICK_PALETTE[value % BRICK_PALETTE.length]!;
       const shade = 0.9 + ((value >>> 8) % 23) / 100;
       const mottling = ((value >>> 16) % 15) - 7;
@@ -94,7 +95,7 @@ export function createArchitectureRiseBrickTextures(
       roughnessBytes[offset + 1] = roughness;
       roughnessBytes[offset + 2] = roughness;
       roughnessBytes[offset + 3] = 255;
-      brickPixels[pixelIndex] = row * style.tileBrickPitches + positiveMod(column, style.tileBrickPitches);
+      brickPixels[pixelIndex] = row * style.tileBrickPitches + wrappedColumn;
       heights[pixelIndex] = 1;
     }
   }
