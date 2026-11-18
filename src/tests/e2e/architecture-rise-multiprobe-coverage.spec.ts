@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 type GeometryMetrics = {
   sampleCount: number;
@@ -228,7 +228,7 @@ declare global {
   }
 }
 
-test("Architecture Rise v2 diagnostic reports mounted pane samples before any baseline gate", async ({ page }) => {
+const verifyMultiProbeDiagnostic = async (page: Page): Promise<void> => {
   await page.goto("/src/tests/e2e/fixtures/architecture-rise-multiprobe-coverage.html?mode=diagnostic");
   const body = page.locator("body");
   await expect.poll(async () =>
@@ -236,6 +236,7 @@ test("Architecture Rise v2 diagnostic reports mounted pane samples before any ba
     (await body.getAttribute("data-proof-error")) !== null,
   { timeout: 60_000 }).toBe(true);
   expect(await body.getAttribute("data-proof-error")).toBeNull();
+  expect(await body.getAttribute("data-proof-ready")).toBe("true");
 
   const proof = await page.evaluate(() => {
     const result = window.__architectureRiseMultiProbeCoverage?.proof as DiagnosticProof | undefined;
@@ -292,9 +293,9 @@ test("Architecture Rise v2 diagnostic reports mounted pane samples before any ba
     falsePositiveCount: 0, falseNegativeCount: 17, p95QErrorM: 5.755903167780692,
     p95AngularErrorDeg: 11.534030040784835,
   });
-});
+};
 
-test("Architecture Rise multi-Probe baseline identity negative control fails closed", async ({ page }) => {
+const verifyInvalidBaselineIdentity = async (page: Page): Promise<void> => {
   await page.goto(
     "/src/tests/e2e/fixtures/architecture-rise-multiprobe-coverage.html?expectedBaselineIdentity=architecture-rise-v1-legacy-layout",
   );
@@ -302,10 +303,11 @@ test("Architecture Rise multi-Probe baseline identity negative control fails clo
   await expect.poll(async () => (await body.getAttribute("data-proof-error")) !== null, { timeout: 60_000 }).toBe(true);
   expect(await body.getAttribute("data-proof-error")).toContain("geometry baseline identity mismatch");
   expect(await body.getAttribute("data-proof-error")).toContain("architecture-rise-v1-legacy-layout");
-});
+  expect(await body.getAttribute("data-proof-ready")).toBe("false");
+  expect(await page.evaluate(() => window.__architectureRiseMultiProbeCoverage?.proof)).toBeUndefined();
+};
 
-test("Architecture Rise bounded multi-Probe CPU study protects the placement and holdout conclusion", async ({ page }) => {
-  test.setTimeout(300_000);
+const runFullMultiProbeStudy = async (page: Page): Promise<void> => {
   const pageErrors: string[] = [];
   const consoleErrors: string[] = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
@@ -635,4 +637,38 @@ test("Architecture Rise bounded multi-Probe CPU study protects the placement and
     .toBe("MULTI-PROBE COVERAGE IMPROVES BUT COMPLEXITY / VALIDITY IS NOT JUSTIFIED");
   expect(proof.decision.basis.join(" ")).toContain("holdout C same-object hits changed from");
   expect(proof.decision.basis.join(" ")).toContain("View B false negatives changed from 42 to 26");
+};
+
+const runMeasuredVerificationStage = async (
+  name: string,
+  run: () => Promise<void>,
+  failures: string[],
+): Promise<void> => {
+  const startedAt = Date.now();
+  let failure: string | undefined;
+  try {
+    await test.step(name, run);
+  } catch (error) {
+    failure = error instanceof Error ? error.message : String(error);
+    failures.push(`${name}: ${failure}`);
+  }
+  console.info("Architecture Rise Multi-Probe verification stage:", JSON.stringify({
+    name,
+    status: failure ? "failed" : "passed",
+    elapsedMs: Date.now() - startedAt,
+    ...(failure ? { failure } : {}),
+  }));
+};
+
+test("Architecture Rise bounded multi-Probe CPU study protects the placement and holdout conclusion", async ({ page }) => {
+  test.setTimeout(300_000);
+  const stageFailures: string[] = [];
+
+  // Each helper navigates to its own fixture URL, so the invalid-identity state cannot leak into the full study.
+  // A failed step is recorded and later stages still run; the final assertion makes every stage mandatory.
+  await runMeasuredVerificationStage("Stage 1 — geometry sampling diagnostic", () => verifyMultiProbeDiagnostic(page), stageFailures);
+  await runMeasuredVerificationStage("Stage 2 — invalid baseline identity negative control", () => verifyInvalidBaselineIdentity(page), stageFailures);
+  await runMeasuredVerificationStage("Stage 3 — full bounded CPU study", () => runFullMultiProbeStudy(page), stageFailures);
+
+  expect(stageFailures, `Every Multi-Probe verification stage must pass:\n${stageFailures.join("\n")}`).toEqual([]);
 });
