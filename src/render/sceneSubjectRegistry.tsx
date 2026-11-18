@@ -13,6 +13,7 @@ import {
   ArchitectureForegroundSubject,
   FocusFundamentalsSubject,
   InteriorCornerSubject,
+  StillLifeStudioSubject,
   ObliqueTabletopSubject,
   MirrorShiftSubject,
   MacroSpecimenSubject,
@@ -27,6 +28,7 @@ import {
   ARCHITECTURE_RISE_ASSET_KEY,
   ARCHITECTURE_FOREGROUND_ASSET_KEY,
   INTERIOR_CORNER_ASSET_KEY,
+  STILL_LIFE_STUDIO_ASSET_KEY,
   OBLIQUE_TABLETOP_ASSET_KEY,
   FOCUS_FUNDAMENTALS_ASSET_KEY,
   VIEW_CAMERA_ANATOMY_ASSET_KEY,
@@ -50,6 +52,10 @@ import { TABLE_TILT_PRESENTATION } from "../scenes/presentation/tableTilt";
 import { SHELF_SWING_PRESENTATION } from "../scenes/presentation/shelfSwing";
 import { ARCHITECTURE_FOREGROUND_PRESENTATION } from "../scenes/presentation/architectureForeground";
 import { INTERIOR_CORNER_PRESENTATION } from "../scenes/presentation/interiorCorner";
+import {
+  STILL_LIFE_STUDIO_PRESENTATION,
+  STILL_LIFE_STUDIO_PRESENTATION_LIGHTING,
+} from "../scenes/presentation/stillLifeStudio";
 import { OBLIQUE_TABLETOP_PRESENTATION } from "../scenes/presentation/obliqueTabletop";
 import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../scenes/presentation/focusFundamentals";
 import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../scenes/presentation/viewCameraAnatomy";
@@ -475,6 +481,18 @@ export const sceneSubjectRegistry = {
       targetMm: interiorCornerLightingTargetMm,
       keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
     },
+  },
+  "still-life-studio": {
+    SceneSubject: StillLifeStudioSubject,
+    createRttGroup: (options) =>
+      createRegisteredSceneAsset(STILL_LIFE_STUDIO_ASSET_KEY, {
+        presentation: STILL_LIFE_STUDIO_PRESENTATION,
+        variationDescriptor: options?.variationDescriptor,
+      }),
+    disposeRttGroup: (group) =>
+      disposeRegisteredSceneAsset(STILL_LIFE_STUDIO_ASSET_KEY, group),
+    rttBounds: STILL_LIFE_STUDIO_PRESENTATION.geometry.stillLifeStudioSceneBounds,
+    presentationLighting: STILL_LIFE_STUDIO_PRESENTATION_LIGHTING,
   },
 } as const satisfies Record<string, SceneSubjectRegistration>;
 

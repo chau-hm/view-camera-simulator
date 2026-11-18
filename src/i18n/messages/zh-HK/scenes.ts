@@ -24,6 +24,20 @@ export const scenesMessages = {
       title: "微距攝影",
       description: "探索微距距離下的近距離對焦、放大率、景深及相機移軸。",
     },
+    freePractice: {
+      title: "自由練習",
+      description: "在沒有指定任務的攝影場景中，自由探索構圖、對焦與相機移軸。",
+    },
+  },
+  stillLifeStudio: {
+    title: "靜物攝影工作室",
+    description:
+      "以不同擺設的花瓶、書本、淺碗和木製造型，練習構圖、選擇性對焦、景深及大片幅相機移軸。相同種子會重現相同擺設。",
+    topics: {
+      composition: "構圖",
+      focus: "對焦",
+      depthOfField: "景深",
+    },
   },
   macroBellowsExtension: {
     title: "1:1 平面主體",

@@ -19,6 +19,7 @@ import { macroBellowsExtensionScene } from "./macro-bellows-extension";
 import { macroDepthOfFieldScene } from "./macro-depth-of-field";
 import { macroObliquePlaneScene } from "./macro-oblique-plane";
 import { macroCompoundMovementsScene } from "./macro-compound-movements";
+import { stillLifeStudioScene } from "./still-life-studio";
 
 export const sceneRegistry: Record<string, SceneDefinition> = {
   [macroBellowsExtensionScene.id]: macroBellowsExtensionScene,
@@ -36,6 +37,7 @@ export const sceneRegistry: Record<string, SceneDefinition> = {
   [macroDepthOfFieldScene.id]: macroDepthOfFieldScene,
   [macroObliquePlaneScene.id]: macroObliquePlaneScene,
   [macroCompoundMovementsScene.id]: macroCompoundMovementsScene,
+  [stillLifeStudioScene.id]: stillLifeStudioScene,
 };
 
 export const sceneOrder = [
@@ -47,6 +49,7 @@ export const sceneOrder = [
   shelfSwingScene.id,
   obliqueTabletopScene.id,
   focusFundamentalsTwoTargets.id,
+  stillLifeStudioScene.id,
   mirrorShiftScene.id,
   obliqueArchitectureScene.id,
   interiorCornerScene.id,

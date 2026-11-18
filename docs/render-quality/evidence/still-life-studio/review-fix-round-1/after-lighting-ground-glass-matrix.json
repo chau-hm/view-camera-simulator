@@ -1,0 +1,891 @@
+{
+  "phase": "after-lighting",
+  "purpose": "Post-correction Ground Glass mode/framing qualification",
+  "capturedAt": "2026-11-18T02:02:03.113Z",
+  "runtime": "Chromium software WebGL2 preview; submit timings are not hardware GPU performance evidence",
+  "setup": {
+    "route": "http://127.0.0.1:4176/simulator/free/still-life-studio?rttDiagnostics=1&dofProfiling=1&seed=284719&sv=1",
+    "seed": 284719,
+    "schemaVersion": 1,
+    "focusDistanceMm": 4100,
+    "quality": "standard",
+    "groundGlassGridEnabled": false,
+    "focusLoupeActive": "false",
+    "viewport": {
+      "width": 1440,
+      "height": 1000,
+      "dpr": 1
+    },
+    "filmGeometry": {
+      "camera-lens-center-world": "0.000000,0.000000,0.000000",
+      "camera-film-center-world": "0.000000,0.000000,-155.696203",
+      "optical-axis-origin-world-mm": "0.000000,0.000000,0.000000",
+      "optical-axis-forward-world": "0.000000,0.000000,1.000000",
+      "film-plane-normal-world": "0.000000,0.000000,1.000000",
+      "film-plane-width-mm": "127",
+      "film-plane-height-mm": "101.6",
+      "film-plane-corners-world-mm": "{\"topLeft\":{\"x\":-63.5,\"y\":50.8,\"z\":-155.69620253164558},\"topRight\":{\"x\":63.5,\"y\":50.8,\"z\":-155.69620253164558},\"bottomRight\":{\"x\":63.5,\"y\":-50.8,\"z\":-155.69620253164558},\"bottomLeft\":{\"x\":-63.5,\"y\":-50.8,\"z\":-155.69620253164558}}"
+    },
+    "initialFrame": "gg-mwlh5xgn-dv19quo772n-default-request-3"
+  },
+  "sceneLightingIntent": {
+    "profileId": "teaching-default",
+    "placementSource": "scene-registration",
+    "targetMm": {
+      "x": 0,
+      "y": 130,
+      "z": 4100
+    },
+    "keyOffsetWorld": {
+      "x": -2,
+      "y": 3.5,
+      "z": -4.5
+    }
+  },
+  "projectedBounds": {
+    "raw": {
+      "opticalAxisDirectionWorld": "0.000000,0.000000,1.000000",
+      "filmPlane": {
+        "dimensionsMm": {
+          "width": 127,
+          "height": 101.6
+        },
+        "cornersWorldMm": {
+          "topLeft": {
+            "x": -63.5,
+            "y": 50.8,
+            "z": -155.69620253164558
+          },
+          "topRight": {
+            "x": 63.5,
+            "y": 50.8,
+            "z": -155.69620253164558
+          },
+          "bottomRight": {
+            "x": 63.5,
+            "y": -50.8,
+            "z": -155.69620253164558
+          },
+          "bottomLeft": {
+            "x": -63.5,
+            "y": -50.8,
+            "z": -155.69620253164558
+          }
+        }
+      },
+      "actualGroundGlassCamera": {
+        "positionWorld": "0,0,0",
+        "upWorld": "0,1,0",
+        "forwardWorld": "0,0,1",
+        "nearWorld": 0.01,
+        "farWorld": 9.120000000000001,
+        "projectionMatrixColumnMajor": [
+          2.4519087012857574,
+          0,
+          0,
+          0,
+          0,
+          3.064885876607197,
+          0,
+          0,
+          0,
+          0,
+          -1.0021953896816684,
+          -1,
+          0,
+          0,
+          -0.020021953896816685,
+          0
+        ],
+        "configurationOk": true,
+        "projectionDeterminant": -0.15046138657656472
+      },
+      "table": {
+        "topYmm": -150,
+        "verticalDifferenceFromLensMm": -150,
+        "topProjectedBounds": {
+          "minX": -0.26622146915179923,
+          "maxX": 1.2662214691517992,
+          "minY": 0.4042223163560251,
+          "maxY": 0.46036785504387245,
+          "minDepth": 0.9938529088913283,
+          "maxDepth": 0.9987433286649761,
+          "fullyInsideImage": false
+        },
+        "slabProjectedBounds": {
+          "minX": -0.26622146915179923,
+          "maxX": 1.2662214691517992,
+          "minY": 0.35314088507923846,
+          "maxY": 0.46036785504387245,
+          "minDepth": 0.9938529088913283,
+          "maxDepth": 0.9987433286649761,
+          "fullyInsideImage": false
+        }
+      },
+      "backdrop": {
+        "centerMm": {
+          "x": 0,
+          "y": 412.5,
+          "z": 6200
+        },
+        "sizeMm": {
+          "width": 3600,
+          "height": 2775,
+          "depth": 100
+        },
+        "nearSurfaceZmm": 6150,
+        "projectedBounds": {
+          "minX": 0.14118409249476715,
+          "maxX": 0.8588159075052328,
+          "minY": 0.257051729293332,
+          "maxY": 0.948519884381541,
+          "minDepth": 0.9989397874220236,
+          "maxDepth": 0.9989918770581778,
+          "fullyInsideImage": true
+        }
+      },
+      "floor": {
+        "centerMm": {
+          "x": 0,
+          "y": -1000,
+          "z": 4100
+        },
+        "sizeMm": {
+          "width": 7000,
+          "height": 50,
+          "depth": 8000
+        }
+      },
+      "sceneBounds": {
+        "min": {
+          "x": -3550,
+          "y": -1050,
+          "z": 100
+        },
+        "max": {
+          "x": 3550,
+          "y": 1900,
+          "z": 8120
+        }
+      },
+      "focusReferences": [
+        {
+          "id": "still-life-near",
+          "positionMm": {
+            "x": -1120,
+            "y": -55,
+            "z": 2992
+          },
+          "projectedBounds": {
+            "minX": 0.010355799124919685,
+            "maxX": 0.07181741429752408,
+            "minY": 0.4231729810342447,
+            "maxY": 0.5204872050575348,
+            "minDepth": 0.9955035601707003,
+            "maxDepth": 0.9955035601707003,
+            "fullyInsideImage": true
+          }
+        },
+        {
+          "id": "still-life-middle",
+          "positionMm": {
+            "x": 1120,
+            "y": -55,
+            "z": 4142
+          },
+          "projectedBounds": {
+            "minX": 0.8093004095658638,
+            "maxX": 0.8536975975418253,
+            "minY": 0.44450351503004837,
+            "maxY": 0.5147990626586538,
+            "minDepth": 0.9973615041440497,
+            "maxDepth": 0.9973615041440497,
+            "fullyInsideImage": true
+          }
+        },
+        {
+          "id": "still-life-far",
+          "positionMm": {
+            "x": -1120,
+            "y": -55,
+            "z": 5292
+          },
+          "projectedBounds": {
+            "minX": 0.22316412527999996,
+            "maxX": 0.2579133982574059,
+            "minY": 0.45656340877824264,
+            "maxY": 0.5115830909924686,
+            "minDepth": 0.9984119516815141,
+            "maxDepth": 0.9984119516815141,
+            "fullyInsideImage": true
+          }
+        }
+      ],
+      "objects": [
+        {
+          "id": "left-form",
+          "family": "books",
+          "positionMm": {
+            "x": -440,
+            "y": 10,
+            "z": 3210
+          },
+          "dimensionsMm": {
+            "width": 510,
+            "height": 320,
+            "depth": 400
+          },
+          "rotationYDeg": -10,
+          "boundsMm": {
+            "min": {
+              "x": -725.8556125514991,
+              "y": -150,
+              "z": 2968.7581640924914
+            },
+            "max": {
+              "x": -154.14438744850088,
+              "y": 170,
+              "z": 3451.2418359075086
+            }
+          },
+          "projectedBounds": {
+            "minX": 0.20025653927992426,
+            "maxX": 0.4452446419565437,
+            "minY": 0.4225715170990336,
+            "maxY": 0.5877522806210952,
+            "minDepth": 0.995451171126252,
+            "maxDepth": 0.9963940130037134,
+            "fullyInsideImage": true
+          }
+        },
+        {
+          "id": "centre-form",
+          "family": "books",
+          "positionMm": {
+            "x": 30,
+            "y": -5,
+            "z": 4090
+          },
+          "dimensionsMm": {
+            "width": 490,
+            "height": 290,
+            "depth": 370
+          },
+          "rotationYDeg": -10,
+          "boundsMm": {
+            "min": {
+              "x": -243.4028123563731,
+              "y": -150,
+              "z": 3865.2667621643436
+            },
+            "max": {
+              "x": 303.4028123563731,
+              "y": 140,
+              "z": 4314.733237835657
+            }
+          },
+          "projectedBounds": {
+            "minX": 0.42279944564552663,
+            "maxX": 0.5962308737514675,
+            "minY": 0.44053025188439343,
+            "maxY": 0.5555050982412328,
+            "minDepth": 0.9970154227793051,
+            "maxDepth": 0.9975550207890461,
+            "fullyInsideImage": true
+          }
+        },
+        {
+          "id": "right-form",
+          "family": "wooden-form",
+          "positionMm": {
+            "x": 470,
+            "y": 5,
+            "z": 5100
+          },
+          "dimensionsMm": {
+            "width": 480,
+            "height": 310,
+            "depth": 380
+          },
+          "rotationYDeg": -10,
+          "boundsMm": {
+            "min": {
+              "x": 200.6529855203533,
+              "y": -150,
+              "z": 4871.210964287618
+            },
+            "max": {
+              "x": 739.3470144796468,
+              "y": 160,
+              "z": 5328.789035712382
+            }
+          },
+          "projectedBounds": {
+            "minX": 0.5461627208207304,
+            "maxX": 0.6860739959080591,
+            "minY": 0.4528112326830509,
+            "maxY": 0.550334685138079,
+            "minDepth": 0.9980851275633567,
+            "maxDepth": 0.9984380718815765,
+            "fullyInsideImage": true
+          }
+        }
+      ],
+      "planner": {
+        "compositionId": "horizontal-grouping",
+        "fallbackUsed": false
+      }
+    },
+    "upright": {
+      "opticalAxisDirectionWorld": "0.000000,0.000000,1.000000",
+      "filmPlane": {
+        "dimensionsMm": {
+          "width": 127,
+          "height": 101.6
+        },
+        "cornersWorldMm": {
+          "topLeft": {
+            "x": -63.5,
+            "y": 50.8,
+            "z": -155.69620253164558
+          },
+          "topRight": {
+            "x": 63.5,
+            "y": 50.8,
+            "z": -155.69620253164558
+          },
+          "bottomRight": {
+            "x": 63.5,
+            "y": -50.8,
+            "z": -155.69620253164558
+          },
+          "bottomLeft": {
+            "x": -63.5,
+            "y": -50.8,
+            "z": -155.69620253164558
+          }
+        }
+      },
+      "actualGroundGlassCamera": {
+        "positionWorld": "0,0,0",
+        "upWorld": "0,1,0",
+        "forwardWorld": "0,0,1",
+        "nearWorld": 0.01,
+        "farWorld": 9.120000000000001,
+        "projectionMatrixColumnMajor": [
+          2.4519087012857574,
+          0,
+          0,
+          0,
+          0,
+          3.064885876607197,
+          0,
+          0,
+          0,
+          0,
+          -1.0021953896816684,
+          -1,
+          0,
+          0,
+          -0.020021953896816685,
+          0
+        ],
+        "configurationOk": true,
+        "projectionDeterminant": -0.15046138657656472
+      },
+      "table": {
+        "topYmm": -150,
+        "verticalDifferenceFromLensMm": -150,
+        "topProjectedBounds": {
+          "minX": -0.26622146915179923,
+          "maxX": 1.2662214691517992,
+          "minY": 0.5396321449561275,
+          "maxY": 0.5957776836439749,
+          "minDepth": 0.9938529088913283,
+          "maxDepth": 0.9987433286649761,
+          "fullyInsideImage": false
+        },
+        "slabProjectedBounds": {
+          "minX": -0.26622146915179923,
+          "maxX": 1.2662214691517992,
+          "minY": 0.5396321449561275,
+          "maxY": 0.6468591149207615,
+          "minDepth": 0.9938529088913283,
+          "maxDepth": 0.9987433286649761,
+          "fullyInsideImage": false
+        }
+      },
+      "backdrop": {
+        "centerMm": {
+          "x": 0,
+          "y": 412.5,
+          "z": 6200
+        },
+        "sizeMm": {
+          "width": 3600,
+          "height": 2775,
+          "depth": 100
+        },
+        "nearSurfaceZmm": 6150,
+        "projectedBounds": {
+          "minX": 0.1411840924947672,
+          "maxX": 0.8588159075052328,
+          "minY": 0.051480115618458944,
+          "maxY": 0.742948270706668,
+          "minDepth": 0.9989397874220236,
+          "maxDepth": 0.9989918770581778,
+          "fullyInsideImage": true
+        }
+      },
+      "floor": {
+        "centerMm": {
+          "x": 0,
+          "y": -1000,
+          "z": 4100
+        },
+        "sizeMm": {
+          "width": 7000,
+          "height": 50,
+          "depth": 8000
+        }
+      },
+      "sceneBounds": {
+        "min": {
+          "x": -3550,
+          "y": -1050,
+          "z": 100
+        },
+        "max": {
+          "x": 3550,
+          "y": 1900,
+          "z": 8120
+        }
+      },
+      "focusReferences": [
+        {
+          "id": "still-life-near",
+          "positionMm": {
+            "x": -1120,
+            "y": -55,
+            "z": 2992
+          },
+          "projectedBounds": {
+            "minX": 0.9281825857024759,
+            "maxX": 0.9896442008750803,
+            "minY": 0.47951279494246524,
+            "maxY": 0.5768270189657553,
+            "minDepth": 0.9955035601707003,
+            "maxDepth": 0.9955035601707003,
+            "fullyInsideImage": true
+          }
+        },
+        {
+          "id": "still-life-middle",
+          "positionMm": {
+            "x": 1120,
+            "y": -55,
+            "z": 4142
+          },
+          "projectedBounds": {
+            "minX": 0.14630240245817477,
+            "maxX": 0.19069959043413615,
+            "minY": 0.48520093734134623,
+            "maxY": 0.5554964849699516,
+            "minDepth": 0.9973615041440497,
+            "maxDepth": 0.9973615041440497,
+            "fullyInsideImage": true
+          }
+        },
+        {
+          "id": "still-life-far",
+          "positionMm": {
+            "x": -1120,
+            "y": -55,
+            "z": 5292
+          },
+          "projectedBounds": {
+            "minX": 0.7420866017425941,
+            "maxX": 0.77683587472,
+            "minY": 0.4884169090075314,
+            "maxY": 0.5434365912217574,
+            "minDepth": 0.9984119516815141,
+            "maxDepth": 0.9984119516815141,
+            "fullyInsideImage": true
+          }
+        }
+      ],
+      "objects": [
+        {
+          "id": "left-form",
+          "family": "books",
+          "positionMm": {
+            "x": -440,
+            "y": 10,
+            "z": 3210
+          },
+          "dimensionsMm": {
+            "width": 510,
+            "height": 320,
+            "depth": 400
+          },
+          "rotationYDeg": -10,
+          "boundsMm": {
+            "min": {
+              "x": -725.8556125514991,
+              "y": -150,
+              "z": 2968.7581640924914
+            },
+            "max": {
+              "x": -154.14438744850088,
+              "y": 170,
+              "z": 3451.2418359075086
+            }
+          },
+          "projectedBounds": {
+            "minX": 0.5547553580434563,
+            "maxX": 0.7997434607200757,
+            "minY": 0.4122477193789048,
+            "maxY": 0.5774284829009664,
+            "minDepth": 0.995451171126252,
+            "maxDepth": 0.9963940130037134,
+            "fullyInsideImage": true
+          }
+        },
+        {
+          "id": "centre-form",
+          "family": "books",
+          "positionMm": {
+            "x": 30,
+            "y": -5,
+            "z": 4090
+          },
+          "dimensionsMm": {
+            "width": 490,
+            "height": 290,
+            "depth": 370
+          },
+          "rotationYDeg": -10,
+          "boundsMm": {
+            "min": {
+              "x": -243.4028123563731,
+              "y": -150,
+              "z": 3865.2667621643436
+            },
+            "max": {
+              "x": 303.4028123563731,
+              "y": 140,
+              "z": 4314.733237835657
+            }
+          },
+          "projectedBounds": {
+            "minX": 0.40376912624853245,
+            "maxX": 0.5772005543544734,
+            "minY": 0.44449490175876716,
+            "maxY": 0.5594697481156066,
+            "minDepth": 0.9970154227793051,
+            "maxDepth": 0.9975550207890461,
+            "fullyInsideImage": true
+          }
+        },
+        {
+          "id": "right-form",
+          "family": "wooden-form",
+          "positionMm": {
+            "x": 470,
+            "y": 5,
+            "z": 5100
+          },
+          "dimensionsMm": {
+            "width": 480,
+            "height": 310,
+            "depth": 380
+          },
+          "rotationYDeg": -10,
+          "boundsMm": {
+            "min": {
+              "x": 200.6529855203533,
+              "y": -150,
+              "z": 4871.210964287618
+            },
+            "max": {
+              "x": 739.3470144796468,
+              "y": 160,
+              "z": 5328.789035712382
+            }
+          },
+          "projectedBounds": {
+            "minX": 0.31392600409194094,
+            "maxX": 0.45383727917926964,
+            "minY": 0.4496653148619209,
+            "maxY": 0.5471887673169491,
+            "minDepth": 0.9980851275633567,
+            "maxDepth": 0.9984380718815765,
+            "fullyInsideImage": true
+          }
+        }
+      ],
+      "planner": {
+        "compositionId": "horizontal-grouping",
+        "fallbackUsed": false
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "raw-f5_6",
+      "orientation": "raw",
+      "dofBypass": false,
+      "aperture": 5.6,
+      "frameRequestId": "gg-mwlh5xgn-dv19quo772n-default-request-4",
+      "screenshot": "after-lighting-raw-f5_6.png",
+      "screenshotCssBounds": {
+        "x": 591,
+        "y": 200.390625,
+        "width": 514,
+        "height": 411
+      },
+      "runtime": {
+        "frame-request-id": "gg-mwlh5xgn-dv19quo772n-default-request-4",
+        "last-completed-request-id": "gg-mwlh5xgn-dv19quo772n-default-request-4",
+        "frame-result-status": "completed",
+        "rtt-camera-ok": "true",
+        "rtt-camera-near-world": "0.01",
+        "rtt-camera-far-world": "9.120000000000001",
+        "rtt-projection-determinant": "-0.15046138657656472",
+        "rtt-projection-matrix": "2.4519087012857574,0,0,0,0,3.064885876607197,0,0,0,0,-1.0021953896816684,-1,0,0,-0.020021953896816685,0",
+        "rtt-camera-position": "0,0,0",
+        "rtt-camera-up": "0,1,0",
+        "rtt-camera-forward": "0,0,1",
+        "rtt-preview-mode": "raw",
+        "rtt-raw-debug": "false",
+        "rtt-dof-processing-enabled": "true",
+        "rtt-dof-model": "parallel-thin-lens",
+        "rtt-dof-mode": null,
+        "rtt-depth-available": "true",
+        "rtt-uniforms-finite": null,
+        "rtt-natural-illumination-enabled": "true",
+        "rtt-natural-illumination-kind": "parallel-cos4",
+        "rtt-natural-illumination-state": "{\"kind\":\"parallel-cos4\",\"imageDistanceMm\":155.69620253164558,\"opticalAxisOffsetXMm\":0,\"opticalAxisOffsetYMm\":0}",
+        "rtt-ground-glass-illuminance-gain": "3.581259522696646",
+        "rtt-coverage-enabled": "true",
+        "rtt-coverage-kind": "parallel-circle",
+        "rtt-coverage-radius-mm": "113.11991258817643",
+        "rtt-raw-variance": null,
+        "rtt-final-variance": null,
+        "rtt-raw-non-background": null,
+        "rtt-final-non-background": null,
+        "rtt-logical-width": "514",
+        "rtt-logical-height": "411",
+        "rtt-internal-width": "655",
+        "rtt-internal-height": "524",
+        "rtt-sampled-film-width-mm": "127",
+        "rtt-sampled-film-height-mm": "101.6"
+      }
+    },
+    {
+      "id": "raw-f11",
+      "orientation": "raw",
+      "dofBypass": false,
+      "aperture": 11,
+      "frameRequestId": "gg-mwlh5xgn-dv19quo772n-default-request-5",
+      "screenshot": "after-lighting-raw-f11.png",
+      "screenshotCssBounds": {
+        "x": 591,
+        "y": 200.390625,
+        "width": 514,
+        "height": 411
+      },
+      "runtime": {
+        "frame-request-id": "gg-mwlh5xgn-dv19quo772n-default-request-5",
+        "last-completed-request-id": "gg-mwlh5xgn-dv19quo772n-default-request-5",
+        "frame-result-status": "completed",
+        "rtt-camera-ok": "true",
+        "rtt-camera-near-world": "0.01",
+        "rtt-camera-far-world": "9.120000000000001",
+        "rtt-projection-determinant": "-0.15046138657656472",
+        "rtt-projection-matrix": "2.4519087012857574,0,0,0,0,3.064885876607197,0,0,0,0,-1.0021953896816684,-1,0,0,-0.020021953896816685,0",
+        "rtt-camera-position": "0,0,0",
+        "rtt-camera-up": "0,1,0",
+        "rtt-camera-forward": "0,0,1",
+        "rtt-preview-mode": "raw",
+        "rtt-raw-debug": "false",
+        "rtt-dof-processing-enabled": "true",
+        "rtt-dof-model": "parallel-thin-lens",
+        "rtt-dof-mode": null,
+        "rtt-depth-available": "true",
+        "rtt-uniforms-finite": null,
+        "rtt-natural-illumination-enabled": "true",
+        "rtt-natural-illumination-kind": "parallel-cos4",
+        "rtt-natural-illumination-state": "{\"kind\":\"parallel-cos4\",\"imageDistanceMm\":155.69620253164558,\"opticalAxisOffsetXMm\":0,\"opticalAxisOffsetYMm\":0}",
+        "rtt-ground-glass-illuminance-gain": "0.9281677572873289",
+        "rtt-coverage-enabled": "true",
+        "rtt-coverage-kind": "parallel-circle",
+        "rtt-coverage-radius-mm": "113.11991258817643",
+        "rtt-raw-variance": null,
+        "rtt-final-variance": null,
+        "rtt-raw-non-background": null,
+        "rtt-final-non-background": null,
+        "rtt-logical-width": "514",
+        "rtt-logical-height": "411",
+        "rtt-internal-width": "655",
+        "rtt-internal-height": "524",
+        "rtt-sampled-film-width-mm": "127",
+        "rtt-sampled-film-height-mm": "101.6"
+      }
+    },
+    {
+      "id": "raw-f22",
+      "orientation": "raw",
+      "dofBypass": false,
+      "aperture": 22,
+      "frameRequestId": "gg-mwlh5xgn-dv19quo772n-default-request-6",
+      "screenshot": "after-lighting-raw-f22.png",
+      "screenshotCssBounds": {
+        "x": 591,
+        "y": 200.390625,
+        "width": 514,
+        "height": 411
+      },
+      "runtime": {
+        "frame-request-id": "gg-mwlh5xgn-dv19quo772n-default-request-6",
+        "last-completed-request-id": "gg-mwlh5xgn-dv19quo772n-default-request-6",
+        "frame-result-status": "completed",
+        "rtt-camera-ok": "true",
+        "rtt-camera-near-world": "0.01",
+        "rtt-camera-far-world": "9.120000000000001",
+        "rtt-projection-determinant": "-0.15046138657656472",
+        "rtt-projection-matrix": "2.4519087012857574,0,0,0,0,3.064885876607197,0,0,0,0,-1.0021953896816684,-1,0,0,-0.020021953896816685,0",
+        "rtt-camera-position": "0,0,0",
+        "rtt-camera-up": "0,1,0",
+        "rtt-camera-forward": "0,0,1",
+        "rtt-preview-mode": "raw",
+        "rtt-raw-debug": "false",
+        "rtt-dof-processing-enabled": "true",
+        "rtt-dof-model": "parallel-thin-lens",
+        "rtt-dof-mode": null,
+        "rtt-depth-available": "true",
+        "rtt-uniforms-finite": null,
+        "rtt-natural-illumination-enabled": "true",
+        "rtt-natural-illumination-kind": "parallel-cos4",
+        "rtt-natural-illumination-state": "{\"kind\":\"parallel-cos4\",\"imageDistanceMm\":155.69620253164558,\"opticalAxisOffsetXMm\":0,\"opticalAxisOffsetYMm\":0}",
+        "rtt-ground-glass-illuminance-gain": "0.23204193932183223",
+        "rtt-coverage-enabled": "true",
+        "rtt-coverage-kind": "parallel-circle",
+        "rtt-coverage-radius-mm": "113.11991258817643",
+        "rtt-raw-variance": null,
+        "rtt-final-variance": null,
+        "rtt-raw-non-background": null,
+        "rtt-final-non-background": null,
+        "rtt-logical-width": "514",
+        "rtt-logical-height": "411",
+        "rtt-internal-width": "655",
+        "rtt-internal-height": "524",
+        "rtt-sampled-film-width-mm": "127",
+        "rtt-sampled-film-height-mm": "101.6"
+      }
+    },
+    {
+      "id": "upright-f11",
+      "orientation": "upright",
+      "dofBypass": false,
+      "aperture": 11,
+      "frameRequestId": "gg-mwlh5xgn-dv19quo772n-default-request-8",
+      "screenshot": "after-lighting-upright-f11.png",
+      "screenshotCssBounds": {
+        "x": 591,
+        "y": 200.390625,
+        "width": 514,
+        "height": 411
+      },
+      "runtime": {
+        "frame-request-id": "gg-mwlh5xgn-dv19quo772n-default-request-8",
+        "last-completed-request-id": "gg-mwlh5xgn-dv19quo772n-default-request-8",
+        "frame-result-status": "completed",
+        "rtt-camera-ok": "true",
+        "rtt-camera-near-world": "0.01",
+        "rtt-camera-far-world": "9.120000000000001",
+        "rtt-projection-determinant": "-0.15046138657656472",
+        "rtt-projection-matrix": "2.4519087012857574,0,0,0,0,3.064885876607197,0,0,0,0,-1.0021953896816684,-1,0,0,-0.020021953896816685,0",
+        "rtt-camera-position": "0,0,0",
+        "rtt-camera-up": "0,1,0",
+        "rtt-camera-forward": "0,0,1",
+        "rtt-preview-mode": "upright",
+        "rtt-raw-debug": "false",
+        "rtt-dof-processing-enabled": "true",
+        "rtt-dof-model": "parallel-thin-lens",
+        "rtt-dof-mode": null,
+        "rtt-depth-available": "true",
+        "rtt-uniforms-finite": null,
+        "rtt-natural-illumination-enabled": "true",
+        "rtt-natural-illumination-kind": "parallel-cos4",
+        "rtt-natural-illumination-state": "{\"kind\":\"parallel-cos4\",\"imageDistanceMm\":155.69620253164558,\"opticalAxisOffsetXMm\":0,\"opticalAxisOffsetYMm\":0}",
+        "rtt-ground-glass-illuminance-gain": "0.9281677572873289",
+        "rtt-coverage-enabled": "true",
+        "rtt-coverage-kind": "parallel-circle",
+        "rtt-coverage-radius-mm": "113.11991258817643",
+        "rtt-raw-variance": null,
+        "rtt-final-variance": null,
+        "rtt-raw-non-background": null,
+        "rtt-final-non-background": null,
+        "rtt-logical-width": "514",
+        "rtt-logical-height": "411",
+        "rtt-internal-width": "655",
+        "rtt-internal-height": "524",
+        "rtt-sampled-film-width-mm": "127",
+        "rtt-sampled-film-height-mm": "101.6"
+      }
+    },
+    {
+      "id": "raw-dof-bypass-f11",
+      "orientation": "raw",
+      "dofBypass": true,
+      "aperture": 11,
+      "frameRequestId": "gg-mwlh5xgn-dv19quo772n-default-request-10",
+      "screenshot": "after-lighting-raw-dof-bypass-f11.png",
+      "screenshotCssBounds": {
+        "x": 591,
+        "y": 216.984375,
+        "width": 514,
+        "height": 411
+      },
+      "runtime": {
+        "frame-request-id": "gg-mwlh5xgn-dv19quo772n-default-request-10",
+        "last-completed-request-id": "gg-mwlh5xgn-dv19quo772n-default-request-10",
+        "frame-result-status": "completed",
+        "rtt-camera-ok": "true",
+        "rtt-camera-near-world": "0.01",
+        "rtt-camera-far-world": "9.120000000000001",
+        "rtt-projection-determinant": "-0.15046138657656472",
+        "rtt-projection-matrix": "2.4519087012857574,0,0,0,0,3.064885876607197,0,0,0,0,-1.0021953896816684,-1,0,0,-0.020021953896816685,0",
+        "rtt-camera-position": "0,0,0",
+        "rtt-camera-up": "0,1,0",
+        "rtt-camera-forward": "0,0,1",
+        "rtt-preview-mode": "raw",
+        "rtt-raw-debug": "true",
+        "rtt-dof-processing-enabled": "false",
+        "rtt-dof-model": "parallel-thin-lens",
+        "rtt-dof-mode": null,
+        "rtt-depth-available": "true",
+        "rtt-uniforms-finite": null,
+        "rtt-natural-illumination-enabled": "false",
+        "rtt-natural-illumination-kind": "parallel-cos4",
+        "rtt-natural-illumination-state": "{\"kind\":\"parallel-cos4\",\"imageDistanceMm\":155.69620253164558,\"opticalAxisOffsetXMm\":0,\"opticalAxisOffsetYMm\":0}",
+        "rtt-ground-glass-illuminance-gain": "1",
+        "rtt-coverage-enabled": "false",
+        "rtt-coverage-kind": "parallel-circle",
+        "rtt-coverage-radius-mm": "113.11991258817643",
+        "rtt-raw-variance": null,
+        "rtt-final-variance": null,
+        "rtt-raw-non-background": null,
+        "rtt-final-non-background": null,
+        "rtt-logical-width": "514",
+        "rtt-logical-height": "411",
+        "rtt-internal-width": "655",
+        "rtt-internal-height": "524",
+        "rtt-sampled-film-width-mm": "127",
+        "rtt-sampled-film-height-mm": "101.6"
+      }
+    }
+  ],
+  "pageErrors": []
+}

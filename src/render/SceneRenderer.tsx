@@ -2183,6 +2183,23 @@ export const SceneRenderer = ({
       data-camera-film-center-world={serializeFiniteRenderVector(
         opticsState.filmCenterWorld,
       )}
+      data-optical-axis-origin-world-mm={serializeFiniteRenderVector(
+        opticsState.opticalAxis.origin,
+      )}
+      data-optical-axis-forward-world={serializeFiniteRenderVector(
+        opticsState.opticalAxis.direction,
+      )}
+      data-film-plane-normal-world={serializeFiniteRenderVector(
+        opticsState.filmPlane.normal,
+      )}
+      data-film-plane-width-mm={CAMERA_CONSTANTS.filmWidthMm}
+      data-film-plane-height-mm={CAMERA_CONSTANTS.filmHeightMm}
+      data-film-plane-corners-world-mm={JSON.stringify({
+        topLeft: opticsState.filmPlaneCornersWorld.topLeft,
+        topRight: opticsState.filmPlaneCornersWorld.topRight,
+        bottomRight: opticsState.filmPlaneCornersWorld.bottomRight,
+        bottomLeft: opticsState.filmPlaneCornersWorld.bottomLeft,
+      })}
       data-focus-standard-selected={
         opticsState.diagnostics.requestedFocusStandard ?? opticsState.diagnostics.focusStandard
       }
