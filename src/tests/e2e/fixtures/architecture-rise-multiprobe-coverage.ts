@@ -941,10 +941,24 @@ const runStudy = (options: {
   };
 
   const paneBounds = boundsForMeshes(frontPanes);
+  // The stone-base refinement splits the original primary wall strip into stacked meshes. Follow
+  // that strip's upper continuation so its facade envelope stays the same without trusting one
+  // lower-only mesh or widening the probe search corridor to unrelated facade bays.
   const facadeMesh = allMeshes.find((mesh) => mesh.name === "architecture-rise-primary-facade");
   const groundMesh = allMeshes.find((mesh) => mesh.name === "architecture-rise-ground");
   if (!facadeMesh || !groundMesh) throw new Error("Geometry-derived search requires the primary facade and support ground");
-  const facadeBounds = boundsForMeshes([facadeMesh]);
+  const primaryFacadeBounds = new THREE.Box3().setFromObject(facadeMesh);
+  const facadeContinuation = allMeshes.filter((mesh) => {
+    if (mesh === facadeMesh || !mesh.name.startsWith("architecture-rise-main-facade-wall-segment-")) return false;
+    const bounds = new THREE.Box3().setFromObject(mesh);
+    return Math.abs(bounds.min.x - primaryFacadeBounds.min.x) <= 1e-6 &&
+      Math.abs(bounds.max.x - primaryFacadeBounds.max.x) <= 1e-6 &&
+      Math.abs(bounds.min.z - primaryFacadeBounds.min.z) <= 1e-6 &&
+      Math.abs(bounds.max.z - primaryFacadeBounds.max.z) <= 1e-6 &&
+      bounds.min.y >= primaryFacadeBounds.max.y - 1e-6 &&
+      bounds.max.y > primaryFacadeBounds.max.y;
+  });
+  const facadeBounds = boundsForMeshes([facadeMesh, ...facadeContinuation]);
   const groundBounds = boundsForMeshes([groundMesh]);
   const reflectedWorldBounds = boundsForMeshes(allMeshes.filter((mesh) => !isGlazing(mesh) && mesh !== groundMesh));
   const glazingBounds = allGlazing.map((mesh) => new THREE.Box3().setFromObject(mesh));
