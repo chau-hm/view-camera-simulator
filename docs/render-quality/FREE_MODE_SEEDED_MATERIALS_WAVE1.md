@@ -97,3 +97,54 @@ Full capture metadata and ten-action resource traces:
 ## Recommended Wave 2 candidates
 
 Evaluate **Mirror Shift** as a small-scope candidate for restrained wall/floor finish variation, after separately protecting the mirror and reflected-subject teaching cues. **Oblique Tabletop** is another suitable candidate if its existing measurement and focus markings can be isolated from any wood treatment. Both should receive their own role inventory and canonical signatures before implementation. Architecture Rise remains excluded while its geometry work proceeds.
+
+## Review-Fix Round 1 — Table Tilt Calibrated Ground Glass Qualification
+
+### Why the original captures were insufficient
+
+The original Wave 1 Ground Glass capture helper chose a generic reachable focus near the slider midpoint (approximately 4660 mm for Table Tilt), then selected f/11. It did not first apply the scene's calibrated Front Tilt. Those captures remain valid evidence of that original neutral-like test setup, but they are not calibrated Table Tilt photographs and do not establish that the tabletop material is useful through the simulated camera.
+
+The focused rerun uses the exported `tableTiltCalibration` in `src/scenes/tableTiltGeometry.ts`. The raw calibrated values are Front Tilt 9°, focus `150 / sin²(9°)` = 6129.518728 mm, f/11, Front Rise 0 mm, and Front Swing 0°. The public Focus slider has a 10 mm step, so the helper requests 6129.518728 mm and verifies the actual reachable value is 6130 mm. Front Tilt has a 0.1° step; the actual value is 9.0°. The neutral comparison is kept distinct: 0° tilt, the existing Table Tilt scene camera-preset focus of 4600 mm, and f/11. Both states use seed 284719.
+
+The helper verifies the active Free Mode route, scene ID and schema v1 identity, the selected Front standard / Tilt control, all relevant values, and neutral Rise and Swing. It waits for the completed current-state Ground Glass request and records the request and completion IDs, camera pose, projection, renderer generation, subject generation, and RTT resource generation. The viewport is 1440×1000 at DPR 1, Standard quality, and the Ground Glass canvas is inspected at its native 514×411 display size.
+
+### Neutral and calibrated comparison
+
+| State | Front Tilt | Focus requested → actual | Aperture | Result |
+| --- | ---: | ---: | ---: | --- |
+| Neutral | 0° | 4600 → 4600 mm (existing scene default) | f/11 | Reference Raw and Upright captures |
+| Calibrated | 9° | 6129.518728 → 6130 mm (10 mm slider step) | f/11 | Raw and Upright captures |
+
+Normal photographic output has DOF bypass disabled and normal derived-plane DOF processing enabled. Raw and Upright are orientation presentations of the current RTT image; they are not DOF modes. The separate Raw RTT diagnostic explicitly enables the raw/debug path and verifies `dofBypass=true` and `dofProcessingEnabled=false`; it is labelled as a diagnostic rather than a photographic Ground Glass result. An additional f/5.6 normal-processing capture is supporting evidence only because it has a very bright, washed-out background.
+
+Every capture records the scene, preview orientation, seed, focus, tilt, aperture, bypass and DOF state, frame status, request/completion IDs, and renderer/subject/resource generations in the [calibrated qualification report](evidence/free-mode-seeded-materials-wave1/table-tilt-calibrated-ground-glass-report.json). Each requested frame completed with its request ID matching its completed request ID. Normal Raw/Upright frames were contentful and retained normal DOF processing. The bypass diagnostic completed independently with DOF disabled.
+
+### Three-seed calibrated results and visibility
+
+Seeds `0`, `284719`, and `4294967295` were each opened through their Free Mode schema-v1 URL and captured in calibrated Raw and Upright orientations at f/11. The URL identity was verified before applying the calibration. The same camera controls were reached for all three seeds, with current-seed RTT completion confirmed for every image.
+
+At normal Ground Glass size, the tabletop appears as a narrow strip near the image edge. Its seeded wood grain and differences between seeds are not reliably inspectable. The near, middle, and far focus-detail points project inside the film, but their physical markings remain too small to read in these captures. The projection diagnostic places only two of the four tabletop top corners inside the film: the far pair is in frame while the near pair is clipped. This distinguishes target-point presence from useful subject framing and from readable detail.
+
+The calibrated comparison does not show a meaningful framing improvement. Front Tilt changes the focus-plane orientation; it does not materially reframe the tabletop. Raw places the subject band near the top edge and Upright Assist near the bottom, as expected. The images do not establish an obvious improvement in focus-detail legibility, and the large empty portion of the photographic frame remains. Material texture visibility through Table Tilt Ground Glass is therefore **NEEDS_REVIEW**, and the existing photographic framing is **LIMITED**.
+
+The camera pose and scene geometry were already present before this materials PR: `tableTiltGeometry.ts` is unchanged from the PR base, and the Table Tilt subject-factory changes replace material assignment while retaining the existing mesh dimensions, placements, and geometry. The scene-definition change enables the existing schema-v1 variation contract. This review-fix found no evidence that seeded materials cause the clipping or narrow tabletop coverage. Treat the framing limitation as inherited from the existing Table Tilt camera/scene composition; investigate any correction as a separate scene-framing task. No geometry, optics, material recipes, or camera controls were changed in this round.
+
+The Focus and Tilt changes also leave the seeded material subject generation and texture counts stable: the Table Tilt Observer and RTT subjects each own 6 textures, with 17 renderer textures in the captured route. This focused run preserved the existing subject ownership and lifecycle assertions.
+
+### Reviewer-visible evidence
+
+The following contact sheets contain unretouched native-size Ground Glass captures. Each panel retains its original 514×411 image; the contact sheet only arranges the panels for comparison.
+
+![Table Tilt — Neutral vs Calibrated Ground Glass](evidence/free-mode-seeded-materials-wave1/table-tilt-calibrated-neutral-vs-calibrated-contact-sheet.png)
+
+![Table Tilt — Calibrated Three-Seed Comparison](evidence/free-mode-seeded-materials-wave1/table-tilt-calibrated-three-seed-contact-sheet.png)
+
+The report includes per-image hashes, actual controls, RTT identities, camera/projection diagnostics, projected tabletop corners and teaching-detail points, and material-resource stability. Raw full-size captures remain outside Git; only the compact contact sheets and machine-readable report were added here. The earlier Wave 1 Table Tilt images and capture history remain unchanged.
+
+### Review-fix verdict
+
+- **Materials implementation:** PASS. This round did not alter material recipes, generated maps, canonical outputs, or deterministic seed signatures.
+- **Table Tilt Ground Glass evidence:** NEEDS_REVIEW. Correctly calibrated frames render, but they do not show enough readable tabletop surface to qualify seeded wood appearance photographically.
+- **Existing scene photographic framing:** LIMITED. The near tabletop edge is clipped and the tabletop occupies only a narrow band. Since this composition predates the materials changes, any reframing needs a separate, explicitly scoped follow-up before public Ground Glass material qualification.
+
+Validation: the calibrated Chromium Playwright qualification passed (1 test); `npm test` passed under Node 24.3.0 (345 files / 4,249 tests); `npm run typecheck`, `npm run lint`, `npm run check:css`, `npm run build`, and `git diff --check` passed. GitHub CI for the review-fix commit is reported in the updated PR handoff.

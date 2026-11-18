@@ -2,6 +2,14 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
+import * as THREE from "three";
+import { tableTiltScene } from "../../scenes/definitions/table-tilt";
+import tableTiltGeometry, { tableTiltCalibration } from "../../scenes/tableTiltGeometry";
+import { WORLD_SCALE } from "../../render/rttUtils";
+import {
+  applyGroundGlassRttDisplayTransform,
+  resolveGroundGlassRttDisplayTransform,
+} from "../../render/groundGlassRttOrientation";
 import { setRangeDirectOnGrid } from "../e2e/helpers/rangeInput";
 
 const FIXED_SEED = 284719;
@@ -487,6 +495,524 @@ const qualifyScene = async (page: Page, testInfo: TestInfo, sceneCase: SceneCase
     },
   }, null, 2));
 };
+
+type RangeControlState = { min: number; max: number; step: number; value: number };
+
+const readRangeControl = async (page: Page, label: string): Promise<RangeControlState> =>
+  page.getByRole("slider", { name: label, exact: true }).evaluate((element) => {
+    const input = element as HTMLInputElement;
+    return {
+      min: Number(input.min),
+      max: Number(input.max),
+      step: Number(input.step),
+      value: Number(input.value),
+    };
+  });
+
+const setRangeToNearestReachableValue = async (
+  page: Page,
+  label: string,
+  requested: number,
+): Promise<{ requested: number; actual: number; min: number; max: number; step: number }> => {
+  const range = await readRangeControl(page, label);
+  if (requested < range.min || requested > range.max) {
+    throw new Error(
+      `${label} calibration ${requested} is outside the public range ${range.min}–${range.max}`,
+    );
+  }
+  const steps = Math.round((requested - range.min) / range.step);
+  const actual = Number((range.min + steps * range.step).toFixed(6));
+  await setRangeDirectOnGrid(page, label, actual);
+  await expect(page.getByRole("slider", { name: label, exact: true })).toHaveValue(String(actual));
+  expect(Math.abs(actual - requested)).toBeLessThanOrEqual(range.step / 2 + 1e-8);
+  return { requested, actual, min: range.min, max: range.max, step: range.step };
+};
+
+const setTableTiltCalibratedCamera = async (page: Page, rtt: Locator) => {
+  const controls = page.locator('.movement-controls[data-standard="front"]');
+  await expect(controls).toHaveCount(1);
+  await expect(controls.locator(".movement-controls__heading")).toHaveText("Front standard");
+
+  const tilt = controls.getByRole("slider", { name: "Tilt", exact: true });
+  await expect(tilt).toBeEnabled();
+  const initialSubjectGeneration = await subjectGeneration(rtt);
+  const initialCapacity = capacityShape(await waitForCapacity(page));
+  const assertMaterialResourcesStable = async () => {
+    await expect(rtt).toHaveAttribute("data-rtt-sanity-state", new RegExp(`subject-generation:${initialSubjectGeneration}(?:\\||$)`));
+    const capacity = capacityShape(await waitForCapacity(page));
+    expect(capacity.viewportSubject.textures).toBe(initialCapacity.viewportSubject.textures);
+    expect(capacity.rttSubject.textures).toBe(initialCapacity.rttSubject.textures);
+    expect(capacity.rendererResources).toEqual(initialCapacity.rendererResources);
+  };
+
+  let previousRequestId = await rtt.getAttribute("data-frame-request-id");
+  const tiltValue = await setRangeToNearestReachableValue(
+    page,
+    "Tilt",
+    tableTiltCalibration.frontTiltDeg,
+  );
+  await expect.poll(async () => rtt.getAttribute("data-frame-request-id"), {
+    timeout: 120_000,
+  }).not.toBe(previousRequestId);
+  await waitForCompletedFrame(rtt);
+  await assertMaterialResourcesStable();
+  previousRequestId = await rtt.getAttribute("data-frame-request-id");
+
+  const focusValue = await setRangeToNearestReachableValue(
+    page,
+    "Focus distance",
+    tableTiltCalibration.focusDistanceMm,
+  );
+  await expect.poll(async () => rtt.getAttribute("data-frame-request-id"), {
+    timeout: 120_000,
+  }).not.toBe(previousRequestId);
+  await waitForCompletedFrame(rtt);
+  await assertMaterialResourcesStable();
+
+  for (const label of ["Rise", "Swing"]) {
+    const slider = page.getByRole("slider", { name: label, exact: true });
+    const current = Number(await slider.inputValue());
+    if (current !== 0) await setRangeDirectOnGrid(page, label, 0);
+    await expect(slider).toHaveValue("0");
+  }
+
+  await page.getByRole("radiogroup", { name: "Aperture" })
+    .getByRole("radio", { name: "f/11" }).check();
+  await expect(page.getByRole("slider", { name: "Tilt", exact: true }))
+    .toHaveValue(String(tiltValue.actual));
+  await expect(page.getByRole("slider", { name: "Focus distance", exact: true }))
+    .toHaveValue(String(focusValue.actual));
+  await expect(page.getByRole("radiogroup", { name: "Aperture" }))
+    .toHaveAttribute("data-selected-aperture", "11");
+  const requestId = await waitForCompletedFrame(rtt);
+  await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true");
+  await expect(rtt).toHaveAttribute("data-rtt-raw-debug", "false");
+  await expect(rtt).toHaveAttribute("data-rtt-dof-processing-enabled", "true");
+
+  return {
+    movementControl: "Front standard / Tilt",
+    frontRiseMm: Number(await page.getByRole("slider", { name: "Rise", exact: true }).inputValue()),
+    frontTilt: tiltValue,
+    frontSwingDeg: Number(await page.getByRole("slider", { name: "Swing", exact: true }).inputValue()),
+    focusDistance: focusValue,
+    aperture: 11,
+    requestId,
+    materialSubjectGeneration: initialSubjectGeneration,
+    materialTextureCounts: {
+      observer: initialCapacity.viewportSubject.textures,
+      rtt: initialCapacity.rttSubject.textures,
+      renderer: initialCapacity.rendererResources.textures,
+    },
+    materialResourcesStableDuringTiltAndFocus: true,
+  };
+};
+
+const readRttCaptureDiagnostics = async (
+  rtt: Locator,
+  previewMode: "raw" | "upright",
+  dofBypass = false,
+) => {
+  const attributes = await rtt.evaluate((element) => {
+    const names = [
+      "data-rtt-camera-position",
+      "data-rtt-camera-up",
+      "data-rtt-camera-forward",
+      "data-rtt-projection-matrix",
+      "data-rtt-camera-near-world",
+      "data-rtt-camera-far-world",
+      "data-rtt-camera-ok",
+      "data-rtt-projection-determinant",
+      "data-rtt-preview-mode",
+      "data-rtt-raw-debug",
+      "data-rtt-dof-processing-enabled",
+      "data-rtt-dof-mode",
+      "data-frame-request-id",
+      "data-last-completed-request-id",
+      "data-frame-result-status",
+      "data-frame-scene-id",
+      "data-renderer-generation",
+      "data-rtt-resource-generation",
+      "data-rtt-owner-id",
+      "data-rtt-sanity-state",
+      "data-rtt-raw-contentful",
+      "data-rtt-final-contentful",
+    ];
+    return Object.fromEntries(names.map((name) => [name, element.getAttribute(name)]));
+  });
+  expect(attributes["data-frame-result-status"]).toBe("completed");
+  expect(attributes["data-frame-request-id"]).toBe(attributes["data-last-completed-request-id"]);
+  expect(attributes["data-frame-scene-id"]).toBe("table-tilt");
+  expect(attributes["data-rtt-camera-ok"]).toBe("true");
+  expect(attributes["data-rtt-preview-mode"]).toBe(previewMode);
+  expect(attributes["data-rtt-raw-debug"]).toBe(String(dofBypass));
+  expect(attributes["data-rtt-dof-processing-enabled"]).toBe(String(!dofBypass));
+
+  const tuple = (name: string, length: number): number[] => {
+    const value = attributes[name];
+    if (!value) throw new Error(`Ground Glass diagnostic ${name} is unavailable`);
+    const parsed = value.split(",").map(Number);
+    if (parsed.length !== length || !parsed.every(Number.isFinite)) {
+      throw new Error(`Ground Glass diagnostic ${name} is invalid: ${value}`);
+    }
+    return parsed;
+  };
+  const cameraPositionWorld = tuple("data-rtt-camera-position", 3);
+  const cameraUpWorld = tuple("data-rtt-camera-up", 3);
+  const cameraForwardWorld = tuple("data-rtt-camera-forward", 3);
+  const projectionMatrix = tuple("data-rtt-projection-matrix", 16);
+  const nearWorld = Number(attributes["data-rtt-camera-near-world"]);
+  const farWorld = Number(attributes["data-rtt-camera-far-world"]);
+  const projectionDeterminant = Number(attributes["data-rtt-projection-determinant"]);
+  expect(Number.isFinite(nearWorld) && nearWorld > 0).toBe(true);
+  expect(Number.isFinite(farWorld) && farWorld > nearWorld).toBe(true);
+  expect(Number.isFinite(projectionDeterminant) && Math.abs(projectionDeterminant) > 0).toBe(true);
+
+  const camera = new THREE.PerspectiveCamera();
+  camera.position.fromArray(cameraPositionWorld);
+  camera.up.fromArray(cameraUpWorld);
+  camera.lookAt(
+    camera.position.clone().add(new THREE.Vector3().fromArray(cameraForwardWorld)),
+  );
+  camera.updateMatrixWorld(true);
+  camera.projectionMatrix.fromArray(projectionMatrix);
+  camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
+
+  const project = (pointMm: { x: number; y: number; z: number }) => {
+    const ndc = new THREE.Vector3(
+      pointMm.x * WORLD_SCALE,
+      pointMm.y * WORLD_SCALE,
+      pointMm.z * WORLD_SCALE,
+    ).project(camera);
+    const sourceUv = { u: (ndc.x + 1) / 2, v: (1 - ndc.y) / 2 };
+    const displayUv = applyGroundGlassRttDisplayTransform(
+      sourceUv,
+      resolveGroundGlassRttDisplayTransform(previewMode),
+    );
+    return {
+      ndc: { x: ndc.x, y: ndc.y, z: ndc.z },
+      sourceUv,
+      displayUv,
+      insideFilmAndClip: ndc.x >= -1 && ndc.x <= 1 && ndc.y >= -1 && ndc.y <= 1 && ndc.z >= -1 && ndc.z <= 1,
+    };
+  };
+  const { tabletop } = tableTiltGeometry;
+  const tabletopTopCorners = [
+    { id: "near-left", localX: -tabletop.width / 2, localDepth: tabletop.nearLocalDepth },
+    { id: "near-right", localX: tabletop.width / 2, localDepth: tabletop.nearLocalDepth },
+    { id: "far-left", localX: -tabletop.width / 2, localDepth: tabletop.farLocalDepth },
+    { id: "far-right", localX: tabletop.width / 2, localDepth: tabletop.farLocalDepth },
+  ].map(({ id, ...local }) => ({
+    id,
+    worldMm: tableTiltGeometry.tabletopLocalToWorld(local),
+  }));
+  const tableBounds = tabletopTopCorners.map(({ id, worldMm }) => ({ id, worldMm, ...project(worldMm) }));
+  const focusDetails = tableTiltGeometry.subjects.map((subject) => ({
+    id: subject.id,
+    worldMm: subject.focusDetailProbeWorld,
+    ...project(subject.focusDetailProbeWorld),
+  }));
+  const tabletopCornersInsideFilmAndClip = tableBounds.filter((point) => point.insideFilmAndClip).length;
+  const focusDetailsInsideFilmAndClip = focusDetails.filter((point) => point.insideFilmAndClip).length;
+  expect(tableBounds).toHaveLength(4);
+  expect(tabletopCornersInsideFilmAndClip).toBeGreaterThan(0);
+  expect(focusDetails).toHaveLength(3);
+  expect(focusDetailsInsideFilmAndClip).toBe(3);
+
+  return {
+    requestId: attributes["data-frame-request-id"],
+    completedRequestId: attributes["data-last-completed-request-id"],
+    frameStatus: attributes["data-frame-result-status"],
+    sceneId: attributes["data-frame-scene-id"],
+    previewMode,
+    dofBypass,
+    dofProcessingEnabled: !dofBypass,
+    dofMode: attributes["data-rtt-dof-mode"],
+    rawContentful: attributes["data-rtt-raw-contentful"],
+    finalContentful: attributes["data-rtt-final-contentful"],
+    rendererGeneration: attributes["data-renderer-generation"],
+    subjectGeneration: attributes["data-rtt-sanity-state"]?.match(/subject-generation:([^|]+)/)?.[1] ?? null,
+    rttResourceGeneration: attributes["data-rtt-resource-generation"],
+    rttOwnerId: attributes["data-rtt-owner-id"],
+    camera: {
+      lensWorldPosition: cameraPositionWorld,
+      filmPlaneUpWorld: cameraUpWorld,
+      opticalAxisWorld: cameraForwardWorld,
+      nearWorld,
+      farWorld,
+      projectionDeterminant,
+      projectionMatrix,
+    },
+    framingProjectionSummary: {
+      tabletopCornersInsideFilmAndClip,
+      tabletopTopCornerCount: tableBounds.length,
+      focusDetailsInsideFilmAndClip,
+      focusDetailCount: focusDetails.length,
+      interpretation: "Projected focus-detail points being inside the film is separate from whether their physical markings are legible at normal Ground Glass size.",
+    },
+    projectedTabletopTopCorners: tableBounds,
+    projectedFocusDetails: focusDetails,
+  };
+};
+
+const captureTableTiltGroundGlass = async (
+  page: Page,
+  rtt: Locator,
+  directory: string,
+  filename: string,
+  label: string,
+  previewMode: "raw" | "upright",
+  settings: Record<string, unknown>,
+) => {
+  await page.getByRole("radio", {
+    name: previewMode === "raw" ? "Raw Ground Glass" : "Upright Assist",
+  }).check();
+  await expect(rtt).toHaveAttribute("data-rtt-preview-mode", previewMode);
+  await expect(rtt).toHaveAttribute("data-rtt-raw-debug", "false");
+  await expect(rtt).toHaveAttribute("data-rtt-dof-processing-enabled", "true");
+  const requestId = await waitForCompletedFrame(rtt);
+  const capture = await captureCanvas(rtt.locator("canvas").first(), directory, filename);
+  const diagnostics = await readRttCaptureDiagnostics(rtt, previewMode);
+  expect(diagnostics.requestId).toBe(requestId);
+  return {
+    ...capture,
+    label,
+    settings,
+    diagnostics,
+  };
+};
+
+test("Table Tilt calibrated Ground Glass qualification distinguishes neutral and calibrated states", async ({ page }, testInfo) => {
+  test.setTimeout(900_000);
+  const directory = await evidenceDirectory(testInfo);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  expect(await page.evaluate(() => window.devicePixelRatio)).toBe(1);
+
+  const seed = FIXED_SEED;
+  const route = (value: number) =>
+    `/simulator/free/table-tilt?seed=${value}&sv=1&${DIAGNOSTICS}`;
+  const assertSeedRoute = async (value: number) => {
+    await expect(page.getByTestId("scene-variation-controls")).toHaveAttribute("data-active-seed", String(value));
+    await expect(page.getByTestId("scene-variation-controls")).toHaveAttribute("data-active-schema", "1");
+    const url = new URL(page.url());
+    expect(url.pathname).toBe(appRoute(testInfo, "/simulator/free/table-tilt"));
+    expect(url.searchParams.get("seed")).toBe(String(value));
+    expect(url.searchParams.get("sv")).toBe("1");
+  };
+
+  await page.goto(appRoute(testInfo, route(seed)));
+  const { rtt } = await waitForSceneReady(page, "table-tilt");
+  await assertSeedRoute(seed);
+  await expect(page.getByRole("slider", { name: "Tilt", exact: true })).toHaveValue("0");
+  const neutralFocusMm = tableTiltScene.cameraPreset.focusDistanceMm;
+  const frontControls = page.locator('.movement-controls[data-standard="front"]');
+  await expect(frontControls).toHaveCount(1);
+  await expect(frontControls.locator(".movement-controls__heading")).toHaveText("Front standard");
+  await expect(page.getByRole("slider", { name: "Rise", exact: true })).toHaveValue("0");
+  await expect(page.getByRole("slider", { name: "Focus distance", exact: true }))
+    .toHaveValue(String(neutralFocusMm));
+  await expect(page.getByRole("slider", { name: "Swing", exact: true })).toHaveValue("0");
+  await expect(page.getByRole("radiogroup", { name: "Aperture" }))
+    .toHaveAttribute("data-selected-aperture", "11");
+  await expect(rtt).toHaveAttribute("data-rtt-raw-debug", "false");
+  await expect(rtt).toHaveAttribute("data-rtt-dof-processing-enabled", "true");
+
+  const neutralState = {
+    mode: "neutral",
+    frontStandard: "front",
+    frontRiseMm: tableTiltCalibration.frontRiseMm,
+    frontTiltDeg: 0,
+    frontSwingDeg: tableTiltCalibration.frontSwingDeg,
+    focusDistanceMm: neutralFocusMm,
+    focusSource: "tableTiltScene.cameraPreset.focusDistanceMm (existing zero-tilt scene default)",
+    aperture: 11,
+  };
+  const neutralRaw = await captureTableTiltGroundGlass(
+    page,
+    rtt,
+    directory,
+    "table-tilt-ground-glass-neutral-seed-284719-raw.png",
+    "Neutral · Raw · f/11",
+    "raw",
+    neutralState,
+  );
+  const neutralUpright = await captureTableTiltGroundGlass(
+    page,
+    rtt,
+    directory,
+    "table-tilt-ground-glass-neutral-seed-284719-upright.png",
+    "Neutral · Upright · f/11",
+    "upright",
+    neutralState,
+  );
+
+  const calibratedSettings = await setTableTiltCalibratedCamera(page, rtt);
+  await assertSeedRoute(seed);
+  const calibratedRaw = await captureTableTiltGroundGlass(
+    page,
+    rtt,
+    directory,
+    "table-tilt-ground-glass-calibrated-seed-284719-raw.png",
+    "Calibrated · Raw · f/11",
+    "raw",
+    calibratedSettings,
+  );
+  const calibratedUpright = await captureTableTiltGroundGlass(
+    page,
+    rtt,
+    directory,
+    "table-tilt-ground-glass-calibrated-seed-284719-upright.png",
+    "Calibrated · Upright · f/11",
+    "upright",
+    calibratedSettings,
+  );
+
+  await page.getByRole("radiogroup", { name: "Aperture" })
+    .getByRole("radio", { name: "f/5.6" }).check();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" }))
+    .toHaveAttribute("data-selected-aperture", "5.6");
+  const f56RequestId = await waitForCompletedFrame(rtt);
+  const f56Settings = { ...calibratedSettings, aperture: 5.6, requestId: f56RequestId };
+  const f56Raw = await captureTableTiltGroundGlass(
+    page,
+    rtt,
+    directory,
+    "table-tilt-ground-glass-calibrated-seed-284719-f5p6-raw.png",
+    "Calibrated · Raw · f/5.6 (supporting focus view)",
+    "raw",
+    f56Settings,
+  );
+  await page.getByRole("radiogroup", { name: "Aperture" })
+    .getByRole("radio", { name: "f/11" }).check();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" }))
+    .toHaveAttribute("data-selected-aperture", "11");
+  await waitForCompletedFrame(rtt);
+
+  const rawDebug = page.getByLabel("Raw RTT — bypass DOF", { exact: true });
+  await page.getByRole("radio", { name: "Raw Ground Glass" }).check();
+  await expect(rtt).toHaveAttribute("data-rtt-preview-mode", "raw");
+  await expect(rawDebug).not.toBeChecked();
+  await rawDebug.check();
+  await expect(rtt).toHaveAttribute("data-rtt-raw-debug", "true");
+  await expect(rtt).toHaveAttribute("data-rtt-dof-processing-enabled", "false");
+  const bypassRequestId = await waitForCompletedFrame(rtt);
+  const bypassCapture = await captureCanvas(
+    rtt.locator("canvas").first(),
+    directory,
+    "table-tilt-ground-glass-calibrated-seed-284719-raw-rtt-bypass-dof.png",
+  );
+  const bypassDiagnostics = await readRttCaptureDiagnostics(rtt, "raw", true);
+  expect(bypassDiagnostics.requestId).toBe(bypassRequestId);
+  await rawDebug.uncheck();
+  await expect(rtt).toHaveAttribute("data-rtt-dof-processing-enabled", "true");
+  await waitForCompletedFrame(rtt);
+
+  const calibratedBySeed = new Map<number, {
+    raw: typeof calibratedRaw;
+    upright: typeof calibratedUpright;
+    settings: typeof calibratedSettings;
+  }>();
+  calibratedBySeed.set(seed, { raw: calibratedRaw, upright: calibratedUpright, settings: calibratedSettings });
+  for (const otherSeed of [0, MAX_SEED]) {
+    await page.goto(appRoute(testInfo, route(otherSeed)));
+    const runtime = await waitForSceneReady(page, "table-tilt");
+    await assertSeedRoute(otherSeed);
+    const settings = await setTableTiltCalibratedCamera(page, runtime.rtt);
+    const raw = await captureTableTiltGroundGlass(
+      page,
+      runtime.rtt,
+      directory,
+      `table-tilt-ground-glass-calibrated-seed-${otherSeed}-raw.png`,
+      `Seed ${otherSeed} · Calibrated · Raw · f/11`,
+      "raw",
+      settings,
+    );
+    const upright = await captureTableTiltGroundGlass(
+      page,
+      runtime.rtt,
+      directory,
+      `table-tilt-ground-glass-calibrated-seed-${otherSeed}-upright.png`,
+      `Seed ${otherSeed} · Calibrated · Upright · f/11`,
+      "upright",
+      settings,
+    );
+    calibratedBySeed.set(otherSeed, { raw, upright, settings });
+  }
+
+  const neutralComparison = [neutralRaw, neutralUpright, calibratedRaw, calibratedUpright];
+  await writeContactSheet(
+    page,
+    directory,
+    "table-tilt-calibrated-neutral-vs-calibrated-contact-sheet.png",
+    neutralComparison,
+  );
+  const seedComparison = [0, seed, MAX_SEED].flatMap((value) => {
+    const captures = calibratedBySeed.get(value);
+    if (!captures) throw new Error(`Missing calibrated captures for seed ${value}`);
+    return [captures.raw, captures.upright];
+  });
+  await writeContactSheet(
+    page,
+    directory,
+    "table-tilt-calibrated-three-seed-contact-sheet.png",
+    seedComparison,
+  );
+
+  const report = {
+    qualification: "Table Tilt calibrated Ground Glass review-fix round 1",
+    viewport: { width: 1440, height: 1000 },
+    devicePixelRatio: await page.evaluate(() => window.devicePixelRatio),
+    sceneId: "table-tilt",
+    mode: "free",
+    schemaVersion: 1,
+    seed: FIXED_SEED,
+    originalCaptureLimitation: "The Wave 1 capture selected a generic reachable midpoint focus value rather than the authoritative Table Tilt calibration.",
+    calibrationSource: "src/scenes/tableTiltGeometry.ts#tableTiltCalibration",
+    calibrationRequested: {
+      frontTiltDeg: tableTiltCalibration.frontTiltDeg,
+      focusDistanceMm: tableTiltCalibration.focusDistanceMm,
+      aperture: tableTiltCalibration.aperture,
+      frontRiseMm: tableTiltCalibration.frontRiseMm,
+      frontSwingDeg: tableTiltCalibration.frontSwingDeg,
+    },
+    neutralState,
+    calibratedSettings,
+    focusControlResolution: calibratedSettings.focusDistance.step,
+    tiltControlResolution: calibratedSettings.frontTilt.step,
+    captures: {
+      neutral: [neutralRaw, neutralUpright],
+      calibratedSeed284719: [calibratedRaw, calibratedUpright],
+      calibratedThreeSeed: [0, seed, MAX_SEED].flatMap((value) => {
+        const capture = calibratedBySeed.get(value);
+        return capture ? [capture.raw, capture.upright] : [];
+      }),
+      calibratedSeed284719F56: f56Raw,
+      rawRttBypassDiagnostic: {
+        filename: bypassCapture.filename,
+        width: bypassCapture.width,
+        height: bypassCapture.height,
+        sha256: bypassCapture.sha256,
+        settings: { ...calibratedSettings, aperture: 11 },
+        classification: "Raw RTT diagnostic; DOF processing bypassed; not an ordinary photographic Ground Glass output.",
+        diagnostics: bypassDiagnostics,
+      },
+    },
+    contactSheets: [
+      "table-tilt-calibrated-neutral-vs-calibrated-contact-sheet.png",
+      "table-tilt-calibrated-three-seed-contact-sheet.png",
+    ],
+    visualAssessment: {
+      inspectionMethod: "Manual inspection of the unretouched 514×411 Chromium Ground Glass captures and contact sheets at native display size.",
+      tabletopVisibility: "The tabletop appears as a narrow band near the frame edge; its wood grain and seed-to-seed differences are not reliably inspectable at normal display size.",
+      focusDetailVisibility: "Near, middle, and far focus-detail points project inside the film, but their markings remain too small to read in the photographic captures.",
+      framing: "LIMITED: only the far pair of projected tabletop top corners lies inside the film; the near pair is clipped. Front Tilt changes focus-plane orientation but does not materially reframe the scene.",
+      rawUpright: "Correct: Raw shows the inverted subject band near the top; Upright Assist places it near the bottom.",
+      f56SupportingView: "The normal f/5.6 capture is very bright with a washed-out background; it remains supporting evidence and is not used to qualify tabletop material visibility.",
+      materialsQualificationThroughGroundGlass: "NEEDS_REVIEW",
+      photographicFramingClassification: "LIMITED",
+    },
+  };
+  await writeFile(path.join(directory, "table-tilt-calibrated-ground-glass-report.json"), JSON.stringify(report, null, 2));
+});
 
 test("Architecture + Foreground seeded materials qualify in Chromium at ordinary size", async ({ page }, testInfo) => {
   test.setTimeout(900_000);
