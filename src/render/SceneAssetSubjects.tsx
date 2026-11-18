@@ -229,9 +229,17 @@ export const ObliqueArchitectureSubject = () => (
   />
 );
 
-export const TableTiltSubject = () => (
-  <RegisteredSceneAsset assetKey={TABLE_TILT_ASSET_KEY} request={tableTiltRequest} />
-);
+export const TableTiltSubject = ({
+  variationDescriptor,
+}: {
+  variationDescriptor?: SceneVariationDescriptor;
+}) => {
+  const request = useMemo(
+    () => ({ ...tableTiltRequest, variationDescriptor }),
+    [variationDescriptor],
+  );
+  return <RegisteredSceneAsset assetKey={TABLE_TILT_ASSET_KEY} request={request} />;
+};
 
 export const ShelfSwingSubject = ({
   variationDescriptor,
@@ -247,12 +255,22 @@ export const ShelfSwingSubject = ({
   );
 };
 
-export const ArchitectureForegroundSubject = () => (
-  <RegisteredSceneAsset
-    assetKey={ARCHITECTURE_FOREGROUND_ASSET_KEY}
-    request={architectureForegroundRequest}
-  />
-);
+export const ArchitectureForegroundSubject = ({
+  variationDescriptor,
+}: {
+  variationDescriptor?: SceneVariationDescriptor;
+}) => {
+  const request = useMemo(
+    () => ({ ...architectureForegroundRequest, variationDescriptor }),
+    [variationDescriptor],
+  );
+  return (
+    <RegisteredSceneAsset
+      assetKey={ARCHITECTURE_FOREGROUND_ASSET_KEY}
+      request={request}
+    />
+  );
+};
 
 export const InteriorCornerSubject = ({
   variationDescriptor,
