@@ -1,0 +1,1538 @@
+{
+  "sceneId": "still-life-studio",
+  "schemaVersion": 1,
+  "browser": "Chromium production preview · WebGL2",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "devicePixelRatio": 1,
+  "observerCanvas": {
+    "width": 514,
+    "height": 411
+  },
+  "renderQuality": "standard",
+  "overlays": "clean Observer; optical, focus and DOF overlays disabled",
+  "focusDistanceMm": 4100,
+  "aperture": 11,
+  "cameraPosition": "-2.600000,1.700000,0.300000",
+  "orbitTarget": "0.000000,0.400000,4.100000",
+  "seeds": [
+    {
+      "seed": 0,
+      "compositionId": "vertical-emphasis",
+      "objectFamilies": [
+        "wooden-form",
+        "bowl",
+        "books"
+      ],
+      "objectCount": 3,
+      "planSignature": "48d3a09eb103c7a596dd8ca54955a5864902575e11857f073adc9343b93ed7d7",
+      "fallbackUsed": false,
+      "fallbackIssues": []
+    },
+    {
+      "seed": 1,
+      "compositionId": "asymmetric-still-life",
+      "objectFamilies": [
+        "books",
+        "wooden-form",
+        "books",
+        "books"
+      ],
+      "objectCount": 4,
+      "planSignature": "4d226f7b15781ea48f385d6fa7e52dc1cd59bae10cf970cc027da7e5bc7b6887",
+      "fallbackUsed": false,
+      "fallbackIssues": []
+    },
+    {
+      "seed": 284719,
+      "compositionId": "horizontal-grouping",
+      "objectFamilies": [
+        "books",
+        "books",
+        "wooden-form"
+      ],
+      "objectCount": 3,
+      "planSignature": "bf844ab9a2b62b71cc86acb1aabcccaa37ba9b36d5723ad307384b7f6b2f65c1",
+      "fallbackUsed": false,
+      "fallbackIssues": []
+    },
+    {
+      "seed": 4294967295,
+      "compositionId": "vertical-emphasis",
+      "objectFamilies": [
+        "vessel",
+        "books",
+        "wooden-form",
+        "books"
+      ],
+      "objectCount": 4,
+      "planSignature": "15d23346bf39e52e6f283580aae04f1e4effed230293119f4784a5b48de5b881",
+      "fallbackUsed": false,
+      "fallbackIssues": []
+    },
+    {
+      "seed": 3079748268,
+      "compositionId": "vertical-emphasis",
+      "objectFamilies": [
+        "wooden-form",
+        "bowl",
+        "books"
+      ],
+      "objectCount": 3,
+      "planSignature": "697c5600969258e77d569f887e39386f05b37dcb8aaef4cefdc72ac70c7d0945",
+      "fallbackUsed": false,
+      "fallbackIssues": []
+    },
+    {
+      "seed": 654013979,
+      "compositionId": "horizontal-grouping",
+      "objectFamilies": [
+        "books",
+        "bowl",
+        "bowl"
+      ],
+      "objectCount": 3,
+      "planSignature": "3595802ea810c09c83888bed8caf3c0e9d17f04de4f087ce89d5acdf865ea679",
+      "fallbackUsed": false,
+      "fallbackIssues": []
+    },
+    {
+      "seed": 4041585854,
+      "compositionId": "horizontal-grouping",
+      "objectFamilies": [
+        "bowl",
+        "books",
+        "wooden-form",
+        "wooden-form"
+      ],
+      "objectCount": 4,
+      "planSignature": "882e821444adbb9bd612d284e2cc347cb230038ea86a71a896b4c69078d99436",
+      "fallbackUsed": false,
+      "fallbackIssues": []
+    },
+    {
+      "seed": 2762659077,
+      "compositionId": "asymmetric-still-life",
+      "objectFamilies": [
+        "bowl",
+        "vessel",
+        "wooden-form"
+      ],
+      "objectCount": 3,
+      "planSignature": "1838f96734e371b9f69e68a1ff57ac53ed659226cc490be18fc11b4df67e80ad",
+      "fallbackUsed": false,
+      "fallbackIssues": []
+    },
+    {
+      "seed": 2004402848,
+      "compositionId": "horizontal-grouping",
+      "objectFamilies": [
+        "books",
+        "books",
+        "books"
+      ],
+      "objectCount": 3,
+      "planSignature": "6026b6f1aeee15da9b3cb45cc73b539a979fda594878915ae442f297eaf33e32",
+      "fallbackUsed": false,
+      "fallbackIssues": []
+    },
+    {
+      "seed": 1824298367,
+      "compositionId": "vertical-emphasis",
+      "objectFamilies": [
+        "vessel",
+        "books",
+        "wooden-form",
+        "bowl"
+      ],
+      "objectCount": 4,
+      "planSignature": "9c1962d2d8887b00c1f00372c1c61da40b820f2946034929026f7f564a9cc24a",
+      "fallbackUsed": false,
+      "fallbackIssues": []
+    },
+    {
+      "seed": 2130322642,
+      "compositionId": "horizontal-grouping",
+      "objectFamilies": [
+        "bowl",
+        "bowl",
+        "bowl"
+      ],
+      "objectCount": 3,
+      "planSignature": "33e23aa2c3f7ad0251ce77ec719911458bfdcf5437c42d2b2af08680500e220d",
+      "fallbackUsed": false,
+      "fallbackIssues": []
+    },
+    {
+      "seed": 4065361417,
+      "compositionId": "layered-depth",
+      "objectFamilies": [
+        "wooden-form",
+        "wooden-form",
+        "wooden-form"
+      ],
+      "objectCount": 3,
+      "planSignature": "f7511ae135de29256a70574724a98e05e4d09b0652a63c1494a1782eb2ba1246",
+      "fallbackUsed": false,
+      "fallbackIssues": []
+    }
+  ],
+  "implicitEntry": {
+    "url": "/simulator/free/still-life-studio?rttDiagnostics=1&sceneCapacityProfiling=1&dofProfiling=1&seed=442295363&sv=1",
+    "seed": "442295363"
+  },
+  "variation": {
+    "distinctPlanCount": 12,
+    "distinctCompositionCount": 4,
+    "screenshotHashes": {
+      "0": "ec48be66d318b0430fe69fd46e6cb297ad6fda3a53e701e03e2975e5a005aefc",
+      "1": "1eb00879a407f3dd68eda44ed933b7b9c8d74d764d8403acc559571c86c343f4",
+      "284719": "e7c55d8e9d3daa96ca7fb62d94d8cc3727451a7f43c162ecd61630428989633d",
+      "654013979": "74113c5c11244f783e0ff28a70b96585a77b91c113c7d781b2a1a01a579f69cf",
+      "1824298367": "063b673ed850f9388c9dd71e7d78e5eb7fca6520186cc7ae52dc1f02fe22dad1",
+      "2004402848": "af249eca12543cde00b2558b5752a04953928c0d9ecb5e5405841b45934c7794",
+      "2130322642": "be51b0a92f46069d08a5bd061f78face940cd835beb779d7ff42e8e5bd51d794",
+      "2762659077": "84cc68ffac72009ead981e54d3c7e9169746907772d99f03791f8fdc57061e9e",
+      "3079748268": "0120371edecf27170c315c8e75c5537a124f4b23d4170ad6a66fcc6ffcaa33e4",
+      "4041585854": "0bf8cbee6c6e14df02d6ce6816e1804d3f25ef25ddbf64611d77a7bbc6ecb0ad",
+      "4065361417": "6d64ed6f3956128160d729750d084294caf1d8b907328693688a68747996b4e7",
+      "4294967295": "10bcb4058856db1937b595caf4a3e64a813bde8023f7f80202b23608f8736687"
+    },
+    "pixelIdenticalReloadReplay": true
+  },
+  "artifacts": {
+    "seedGrid": "still-life-studio-12-seed-grid.png",
+    "representatives": "still-life-studio-four-representatives.png",
+    "blindPairs": "still-life-studio-blind-pairs.png",
+    "observerGroundGlass": "still-life-studio-observer-ground-glass-parity.png",
+    "sameSeedReplay": "still-life-studio-same-seed-replay.png",
+    "thumbnail": "public/assets/still-life-studio.webp",
+    "thumbnailSha256": "fd382179ce63d3eb7d3057f0eefbcbffb93acba0594e5b4449e74916f0ac246e",
+    "contactSheetHashes": {
+      "seedGrid": "a4c4fa3c287fc5999e8a4408fc75c2c86dae69160d22e06b16fd38d149507639",
+      "representatives": "6feedde78c85eeee3704a5c1c08fc9bf49959d657a22973828d9d6d1be79e59b",
+      "blindPairs": "36770c2c5589a18c653cda1b1c91f0b493168e8f0c1ef89c54bb6601dccf691c",
+      "sameSeedReplay": "031f6b465c49aad1e9fc0e4094fb3c934db0b568285eaae6ab244e06d560cdc1"
+    }
+  },
+  "shareUrl": "http://127.0.0.1:4196/simulator/free/still-life-studio?rttDiagnostics=1&sceneCapacityProfiling=1&dofProfiling=1&keep=still-life&seed=284719&sv=1#qualification",
+  "history": {
+    "seedA": 284719,
+    "seedB": 957143691,
+    "restoredA": 284719,
+    "restoredB": 957143691
+  },
+  "regenerationSeeds": [
+    284719,
+    957143691,
+    2409048428,
+    1527670508,
+    3367752999,
+    1387033817,
+    2782099601,
+    3811185198,
+    3020084631,
+    336004539,
+    4003810097,
+    3723094761,
+    2947498621
+  ],
+  "groundGlass": {
+    "frameStatus": "completed",
+    "frameRequestId": "gg-mwl162wh-g7hlgo223ml-default-request-54",
+    "lastCompletedRequestId": "gg-mwl162wh-g7hlgo223ml-default-request-54",
+    "previewStates": [
+      {
+        "focusDistanceMm": 3000,
+        "aperture": 5.6,
+        "mode": "processed",
+        "frameRequestId": "gg-mwl162wh-g7hlgo223ml-default-request-5"
+      },
+      {
+        "focusDistanceMm": 3000,
+        "aperture": 11,
+        "mode": "processed",
+        "frameRequestId": "gg-mwl162wh-g7hlgo223ml-default-request-6"
+      },
+      {
+        "focusDistanceMm": 3000,
+        "aperture": 22,
+        "mode": "processed",
+        "frameRequestId": "gg-mwl162wh-g7hlgo223ml-default-request-7"
+      },
+      {
+        "focusDistanceMm": 4100,
+        "aperture": 5.6,
+        "mode": "processed",
+        "frameRequestId": "gg-mwl162wh-g7hlgo223ml-default-request-9"
+      },
+      {
+        "focusDistanceMm": 4100,
+        "aperture": 11,
+        "mode": "processed",
+        "frameRequestId": "gg-mwl162wh-g7hlgo223ml-default-request-10"
+      },
+      {
+        "focusDistanceMm": 4100,
+        "aperture": 22,
+        "mode": "processed",
+        "frameRequestId": "gg-mwl162wh-g7hlgo223ml-default-request-11"
+      },
+      {
+        "focusDistanceMm": 5300,
+        "aperture": 5.6,
+        "mode": "processed",
+        "frameRequestId": "gg-mwl162wh-g7hlgo223ml-default-request-13"
+      },
+      {
+        "focusDistanceMm": 5300,
+        "aperture": 11,
+        "mode": "processed",
+        "frameRequestId": "gg-mwl162wh-g7hlgo223ml-default-request-14"
+      },
+      {
+        "focusDistanceMm": 5300,
+        "aperture": 22,
+        "mode": "processed",
+        "frameRequestId": "gg-mwl162wh-g7hlgo223ml-default-request-15"
+      },
+      {
+        "focusDistanceMm": 5300,
+        "aperture": 22,
+        "mode": "raw",
+        "frameRequestId": "gg-mwl162wh-g7hlgo223ml-default-request-16"
+      },
+      {
+        "focusDistanceMm": 5300,
+        "aperture": 22,
+        "mode": "upright",
+        "frameRequestId": "gg-mwl162wh-g7hlgo223ml-default-request-18"
+      }
+    ],
+    "focusStates": [
+      3000,
+      4100,
+      5300
+    ],
+    "movementStates": [
+      {
+        "movement": "Front Rise",
+        "value": 10
+      },
+      {
+        "movement": "Front Shift",
+        "value": 20
+      },
+      {
+        "movement": "Front Tilt",
+        "value": -2
+      },
+      {
+        "movement": "Front Swing",
+        "value": 2
+      },
+      {
+        "movement": "Rear Rise",
+        "value": 10
+      },
+      {
+        "movement": "Rear Shift",
+        "value": -20
+      },
+      {
+        "movement": "Rear Tilt",
+        "value": 2
+      },
+      {
+        "movement": "Rear Swing",
+        "value": -2
+      }
+    ]
+  },
+  "capacity": {
+    "sampleCount": 16,
+    "seedA": {
+      "viewportSubject": {
+        "objectCount": 42,
+        "meshCount": 31,
+        "renderableMeshCount": 31,
+        "uniqueGeometryCount": 28,
+        "uniqueMaterialCount": 10,
+        "uniqueTextureCount": 18,
+        "triangleCount": 6528,
+        "effectiveTriangleCount": 6528
+      },
+      "rttSubject": {
+        "objectCount": 41,
+        "meshCount": 31,
+        "renderableMeshCount": 31,
+        "uniqueGeometryCount": 28,
+        "uniqueMaterialCount": 10,
+        "uniqueTextureCount": 18,
+        "triangleCount": 6528,
+        "effectiveTriangleCount": 6528
+      },
+      "rendererResources": {
+        "geometries": 29,
+        "textures": 27
+      },
+      "groundGlass": {
+        "enabled": true,
+        "renderQuality": "standard",
+        "frameCount": 60,
+        "profilingBackend": "cpu-fallback",
+        "cpuSubmit": {
+          "latestMs": 0.20000000298023224,
+          "averageMs": 0.16999999955296516,
+          "p50Ms": 0.19999998807907104,
+          "p95Ms": 0.29999999701976776,
+          "count": 60
+        },
+        "physicalDofCpuSubmit": {
+          "latestMs": 0,
+          "averageMs": 0.024999999751647312,
+          "p50Ms": 0,
+          "p95Ms": 0.10000000894069672,
+          "count": 60
+        },
+        "framesAccepted": 772,
+        "framesRejectedCapacity": 0,
+        "framesInvalidated": 0,
+        "framesCompletedGpu": 0
+      }
+    },
+    "seedB": {
+      "viewportSubject": {
+        "objectCount": 42,
+        "meshCount": 30,
+        "renderableMeshCount": 30,
+        "uniqueGeometryCount": 27,
+        "uniqueMaterialCount": 11,
+        "uniqueTextureCount": 21,
+        "triangleCount": 5940,
+        "effectiveTriangleCount": 5940
+      },
+      "rttSubject": {
+        "objectCount": 41,
+        "meshCount": 30,
+        "renderableMeshCount": 30,
+        "uniqueGeometryCount": 27,
+        "uniqueMaterialCount": 11,
+        "uniqueTextureCount": 21,
+        "triangleCount": 5940,
+        "effectiveTriangleCount": 5940
+      },
+      "rendererResources": {
+        "geometries": 28,
+        "textures": 30
+      },
+      "groundGlass": {
+        "enabled": true,
+        "renderQuality": "standard",
+        "frameCount": 60,
+        "profilingBackend": "cpu-fallback",
+        "cpuSubmit": {
+          "latestMs": 0.20000000298023224,
+          "averageMs": 0.41333333402872086,
+          "p50Ms": 0.20000000298023224,
+          "p95Ms": 0.29999999701976776,
+          "count": 60
+        },
+        "physicalDofCpuSubmit": {
+          "latestMs": 0,
+          "averageMs": 0.029999999950329464,
+          "p50Ms": 0,
+          "p95Ms": 0.10000000894069672,
+          "count": 60
+        },
+        "framesAccepted": 811,
+        "framesRejectedCapacity": 0,
+        "framesInvalidated": 0,
+        "framesCompletedGpu": 0
+      }
+    },
+    "historyA": {
+      "viewportSubject": {
+        "objectCount": 42,
+        "meshCount": 31,
+        "renderableMeshCount": 31,
+        "uniqueGeometryCount": 28,
+        "uniqueMaterialCount": 10,
+        "uniqueTextureCount": 18,
+        "triangleCount": 6528,
+        "effectiveTriangleCount": 6528
+      },
+      "rttSubject": {
+        "objectCount": 41,
+        "meshCount": 31,
+        "renderableMeshCount": 31,
+        "uniqueGeometryCount": 28,
+        "uniqueMaterialCount": 10,
+        "uniqueTextureCount": 18,
+        "triangleCount": 6528,
+        "effectiveTriangleCount": 6528
+      },
+      "rendererResources": {
+        "geometries": 29,
+        "textures": 27
+      },
+      "groundGlass": {
+        "enabled": true,
+        "renderQuality": "standard",
+        "frameCount": 60,
+        "profilingBackend": "cpu-fallback",
+        "cpuSubmit": {
+          "latestMs": 0.20000000298023224,
+          "averageMs": 0.8316666680077712,
+          "p50Ms": 0.20000000298023224,
+          "p95Ms": 0.30000001192092896,
+          "count": 60
+        },
+        "physicalDofCpuSubmit": {
+          "latestMs": 0.10000000894069672,
+          "averageMs": 0.028333333134651185,
+          "p50Ms": 0,
+          "p95Ms": 0.10000000894069672,
+          "count": 60
+        },
+        "framesAccepted": 826,
+        "framesRejectedCapacity": 0,
+        "framesInvalidated": 0,
+        "framesCompletedGpu": 0
+      }
+    },
+    "historyB": {
+      "viewportSubject": {
+        "objectCount": 42,
+        "meshCount": 30,
+        "renderableMeshCount": 30,
+        "uniqueGeometryCount": 27,
+        "uniqueMaterialCount": 11,
+        "uniqueTextureCount": 21,
+        "triangleCount": 5940,
+        "effectiveTriangleCount": 5940
+      },
+      "rttSubject": {
+        "objectCount": 41,
+        "meshCount": 30,
+        "renderableMeshCount": 30,
+        "uniqueGeometryCount": 27,
+        "uniqueMaterialCount": 11,
+        "uniqueTextureCount": 21,
+        "triangleCount": 5940,
+        "effectiveTriangleCount": 5940
+      },
+      "rendererResources": {
+        "geometries": 28,
+        "textures": 30
+      },
+      "groundGlass": {
+        "enabled": true,
+        "renderQuality": "standard",
+        "frameCount": 60,
+        "profilingBackend": "cpu-fallback",
+        "cpuSubmit": {
+          "latestMs": 0.19999998807907104,
+          "averageMs": 1.2350000008940696,
+          "p50Ms": 0.20000000298023224,
+          "p95Ms": 0.30000001192092896,
+          "count": 60
+        },
+        "physicalDofCpuSubmit": {
+          "latestMs": 0.09999999403953552,
+          "averageMs": 0.028333333134651185,
+          "p50Ms": 0,
+          "p95Ms": 0.10000000894069672,
+          "count": 60
+        },
+        "framesAccepted": 842,
+        "framesRejectedCapacity": 0,
+        "framesInvalidated": 0,
+        "framesCompletedGpu": 0
+      }
+    },
+    "afterTenRegenerations": {
+      "viewportSubject": {
+        "objectCount": 45,
+        "meshCount": 33,
+        "renderableMeshCount": 33,
+        "uniqueGeometryCount": 30,
+        "uniqueMaterialCount": 11,
+        "uniqueTextureCount": 15,
+        "triangleCount": 6560,
+        "effectiveTriangleCount": 6560
+      },
+      "rttSubject": {
+        "objectCount": 44,
+        "meshCount": 33,
+        "renderableMeshCount": 33,
+        "uniqueGeometryCount": 30,
+        "uniqueMaterialCount": 11,
+        "uniqueTextureCount": 15,
+        "triangleCount": 6560,
+        "effectiveTriangleCount": 6560
+      },
+      "rendererResources": {
+        "geometries": 31,
+        "textures": 24
+      },
+      "groundGlass": {
+        "enabled": true,
+        "renderQuality": "standard",
+        "frameCount": 60,
+        "profilingBackend": "cpu-fallback",
+        "cpuSubmit": {
+          "latestMs": 0.29999999701976776,
+          "averageMs": 0.6399999996026356,
+          "p50Ms": 0.20000000298023224,
+          "p95Ms": 0.30000001192092896,
+          "count": 60
+        },
+        "physicalDofCpuSubmit": {
+          "latestMs": 0.09999999403953552,
+          "averageMs": 0.03999999910593033,
+          "p50Ms": 0,
+          "p95Ms": 0.10000000894069672,
+          "count": 60
+        },
+        "framesAccepted": 1231,
+        "framesRejectedCapacity": 0,
+        "framesInvalidated": 0,
+        "framesCompletedGpu": 0
+      }
+    },
+    "afterLeaveReenter": {
+      "viewportSubject": {
+        "objectCount": 42,
+        "meshCount": 31,
+        "renderableMeshCount": 31,
+        "uniqueGeometryCount": 28,
+        "uniqueMaterialCount": 10,
+        "uniqueTextureCount": 18,
+        "triangleCount": 6528,
+        "effectiveTriangleCount": 6528
+      },
+      "rttSubject": {
+        "objectCount": 41,
+        "meshCount": 31,
+        "renderableMeshCount": 31,
+        "uniqueGeometryCount": 28,
+        "uniqueMaterialCount": 10,
+        "uniqueTextureCount": 18,
+        "triangleCount": 6528,
+        "effectiveTriangleCount": 6528
+      },
+      "rendererResources": {
+        "geometries": 29,
+        "textures": 27
+      },
+      "groundGlass": {
+        "enabled": true,
+        "renderQuality": "high",
+        "frameCount": 13,
+        "profilingBackend": "cpu-fallback",
+        "cpuSubmit": {
+          "latestMs": 0.30000001192092896,
+          "averageMs": 9.423076926515652,
+          "p50Ms": 0.29999999701976776,
+          "p95Ms": 119.6000000089407,
+          "count": 13
+        },
+        "physicalDofCpuSubmit": {
+          "latestMs": 0.10000000894069672,
+          "averageMs": 7.961538464977191,
+          "p50Ms": 0.09999999403953552,
+          "p95Ms": 102.80000001192093,
+          "count": 13
+        },
+        "framesAccepted": 13,
+        "framesRejectedCapacity": 0,
+        "framesInvalidated": 0,
+        "framesCompletedGpu": 0
+      }
+    },
+    "samples": [
+      {
+        "viewportSubject": {
+          "objectCount": 42,
+          "meshCount": 31,
+          "renderableMeshCount": 31,
+          "uniqueGeometryCount": 28,
+          "uniqueMaterialCount": 10,
+          "uniqueTextureCount": 18,
+          "triangleCount": 6528,
+          "effectiveTriangleCount": 6528
+        },
+        "rttSubject": {
+          "objectCount": 41,
+          "meshCount": 31,
+          "renderableMeshCount": 31,
+          "uniqueGeometryCount": 28,
+          "uniqueMaterialCount": 10,
+          "uniqueTextureCount": 18,
+          "triangleCount": 6528,
+          "effectiveTriangleCount": 6528
+        },
+        "rendererResources": {
+          "geometries": 29,
+          "textures": 27
+        },
+        "groundGlass": {
+          "enabled": true,
+          "renderQuality": "standard",
+          "frameCount": 60,
+          "profilingBackend": "cpu-fallback",
+          "cpuSubmit": {
+            "latestMs": 0.20000000298023224,
+            "averageMs": 0.16999999955296516,
+            "p50Ms": 0.19999998807907104,
+            "p95Ms": 0.29999999701976776,
+            "count": 60
+          },
+          "physicalDofCpuSubmit": {
+            "latestMs": 0,
+            "averageMs": 0.024999999751647312,
+            "p50Ms": 0,
+            "p95Ms": 0.10000000894069672,
+            "count": 60
+          },
+          "framesAccepted": 772,
+          "framesRejectedCapacity": 0,
+          "framesInvalidated": 0,
+          "framesCompletedGpu": 0
+        }
+      },
+      {
+        "viewportSubject": {
+          "objectCount": 42,
+          "meshCount": 30,
+          "renderableMeshCount": 30,
+          "uniqueGeometryCount": 27,
+          "uniqueMaterialCount": 11,
+          "uniqueTextureCount": 21,
+          "triangleCount": 5940,
+          "effectiveTriangleCount": 5940
+        },
+        "rttSubject": {
+          "objectCount": 41,
+          "meshCount": 30,
+          "renderableMeshCount": 30,
+          "uniqueGeometryCount": 27,
+          "uniqueMaterialCount": 11,
+          "uniqueTextureCount": 21,
+          "triangleCount": 5940,
+          "effectiveTriangleCount": 5940
+        },
+        "rendererResources": {
+          "geometries": 28,
+          "textures": 30
+        },
+        "groundGlass": {
+          "enabled": true,
+          "renderQuality": "standard",
+          "frameCount": 60,
+          "profilingBackend": "cpu-fallback",
+          "cpuSubmit": {
+            "latestMs": 0.20000000298023224,
+            "averageMs": 0.41333333402872086,
+            "p50Ms": 0.20000000298023224,
+            "p95Ms": 0.29999999701976776,
+            "count": 60
+          },
+          "physicalDofCpuSubmit": {
+            "latestMs": 0,
+            "averageMs": 0.029999999950329464,
+            "p50Ms": 0,
+            "p95Ms": 0.10000000894069672,
+            "count": 60
+          },
+          "framesAccepted": 811,
+          "framesRejectedCapacity": 0,
+          "framesInvalidated": 0,
+          "framesCompletedGpu": 0
+        }
+      },
+      {
+        "viewportSubject": {
+          "objectCount": 42,
+          "meshCount": 31,
+          "renderableMeshCount": 31,
+          "uniqueGeometryCount": 28,
+          "uniqueMaterialCount": 10,
+          "uniqueTextureCount": 18,
+          "triangleCount": 6528,
+          "effectiveTriangleCount": 6528
+        },
+        "rttSubject": {
+          "objectCount": 41,
+          "meshCount": 31,
+          "renderableMeshCount": 31,
+          "uniqueGeometryCount": 28,
+          "uniqueMaterialCount": 10,
+          "uniqueTextureCount": 18,
+          "triangleCount": 6528,
+          "effectiveTriangleCount": 6528
+        },
+        "rendererResources": {
+          "geometries": 29,
+          "textures": 27
+        },
+        "groundGlass": {
+          "enabled": true,
+          "renderQuality": "standard",
+          "frameCount": 60,
+          "profilingBackend": "cpu-fallback",
+          "cpuSubmit": {
+            "latestMs": 0.20000000298023224,
+            "averageMs": 0.8316666680077712,
+            "p50Ms": 0.20000000298023224,
+            "p95Ms": 0.30000001192092896,
+            "count": 60
+          },
+          "physicalDofCpuSubmit": {
+            "latestMs": 0.10000000894069672,
+            "averageMs": 0.028333333134651185,
+            "p50Ms": 0,
+            "p95Ms": 0.10000000894069672,
+            "count": 60
+          },
+          "framesAccepted": 826,
+          "framesRejectedCapacity": 0,
+          "framesInvalidated": 0,
+          "framesCompletedGpu": 0
+        }
+      },
+      {
+        "viewportSubject": {
+          "objectCount": 42,
+          "meshCount": 30,
+          "renderableMeshCount": 30,
+          "uniqueGeometryCount": 27,
+          "uniqueMaterialCount": 11,
+          "uniqueTextureCount": 21,
+          "triangleCount": 5940,
+          "effectiveTriangleCount": 5940
+        },
+        "rttSubject": {
+          "objectCount": 41,
+          "meshCount": 30,
+          "renderableMeshCount": 30,
+          "uniqueGeometryCount": 27,
+          "uniqueMaterialCount": 11,
+          "uniqueTextureCount": 21,
+          "triangleCount": 5940,
+          "effectiveTriangleCount": 5940
+        },
+        "rendererResources": {
+          "geometries": 28,
+          "textures": 30
+        },
+        "groundGlass": {
+          "enabled": true,
+          "renderQuality": "standard",
+          "frameCount": 60,
+          "profilingBackend": "cpu-fallback",
+          "cpuSubmit": {
+            "latestMs": 0.19999998807907104,
+            "averageMs": 1.2350000008940696,
+            "p50Ms": 0.20000000298023224,
+            "p95Ms": 0.30000001192092896,
+            "count": 60
+          },
+          "physicalDofCpuSubmit": {
+            "latestMs": 0.09999999403953552,
+            "averageMs": 0.028333333134651185,
+            "p50Ms": 0,
+            "p95Ms": 0.10000000894069672,
+            "count": 60
+          },
+          "framesAccepted": 842,
+          "framesRejectedCapacity": 0,
+          "framesInvalidated": 0,
+          "framesCompletedGpu": 0
+        }
+      },
+      {
+        "viewportSubject": {
+          "objectCount": 27,
+          "meshCount": 16,
+          "renderableMeshCount": 16,
+          "uniqueGeometryCount": 13,
+          "uniqueMaterialCount": 8,
+          "uniqueTextureCount": 9,
+          "triangleCount": 1608,
+          "effectiveTriangleCount": 1608
+        },
+        "rttSubject": {
+          "objectCount": 26,
+          "meshCount": 16,
+          "renderableMeshCount": 16,
+          "uniqueGeometryCount": 13,
+          "uniqueMaterialCount": 8,
+          "uniqueTextureCount": 9,
+          "triangleCount": 1608,
+          "effectiveTriangleCount": 1608
+        },
+        "rendererResources": {
+          "geometries": 14,
+          "textures": 18
+        },
+        "groundGlass": {
+          "enabled": true,
+          "renderQuality": "standard",
+          "frameCount": 60,
+          "profilingBackend": "cpu-fallback",
+          "cpuSubmit": {
+            "latestMs": 0.09999999403953552,
+            "averageMs": 0.3949999985595544,
+            "p50Ms": 0.19999998807907104,
+            "p95Ms": 0.29999999701976776,
+            "count": 60
+          },
+          "physicalDofCpuSubmit": {
+            "latestMs": 0,
+            "averageMs": 0.03166666676600774,
+            "p50Ms": 0,
+            "p95Ms": 0.10000000894069672,
+            "count": 60
+          },
+          "framesAccepted": 899,
+          "framesRejectedCapacity": 0,
+          "framesInvalidated": 0,
+          "framesCompletedGpu": 0
+        }
+      },
+      {
+        "viewportSubject": {
+          "objectCount": 42,
+          "meshCount": 30,
+          "renderableMeshCount": 30,
+          "uniqueGeometryCount": 27,
+          "uniqueMaterialCount": 11,
+          "uniqueTextureCount": 15,
+          "triangleCount": 5660,
+          "effectiveTriangleCount": 5660
+        },
+        "rttSubject": {
+          "objectCount": 41,
+          "meshCount": 30,
+          "renderableMeshCount": 30,
+          "uniqueGeometryCount": 27,
+          "uniqueMaterialCount": 11,
+          "uniqueTextureCount": 15,
+          "triangleCount": 5660,
+          "effectiveTriangleCount": 5660
+        },
+        "rendererResources": {
+          "geometries": 28,
+          "textures": 24
+        },
+        "groundGlass": {
+          "enabled": true,
+          "renderQuality": "standard",
+          "frameCount": 60,
+          "profilingBackend": "cpu-fallback",
+          "cpuSubmit": {
+            "latestMs": 0.10000000894069672,
+            "averageMs": 0.6216666666169961,
+            "p50Ms": 0.19999998807907104,
+            "p95Ms": 0.29999999701976776,
+            "count": 60
+          },
+          "physicalDofCpuSubmit": {
+            "latestMs": 0,
+            "averageMs": 0.04833333442608515,
+            "p50Ms": 0,
+            "p95Ms": 0.10000000894069672,
+            "count": 60
+          },
+          "framesAccepted": 932,
+          "framesRejectedCapacity": 0,
+          "framesInvalidated": 0,
+          "framesCompletedGpu": 0
+        }
+      },
+      {
+        "viewportSubject": {
+          "objectCount": 29,
+          "meshCount": 18,
+          "renderableMeshCount": 18,
+          "uniqueGeometryCount": 15,
+          "uniqueMaterialCount": 8,
+          "uniqueTextureCount": 12,
+          "triangleCount": 2924,
+          "effectiveTriangleCount": 2924
+        },
+        "rttSubject": {
+          "objectCount": 28,
+          "meshCount": 18,
+          "renderableMeshCount": 18,
+          "uniqueGeometryCount": 15,
+          "uniqueMaterialCount": 8,
+          "uniqueTextureCount": 12,
+          "triangleCount": 2924,
+          "effectiveTriangleCount": 2924
+        },
+        "rendererResources": {
+          "geometries": 16,
+          "textures": 21
+        },
+        "groundGlass": {
+          "enabled": true,
+          "renderQuality": "standard",
+          "frameCount": 60,
+          "profilingBackend": "cpu-fallback",
+          "cpuSubmit": {
+            "latestMs": 0.10000000894069672,
+            "averageMs": 0.6283333338797092,
+            "p50Ms": 0.20000000298023224,
+            "p95Ms": 0.29999999701976776,
+            "count": 60
+          },
+          "physicalDofCpuSubmit": {
+            "latestMs": 0,
+            "averageMs": 0.05000000074505806,
+            "p50Ms": 0,
+            "p95Ms": 0.10000000894069672,
+            "count": 60
+          },
+          "framesAccepted": 965,
+          "framesRejectedCapacity": 0,
+          "framesInvalidated": 0,
+          "framesCompletedGpu": 0
+        }
+      },
+      {
+        "viewportSubject": {
+          "objectCount": 29,
+          "meshCount": 18,
+          "renderableMeshCount": 18,
+          "uniqueGeometryCount": 15,
+          "uniqueMaterialCount": 8,
+          "uniqueTextureCount": 15,
+          "triangleCount": 3064,
+          "effectiveTriangleCount": 3064
+        },
+        "rttSubject": {
+          "objectCount": 28,
+          "meshCount": 18,
+          "renderableMeshCount": 18,
+          "uniqueGeometryCount": 15,
+          "uniqueMaterialCount": 8,
+          "uniqueTextureCount": 15,
+          "triangleCount": 3064,
+          "effectiveTriangleCount": 3064
+        },
+        "rendererResources": {
+          "geometries": 16,
+          "textures": 24
+        },
+        "groundGlass": {
+          "enabled": true,
+          "renderQuality": "standard",
+          "frameCount": 60,
+          "profilingBackend": "cpu-fallback",
+          "cpuSubmit": {
+            "latestMs": 0.20000000298023224,
+            "averageMs": 0.6049999999503295,
+            "p50Ms": 0.10000000894069672,
+            "p95Ms": 0.29999999701976776,
+            "count": 60
+          },
+          "physicalDofCpuSubmit": {
+            "latestMs": 0,
+            "averageMs": 0.038333333532015484,
+            "p50Ms": 0,
+            "p95Ms": 0.10000000894069672,
+            "count": 60
+          },
+          "framesAccepted": 998,
+          "framesRejectedCapacity": 0,
+          "framesInvalidated": 0,
+          "framesCompletedGpu": 0
+        }
+      },
+      {
+        "viewportSubject": {
+          "objectCount": 36,
+          "meshCount": 25,
+          "renderableMeshCount": 25,
+          "uniqueGeometryCount": 22,
+          "uniqueMaterialCount": 9,
+          "uniqueTextureCount": 12,
+          "triangleCount": 4468,
+          "effectiveTriangleCount": 4468
+        },
+        "rttSubject": {
+          "objectCount": 35,
+          "meshCount": 25,
+          "renderableMeshCount": 25,
+          "uniqueGeometryCount": 22,
+          "uniqueMaterialCount": 9,
+          "uniqueTextureCount": 12,
+          "triangleCount": 4468,
+          "effectiveTriangleCount": 4468
+        },
+        "rendererResources": {
+          "geometries": 23,
+          "textures": 21
+        },
+        "groundGlass": {
+          "enabled": true,
+          "renderQuality": "standard",
+          "frameCount": 60,
+          "profilingBackend": "cpu-fallback",
+          "cpuSubmit": {
+            "latestMs": 0.20000000298023224,
+            "averageMs": 0.6083333328366279,
+            "p50Ms": 0.10000000894069672,
+            "p95Ms": 0.29999999701976776,
+            "count": 60
+          },
+          "physicalDofCpuSubmit": {
+            "latestMs": 0,
+            "averageMs": 0.033333333830038704,
+            "p50Ms": 0,
+            "p95Ms": 0.10000000894069672,
+            "count": 60
+          },
+          "framesAccepted": 1031,
+          "framesRejectedCapacity": 0,
+          "framesInvalidated": 0,
+          "framesCompletedGpu": 0
+        }
+      },
+      {
+        "viewportSubject": {
+          "objectCount": 40,
+          "meshCount": 29,
+          "renderableMeshCount": 29,
+          "uniqueGeometryCount": 26,
+          "uniqueMaterialCount": 10,
+          "uniqueTextureCount": 15,
+          "triangleCount": 5212,
+          "effectiveTriangleCount": 5212
+        },
+        "rttSubject": {
+          "objectCount": 39,
+          "meshCount": 29,
+          "renderableMeshCount": 29,
+          "uniqueGeometryCount": 26,
+          "uniqueMaterialCount": 10,
+          "uniqueTextureCount": 15,
+          "triangleCount": 5212,
+          "effectiveTriangleCount": 5212
+        },
+        "rendererResources": {
+          "geometries": 27,
+          "textures": 24
+        },
+        "groundGlass": {
+          "enabled": true,
+          "renderQuality": "standard",
+          "frameCount": 60,
+          "profilingBackend": "cpu-fallback",
+          "cpuSubmit": {
+            "latestMs": 0.20000000298023224,
+            "averageMs": 0.6033333321412404,
+            "p50Ms": 0.10000000894069672,
+            "p95Ms": 0.29999999701976776,
+            "count": 60
+          },
+          "physicalDofCpuSubmit": {
+            "latestMs": 0,
+            "averageMs": 0.02999999945362409,
+            "p50Ms": 0,
+            "p95Ms": 0.10000000894069672,
+            "count": 60
+          },
+          "framesAccepted": 1064,
+          "framesRejectedCapacity": 0,
+          "framesInvalidated": 0,
+          "framesCompletedGpu": 0
+        }
+      },
+      {
+        "viewportSubject": {
+          "objectCount": 34,
+          "meshCount": 22,
+          "renderableMeshCount": 22,
+          "uniqueGeometryCount": 19,
+          "uniqueMaterialCount": 10,
+          "uniqueTextureCount": 15,
+          "triangleCount": 3548,
+          "effectiveTriangleCount": 3548
+        },
+        "rttSubject": {
+          "objectCount": 33,
+          "meshCount": 22,
+          "renderableMeshCount": 22,
+          "uniqueGeometryCount": 19,
+          "uniqueMaterialCount": 10,
+          "uniqueTextureCount": 15,
+          "triangleCount": 3548,
+          "effectiveTriangleCount": 3548
+        },
+        "rendererResources": {
+          "geometries": 20,
+          "textures": 24
+        },
+        "groundGlass": {
+          "enabled": true,
+          "renderQuality": "standard",
+          "frameCount": 60,
+          "profilingBackend": "cpu-fallback",
+          "cpuSubmit": {
+            "latestMs": 0.20000000298023224,
+            "averageMs": 0.6066666662693023,
+            "p50Ms": 0.10000000894069672,
+            "p95Ms": 0.29999999701976776,
+            "count": 60
+          },
+          "physicalDofCpuSubmit": {
+            "latestMs": 0.09999999403953552,
+            "averageMs": 0.033333332588275276,
+            "p50Ms": 0,
+            "p95Ms": 0.10000000894069672,
+            "count": 60
+          },
+          "framesAccepted": 1097,
+          "framesRejectedCapacity": 0,
+          "framesInvalidated": 0,
+          "framesCompletedGpu": 0
+        }
+      },
+      {
+        "viewportSubject": {
+          "objectCount": 44,
+          "meshCount": 32,
+          "renderableMeshCount": 32,
+          "uniqueGeometryCount": 29,
+          "uniqueMaterialCount": 12,
+          "uniqueTextureCount": 18,
+          "triangleCount": 6112,
+          "effectiveTriangleCount": 6112
+        },
+        "rttSubject": {
+          "objectCount": 43,
+          "meshCount": 32,
+          "renderableMeshCount": 32,
+          "uniqueGeometryCount": 29,
+          "uniqueMaterialCount": 12,
+          "uniqueTextureCount": 18,
+          "triangleCount": 6112,
+          "effectiveTriangleCount": 6112
+        },
+        "rendererResources": {
+          "geometries": 30,
+          "textures": 27
+        },
+        "groundGlass": {
+          "enabled": true,
+          "renderQuality": "standard",
+          "frameCount": 60,
+          "profilingBackend": "cpu-fallback",
+          "cpuSubmit": {
+            "latestMs": 0.19999998807907104,
+            "averageMs": 0.6333333338300388,
+            "p50Ms": 0.19999998807907104,
+            "p95Ms": 0.29999999701976776,
+            "count": 60
+          },
+          "physicalDofCpuSubmit": {
+            "latestMs": 0,
+            "averageMs": 0.026666666815678277,
+            "p50Ms": 0,
+            "p95Ms": 0.10000000894069672,
+            "count": 60
+          },
+          "framesAccepted": 1130,
+          "framesRejectedCapacity": 0,
+          "framesInvalidated": 0,
+          "framesCompletedGpu": 0
+        }
+      },
+      {
+        "viewportSubject": {
+          "objectCount": 46,
+          "meshCount": 34,
+          "renderableMeshCount": 34,
+          "uniqueGeometryCount": 31,
+          "uniqueMaterialCount": 11,
+          "uniqueTextureCount": 21,
+          "triangleCount": 8292,
+          "effectiveTriangleCount": 8292
+        },
+        "rttSubject": {
+          "objectCount": 45,
+          "meshCount": 34,
+          "renderableMeshCount": 34,
+          "uniqueGeometryCount": 31,
+          "uniqueMaterialCount": 11,
+          "uniqueTextureCount": 21,
+          "triangleCount": 8292,
+          "effectiveTriangleCount": 8292
+        },
+        "rendererResources": {
+          "geometries": 32,
+          "textures": 30
+        },
+        "groundGlass": {
+          "enabled": true,
+          "renderQuality": "standard",
+          "frameCount": 60,
+          "profilingBackend": "cpu-fallback",
+          "cpuSubmit": {
+            "latestMs": 0.20000000298023224,
+            "averageMs": 0.6766666660706202,
+            "p50Ms": 0.20000000298023224,
+            "p95Ms": 0.29999999701976776,
+            "count": 60
+          },
+          "physicalDofCpuSubmit": {
+            "latestMs": 0,
+            "averageMs": 0.028333333631356556,
+            "p50Ms": 0,
+            "p95Ms": 0.10000000894069672,
+            "count": 60
+          },
+          "framesAccepted": 1163,
+          "framesRejectedCapacity": 0,
+          "framesInvalidated": 0,
+          "framesCompletedGpu": 0
+        }
+      },
+      {
+        "viewportSubject": {
+          "objectCount": 36,
+          "meshCount": 25,
+          "renderableMeshCount": 25,
+          "uniqueGeometryCount": 22,
+          "uniqueMaterialCount": 9,
+          "uniqueTextureCount": 12,
+          "triangleCount": 4468,
+          "effectiveTriangleCount": 4468
+        },
+        "rttSubject": {
+          "objectCount": 35,
+          "meshCount": 25,
+          "renderableMeshCount": 25,
+          "uniqueGeometryCount": 22,
+          "uniqueMaterialCount": 9,
+          "uniqueTextureCount": 12,
+          "triangleCount": 4468,
+          "effectiveTriangleCount": 4468
+        },
+        "rendererResources": {
+          "geometries": 23,
+          "textures": 21
+        },
+        "groundGlass": {
+          "enabled": true,
+          "renderQuality": "standard",
+          "frameCount": 60,
+          "profilingBackend": "cpu-fallback",
+          "cpuSubmit": {
+            "latestMs": 0.09999999403953552,
+            "averageMs": 0.6683333322405816,
+            "p50Ms": 0.20000000298023224,
+            "p95Ms": 0.29999999701976776,
+            "count": 60
+          },
+          "physicalDofCpuSubmit": {
+            "latestMs": 0,
+            "averageMs": 0.03666666547457377,
+            "p50Ms": 0,
+            "p95Ms": 0.10000000894069672,
+            "count": 60
+          },
+          "framesAccepted": 1196,
+          "framesRejectedCapacity": 0,
+          "framesInvalidated": 0,
+          "framesCompletedGpu": 0
+        }
+      },
+      {
+        "viewportSubject": {
+          "objectCount": 45,
+          "meshCount": 33,
+          "renderableMeshCount": 33,
+          "uniqueGeometryCount": 30,
+          "uniqueMaterialCount": 11,
+          "uniqueTextureCount": 15,
+          "triangleCount": 6560,
+          "effectiveTriangleCount": 6560
+        },
+        "rttSubject": {
+          "objectCount": 44,
+          "meshCount": 33,
+          "renderableMeshCount": 33,
+          "uniqueGeometryCount": 30,
+          "uniqueMaterialCount": 11,
+          "uniqueTextureCount": 15,
+          "triangleCount": 6560,
+          "effectiveTriangleCount": 6560
+        },
+        "rendererResources": {
+          "geometries": 31,
+          "textures": 24
+        },
+        "groundGlass": {
+          "enabled": true,
+          "renderQuality": "standard",
+          "frameCount": 60,
+          "profilingBackend": "cpu-fallback",
+          "cpuSubmit": {
+            "latestMs": 0.10000000894069672,
+            "averageMs": 0.6399999998509884,
+            "p50Ms": 0.20000000298023224,
+            "p95Ms": 0.30000001192092896,
+            "count": 60
+          },
+          "physicalDofCpuSubmit": {
+            "latestMs": 0,
+            "averageMs": 0.038333332538604735,
+            "p50Ms": 0,
+            "p95Ms": 0.10000000894069672,
+            "count": 60
+          },
+          "framesAccepted": 1229,
+          "framesRejectedCapacity": 0,
+          "framesInvalidated": 0,
+          "framesCompletedGpu": 0
+        }
+      },
+      {
+        "viewportSubject": {
+          "objectCount": 42,
+          "meshCount": 31,
+          "renderableMeshCount": 31,
+          "uniqueGeometryCount": 28,
+          "uniqueMaterialCount": 10,
+          "uniqueTextureCount": 18,
+          "triangleCount": 6528,
+          "effectiveTriangleCount": 6528
+        },
+        "rttSubject": {
+          "objectCount": 41,
+          "meshCount": 31,
+          "renderableMeshCount": 31,
+          "uniqueGeometryCount": 28,
+          "uniqueMaterialCount": 10,
+          "uniqueTextureCount": 18,
+          "triangleCount": 6528,
+          "effectiveTriangleCount": 6528
+        },
+        "rendererResources": {
+          "geometries": 29,
+          "textures": 27
+        },
+        "groundGlass": {
+          "enabled": true,
+          "renderQuality": "high",
+          "frameCount": 13,
+          "profilingBackend": "cpu-fallback",
+          "cpuSubmit": {
+            "latestMs": 0.30000001192092896,
+            "averageMs": 9.423076926515652,
+            "p50Ms": 0.29999999701976776,
+            "p95Ms": 119.6000000089407,
+            "count": 13
+          },
+          "physicalDofCpuSubmit": {
+            "latestMs": 0.10000000894069672,
+            "averageMs": 7.961538464977191,
+            "p50Ms": 0.09999999403953552,
+            "p95Ms": 102.80000001192093,
+            "count": 13
+          },
+          "framesAccepted": 13,
+          "framesRejectedCapacity": 0,
+          "framesInvalidated": 0,
+          "framesCompletedGpu": 0
+        }
+      }
+    ],
+    "rendererResourceOverhead": {
+      "geometryValues": [
+        1
+      ],
+      "textureValues": [
+        9
+      ],
+      "minimumRendererGeometries": 14,
+      "maximumRendererGeometries": 32,
+      "minimumRendererTextures": 18,
+      "maximumRendererTextures": 30
+    },
+    "resourceOwnershipResiduals": [
+      {
+        "geometryOverhead": 1,
+        "textureOverhead": 9
+      },
+      {
+        "geometryOverhead": 1,
+        "textureOverhead": 9
+      },
+      {
+        "geometryOverhead": 1,
+        "textureOverhead": 9
+      },
+      {
+        "geometryOverhead": 1,
+        "textureOverhead": 9
+      },
+      {
+        "geometryOverhead": 1,
+        "textureOverhead": 9
+      },
+      {
+        "geometryOverhead": 1,
+        "textureOverhead": 9
+      },
+      {
+        "geometryOverhead": 1,
+        "textureOverhead": 9
+      },
+      {
+        "geometryOverhead": 1,
+        "textureOverhead": 9
+      },
+      {
+        "geometryOverhead": 1,
+        "textureOverhead": 9
+      },
+      {
+        "geometryOverhead": 1,
+        "textureOverhead": 9
+      },
+      {
+        "geometryOverhead": 1,
+        "textureOverhead": 9
+      },
+      {
+        "geometryOverhead": 1,
+        "textureOverhead": 9
+      },
+      {
+        "geometryOverhead": 1,
+        "textureOverhead": 9
+      },
+      {
+        "geometryOverhead": 1,
+        "textureOverhead": 9
+      },
+      {
+        "geometryOverhead": 1,
+        "textureOverhead": 9
+      },
+      {
+        "geometryOverhead": 1,
+        "textureOverhead": 9
+      }
+    ]
+  },
+  "pageErrors": []
+}

@@ -1,0 +1,159 @@
+{
+  "seed": 284719,
+  "schemaVersion": 2,
+  "states": [
+    {
+      "stationId": "shelf-front",
+      "focusDistanceMm": 2400,
+      "frontSwingDeg": 0,
+      "aperture": 5.6,
+      "previewMode": "processed",
+      "orientation": "raw",
+      "frameRequestId": "gg-mwk0o6si-zhl77kvo5q-default-request-8",
+      "groundGlassImageSha256": "b4fa3de16eca93ef920caf673c031725d86ef6b61eeafffe0ebcc785e62b70b0"
+    },
+    {
+      "stationId": "shelf-front",
+      "focusDistanceMm": 2400,
+      "frontSwingDeg": 0,
+      "aperture": 11,
+      "previewMode": "processed",
+      "orientation": "raw",
+      "frameRequestId": "gg-mwk0o6si-zhl77kvo5q-default-request-9",
+      "groundGlassImageSha256": "23bee1adfe743296e6a928fb0e3614f60c7a75ce450cbdb706f57b574ec88bb6"
+    },
+    {
+      "stationId": "shelf-front",
+      "focusDistanceMm": 2400,
+      "frontSwingDeg": 0,
+      "aperture": 22,
+      "previewMode": "processed",
+      "orientation": "raw",
+      "frameRequestId": "gg-mwk0o6si-zhl77kvo5q-default-request-10",
+      "groundGlassImageSha256": "bda70c4437df4f360e07fd6c6aeff48fa6d1f58d875f3db7d57dbfb97b854807"
+    },
+    {
+      "stationId": "shelf-middle",
+      "focusDistanceMm": 3800,
+      "frontSwingDeg": 0,
+      "aperture": 5.6,
+      "previewMode": "processed",
+      "orientation": "raw",
+      "frameRequestId": "gg-mwk0o6si-zhl77kvo5q-default-request-12",
+      "groundGlassImageSha256": "944fdbdc71912fd8549d9886a06fcf386c4a82f264ab9057aeeec0e8949d7c89"
+    },
+    {
+      "stationId": "shelf-middle",
+      "focusDistanceMm": 3800,
+      "frontSwingDeg": 0,
+      "aperture": 11,
+      "previewMode": "processed",
+      "orientation": "raw",
+      "frameRequestId": "gg-mwk0o6si-zhl77kvo5q-default-request-13",
+      "groundGlassImageSha256": "5f278e56d0387a4a8b3141439e086591aa706d570453528d785bf48ff0bd156d"
+    },
+    {
+      "stationId": "shelf-middle",
+      "focusDistanceMm": 3800,
+      "frontSwingDeg": 0,
+      "aperture": 22,
+      "previewMode": "processed",
+      "orientation": "raw",
+      "frameRequestId": "gg-mwk0o6si-zhl77kvo5q-default-request-14",
+      "groundGlassImageSha256": "13e53366eaf4014d5c87f0b5e44191ce1ab4babb24b37e0ea99c673b919f97a3"
+    },
+    {
+      "stationId": "shelf-back",
+      "focusDistanceMm": 5200,
+      "frontSwingDeg": 0,
+      "aperture": 5.6,
+      "previewMode": "processed",
+      "orientation": "raw",
+      "frameRequestId": "gg-mwk0o6si-zhl77kvo5q-default-request-16",
+      "groundGlassImageSha256": "71c20175b8cb0d7ce86cb94b87bb69de997b567df0fa912a384286e9158426c1"
+    },
+    {
+      "stationId": "shelf-back",
+      "focusDistanceMm": 5200,
+      "frontSwingDeg": 0,
+      "aperture": 11,
+      "previewMode": "processed",
+      "orientation": "raw",
+      "frameRequestId": "gg-mwk0o6si-zhl77kvo5q-default-request-17",
+      "groundGlassImageSha256": "8d7c02fef4275d5a5655a6cfbecb7ccfa4fa5ab7711d3d666b75bee50424b33f"
+    },
+    {
+      "stationId": "shelf-back",
+      "focusDistanceMm": 5200,
+      "frontSwingDeg": 0,
+      "aperture": 22,
+      "previewMode": "processed",
+      "orientation": "raw",
+      "frameRequestId": "gg-mwk0o6si-zhl77kvo5q-default-request-18",
+      "groundGlassImageSha256": "880c3e45c2895e6d356374604d5291f5475f9b7bf7b81230c1c0f3a5e7752e5c"
+    },
+    {
+      "stationId": "calibrated-plane",
+      "focusDistanceMm": 3400,
+      "frontSwingDeg": -4,
+      "aperture": 5.6,
+      "previewMode": "processed",
+      "orientation": "raw",
+      "frameRequestId": "gg-mwk0o6si-zhl77kvo5q-default-request-21",
+      "groundGlassImageSha256": "d4bd5a631a67f0e4a71aca63d5f7264d20d3fcb41a9f36081961d31cea88d29e"
+    },
+    {
+      "stationId": "calibrated-plane",
+      "focusDistanceMm": 3400,
+      "frontSwingDeg": -4,
+      "aperture": 11,
+      "previewMode": "processed",
+      "orientation": "raw",
+      "frameRequestId": "gg-mwk0o6si-zhl77kvo5q-default-request-22",
+      "groundGlassImageSha256": "4aaefae97513052c94e94f272eefa1a7ee2a9467b17e9353e627acc587866b2f"
+    },
+    {
+      "stationId": "calibrated-plane",
+      "focusDistanceMm": 3400,
+      "frontSwingDeg": -4,
+      "aperture": 22,
+      "previewMode": "processed",
+      "orientation": "raw",
+      "frameRequestId": "gg-mwk0o6si-zhl77kvo5q-default-request-23",
+      "groundGlassImageSha256": "fd41f5d85f4fc5338d205f046cd5d395837aebec8aa2d11a072e3a8f37e34cff"
+    }
+  ],
+  "previewModes": [
+    {
+      "mode": "processed",
+      "orientation": "raw-ground-glass",
+      "bypassDof": false,
+      "frameRequestId": "gg-mwk0o6si-zhl77kvo5q-default-request-23",
+      "groundGlassImageSha256": "fd41f5d85f4fc5338d205f046cd5d395837aebec8aa2d11a072e3a8f37e34cff"
+    },
+    {
+      "mode": "raw",
+      "orientation": "raw-ground-glass",
+      "bypassDof": true,
+      "frameRequestId": "gg-mwk0o6si-zhl77kvo5q-default-request-24",
+      "groundGlassImageSha256": "5e6181f0d0617412fae3d92c7937d3a038590c59bb469c7d516c058bfc6bd340"
+    },
+    {
+      "mode": "upright",
+      "orientation": "upright-assist",
+      "bypassDof": false,
+      "frameRequestId": "gg-mwk0o6si-zhl77kvo5q-default-request-26",
+      "groundGlassImageSha256": "0bd9e34d6e5e4a129cb56bebe4c64c87666f1373570fecd1254fa7937a67171e"
+    }
+  ],
+  "previewModeCoverage": [
+    "processed",
+    "raw",
+    "upright"
+  ],
+  "allFramesCompleted": true,
+  "subjectCapacityStable": true,
+  "rendererGenerationStable": true,
+  "rttResourceGenerationStable": true,
+  "pageErrors": []
+}

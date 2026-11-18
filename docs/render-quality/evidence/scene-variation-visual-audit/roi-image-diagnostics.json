@@ -1,0 +1,490 @@
+{
+  "comparisons" : [
+    {
+      "comparison" : "Interior Corner schema v2 seed 284719 vs 0",
+      "fullFrameChangedPixelCount" : 78968,
+      "fullFrameChangedPixelFraction" : 0.3738059397691878,
+      "regions" : [
+        {
+          "areaPixelCount" : 42900,
+          "changedPixelCount" : 34066,
+          "changedPixelFraction" : 0.79407925407925406,
+          "name" : "wall and artwork surface region (approximate)",
+          "rectTopLeftPx" : [
+            70,
+            95,
+            330,
+            130
+          ]
+        },
+        {
+          "areaPixelCount" : 30375,
+          "changedPixelCount" : 21156,
+          "changedPixelFraction" : 0.69649382716049379,
+          "name" : "bench, console, and rug region (approximate)",
+          "rectTopLeftPx" : [
+            175,
+            210,
+            225,
+            135
+          ]
+        }
+      ]
+    },
+    {
+      "comparison" : "Interior Corner schema v2 seed 284719 vs 1",
+      "fullFrameChangedPixelCount" : 77064,
+      "fullFrameChangedPixelFraction" : 0.3647930926751683,
+      "regions" : [
+        {
+          "areaPixelCount" : 42900,
+          "changedPixelCount" : 32657,
+          "changedPixelFraction" : 0.76123543123543125,
+          "name" : "wall and artwork surface region (approximate)",
+          "rectTopLeftPx" : [
+            70,
+            95,
+            330,
+            130
+          ]
+        },
+        {
+          "areaPixelCount" : 30375,
+          "changedPixelCount" : 21009,
+          "changedPixelFraction" : 0.69165432098765434,
+          "name" : "bench, console, and rug region (approximate)",
+          "rectTopLeftPx" : [
+            175,
+            210,
+            225,
+            135
+          ]
+        }
+      ]
+    },
+    {
+      "comparison" : "Interior Corner schema v2 seed 284719 vs 4294967295",
+      "fullFrameChangedPixelCount" : 79446,
+      "fullFrameChangedPixelFraction" : 0.37606861881905196,
+      "regions" : [
+        {
+          "areaPixelCount" : 42900,
+          "changedPixelCount" : 33944,
+          "changedPixelFraction" : 0.79123543123543127,
+          "name" : "wall and artwork surface region (approximate)",
+          "rectTopLeftPx" : [
+            70,
+            95,
+            330,
+            130
+          ]
+        },
+        {
+          "areaPixelCount" : 30375,
+          "changedPixelCount" : 21801,
+          "changedPixelFraction" : 0.71772839506172836,
+          "name" : "bench, console, and rug region (approximate)",
+          "rectTopLeftPx" : [
+            175,
+            210,
+            225,
+            135
+          ]
+        }
+      ]
+    },
+    {
+      "comparison" : "Interior Corner schema v2 seed 284719 vs 3079748268",
+      "fullFrameChangedPixelCount" : 77602,
+      "fullFrameChangedPixelFraction" : 0.36733979001581035,
+      "regions" : [
+        {
+          "areaPixelCount" : 42900,
+          "changedPixelCount" : 33425,
+          "changedPixelFraction" : 0.77913752913752909,
+          "name" : "wall and artwork surface region (approximate)",
+          "rectTopLeftPx" : [
+            70,
+            95,
+            330,
+            130
+          ]
+        },
+        {
+          "areaPixelCount" : 30375,
+          "changedPixelCount" : 21174,
+          "changedPixelFraction" : 0.69708641975308638,
+          "name" : "bench, console, and rug region (approximate)",
+          "rectTopLeftPx" : [
+            175,
+            210,
+            225,
+            135
+          ]
+        }
+      ]
+    },
+    {
+      "comparison" : "Interior Corner schema v2 seed 284719 vs 654013979",
+      "fullFrameChangedPixelCount" : 77812,
+      "fullFrameChangedPixelFraction" : 0.36833385403353308,
+      "regions" : [
+        {
+          "areaPixelCount" : 42900,
+          "changedPixelCount" : 32675,
+          "changedPixelFraction" : 0.7616550116550117,
+          "name" : "wall and artwork surface region (approximate)",
+          "rectTopLeftPx" : [
+            70,
+            95,
+            330,
+            130
+          ]
+        },
+        {
+          "areaPixelCount" : 30375,
+          "changedPixelCount" : 21942,
+          "changedPixelFraction" : 0.72237037037037033,
+          "name" : "bench, console, and rug region (approximate)",
+          "rectTopLeftPx" : [
+            175,
+            210,
+            225,
+            135
+          ]
+        }
+      ]
+    },
+    {
+      "comparison" : "Interior Corner schema v2 seed 284719 vs 4041585854",
+      "fullFrameChangedPixelCount" : 81808,
+      "fullFrameChangedPixelFraction" : 0.38724947219934297,
+      "regions" : [
+        {
+          "areaPixelCount" : 42900,
+          "changedPixelCount" : 35017,
+          "changedPixelFraction" : 0.8162470862470862,
+          "name" : "wall and artwork surface region (approximate)",
+          "rectTopLeftPx" : [
+            70,
+            95,
+            330,
+            130
+          ]
+        },
+        {
+          "areaPixelCount" : 30375,
+          "changedPixelCount" : 21902,
+          "changedPixelFraction" : 0.72105349794238682,
+          "name" : "bench, console, and rug region (approximate)",
+          "rectTopLeftPx" : [
+            175,
+            210,
+            225,
+            135
+          ]
+        }
+      ]
+    },
+    {
+      "comparison" : "Interior Corner schema v2 seed 284719 vs 2762659077",
+      "fullFrameChangedPixelCount" : 76959,
+      "fullFrameChangedPixelFraction" : 0.36429606066630693,
+      "regions" : [
+        {
+          "areaPixelCount" : 42900,
+          "changedPixelCount" : 32419,
+          "changedPixelFraction" : 0.75568764568764568,
+          "name" : "wall and artwork surface region (approximate)",
+          "rectTopLeftPx" : [
+            70,
+            95,
+            330,
+            130
+          ]
+        },
+        {
+          "areaPixelCount" : 30375,
+          "changedPixelCount" : 21169,
+          "changedPixelFraction" : 0.69692181069958847,
+          "name" : "bench, console, and rug region (approximate)",
+          "rectTopLeftPx" : [
+            175,
+            210,
+            225,
+            135
+          ]
+        }
+      ]
+    },
+    {
+      "comparison" : "Interior Corner schema v2 seed 284719 vs 2004402848",
+      "fullFrameChangedPixelCount" : 80037,
+      "fullFrameChangedPixelFraction" : 0.3788661989832145,
+      "regions" : [
+        {
+          "areaPixelCount" : 42900,
+          "changedPixelCount" : 34939,
+          "changedPixelFraction" : 0.81442890442890448,
+          "name" : "wall and artwork surface region (approximate)",
+          "rectTopLeftPx" : [
+            70,
+            95,
+            330,
+            130
+          ]
+        },
+        {
+          "areaPixelCount" : 30375,
+          "changedPixelCount" : 22012,
+          "changedPixelFraction" : 0.72467489711934152,
+          "name" : "bench, console, and rug region (approximate)",
+          "rectTopLeftPx" : [
+            175,
+            210,
+            225,
+            135
+          ]
+        }
+      ]
+    },
+    {
+      "comparison" : "Interior Corner schema v2 seed 284719 vs 1824298367",
+      "fullFrameChangedPixelCount" : 76196,
+      "fullFrameChangedPixelFraction" : 0.3606842947352476,
+      "regions" : [
+        {
+          "areaPixelCount" : 42900,
+          "changedPixelCount" : 32339,
+          "changedPixelFraction" : 0.75382284382284381,
+          "name" : "wall and artwork surface region (approximate)",
+          "rectTopLeftPx" : [
+            70,
+            95,
+            330,
+            130
+          ]
+        },
+        {
+          "areaPixelCount" : 30375,
+          "changedPixelCount" : 21561,
+          "changedPixelFraction" : 0.70982716049382721,
+          "name" : "bench, console, and rug region (approximate)",
+          "rectTopLeftPx" : [
+            175,
+            210,
+            225,
+            135
+          ]
+        }
+      ]
+    },
+    {
+      "comparison" : "Interior Corner schema v2 seed 284719 vs 2130322642",
+      "fullFrameChangedPixelCount" : 79162,
+      "fullFrameChangedPixelFraction" : 0.37472426557603644,
+      "regions" : [
+        {
+          "areaPixelCount" : 42900,
+          "changedPixelCount" : 34229,
+          "changedPixelFraction" : 0.79787878787878785,
+          "name" : "wall and artwork surface region (approximate)",
+          "rectTopLeftPx" : [
+            70,
+            95,
+            330,
+            130
+          ]
+        },
+        {
+          "areaPixelCount" : 30375,
+          "changedPixelCount" : 21755,
+          "changedPixelFraction" : 0.71621399176954736,
+          "name" : "bench, console, and rug region (approximate)",
+          "rectTopLeftPx" : [
+            175,
+            210,
+            225,
+            135
+          ]
+        }
+      ]
+    },
+    {
+      "comparison" : "Interior Corner schema v2 seed 284719 vs 4065361417",
+      "fullFrameChangedPixelCount" : 77930,
+      "fullFrameChangedPixelFraction" : 0.36889242333872968,
+      "regions" : [
+        {
+          "areaPixelCount" : 42900,
+          "changedPixelCount" : 33217,
+          "changedPixelFraction" : 0.77428904428904433,
+          "name" : "wall and artwork surface region (approximate)",
+          "rectTopLeftPx" : [
+            70,
+            95,
+            330,
+            130
+          ]
+        },
+        {
+          "areaPixelCount" : 30375,
+          "changedPixelCount" : 21908,
+          "changedPixelFraction" : 0.72125102880658432,
+          "name" : "bench, console, and rug region (approximate)",
+          "rectTopLeftPx" : [
+            175,
+            210,
+            225,
+            135
+          ]
+        }
+      ]
+    },
+    {
+      "comparison" : "Shelf Swing schema v1 seed 284719 vs 0",
+      "fullFrameChangedPixelCount" : 896,
+      "fullFrameChangedPixelFraction" : 0.0042413398089503626,
+      "regions" : [
+        {
+          "areaPixelCount" : 8520,
+          "changedPixelCount" : 896,
+          "changedPixelFraction" : 0.10516431924882629,
+          "name" : "combined lower display zones (sum of three non-overlapping rectangles)"
+        }
+      ]
+    },
+    {
+      "comparison" : "Shelf Swing schema v1 seed 284719 vs 1",
+      "fullFrameChangedPixelCount" : 861,
+      "fullFrameChangedPixelFraction" : 0.0040756624726632391,
+      "regions" : [
+        {
+          "areaPixelCount" : 8520,
+          "changedPixelCount" : 861,
+          "changedPixelFraction" : 0.10105633802816902,
+          "name" : "combined lower display zones (sum of three non-overlapping rectangles)"
+        }
+      ]
+    },
+    {
+      "comparison" : "Shelf Swing schema v1 seed 284719 vs 4294967295",
+      "fullFrameChangedPixelCount" : 828,
+      "fullFrameChangedPixelFraction" : 0.0039194524127353801,
+      "regions" : [
+        {
+          "areaPixelCount" : 8520,
+          "changedPixelCount" : 828,
+          "changedPixelFraction" : 0.097183098591549291,
+          "name" : "combined lower display zones (sum of three non-overlapping rectangles)"
+        }
+      ]
+    },
+    {
+      "comparison" : "Shelf Swing schema v1 seed 284719 vs 3079748268",
+      "fullFrameChangedPixelCount" : 803,
+      "fullFrameChangedPixelFraction" : 0.0038011114582445775,
+      "regions" : [
+        {
+          "areaPixelCount" : 8520,
+          "changedPixelCount" : 803,
+          "changedPixelFraction" : 0.094248826291079807,
+          "name" : "combined lower display zones (sum of three non-overlapping rectangles)"
+        }
+      ]
+    },
+    {
+      "comparison" : "Shelf Swing schema v1 seed 284719 vs 654013979",
+      "fullFrameChangedPixelCount" : 859,
+      "fullFrameChangedPixelFraction" : 0.0040661951963039756,
+      "regions" : [
+        {
+          "areaPixelCount" : 8520,
+          "changedPixelCount" : 859,
+          "changedPixelFraction" : 0.10082159624413145,
+          "name" : "combined lower display zones (sum of three non-overlapping rectangles)"
+        }
+      ]
+    },
+    {
+      "comparison" : "Shelf Swing schema v1 seed 284719 vs 4041585854",
+      "fullFrameChangedPixelCount" : 776,
+      "fullFrameChangedPixelFraction" : 0.0036733032273945109,
+      "regions" : [
+        {
+          "areaPixelCount" : 8520,
+          "changedPixelCount" : 776,
+          "changedPixelFraction" : 0.091079812206572769,
+          "name" : "combined lower display zones (sum of three non-overlapping rectangles)"
+        }
+      ]
+    },
+    {
+      "comparison" : "Shelf Swing schema v1 seed 284719 vs 2762659077",
+      "fullFrameChangedPixelCount" : 829,
+      "fullFrameChangedPixelFraction" : 0.0039241860509150123,
+      "regions" : [
+        {
+          "areaPixelCount" : 8520,
+          "changedPixelCount" : 829,
+          "changedPixelFraction" : 0.097300469483568075,
+          "name" : "combined lower display zones (sum of three non-overlapping rectangles)"
+        }
+      ]
+    },
+    {
+      "comparison" : "Shelf Swing schema v1 seed 284719 vs 2004402848",
+      "fullFrameChangedPixelCount" : 825,
+      "fullFrameChangedPixelFraction" : 0.0039052514981964838,
+      "regions" : [
+        {
+          "areaPixelCount" : 8520,
+          "changedPixelCount" : 825,
+          "changedPixelFraction" : 0.096830985915492954,
+          "name" : "combined lower display zones (sum of three non-overlapping rectangles)"
+        }
+      ]
+    },
+    {
+      "comparison" : "Shelf Swing schema v1 seed 284719 vs 1824298367",
+      "fullFrameChangedPixelCount" : 633,
+      "fullFrameChangedPixelFraction" : 0.0029963929677071202,
+      "regions" : [
+        {
+          "areaPixelCount" : 8520,
+          "changedPixelCount" : 633,
+          "changedPixelFraction" : 0.074295774647887322,
+          "name" : "combined lower display zones (sum of three non-overlapping rectangles)"
+        }
+      ]
+    },
+    {
+      "comparison" : "Shelf Swing schema v1 seed 284719 vs 2130322642",
+      "fullFrameChangedPixelCount" : 799,
+      "fullFrameChangedPixelFraction" : 0.0037821769055260491,
+      "regions" : [
+        {
+          "areaPixelCount" : 8520,
+          "changedPixelCount" : 799,
+          "changedPixelFraction" : 0.093779342723004699,
+          "name" : "combined lower display zones (sum of three non-overlapping rectangles)"
+        }
+      ]
+    },
+    {
+      "comparison" : "Shelf Swing schema v1 seed 284719 vs 4065361417",
+      "fullFrameChangedPixelCount" : 711,
+      "fullFrameChangedPixelFraction" : 0.0033656167457184242,
+      "regions" : [
+        {
+          "areaPixelCount" : 8520,
+          "changedPixelCount" : 711,
+          "changedPixelFraction" : 0.083450704225352113,
+          "name" : "combined lower display zones (sum of three non-overlapping rectangles)"
+        }
+      ]
+    }
+  ],
+  "limitations" : "Interior Corner wall region contains static art\/trim and changing seeded surfaces; layout region includes fixed furniture and floor around generated decor. Shelf lower-display rectangles include shelf\/frame pixels and nearby shadow, so they measure a display zone rather than isolated props. These ROI values are supporting diagnostics, not perceptual scores or exact prop-area estimates.",
+  "method" : "RGB inequality at threshold 0, at the visible 514x411 Observer image size. ROI bounds use top-left pixel coordinates and are approximate fixed canvas regions, not object masks; each displayed seed image is compared with reference seed 284719."
+}

@@ -183,6 +183,12 @@ const tupleMatches = (
 ): boolean =>
   Boolean(left?.every((value, index) => Math.abs(value - right[index]) < 1e-9));
 
+const matrixMatches = (
+  left: readonly number[] | undefined,
+  right: readonly number[],
+): boolean =>
+  Boolean(left?.length === right.length && left.every((value, index) => Math.abs(value - right[index]) < 1e-12));
+
 function OffscreenRenderer({
   opticsState,
   focalLengthMm,
@@ -1521,6 +1527,7 @@ function OffscreenRenderer({
         currentCameraInfo.cameraConfigurationOk !== cfg.ok ||
         currentCameraInfo.cameraConfigurationError !== (cfg.ok ? null : cfg.reason) ||
         currentCameraInfo.projectionDeterminant !== projectionDeterminant ||
+        !matrixMatches(currentCameraInfo.projectionMatrix, cam.projectionMatrix.elements) ||
         currentCameraInfo.inspectionWindowActive !== inspectionWindow.active ||
         currentCameraInfo.inspectionCenterU !== inspectionWindow.centerU ||
         currentCameraInfo.inspectionCenterV !== inspectionWindow.centerV ||
@@ -1538,6 +1545,7 @@ function OffscreenRenderer({
         cameraConfigurationOk: cfg.ok,
         cameraConfigurationError: cfg.ok ? null : cfg.reason,
         projectionDeterminant,
+        projectionMatrix: [...cam.projectionMatrix.elements],
         cameraPositionWorld: configuredPose.positionWorld,
         cameraUpWorld: configuredPose.upWorld,
         cameraForwardWorld: configuredPose.forwardWorld,
@@ -1999,6 +2007,7 @@ function OffscreenRenderer({
               cameraConfigurationOk: cfg.ok,
               cameraConfigurationError: cfg.ok ? null : cfg.reason,
               projectionDeterminant,
+              projectionMatrix: [...cam.projectionMatrix.elements],
               cameraPositionWorld: configuredPose.positionWorld,
               cameraUpWorld: configuredPose.upWorld,
               cameraForwardWorld: configuredPose.forwardWorld,

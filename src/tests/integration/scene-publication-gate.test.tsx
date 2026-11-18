@@ -13,7 +13,14 @@ vi.mock("../../config/scenePublication", async () => {
       ...actual.scenePublication,
       "shelf-swing": false,
       "macro-compound-movements": false,
+      "still-life-studio": false,
     },
+    resolveScenePublication: () => ({
+      ...actual.scenePublication,
+      "shelf-swing": false,
+      "macro-compound-movements": false,
+      "still-life-studio": false,
+    }),
   };
 });
 
@@ -89,11 +96,15 @@ describe("scene publication gate", () => {
     expect(
       screen.queryByRole("heading", { name: "Compound Macro Still Life", level: 3 }),
     ).toBeNull();
+    expect(
+      screen.queryByRole("heading", { name: "Still-Life Studio", level: 3 }),
+    ).toBeNull();
   });
 
   it.each([
     "/simulator/free/shelf-swing",
     "/simulator/free/shelf-swing?lesson=1",
+    "/simulator/free/still-life-studio",
     "/simulator/guided/shelf-swing/swing-01",
     "/simulator/guided/shelf-swing/swing-01?lesson=1",
   ])("redirects unpublished route %s to Scenes", async (route) => {

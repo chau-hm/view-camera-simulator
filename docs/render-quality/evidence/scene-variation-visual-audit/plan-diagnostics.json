@@ -1,0 +1,769 @@
+{
+  "source": "existing pure scene variation planners at the audited main commit",
+  "method": "Plan summaries are computed from each selected (sceneId, seed, schemaVersion); placements remain renderer-neutral plan data. Safety issue arrays are included as returned by current planners.",
+  "seeds": [
+    0,
+    1,
+    284719,
+    4294967295,
+    3079748268,
+    654013979,
+    4041585854,
+    2762659077,
+    2004402848,
+    1824298367,
+    2130322642,
+    4065361417
+  ],
+  "interiorCorner": {
+    "schemaVersion": 2,
+    "uniqueArrangementIds": 12,
+    "uniqueMaterialRoleSeeds": {
+      "wall": 12,
+      "ceiling": 12,
+      "floor": 12,
+      "trim": 12,
+      "wood": 12,
+      "artwork": 12,
+      "fabric": 12
+    },
+    "seeds": [
+      {
+        "seed": 0,
+        "planSha256": "f75ec88d9ff3e410a92e9c04a2811d843b4e0b2c223cc81c0e8a0f943d68b279",
+        "arrangementId": "console-2-round-ivory_0-books_sculpture-orb_one-cushion-sage_rug-striped-charcoal",
+        "propCounts": {
+          "vase": 1,
+          "book": 0,
+          "sculpture": 1,
+          "cushion": 1,
+          "rug": 1
+        },
+        "rug": {
+          "pattern": "striped",
+          "palette": "charcoal"
+        },
+        "cushionPalettes": [
+          "sage"
+        ],
+        "consoleAccessories": [
+          "vase:round:ivory",
+          "sculpture:orb:ivory"
+        ],
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 1,
+        "planSha256": "a2444f7294ce17a3bb26e1f701ff90773519ba26cb1beb96cff7b88ed54233c1",
+        "arrangementId": "console-1-round-sage_2-books_no-sculpture_two-cushions-ochre-sage_rug-striped-linen",
+        "propCounts": {
+          "vase": 1,
+          "book": 2,
+          "sculpture": 0,
+          "cushion": 2,
+          "rug": 1
+        },
+        "rug": {
+          "pattern": "striped",
+          "palette": "linen"
+        },
+        "cushionPalettes": [
+          "ochre",
+          "sage"
+        ],
+        "consoleAccessories": [
+          "vase:round:sage",
+          "book:sage",
+          "book:linen"
+        ],
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 284719,
+        "planSha256": "6cc1bfe1ffde90045f99c01af4bfeb7bee74fc05c6f0b262c3875ceb676cec95",
+        "arrangementId": "console-0-flared-sage_0-books_no-sculpture_one-cushion-sage_rug-striped-charcoal",
+        "propCounts": {
+          "vase": 1,
+          "book": 0,
+          "sculpture": 0,
+          "cushion": 1,
+          "rug": 1
+        },
+        "rug": {
+          "pattern": "striped",
+          "palette": "charcoal"
+        },
+        "cushionPalettes": [
+          "sage"
+        ],
+        "consoleAccessories": [
+          "vase:flared:sage"
+        ],
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 4294967295,
+        "planSha256": "fcca3b1d9ddb2ab6a315d90e7c0f53e5f755ac4fc38289a246ebb294b461e552",
+        "arrangementId": "console-2-bottle-clay_0-books_sculpture-orb_two-cushions-slate-clay_rug-bordered-ochre",
+        "propCounts": {
+          "vase": 1,
+          "book": 0,
+          "sculpture": 1,
+          "cushion": 2,
+          "rug": 1
+        },
+        "rug": {
+          "pattern": "bordered",
+          "palette": "ochre"
+        },
+        "cushionPalettes": [
+          "slate",
+          "clay"
+        ],
+        "consoleAccessories": [
+          "vase:bottle:clay",
+          "sculpture:orb:clay"
+        ],
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 3079748268,
+        "planSha256": "c100733af1b9505f45d6b5af6210b0af2439a6b02b7f068f012288cc013a5362",
+        "arrangementId": "console-1-flared-sage_3-books_no-sculpture_one-cushion-slate_rug-plain-charcoal",
+        "propCounts": {
+          "vase": 1,
+          "book": 3,
+          "sculpture": 0,
+          "cushion": 1,
+          "rug": 1
+        },
+        "rug": {
+          "pattern": "plain",
+          "palette": "charcoal"
+        },
+        "cushionPalettes": [
+          "slate"
+        ],
+        "consoleAccessories": [
+          "vase:flared:sage",
+          "book:linen",
+          "book:sage",
+          "book:sage"
+        ],
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 654013979,
+        "planSha256": "a9da48f8b17b110e67167bd873ddc981bf295afcd3e1b6393982f5c3f2efc7d4",
+        "arrangementId": "console-1-bottle-sage_3-books_no-sculpture_two-cushions-clay-ochre_rug-plain-linen",
+        "propCounts": {
+          "vase": 1,
+          "book": 3,
+          "sculpture": 0,
+          "cushion": 2,
+          "rug": 1
+        },
+        "rug": {
+          "pattern": "plain",
+          "palette": "linen"
+        },
+        "cushionPalettes": [
+          "clay",
+          "ochre"
+        ],
+        "consoleAccessories": [
+          "vase:bottle:sage",
+          "book:linen",
+          "book:sage",
+          "book:ochre"
+        ],
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 4041585854,
+        "planSha256": "d96ae6cfa53d6b4435eb910ad3647bcc84c69f6782857c6f4b88ba012ea53a86",
+        "arrangementId": "console-3-flared-ivory_2-books_sculpture-orb_two-cushions-clay-ochre_rug-plain-ochre",
+        "propCounts": {
+          "vase": 1,
+          "book": 2,
+          "sculpture": 1,
+          "cushion": 2,
+          "rug": 1
+        },
+        "rug": {
+          "pattern": "plain",
+          "palette": "ochre"
+        },
+        "cushionPalettes": [
+          "clay",
+          "ochre"
+        ],
+        "consoleAccessories": [
+          "vase:flared:ivory",
+          "book:slate",
+          "book:sage",
+          "sculpture:orb:slate"
+        ],
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 2762659077,
+        "planSha256": "f25311f0f23e46225f77649e7e0b6c011689f208b5a99864d5b33852488bbbf3",
+        "arrangementId": "console-0-round-ivory_0-books_no-sculpture_one-cushion-clay_rug-striped-linen",
+        "propCounts": {
+          "vase": 1,
+          "book": 0,
+          "sculpture": 0,
+          "cushion": 1,
+          "rug": 1
+        },
+        "rug": {
+          "pattern": "striped",
+          "palette": "linen"
+        },
+        "cushionPalettes": [
+          "clay"
+        ],
+        "consoleAccessories": [
+          "vase:round:ivory"
+        ],
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 2004402848,
+        "planSha256": "d4a4215f17cdd9031cc2a3b8a13640cdb50a1e1128292e5a5d28ae163b283425",
+        "arrangementId": "console-0-round-clay_0-books_no-sculpture_one-cushion-sage_rug-bordered-linen",
+        "propCounts": {
+          "vase": 1,
+          "book": 0,
+          "sculpture": 0,
+          "cushion": 1,
+          "rug": 1
+        },
+        "rug": {
+          "pattern": "bordered",
+          "palette": "linen"
+        },
+        "cushionPalettes": [
+          "sage"
+        ],
+        "consoleAccessories": [
+          "vase:round:clay"
+        ],
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 1824298367,
+        "planSha256": "cc07d53ea6af8fe97b6face89b5e9ec3ebf198256c2dbbdeeee354d5930a4bf1",
+        "arrangementId": "console-3-round-ivory_3-books_sculpture-orb_two-cushions-sage-slate_rug-plain-linen",
+        "propCounts": {
+          "vase": 1,
+          "book": 3,
+          "sculpture": 1,
+          "cushion": 2,
+          "rug": 1
+        },
+        "rug": {
+          "pattern": "plain",
+          "palette": "linen"
+        },
+        "cushionPalettes": [
+          "sage",
+          "slate"
+        ],
+        "consoleAccessories": [
+          "vase:round:ivory",
+          "book:linen",
+          "book:ochre",
+          "book:slate",
+          "sculpture:orb:slate"
+        ],
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 2130322642,
+        "planSha256": "bcbaca9bd637aaad804377eff57f01e6c90ac2ba3beb3c6c7d3e7ccef368b00a",
+        "arrangementId": "console-1-flared-clay_2-books_no-sculpture_two-cushions-clay-ochre_rug-bordered-ochre",
+        "propCounts": {
+          "vase": 1,
+          "book": 2,
+          "sculpture": 0,
+          "cushion": 2,
+          "rug": 1
+        },
+        "rug": {
+          "pattern": "bordered",
+          "palette": "ochre"
+        },
+        "cushionPalettes": [
+          "clay",
+          "ochre"
+        ],
+        "consoleAccessories": [
+          "vase:flared:clay",
+          "book:ochre",
+          "book:sage"
+        ],
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 4065361417,
+        "planSha256": "817c68f5afb955f67577e0afef45240f170892d1387fa1884b1600d5cbc971da",
+        "arrangementId": "console-1-round-sage_3-books_no-sculpture_one-cushion-sage_rug-striped-linen",
+        "propCounts": {
+          "vase": 1,
+          "book": 3,
+          "sculpture": 0,
+          "cushion": 1,
+          "rug": 1
+        },
+        "rug": {
+          "pattern": "striped",
+          "palette": "linen"
+        },
+        "cushionPalettes": [
+          "sage"
+        ],
+        "consoleAccessories": [
+          "vase:round:sage",
+          "book:ochre",
+          "book:sage",
+          "book:slate"
+        ],
+        "safetyIssueCount": 0
+      }
+    ]
+  },
+  "shelfSwing": {
+    "schemaVersion": 1,
+    "layoutSignatureCount": 12,
+    "fallbackCount": 0,
+    "safetyIssueCount": 0,
+    "totalPropCounts": [
+      {
+        "seed": 0,
+        "count": 6
+      },
+      {
+        "seed": 1,
+        "count": 6
+      },
+      {
+        "seed": 284719,
+        "count": 5
+      },
+      {
+        "seed": 4294967295,
+        "count": 5
+      },
+      {
+        "seed": 3079748268,
+        "count": 6
+      },
+      {
+        "seed": 654013979,
+        "count": 6
+      },
+      {
+        "seed": 4041585854,
+        "count": 4
+      },
+      {
+        "seed": 2762659077,
+        "count": 6
+      },
+      {
+        "seed": 2004402848,
+        "count": 5
+      },
+      {
+        "seed": 1824298367,
+        "count": 4
+      },
+      {
+        "seed": 2130322642,
+        "count": 5
+      },
+      {
+        "seed": 4065361417,
+        "count": 4
+      }
+    ],
+    "seeds": [
+      {
+        "seed": 0,
+        "planSha256": "0fe4c4e9b4ee3a05411b6e63003ee8b255891ea06091c91aeccf52536ea1d3f8",
+        "stations": [
+          {
+            "id": "shelf-front",
+            "count": 2,
+            "families": [
+              "box",
+              "vessel"
+            ]
+          },
+          {
+            "id": "shelf-middle",
+            "count": 2,
+            "families": [
+              "cylinder",
+              "box"
+            ]
+          },
+          {
+            "id": "shelf-back",
+            "count": 2,
+            "families": [
+              "box",
+              "cylinder"
+            ]
+          }
+        ],
+        "fallbackUsed": false,
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 1,
+        "planSha256": "04f3e1c2be8ae8d60b920a27780a4a0a9189dc78465615644e9442ea1ac88104",
+        "stations": [
+          {
+            "id": "shelf-front",
+            "count": 2,
+            "families": [
+              "box",
+              "box"
+            ]
+          },
+          {
+            "id": "shelf-middle",
+            "count": 2,
+            "families": [
+              "box",
+              "box"
+            ]
+          },
+          {
+            "id": "shelf-back",
+            "count": 2,
+            "families": [
+              "cylinder",
+              "vessel"
+            ]
+          }
+        ],
+        "fallbackUsed": false,
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 284719,
+        "planSha256": "85bef947291a31cc2f5c61c8884fb771212f1cffbee4d5396201676dbace9aef",
+        "stations": [
+          {
+            "id": "shelf-front",
+            "count": 1,
+            "families": [
+              "vessel"
+            ]
+          },
+          {
+            "id": "shelf-middle",
+            "count": 2,
+            "families": [
+              "box",
+              "box"
+            ]
+          },
+          {
+            "id": "shelf-back",
+            "count": 2,
+            "families": [
+              "vessel",
+              "cylinder"
+            ]
+          }
+        ],
+        "fallbackUsed": false,
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 4294967295,
+        "planSha256": "adaf776456e9d3e0bb48f385af5121a1c873221aeccd90de80a101a5cdd7a708",
+        "stations": [
+          {
+            "id": "shelf-front",
+            "count": 2,
+            "families": [
+              "vessel",
+              "box"
+            ]
+          },
+          {
+            "id": "shelf-middle",
+            "count": 2,
+            "families": [
+              "cylinder",
+              "cylinder"
+            ]
+          },
+          {
+            "id": "shelf-back",
+            "count": 1,
+            "families": [
+              "cylinder"
+            ]
+          }
+        ],
+        "fallbackUsed": false,
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 3079748268,
+        "planSha256": "c522340d993fff43acf4511ecf35be888af0647ad6624639af952ab040b7faa9",
+        "stations": [
+          {
+            "id": "shelf-front",
+            "count": 2,
+            "families": [
+              "cylinder",
+              "vessel"
+            ]
+          },
+          {
+            "id": "shelf-middle",
+            "count": 2,
+            "families": [
+              "vessel",
+              "cylinder"
+            ]
+          },
+          {
+            "id": "shelf-back",
+            "count": 2,
+            "families": [
+              "vessel",
+              "box"
+            ]
+          }
+        ],
+        "fallbackUsed": false,
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 654013979,
+        "planSha256": "b7498c0aff720a5644b303d576d878b71531bb2b2f659d9820bb5955406b023a",
+        "stations": [
+          {
+            "id": "shelf-front",
+            "count": 2,
+            "families": [
+              "vessel",
+              "box"
+            ]
+          },
+          {
+            "id": "shelf-middle",
+            "count": 2,
+            "families": [
+              "vessel",
+              "vessel"
+            ]
+          },
+          {
+            "id": "shelf-back",
+            "count": 2,
+            "families": [
+              "box",
+              "vessel"
+            ]
+          }
+        ],
+        "fallbackUsed": false,
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 4041585854,
+        "planSha256": "d4617730a54c20407a43321011a7f3ed3a5a9aac57d593b9eab3a20916178d33",
+        "stations": [
+          {
+            "id": "shelf-front",
+            "count": 2,
+            "families": [
+              "cylinder",
+              "vessel"
+            ]
+          },
+          {
+            "id": "shelf-middle",
+            "count": 1,
+            "families": [
+              "box"
+            ]
+          },
+          {
+            "id": "shelf-back",
+            "count": 1,
+            "families": [
+              "box"
+            ]
+          }
+        ],
+        "fallbackUsed": false,
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 2762659077,
+        "planSha256": "4db36d68a0115c40776e795161c83e6f1ad4871fff6ab29d152ff039a3368dc2",
+        "stations": [
+          {
+            "id": "shelf-front",
+            "count": 2,
+            "families": [
+              "cylinder",
+              "cylinder"
+            ]
+          },
+          {
+            "id": "shelf-middle",
+            "count": 2,
+            "families": [
+              "box",
+              "vessel"
+            ]
+          },
+          {
+            "id": "shelf-back",
+            "count": 2,
+            "families": [
+              "box",
+              "vessel"
+            ]
+          }
+        ],
+        "fallbackUsed": false,
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 2004402848,
+        "planSha256": "1a918a809d387599a305b17a0144750648591ed8d64003a344afd71ec4010644",
+        "stations": [
+          {
+            "id": "shelf-front",
+            "count": 2,
+            "families": [
+              "cylinder",
+              "box"
+            ]
+          },
+          {
+            "id": "shelf-middle",
+            "count": 2,
+            "families": [
+              "cylinder",
+              "box"
+            ]
+          },
+          {
+            "id": "shelf-back",
+            "count": 1,
+            "families": [
+              "cylinder"
+            ]
+          }
+        ],
+        "fallbackUsed": false,
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 1824298367,
+        "planSha256": "4f59ba9291d2b48c4ff9f00b786f6128e6aed09b60611ebb2380a0139f1642a9",
+        "stations": [
+          {
+            "id": "shelf-front",
+            "count": 1,
+            "families": [
+              "cylinder"
+            ]
+          },
+          {
+            "id": "shelf-middle",
+            "count": 2,
+            "families": [
+              "box",
+              "box"
+            ]
+          },
+          {
+            "id": "shelf-back",
+            "count": 1,
+            "families": [
+              "cylinder"
+            ]
+          }
+        ],
+        "fallbackUsed": false,
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 2130322642,
+        "planSha256": "3b8c2619efeb4ca9a3c470b03d24c3bff1b29de970d9e9bb9bbd707007108c9b",
+        "stations": [
+          {
+            "id": "shelf-front",
+            "count": 1,
+            "families": [
+              "vessel"
+            ]
+          },
+          {
+            "id": "shelf-middle",
+            "count": 2,
+            "families": [
+              "cylinder",
+              "cylinder"
+            ]
+          },
+          {
+            "id": "shelf-back",
+            "count": 2,
+            "families": [
+              "vessel",
+              "cylinder"
+            ]
+          }
+        ],
+        "fallbackUsed": false,
+        "safetyIssueCount": 0
+      },
+      {
+        "seed": 4065361417,
+        "planSha256": "bb48c65c30f91903ccd2c6a8e2c41da170f2ac1e69e502ebaa48a0a49c67526d",
+        "stations": [
+          {
+            "id": "shelf-front",
+            "count": 1,
+            "families": [
+              "box"
+            ]
+          },
+          {
+            "id": "shelf-middle",
+            "count": 2,
+            "families": [
+              "cylinder",
+              "cylinder"
+            ]
+          },
+          {
+            "id": "shelf-back",
+            "count": 1,
+            "families": [
+              "cylinder"
+            ]
+          }
+        ],
+        "fallbackUsed": false,
+        "safetyIssueCount": 0
+      }
+    ]
+  }
+}

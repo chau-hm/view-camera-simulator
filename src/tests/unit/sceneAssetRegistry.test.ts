@@ -12,6 +12,7 @@ import { OBLIQUE_TABLETOP_PRESENTATION } from "../../scenes/presentation/oblique
 import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../../scenes/presentation/focusFundamentals";
 import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../../scenes/presentation/viewCameraAnatomy";
 import { MIRROR_SHIFT_PRESENTATION } from "../../scenes/presentation/mirrorShift";
+import { STILL_LIFE_STUDIO_PRESENTATION } from "../../scenes/presentation/stillLifeStudio";
 import { MACRO_BELLOWS_EXTENSION_PRESENTATION } from "../../scenes/presentation/macroBellowsExtension";
 import { MACRO_DEPTH_OF_FIELD_PRESENTATION } from "../../scenes/presentation/macroDepthOfField";
 import { MACRO_OBLIQUE_PLANE_PRESENTATION } from "../../scenes/presentation/macroObliquePlane";
@@ -20,6 +21,7 @@ import {
   ARCHITECTURE_RISE_ASSET_KEY,
   ARCHITECTURE_FOREGROUND_ASSET_KEY,
   INTERIOR_CORNER_ASSET_KEY,
+  STILL_LIFE_STUDIO_ASSET_KEY,
   OBLIQUE_TABLETOP_ASSET_KEY,
   FOCUS_FUNDAMENTALS_ASSET_KEY,
   VIEW_CAMERA_ANATOMY_ASSET_KEY,
@@ -94,6 +96,9 @@ const assertSceneAssetRequestKeyPairings = (): void => {
   });
   createRegisteredSceneAsset(MACRO_COMPOUND_MOVEMENTS_ASSET_KEY, {
     presentation: MACRO_COMPOUND_MOVEMENTS_PRESENTATION,
+  });
+  createRegisteredSceneAsset(STILL_LIFE_STUDIO_ASSET_KEY, {
+    presentation: STILL_LIFE_STUDIO_PRESENTATION,
   });
 
   // The Architecture Rise slot rejects the Table Tilt request.
@@ -310,6 +315,7 @@ describe("scene asset registry", () => {
         SHELF_SWING_ASSET_KEY,
         ARCHITECTURE_FOREGROUND_ASSET_KEY,
         INTERIOR_CORNER_ASSET_KEY,
+        STILL_LIFE_STUDIO_ASSET_KEY,
         OBLIQUE_TABLETOP_ASSET_KEY,
         FOCUS_FUNDAMENTALS_ASSET_KEY,
         VIEW_CAMERA_ANATOMY_ASSET_KEY,

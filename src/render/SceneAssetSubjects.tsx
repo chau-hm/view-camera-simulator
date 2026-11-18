@@ -5,6 +5,7 @@ import {
   ARCHITECTURE_RISE_ASSET_KEY,
   ARCHITECTURE_FOREGROUND_ASSET_KEY,
   INTERIOR_CORNER_ASSET_KEY,
+  STILL_LIFE_STUDIO_ASSET_KEY,
   OBLIQUE_TABLETOP_ASSET_KEY,
   OBLIQUE_ARCHITECTURE_ASSET_KEY,
   SHELF_SWING_ASSET_KEY,
@@ -31,6 +32,7 @@ import { TABLE_TILT_PRESENTATION } from "../scenes/presentation/tableTilt";
 import { SHELF_SWING_PRESENTATION } from "../scenes/presentation/shelfSwing";
 import { ARCHITECTURE_FOREGROUND_PRESENTATION } from "../scenes/presentation/architectureForeground";
 import { INTERIOR_CORNER_PRESENTATION } from "../scenes/presentation/interiorCorner";
+import { STILL_LIFE_STUDIO_PRESENTATION } from "../scenes/presentation/stillLifeStudio";
 import type { SceneVariationDescriptor } from "../types/sceneVariation";
 import { OBLIQUE_TABLETOP_PRESENTATION } from "../scenes/presentation/obliqueTabletop";
 import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../scenes/presentation/focusFundamentals";
@@ -181,6 +183,9 @@ const architectureForegroundRequest = Object.freeze({
 const interiorCornerRequest = Object.freeze({
   presentation: INTERIOR_CORNER_PRESENTATION,
 });
+const stillLifeStudioRequest = Object.freeze({
+  presentation: STILL_LIFE_STUDIO_PRESENTATION,
+});
 const obliqueTabletopRequest = Object.freeze({
   presentation: OBLIQUE_TABLETOP_PRESENTATION,
 });
@@ -228,9 +233,19 @@ export const TableTiltSubject = () => (
   <RegisteredSceneAsset assetKey={TABLE_TILT_ASSET_KEY} request={tableTiltRequest} />
 );
 
-export const ShelfSwingSubject = () => (
-  <RegisteredSceneAsset assetKey={SHELF_SWING_ASSET_KEY} request={shelfSwingRequest} />
-);
+export const ShelfSwingSubject = ({
+  variationDescriptor,
+}: {
+  variationDescriptor?: SceneVariationDescriptor;
+}) => {
+  const request = useMemo(
+    () => ({ ...shelfSwingRequest, variationDescriptor }),
+    [variationDescriptor],
+  );
+  return (
+    <RegisteredSceneAsset assetKey={SHELF_SWING_ASSET_KEY} request={request} />
+  );
+};
 
 export const ArchitectureForegroundSubject = () => (
   <RegisteredSceneAsset
@@ -262,6 +277,20 @@ export const ObliqueTabletopSubject = () => (
     request={obliqueTabletopRequest}
   />
 );
+
+export const StillLifeStudioSubject = ({
+  variationDescriptor,
+}: {
+  variationDescriptor?: SceneVariationDescriptor;
+}) => {
+  const request = useMemo(
+    () => ({ ...stillLifeStudioRequest, variationDescriptor }),
+    [variationDescriptor],
+  );
+  return (
+    <RegisteredSceneAsset assetKey={STILL_LIFE_STUDIO_ASSET_KEY} request={request} />
+  );
+};
 
 export const FocusFundamentalsSubject = () => (
   <RegisteredSceneAsset
