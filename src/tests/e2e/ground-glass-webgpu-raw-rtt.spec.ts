@@ -81,7 +81,7 @@ const ARCHITECTURE_RASTER_POINTS = [
   { id: "left-upper-context", u: 0.29, v: 0.48 },
   { id: "left-upper-facade", u: 0.37, v: 0.32 },
   { id: "facade-focus-chart", u: 0.51, v: 0.65 },
-  { id: "right-facade-window", u: 0.63, v: 0.34 },
+  { id: "middle-right-window", u: 0.62, v: 0.767 },
   { id: "left-side-context", u: 0.25, v: 0.54 },
   { id: "right-side-return", u: 0.75, v: 0.54 },
   { id: "left-lower-context", u: 0.29, v: 0.67 },

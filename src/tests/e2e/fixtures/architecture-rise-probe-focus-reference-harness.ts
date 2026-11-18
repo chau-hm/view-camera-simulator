@@ -65,6 +65,10 @@ import { ACCEPTABLE_COC_DIAMETER_MM } from "../../../core/optics/physicalSharpne
 import type { DerivedOpticsState } from "../../../types/optics";
 import { getGroundGlassSceneProfile } from "../../../render/groundGlassSceneProfiles";
 import { vecToWorld } from "../../../render/rttUtils";
+import {
+  addArchitectureRiseTestReflectionTarget,
+  ARCHITECTURE_RISE_TEST_REFLECTION_TARGET_NAME,
+} from "./architecture-rise-test-reflection-target";
 
 const WIDTH = 768;
 const HEIGHT = 614;
@@ -74,8 +78,8 @@ const PROBE_FAR = 100;
 const BASE_SHA = "3952bc1684db74693861e15cacd11fb2e7aefa1b";
 const REFLECTION_WEIGHT = 0.18;
 const SKY_COLOR = new THREE.Color("#dfe5ec");
-const TARGET_PANE_NAME = "architecture-rise-facade-window-bay-bay-2-1-glazing";
-const TARGET_FACE_NAME = "architecture-rise-street-sign-face-back";
+const TARGET_PANE_NAME = "architecture-rise-window-top-left-glazing";
+const TARGET_FACE_NAME = ARCHITECTURE_RISE_TEST_REFLECTION_TARGET_NAME;
 const PANE_U = 0.3;
 const PANE_V = 0.3;
 const FOCUS_CASES = {
@@ -103,7 +107,7 @@ type FocusCaseMeasurement = {
     maxLinearSumDifference: number;
     finalDisplayRgba: readonly [number, number, number, number];
   };
-  reflectedSignSharpness: {
+  reflectedTargetSharpness: {
     crop: { minX: number; minYBottom: number; maxX: number; maxYBottom: number };
     edgeGradientEnergy: number;
     sampleCount: number;
@@ -181,11 +185,11 @@ type FloatBackendCapability = Omit<BackendCapability,
 
 type ProbeOriginMetrics = {
   origin: PointTuple;
-  planarSignFaceSampleCount: number;
-  probeSameSignFaceHitCount: number;
+  planarTargetFaceSampleCount: number;
+  probeSameTargetFaceHitCount: number;
   wrongObjectCount: number;
   noHitCount: number;
-  sameSignFaceCoverage: number;
+  sameTargetFaceCoverage: number;
   medianQErrorM: number | null;
   p95QErrorM: number | null;
   medianQVirtualErrorM: number | null;
@@ -194,7 +198,7 @@ type ProbeOriginMetrics = {
   p95FocusAxisErrorMm: number | null;
   medianAngularParallaxDeg: number | null;
   p95AngularParallaxDeg: number | null;
-  maximumAdjacent2x2SignCluster: number;
+  maximumAdjacent2x2TargetCluster: number;
 };
 
 type DistanceCubeCpuIterationMetrics = {
@@ -333,7 +337,7 @@ type ProbeProof = {
     probeCpuQVirtual: PointTuple;
     probeGpuQVirtual: PointTuple;
     probeCpuHitObject: string;
-    probeGpuQInsideSignFace: boolean;
+    probeGpuQInsideTargetFace: boolean;
     sourcePixel: { x: number; yBottom: number };
     paneMaskActive: boolean;
     paneWorldPosition: PointTuple;
@@ -359,9 +363,9 @@ type ProbeProof = {
     projectedVirtualImageDisplacementPx: number;
   };
   originStudy: {
-    planarSignFaceSampleCount: number;
+    planarTargetFaceSampleCount: number;
     allPaneSampleCount: number;
-    maximumAdjacent2x2SignCluster: number;
+    maximumAdjacent2x2TargetCluster: number;
     boundedRegionM: { min: PointTuple; max: PointTuple };
     candidateCount: number;
     historical: ProbeOriginMetrics;
@@ -875,7 +879,9 @@ type PaneReflectionSample = {
 const PROBE_REGION_FRACTIONS = [0.1, 0.3, 0.7, 0.9] as const;
 
 const isFrontGlazing = (mesh: THREE.Mesh): boolean =>
-  mesh.name.startsWith("architecture-rise-facade-window-bay-") && mesh.name.endsWith("-glazing");
+  mesh.name.startsWith("architecture-rise-window-") &&
+  !mesh.name.includes("service-east-") &&
+  mesh.name.endsWith("-glazing");
 
 const createProbeSceneMeshes = (root: THREE.Group): THREE.Mesh[] => {
   const meshes: THREE.Mesh[] = [];
@@ -890,14 +896,13 @@ const createPlanarSampleMeshes = (root: THREE.Group): THREE.Mesh[] => {
   root.traverse((object) => {
     if (
       object instanceof THREE.Mesh &&
-      !object.name.startsWith("architecture-rise-facade-window-bay-") &&
-      !object.name.startsWith("architecture-rise-side-return-window-bay-")
+      !object.name.startsWith("architecture-rise-window-")
     ) meshes.push(object);
   });
   return meshes;
 };
 
-const maxAdjacentSignCluster = (samples: readonly PaneReflectionSample[], signKeys: ReadonlySet<string>): number => {
+const maxAdjacentTargetCluster = (samples: readonly PaneReflectionSample[], targetKeys: ReadonlySet<string>): number => {
   const paneNames = [...new Set(samples.map((sample) => sample.paneName))];
   let maximum = 0;
   for (const paneName of paneNames) {
@@ -909,7 +914,7 @@ const maxAdjacentSignCluster = (samples: readonly PaneReflectionSample[], signKe
           `${paneName}|${row}|${column + 1}`,
           `${paneName}|${row + 1}|${column + 1}`,
         ];
-        maximum = Math.max(maximum, keys.filter((key) => signKeys.has(key)).length);
+        maximum = Math.max(maximum, keys.filter((key) => targetKeys.has(key)).length);
       }
     }
   }
@@ -948,6 +953,7 @@ const collectPlanarSignSamples = (
         const paneHit = paneRay.intersectObject(pane, false)[0];
         if (!paneHit?.face) continue;
         allPaneSampleCount += 1;
+        if (pane.name !== TARGET_PANE_NAME) continue;
         const normal = paneHit.face.normal.clone().applyMatrix3(
           new THREE.Matrix3().getNormalMatrix(pane.matrixWorld),
         ).normalize();
@@ -1002,8 +1008,8 @@ const probeOriginMetrics = (
   const qVirtualErrors: number[] = [];
   const focusErrors: number[] = [];
   const angularErrors: number[] = [];
-  const signKeys = new Set<string>();
-  let probeSameSignFaceHitCount = 0;
+  const targetKeys = new Set<string>();
+  let probeSameTargetFaceHitCount = 0;
   let wrongObjectCount = 0;
   let noHitCount = 0;
   for (const sample of samples) {
@@ -1017,8 +1023,8 @@ const probeOriginMetrics = (
     }
     const isTargetFace = hit.object.name === TARGET_FACE_NAME;
     if (isTargetFace) {
-      probeSameSignFaceHitCount += 1;
-      signKeys.add(`${sample.paneName}|${sample.row}|${sample.column}`);
+      probeSameTargetFaceHitCount += 1;
+      targetKeys.add(`${sample.paneName}|${sample.row}|${sample.column}`);
     } else {
       wrongObjectCount += 1;
     }
@@ -1038,11 +1044,11 @@ const probeOriginMetrics = (
   }
   return {
     origin: pointToTuple(origin),
-    planarSignFaceSampleCount: samples.length,
-    probeSameSignFaceHitCount,
+    planarTargetFaceSampleCount: samples.length,
+    probeSameTargetFaceHitCount,
     wrongObjectCount,
     noHitCount,
-    sameSignFaceCoverage: samples.length > 0 ? probeSameSignFaceHitCount / samples.length : 0,
+    sameTargetFaceCoverage: samples.length > 0 ? probeSameTargetFaceHitCount / samples.length : 0,
     medianQErrorM: percentile(qErrors, 0.5),
     p95QErrorM: percentile(qErrors, 0.95),
     medianQVirtualErrorM: percentile(qVirtualErrors, 0.5),
@@ -1051,7 +1057,7 @@ const probeOriginMetrics = (
     p95FocusAxisErrorMm: percentile(focusErrors, 0.95),
     medianAngularParallaxDeg: percentile(angularErrors, 0.5),
     p95AngularParallaxDeg: percentile(angularErrors, 0.95),
-    maximumAdjacent2x2SignCluster: maxAdjacentSignCluster(samples, signKeys),
+    maximumAdjacent2x2TargetCluster: maxAdjacentTargetCluster(samples, targetKeys),
   };
 };
 
@@ -1061,30 +1067,30 @@ const studyProbeOrigins = (
   opticalAxis: THREE.Vector3,
 ): ProbeProof["originStudy"] => {
   const { allPaneSampleCount, samples } = collectPlanarSignSamples(root, lensOrigin);
-  if (samples.length === 0) throw new Error("The current Planar sign sample set is empty");
+  if (samples.length === 0) throw new Error("The current Planar target sample set is empty");
   const sceneMeshes = createProbeSceneMeshes(root);
-  const signFace = findMesh(root, TARGET_FACE_NAME);
-  const signBounds = new THREE.Box3().setFromObject(signFace);
+  const reflectionTarget = findMesh(root, TARGET_FACE_NAME);
+  const targetBounds = new THREE.Box3().setFromObject(reflectionTarget);
   const facade = findMesh(root, "architecture-rise-primary-facade");
   const facadeBounds = new THREE.Box3().setFromObject(facade);
   const paneBounds = new THREE.Box3().makeEmpty();
   root.traverse((object) => {
     if (object instanceof THREE.Mesh && isFrontGlazing(object)) paneBounds.union(new THREE.Box3().setFromObject(object));
   });
-  const signSize = signBounds.getSize(new THREE.Vector3());
-  const xPadding = Math.max(signSize.x, 0.35);
-  const yPadding = Math.max(signSize.y * 0.5, 0.35);
-  const zMinimum = signBounds.max.z + Math.max(0.35, signSize.z * 3);
+  const targetSize = targetBounds.getSize(new THREE.Vector3());
+  const xPadding = Math.max(targetSize.x, 0.35);
+  const yPadding = Math.max(targetSize.y * 0.5, 0.35);
+  const zMinimum = targetBounds.max.z + Math.max(0.35, targetSize.z * 3);
   const zMaximum = Math.min(paneBounds.min.z, facadeBounds.min.z) - 0.35;
   if (zMaximum <= zMinimum) throw new Error("The derived open search corridor between sign and facade is empty");
   const regionMin = new THREE.Vector3(
-    Math.min(signBounds.min.x, paneBounds.min.x) - xPadding,
-    Math.max(signBounds.min.y - yPadding, lensOrigin.y - 0.75),
+    Math.min(targetBounds.min.x, paneBounds.min.x) - xPadding,
+    Math.max(targetBounds.min.y - yPadding, lensOrigin.y - 0.75),
     zMinimum,
   );
   const regionMax = new THREE.Vector3(
-    Math.max(signBounds.max.x, paneBounds.max.x) + xPadding,
-    Math.min(signBounds.max.y + yPadding, lensOrigin.y + 3.0),
+    Math.max(targetBounds.max.x, paneBounds.max.x) + xPadding,
+    Math.min(targetBounds.max.y + yPadding, lensOrigin.y + 3.0),
     zMaximum,
   );
   const solidBounds = sceneMeshes.map((mesh) => new THREE.Box3().setFromObject(mesh));
@@ -1110,25 +1116,25 @@ const studyProbeOrigins = (
   const ascending = (a: number | null, b: number | null): number =>
     (a ?? Number.POSITIVE_INFINITY) - (b ?? Number.POSITIVE_INFINITY);
   measured.sort((a, b) =>
-    b.metrics.probeSameSignFaceHitCount - a.metrics.probeSameSignFaceHitCount ||
-    b.metrics.maximumAdjacent2x2SignCluster - a.metrics.maximumAdjacent2x2SignCluster ||
+    b.metrics.probeSameTargetFaceHitCount - a.metrics.probeSameTargetFaceHitCount ||
+    b.metrics.maximumAdjacent2x2TargetCluster - a.metrics.maximumAdjacent2x2TargetCluster ||
     ascending(a.metrics.p95QVirtualErrorM, b.metrics.p95QVirtualErrorM) ||
     ascending(a.metrics.p95FocusAxisErrorMm, b.metrics.p95FocusAxisErrorMm) ||
     ascending(a.metrics.p95AngularParallaxDeg, b.metrics.p95AngularParallaxDeg) ||
     ascending(a.metrics.p95QErrorM, b.metrics.p95QErrorM),
   );
   const selected = measured[0];
-  if (selected.metrics.probeSameSignFaceHitCount < 10 || selected.metrics.maximumAdjacent2x2SignCluster < 3) {
+  if (selected.metrics.probeSameTargetFaceHitCount < 10 || selected.metrics.maximumAdjacent2x2TargetCluster < 3) {
     throw new Error(
       `SINGLE-PROBE GEOMETRY INADEQUATE: best clear origin retained ` +
-      `${selected.metrics.probeSameSignFaceHitCount}/${samples.length} same-face samples and ` +
-      `cluster ${selected.metrics.maximumAdjacent2x2SignCluster}/4`,
+      `${selected.metrics.probeSameTargetFaceHitCount}/${samples.length} same-face samples and ` +
+      `cluster ${selected.metrics.maximumAdjacent2x2TargetCluster}/4`,
     );
   }
   return {
-    planarSignFaceSampleCount: samples.length,
+    planarTargetFaceSampleCount: samples.length,
     allPaneSampleCount,
-    maximumAdjacent2x2SignCluster: maxAdjacentSignCluster(samples, new Set(
+    maximumAdjacent2x2TargetCluster: maxAdjacentTargetCluster(samples, new Set(
       samples.map((sample) => `${sample.paneName}|${sample.row}|${sample.column}`),
     )),
     boundedRegionM: { min: pointToTuple(regionMin), max: pointToTuple(regionMax) },
@@ -1628,9 +1634,14 @@ const makeCompositeMaterial = (bundle: OwnedBundle): THREE.ShaderMaterial => {
       flipDisplayY: { value: 1 },
       groundGlassIlluminanceGain: { value: 1 },
       groundGlassNaturalIlluminationEnabled: { value: 0 },
+      groundGlassNaturalIlluminationModel: { value: 0 },
       groundGlassNaturalIlluminationImageDistanceMm: { value: 0 },
       groundGlassNaturalIlluminationOffsetXMm: { value: 0 },
       groundGlassNaturalIlluminationOffsetYMm: { value: 0 },
+      groundGlassNaturalIlluminationLensToFilmCenterLocalMm: { value: new THREE.Vector3() },
+      groundGlassNaturalIlluminationImageSideAxisLocal: { value: new THREE.Vector3() },
+      groundGlassNaturalIlluminationReferenceFilmIncidenceCosine: { value: 0 },
+      groundGlassNaturalIlluminationFilmNormalTowardLensSign: { value: 0 },
       groundGlassCoverageEnabled: { value: 0 },
       groundGlassCoverageMode: { value: 0 },
       groundGlassCoverageRadiusMm: { value: 0 },
@@ -2571,8 +2582,8 @@ const measureSharpness = (
   image: Float32Array,
   apparentPositions: Float32Array,
   plane: THREE.Plane,
-  signBounds: THREE.Box3,
-): FocusCaseMeasurement["reflectedSignSharpness"] => {
+  targetBounds: THREE.Box3,
+): FocusCaseMeasurement["reflectedTargetSharpness"] => {
   const valid = new Uint8Array(WIDTH * HEIGHT);
   let minX = WIDTH;
   let minY = HEIGHT;
@@ -2588,7 +2599,7 @@ const measureSharpness = (
         apparentPositions[offset + 2],
       );
       const realPoint = reflectPointAcrossPlane(virtualPoint, plane);
-      if (signBounds.distanceToPoint(realPoint) > 0.035) continue;
+      if (targetBounds.distanceToPoint(realPoint) > 0.035) continue;
       valid[y * WIDTH + x] = 1;
       minX = Math.min(minX, x);
       maxX = Math.max(maxX, x);
@@ -2751,14 +2762,15 @@ const runProbeFocusReference = (): ProbeProof => {
     }
 
     const pane = findMesh(subject, TARGET_PANE_NAME);
-    const signFace = findMesh(subject, TARGET_FACE_NAME);
+    const paneFocusDistanceMm = FOCUS_CASES.paneFocus;
+    const paneFocusSetup = makeConfiguredGroundGlassCamera(paneFocusDistanceMm);
+    const initialLensOrigin = paneFocusSetup.camera.getWorldPosition(new THREE.Vector3());
+    addArchitectureRiseTestReflectionTarget(subject, pane, initialLensOrigin);
+    const reflectionTarget = findMesh(subject, TARGET_FACE_NAME);
     const sceneMeshes = createPositionSceneForSubject(subject, pane);
     const probeSceneMeshes = createProbeSceneMeshes(subject);
     const visibilityDepth = makeDataTexture(bundle, new Uint8Array([255, 255, 255, 255]), 1, 1);
 
-    const paneFocusDistanceMm = FOCUS_CASES.paneFocus;
-    const paneFocusSetup = makeConfiguredGroundGlassCamera(paneFocusDistanceMm);
-    const initialLensOrigin = paneFocusSetup.camera.getWorldPosition(new THREE.Vector3());
     const canonicalSample = getSignSample(subject, pane, initialLensOrigin);
     const opticalAxis = new THREE.Vector3(
       paneFocusSetup.optics.opticalAxis.direction.x,
@@ -3128,7 +3140,7 @@ const runProbeFocusReference = (): ProbeProof => {
         reflectedFocusedPixels,
         captured.mappedPositionPixels,
         captured.plane,
-        new THREE.Box3().setFromObject(signFace),
+        new THREE.Box3().setFromObject(reflectionTarget),
       );
       caseImages[caseId] = {
         reflection: reflectionSourceImage,
@@ -3167,7 +3179,7 @@ const runProbeFocusReference = (): ProbeProof => {
           maxLinearSumDifference,
           finalDisplayRgba: displayRgba,
         },
-        reflectedSignSharpness: signSharpness,
+        reflectedTargetSharpness: signSharpness,
         reflectionSourceHash: hashDisplayPixels(reflectionSourceImage),
         reflectionOnlyHash: hashDisplayPixels(focusedReflectionImage),
         combinedDisplayHash: hashDisplayPixels(combinedDisplayImage),
@@ -3268,8 +3280,8 @@ const runProbeFocusReference = (): ProbeProof => {
       "Pane world-position mask",
     );
     const paneFocusMeasurement = focusCases.paneFocus;
-    const faceBounds = new THREE.Box3().setFromObject(signFace);
-    const gpuQInsideSignFace = faceBounds.distanceToPoint(selectedGpuQ) < 0.05;
+    const faceBounds = new THREE.Box3().setFromObject(reflectionTarget);
+    const gpuQInsideTargetFace = faceBounds.distanceToPoint(selectedGpuQ) < 0.05;
     const directRay = new THREE.Raycaster(
       selectedCamera.getWorldPosition(new THREE.Vector3()),
       canonicalSample.panePoint.clone().sub(selectedCamera.getWorldPosition(new THREE.Vector3())).normalize(),
@@ -3378,7 +3390,7 @@ const runProbeFocusReference = (): ProbeProof => {
         probeCpuQVirtual: pointToTuple(probeCpuQVirtual),
         probeGpuQVirtual: pointToTuple(selectedGpuQv),
         probeCpuHitObject,
-        probeGpuQInsideSignFace: gpuQInsideSignFace,
+        probeGpuQInsideTargetFace: gpuQInsideTargetFace,
         sourcePixel: {
           x: selectedPanePixel.x,
           yBottom: selectedPanePixel.yBottom,

@@ -36,7 +36,7 @@ const PROBE_FAR = 100;
 const REFLECTION_WEIGHT = 0.18;
 const BASE_SHA = "30098d044ff5fd8b2a14693c6d310980c5459455";
 const PROBE_ORIGIN = new THREE.Vector3(-1.2725, 1.5, 6.972);
-const FRONT_PANE_PREFIX = "architecture-rise-facade-window-bay-";
+const FRONT_PANE_PREFIX = "architecture-rise-window-";
 const PANE_SAMPLE_FRACTIONS = [0.1, 0.3, 0.7, 0.9] as const;
 const BACKGROUND_COLOR = 0xf8fafc;
 
@@ -290,7 +290,9 @@ const createPerspectiveCamera = (position: THREE.Vector3, target: THREE.Vector3)
 };
 
 const isFrontGlazing = (mesh: THREE.Mesh): boolean =>
-  mesh.name.startsWith(FRONT_PANE_PREFIX) && mesh.name.endsWith("-glazing");
+  mesh.name.startsWith(FRONT_PANE_PREFIX) &&
+  !mesh.name.includes("service-east-") &&
+  mesh.name.endsWith("-glazing");
 
 const isAnyGlazing = (mesh: THREE.Mesh): boolean => mesh.name.endsWith("-glazing");
 
