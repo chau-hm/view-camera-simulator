@@ -9,6 +9,12 @@ import {
 import { createRegisteredRttSubject, disposeRegisteredRttSubject } from "../../render/sceneSubjectRegistry";
 import { toWorld } from "../../render/rttUtils";
 import { STILL_LIFE_STUDIO_PRESENTATION } from "../../scenes/presentation/stillLifeStudio";
+import {
+  stillLifeStudioFocusReferences,
+  stillLifeStudioFocusTileDimensionsMm,
+  stillLifeStudioFocusTargets,
+  stillLifeStudioTable,
+} from "../../scenes/stillLifeStudioGeometry";
 import { stillLifeStudioScene } from "../../scenes/definitions/still-life-studio";
 import { resolveStillLifeStudioPlan, getStillLifeObjectBoundsMm } from "../../scenes/stillLifeStudioVariation";
 import { createSceneVariantIdentity, resolveSceneVariationDescriptor } from "../../scenes/sceneVariation";
@@ -148,7 +154,7 @@ describe("Still-Life Studio registered subject", () => {
             max: { x: actual.max.x * 1000, y: actual.max.y * 1000, z: actual.max.z * 1000 },
           };
           const planned = getStillLifeObjectBoundsMm(placement);
-          expect(actualMm.min.y).toBeCloseTo(0, 2);
+          expect(actualMm.min.y).toBeCloseTo(stillLifeStudioTable.topYmm, 2);
           expect(actualMm.min.x).toBeGreaterThanOrEqual(planned.min.x - 10);
           expect(actualMm.max.x).toBeLessThanOrEqual(planned.max.x + 10);
           expect(actualMm.min.z).toBeGreaterThanOrEqual(planned.min.z - 10);
@@ -159,6 +165,39 @@ describe("Still-Life Studio registered subject", () => {
       } finally {
         disposeRegisteredSceneAsset(STILL_LIFE_STUDIO_ASSET_KEY, group);
       }
+    }
+  });
+
+  it("renders each focus plaque as an upright camera-facing scored surface", () => {
+    const group = createRegisteredSceneAsset(STILL_LIFE_STUDIO_ASSET_KEY, {
+      presentation: STILL_LIFE_STUDIO_PRESENTATION,
+      variationDescriptor: descriptorFor(284719),
+    });
+    group.updateMatrixWorld(true);
+    try {
+      for (const reference of stillLifeStudioFocusReferences) {
+        const tile = group.getObjectByName(`still-life-studio-focus-tile-${reference.id}`);
+        const ring = group.getObjectByName(`still-life-studio-focus-mark-${reference.id}`);
+        const probe = group.getObjectByName(`still-life-studio-focus-${reference.id}`);
+        if (!(tile instanceof THREE.Mesh) || !ring || !probe) {
+          throw new Error(`Missing rendered focus reference ${reference.id}`);
+        }
+        const target = stillLifeStudioFocusTargets.find(({ id }) => id === reference.id);
+        if (!target) throw new Error(`Missing scored focus target ${reference.id}`);
+        const bounds = new THREE.Box3().setFromObject(tile);
+        expect(bounds.min.y * 1000).toBeCloseTo(stillLifeStudioTable.topYmm, 2);
+        expect(bounds.max.y * 1000).toBeCloseTo(
+          stillLifeStudioTable.topYmm + stillLifeStudioFocusTileDimensionsMm.height,
+          2,
+        );
+        expect(bounds.min.z * 1000).toBeCloseTo(target.worldPosition.z, 2);
+        expect(probe.userData.focusProbeWorldMm).toEqual(target.worldPosition);
+
+        const frontNormal = new THREE.Vector3(0, 0, 1).transformDirection(ring.matrixWorld);
+        expect(frontNormal.z).toBeCloseTo(-1, 6);
+      }
+    } finally {
+      disposeRegisteredSceneAsset(STILL_LIFE_STUDIO_ASSET_KEY, group);
     }
   });
 

@@ -4,7 +4,7 @@ import {
   stillLifeStudioBackdrop,
   stillLifeStudioDepthRegions,
   stillLifeStudioFocusReferences,
-  stillLifeStudioFocusTileHalfSizeMm,
+  stillLifeStudioFocusProtectedHalfExtentMm,
   stillLifeStudioSceneBounds,
   stillLifeStudioTable,
 } from "./stillLifeStudioGeometry";
@@ -122,10 +122,10 @@ const studioTableSupport: SupportSurfaceMm = {
 };
 
 const focusProtectedRegions = stillLifeStudioFocusReferences.map((reference) => ({
-  minX: reference.x - stillLifeStudioFocusTileHalfSizeMm - 26,
-  maxX: reference.x + stillLifeStudioFocusTileHalfSizeMm + 26,
-  minZ: reference.z - stillLifeStudioFocusTileHalfSizeMm - 26,
-  maxZ: reference.z + stillLifeStudioFocusTileHalfSizeMm + 26,
+  minX: reference.x - stillLifeStudioFocusProtectedHalfExtentMm - 26,
+  maxX: reference.x + stillLifeStudioFocusProtectedHalfExtentMm + 26,
+  minZ: reference.z - stillLifeStudioFocusProtectedHalfExtentMm - 26,
+  maxZ: reference.z + stillLifeStudioFocusProtectedHalfExtentMm + 26,
 }));
 
 const roundTo10 = (value: number): number => Math.round(value / 10) * 10;
@@ -323,7 +323,7 @@ export const createStillLifeStudioFallbackPlan = (): StillLifeStudioPlan =>
         family: "vessel",
         variant: "round-shoulder",
         dimensionsMm: Object.freeze({ width: 420, height: 680, depth: 420 }),
-        positionMm: Object.freeze({ x: -320, y: 340, z: 4100 }),
+        positionMm: Object.freeze({ x: -320, y: 190, z: 4100 }),
         rotationYDeg: 0,
         supportId: "studio-table",
         palette: "clay",
@@ -334,7 +334,7 @@ export const createStillLifeStudioFallbackPlan = (): StillLifeStudioPlan =>
         family: "bowl",
         variant: "wide-low",
         dimensionsMm: Object.freeze({ width: 500, height: 220, depth: 500 }),
-        positionMm: Object.freeze({ x: 360, y: 110, z: 3200 }),
+        positionMm: Object.freeze({ x: 360, y: -40, z: 3200 }),
         rotationYDeg: 0,
         supportId: "studio-table",
         palette: "sage",
@@ -345,7 +345,7 @@ export const createStillLifeStudioFallbackPlan = (): StillLifeStudioPlan =>
         family: "books",
         variant: "two-book-stack",
         dimensionsMm: Object.freeze({ width: 510, height: 260, depth: 380 }),
-        positionMm: Object.freeze({ x: 260, y: 130, z: 5100 }),
+        positionMm: Object.freeze({ x: 260, y: -20, z: 5100 }),
         rotationYDeg: 0,
         supportId: "studio-table",
         palette: "ochre",

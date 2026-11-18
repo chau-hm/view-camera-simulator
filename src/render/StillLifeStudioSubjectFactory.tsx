@@ -291,14 +291,17 @@ const addFocusReferences = (
   markMaterial: THREE.Material,
 ): void => {
   presentation.geometry.stillLifeStudioFocusReferences.forEach((reference) => {
+    const tileDimensions = presentation.geometry.stillLifeStudioFocusTileDimensionsMm;
+    const tileCenterYmm = presentation.geometry.stillLifeStudioTable.topYmm + tileDimensions.height / 2;
+    const tileFrontZmm = reference.z - tileDimensions.depth / 2;
     const focusGroup = new THREE.Group();
     focusGroup.name = `still-life-studio-focus-reference-${reference.id}`;
     root.add(focusGroup);
     addBox(
       focusGroup,
       `still-life-studio-focus-tile-${reference.id}`,
-      { width: 190, height: 16, depth: 190 },
-      { x: reference.x, y: 8, z: reference.z },
+      tileDimensions,
+      { x: reference.x, y: tileCenterYmm, z: reference.z },
       tileMaterial,
       { cast: false },
     );
@@ -307,8 +310,8 @@ const addFocusReferences = (
       markMaterial,
     );
     ring.name = `still-life-studio-focus-mark-${reference.id}`;
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.set(toWorld(reference.x), toWorld(16.15), toWorld(reference.z));
+    ring.rotation.y = Math.PI;
+    ring.position.set(toWorld(reference.x), toWorld(tileCenterYmm), toWorld(tileFrontZmm - 0.15));
     ring.castShadow = false;
     ring.receiveShadow = false;
     focusGroup.add(ring);
@@ -390,7 +393,8 @@ export const createStillLifeStudioGroup = (
     tableMaterial,
   );
 
-  const legGeometry = new THREE.BoxGeometry(toWorld(100), toWorld(745), toWorld(100));
+  const legHeightMm = 745;
+  const legGeometry = new THREE.BoxGeometry(toWorld(100), toWorld(legHeightMm), toWorld(100));
   [
     { x: -1320, z: 2580 },
     { x: 1320, z: 2580 },
@@ -399,7 +403,10 @@ export const createStillLifeStudioGroup = (
   ].forEach((position, index) => {
     const leg = new THREE.Mesh(legGeometry, tableMaterial);
     leg.name = `still-life-studio-table-leg-${index + 1}`;
-    leg.position.set(toWorld(position.x), toWorld(-452.5), toWorld(position.z));
+    const legCenterYmm = geometry.stillLifeStudioTable.topYmm
+      - geometry.stillLifeStudioTable.sizeMm.height
+      - legHeightMm / 2;
+    leg.position.set(toWorld(position.x), toWorld(legCenterYmm), toWorld(position.z));
     leg.castShadow = true;
     leg.receiveShadow = true;
     root.add(leg);

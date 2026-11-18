@@ -73,7 +73,7 @@ describe("public scene catalog integrity", () => {
     expect(Object.values(scenePublication).every((value) => typeof value === "boolean")).toBe(true);
   });
 
-  it("publishes Still-Life Studio as qualified Free Practice", () => {
+  it("publishes the qualified Still-Life Studio in production and qualification mode", () => {
     const entry = publicSceneCatalog.find(({ id }) => id === "still-life-studio")!;
 
     expect(scenePublication["still-life-studio"]).toBe(true);
@@ -88,16 +88,26 @@ describe("public scene catalog integrity", () => {
     expect(entry.guidedTaskIds).toBeUndefined();
     expect(entry.guidedLesson).toBeUndefined();
     expect(entry.lesson).toBeUndefined();
-    expect(getPublicSceneEntryById("still-life-studio")).toMatchObject(entry);
-    expect(isValidSimulatorRoute({ mode: "free", sceneId: entry.id, publicEntry: entry })).toBe(true);
+    const productionPublication = resolveScenePublication("production");
+    const productionEntry = getPublicSceneEntryById(entry.id, productionPublication);
+    expect(productionPublication["still-life-studio"]).toBe(true);
+    if (productionEntry === undefined) throw new Error("Published Still-Life Studio should be visible in production");
+    expect(productionEntry).toMatchObject(entry);
+    expect(isValidSimulatorRoute({ mode: "free", sceneId: entry.id, publicEntry: productionEntry })).toBe(true);
+
+    const qualificationPublication = resolveScenePublication("still-life-studio-qualification");
+    const qualificationEntry = getPublicSceneEntryById(entry.id, qualificationPublication);
+    if (qualificationEntry === undefined) throw new Error("Still-Life Studio should remain available in qualification mode");
+    expect(qualificationPublication["still-life-studio"]).toBe(true);
+    expect(qualificationPublication["shelf-swing"]).toBe(scenePublication["shelf-swing"]);
+    expect(qualificationEntry).toMatchObject(entry);
+    expect(isValidSimulatorRoute({ mode: "free", sceneId: entry.id, publicEntry: qualificationEntry })).toBe(true);
     expect(isValidSimulatorRoute({
       mode: "guided",
       sceneId: entry.id,
       taskId: "future-task",
       publicEntry: entry,
     })).toBe(false);
-    expect(resolveScenePublication("production")["still-life-studio"]).toBe(true);
-    expect(resolveScenePublication("still-life-studio-qualification")["still-life-studio"]).toBe(true);
   });
 
   it("declares each scene in one registered group with deterministic group order", () => {
