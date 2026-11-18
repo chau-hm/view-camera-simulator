@@ -1,0 +1,347 @@
+{
+  "method": {
+    "description": "Descriptive sRGB relative-luminance statistics sampled from each actual Ground Glass PNG inside the optical projection bounding rectangle of each subject. Y is normalized top-to-bottom as rendered; no brightness pass threshold is applied. Background reference uses a fixed unobstructed backdrop patch x=.78-.92, y=.70-.84 in Raw mode. Luma=0.2126R+0.7152G+0.0722B in 8-bit sRGB code values.",
+    "nearBlackDefinition": "luma < 16 / 255 code values",
+    "resolution": "514×412 CSS-pixel canvas screenshots"
+  },
+  "cases": [
+    {
+      "phase": "baseline",
+      "seed": 284719,
+      "screenshot": "baseline-representative-284719.png",
+      "orientation": "raw",
+      "aperture": 11,
+      "dofBypass": false,
+      "frameRequestId": "gg-mwlejrxh-0efktamtyx8e-default-request-13",
+      "lastCompletedRequestId": "gg-mwlejrxh-0efktamtyx8e-default-request-13",
+      "backgroundReference": {
+        "pixels": 4307,
+        "boxPx": {
+          "x0": 400,
+          "y0": 288,
+          "x1": 473,
+          "y1": 347
+        },
+        "medianLuma": 24.1,
+        "p10Luma": 22.3,
+        "p90Luma": 145.8,
+        "under16Fraction": 0
+      },
+      "subjects": [
+        {
+          "id": "left-form",
+          "family": "books",
+          "pixels": 8763,
+          "boxPx": {
+            "x0": 102,
+            "y0": 206,
+            "x1": 229,
+            "y1": 275
+          },
+          "medianLuma": 29.3,
+          "p10Luma": 7.1,
+          "p90Luma": 31.2,
+          "under16Fraction": 0.174
+        },
+        {
+          "id": "centre-form",
+          "family": "books",
+          "pixels": 4320,
+          "boxPx": {
+            "x0": 217,
+            "y0": 206,
+            "x1": 307,
+            "y1": 254
+          },
+          "medianLuma": 34.2,
+          "p10Luma": 19.9,
+          "p90Luma": 42.3,
+          "under16Fraction": 0.065
+        },
+        {
+          "id": "right-form",
+          "family": "wooden-form",
+          "pixels": 2993,
+          "boxPx": {
+            "x0": 280,
+            "y0": 206,
+            "x1": 353,
+            "y1": 247
+          },
+          "medianLuma": 15.6,
+          "p10Luma": 8.5,
+          "p90Luma": 34.2,
+          "under16Fraction": 0.501
+        }
+      ]
+    },
+    {
+      "phase": "after-lighting",
+      "seed": 284719,
+      "screenshot": "after-lighting-representative-284719-raw-f5_6.png",
+      "orientation": "raw",
+      "aperture": 5.6,
+      "dofBypass": false,
+      "frameRequestId": "gg-mwlfh315-71htkageux7-default-request-20",
+      "lastCompletedRequestId": "gg-mwlfh315-71htkageux7-default-request-20",
+      "backgroundReference": {
+        "pixels": 4307,
+        "boxPx": {
+          "x0": 400,
+          "y0": 288,
+          "x1": 473,
+          "y1": 347
+        },
+        "medianLuma": 120,
+        "p10Luma": 113.5,
+        "p90Luma": 255,
+        "under16Fraction": 0
+      },
+      "subjects": [
+        {
+          "id": "left-form",
+          "family": "books",
+          "pixels": 8763,
+          "boxPx": {
+            "x0": 102,
+            "y0": 174,
+            "x1": 229,
+            "y1": 243
+          },
+          "medianLuma": 155.5,
+          "p10Luma": 38.7,
+          "p90Luma": 167.7,
+          "under16Fraction": 0.009
+        },
+        {
+          "id": "centre-form",
+          "family": "books",
+          "pixels": 4320,
+          "boxPx": {
+            "x0": 217,
+            "y0": 181,
+            "x1": 307,
+            "y1": 229
+          },
+          "medianLuma": 181.9,
+          "p10Luma": 97.2,
+          "p90Luma": 185.4,
+          "under16Fraction": 0
+        },
+        {
+          "id": "right-form",
+          "family": "wooden-form",
+          "pixels": 2993,
+          "boxPx": {
+            "x0": 280,
+            "y0": 186,
+            "x1": 353,
+            "y1": 227
+          },
+          "medianLuma": 73.2,
+          "p10Luma": 50,
+          "p90Luma": 182.7,
+          "under16Fraction": 0
+        }
+      ]
+    },
+    {
+      "phase": "after-lighting",
+      "seed": 284719,
+      "screenshot": "after-lighting-representative-284719-raw-f11.png",
+      "orientation": "raw",
+      "aperture": 11,
+      "dofBypass": false,
+      "frameRequestId": "gg-mwlfh315-71htkageux7-default-request-21",
+      "lastCompletedRequestId": "gg-mwlfh315-71htkageux7-default-request-21",
+      "backgroundReference": {
+        "pixels": 4307,
+        "boxPx": {
+          "x0": 400,
+          "y0": 288,
+          "x1": 473,
+          "y1": 347
+        },
+        "medianLuma": 31.2,
+        "p10Luma": 29.3,
+        "p90Luma": 145.8,
+        "under16Fraction": 0
+      },
+      "subjects": [
+        {
+          "id": "left-form",
+          "family": "books",
+          "pixels": 8763,
+          "boxPx": {
+            "x0": 102,
+            "y0": 174,
+            "x1": 229,
+            "y1": 243
+          },
+          "medianLuma": 40.1,
+          "p10Luma": 9.9,
+          "p90Luma": 43.3,
+          "under16Fraction": 0.197
+        },
+        {
+          "id": "centre-form",
+          "family": "books",
+          "pixels": 4320,
+          "boxPx": {
+            "x0": 217,
+            "y0": 181,
+            "x1": 307,
+            "y1": 229
+          },
+          "medianLuma": 47.4,
+          "p10Luma": 30.3,
+          "p90Luma": 48.6,
+          "under16Fraction": 0.064
+        },
+        {
+          "id": "right-form",
+          "family": "wooden-form",
+          "pixels": 2993,
+          "boxPx": {
+            "x0": 280,
+            "y0": 186,
+            "x1": 353,
+            "y1": 227
+          },
+          "medianLuma": 17.9,
+          "p10Luma": 12.6,
+          "p90Luma": 47.5,
+          "under16Fraction": 0.492
+        }
+      ]
+    },
+    {
+      "phase": "after-lighting",
+      "seed": 284719,
+      "screenshot": "after-lighting-representative-284719-upright-f11.png",
+      "orientation": "upright",
+      "aperture": 11,
+      "dofBypass": false,
+      "frameRequestId": "gg-mwlfh315-71htkageux7-default-request-22",
+      "lastCompletedRequestId": "gg-mwlfh315-71htkageux7-default-request-22",
+      "backgroundReference": null,
+      "subjects": [
+        {
+          "id": "left-form",
+          "family": "books",
+          "pixels": 8763,
+          "boxPx": {
+            "x0": 285,
+            "y0": 169,
+            "x1": 412,
+            "y1": 238
+          },
+          "medianLuma": 40.1,
+          "p10Luma": 9.9,
+          "p90Luma": 43.3,
+          "under16Fraction": 0.215
+        },
+        {
+          "id": "centre-form",
+          "family": "books",
+          "pixels": 4320,
+          "boxPx": {
+            "x0": 207,
+            "y0": 183,
+            "x1": 297,
+            "y1": 231
+          },
+          "medianLuma": 47.4,
+          "p10Luma": 16,
+          "p90Luma": 48.4,
+          "under16Fraction": 0.101
+        },
+        {
+          "id": "right-form",
+          "family": "wooden-form",
+          "pixels": 2993,
+          "boxPx": {
+            "x0": 161,
+            "y0": 185,
+            "x1": 234,
+            "y1": 226
+          },
+          "medianLuma": 14.9,
+          "p10Luma": 12.6,
+          "p90Luma": 47.5,
+          "under16Fraction": 0.518
+        }
+      ]
+    },
+    {
+      "phase": "after-lighting",
+      "seed": 284719,
+      "screenshot": "after-lighting-representative-284719-raw-dof-bypass-f11.png",
+      "orientation": "raw",
+      "aperture": 11,
+      "dofBypass": true,
+      "frameRequestId": "gg-mwlfh315-71htkageux7-default-request-24",
+      "lastCompletedRequestId": "gg-mwlfh315-71htkageux7-default-request-24",
+      "backgroundReference": {
+        "pixels": 4307,
+        "boxPx": {
+          "x0": 400,
+          "y0": 288,
+          "x1": 473,
+          "y1": 347
+        },
+        "medianLuma": 39.6,
+        "p10Luma": 38.6,
+        "p90Luma": 198.5,
+        "under16Fraction": 0
+      },
+      "subjects": [
+        {
+          "id": "left-form",
+          "family": "books",
+          "pixels": 8763,
+          "boxPx": {
+            "x0": 102,
+            "y0": 174,
+            "x1": 229,
+            "y1": 243
+          },
+          "medianLuma": 47,
+          "p10Luma": 10.9,
+          "p90Luma": 48,
+          "under16Fraction": 0.206
+        },
+        {
+          "id": "centre-form",
+          "family": "books",
+          "pixels": 4320,
+          "boxPx": {
+            "x0": 217,
+            "y0": 181,
+            "x1": 307,
+            "y1": 229
+          },
+          "medianLuma": 50.6,
+          "p10Luma": 16.7,
+          "p90Luma": 51.6,
+          "under16Fraction": 0.097
+        },
+        {
+          "id": "right-form",
+          "family": "wooden-form",
+          "pixels": 2993,
+          "boxPx": {
+            "x0": 280,
+            "y0": 186,
+            "x1": 353,
+            "y1": 227
+          },
+          "medianLuma": 15.3,
+          "p10Luma": 14.3,
+          "p90Luma": 51.4,
+          "under16Fraction": 0.525
+        }
+      ]
+    }
+  ]
+}
