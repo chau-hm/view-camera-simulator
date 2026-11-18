@@ -142,6 +142,14 @@ export const GroundGlassRenderSurface = ({
         data-last-completed-request-id={backendDiagnostics?.frame.lastSuccessfullyCompleted?.request.requestId}
         data-render-cleanup-status={backendDiagnostics?.cleanup?.status}
         data-rtt-camera-ok={rttRuntimeInfo?.cameraConfigurationOk === undefined ? undefined : String(rttRuntimeInfo.cameraConfigurationOk)}
+        data-rtt-camera-near-world={rttRuntimeInfo?.cameraNearWorld}
+        data-rtt-camera-far-world={rttRuntimeInfo?.cameraFarWorld}
+        data-rtt-projection-determinant={rttRuntimeInfo?.projectionDeterminant ?? undefined}
+        data-rtt-projection-matrix={rttRuntimeInfo?.projectionMatrix?.join(",")}
+        data-rtt-preview-mode={previewMode}
+        data-rtt-raw-debug={String(rawDebug === true)}
+        data-rtt-dof-processing-enabled={String(rawDebug !== true)}
+        data-rtt-dof-model={opticsState.diagnostics.groundGlassDofModel ?? "unknown"}
         data-rtt-depth-available={rttRuntimeInfo?.depthTextureAvailable === undefined ? undefined : String(rttRuntimeInfo.depthTextureAvailable)}
         data-rtt-uniforms-finite={rttRuntimeInfo?.uniformsFinite === undefined ? undefined : String(rttRuntimeInfo.uniformsFinite)}
         data-rtt-dof-mode={rttRuntimeInfo?.dofMode}

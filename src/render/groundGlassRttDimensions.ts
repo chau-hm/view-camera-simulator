@@ -85,6 +85,8 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   cameraConfigurationOk?: boolean;
   cameraConfigurationError?: string | null;
   projectionDeterminant?: number | null;
+  /** Column-major projection matrix from the actual configured Ground Glass camera. */
+  projectionMatrix?: readonly number[];
   /** Extrinsics read from the configured Three.js camera, in render-world units. */
   cameraPositionWorld?: [number, number, number];
   cameraUpWorld?: [number, number, number];

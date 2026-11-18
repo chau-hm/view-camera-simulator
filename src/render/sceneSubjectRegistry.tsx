@@ -52,7 +52,10 @@ import { TABLE_TILT_PRESENTATION } from "../scenes/presentation/tableTilt";
 import { SHELF_SWING_PRESENTATION } from "../scenes/presentation/shelfSwing";
 import { ARCHITECTURE_FOREGROUND_PRESENTATION } from "../scenes/presentation/architectureForeground";
 import { INTERIOR_CORNER_PRESENTATION } from "../scenes/presentation/interiorCorner";
-import { STILL_LIFE_STUDIO_PRESENTATION } from "../scenes/presentation/stillLifeStudio";
+import {
+  STILL_LIFE_STUDIO_PRESENTATION,
+  STILL_LIFE_STUDIO_PRESENTATION_LIGHTING,
+} from "../scenes/presentation/stillLifeStudio";
 import { OBLIQUE_TABLETOP_PRESENTATION } from "../scenes/presentation/obliqueTabletop";
 import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../scenes/presentation/focusFundamentals";
 import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../scenes/presentation/viewCameraAnatomy";
@@ -489,10 +492,7 @@ export const sceneSubjectRegistry = {
     disposeRttGroup: (group) =>
       disposeRegisteredSceneAsset(STILL_LIFE_STUDIO_ASSET_KEY, group),
     rttBounds: STILL_LIFE_STUDIO_PRESENTATION.geometry.stillLifeStudioSceneBounds,
-    presentationLighting: {
-      targetMm: { x: 0, y: 280, z: 4100 },
-      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
-    },
+    presentationLighting: STILL_LIFE_STUDIO_PRESENTATION_LIGHTING,
   },
 } as const satisfies Record<string, SceneSubjectRegistration>;
 

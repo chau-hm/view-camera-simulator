@@ -10,3 +10,9 @@ export const STILL_LIFE_STUDIO_PRESENTATION: StillLifeStudioPresentation = {
   sceneId: "still-life-studio",
   geometry,
 };
+
+/** Scene-local lighting placement shared by Observer, Ground Glass, and diagnostics. */
+export const STILL_LIFE_STUDIO_PRESENTATION_LIGHTING = {
+  targetMm: { x: 0, y: 130, z: 4100 },
+  keyOffsetWorld: { x: -2, y: 3.5, z: -4.5 },
+} as const;

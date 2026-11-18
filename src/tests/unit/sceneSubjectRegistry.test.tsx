@@ -1019,6 +1019,7 @@ describe("scene subject registry", () => {
     "interior-corner",
     "macro-depth-of-field",
     "macro-oblique-plane",
+    "still-life-studio",
   ] as const)(
     "%s uses one presentation placement and recipe on Observer and Ground Glass",
     (sceneId) => {

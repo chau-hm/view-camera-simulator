@@ -12,7 +12,9 @@ const basePath = (process.env.STILL_LIFE_STUDIO_BASE_PATH ?? "/").replace(/\/$/,
 const scenePath = `${basePath}/simulator/free/still-life-studio`;
 const diagnostics = "rttDiagnostics=1&sceneCapacityProfiling=1&dofProfiling=1";
 const rawDirectory = path.resolve(process.env.SCENE_VARIATION_EVIDENCE_DIR ?? "/private/tmp/still-life-studio-evidence");
-const evidenceDirectory = path.resolve("docs/render-quality/evidence/still-life-studio");
+const evidenceDirectory = path.resolve(
+  process.env.STILL_LIFE_STUDIO_EVIDENCE_DIR ?? "docs/render-quality/evidence/still-life-studio",
+);
 
 const descriptorFor = (seed: number) => resolveSceneVariationDescriptor(
   stillLifeStudioScene,
@@ -39,6 +41,25 @@ const waitForFrame = async (rtt: Locator, previous?: string | null): Promise<str
   }, { timeout: 120_000 }).toBe(true);
   await expect(rtt).toHaveAttribute("data-frame-result-status", "completed");
   return (await rtt.getAttribute("data-frame-request-id")) ?? "";
+};
+
+const readPreviewState = async (rtt: Locator, focusDistanceMm: number, aperture: number) => {
+  const [orientation, rawDebug, dofProcessingEnabled, frameRequestId, lastCompletedRequestId] = await Promise.all([
+    rtt.getAttribute("data-rtt-preview-mode"),
+    rtt.getAttribute("data-rtt-raw-debug"),
+    rtt.getAttribute("data-rtt-dof-processing-enabled"),
+    rtt.getAttribute("data-frame-request-id"),
+    rtt.getAttribute("data-last-completed-request-id"),
+  ]);
+  return {
+    focusDistanceMm,
+    aperture,
+    orientation,
+    rawDebug: rawDebug === "true",
+    dofProcessingEnabled: dofProcessingEnabled === "true",
+    frameRequestId,
+    lastCompletedRequestId,
+  };
 };
 
 const waitForScene = async (page: Page, seed?: number) => {
@@ -290,6 +311,8 @@ test("Still-Life Studio qualifies for visual and runtime evidence", async ({ pag
   const parityRtt = await replay.rtt.locator("canvas").screenshot({ animations: "disabled" });
   const previewStates: Array<Record<string, unknown>> = [];
   const rawToggle = page.getByLabel("Raw RTT — bypass DOF");
+  await page.getByRole("radio", { name: "Raw Ground Glass" }).check();
+  await rawToggle.uncheck();
   let previousFrame = (await replay.rtt.getAttribute("data-frame-request-id")) ?? "";
   const focusStates: number[] = [];
   for (const focusDistanceMm of [3000, 4100, 5300]) {
@@ -299,17 +322,41 @@ test("Still-Life Studio qualifies for visual and runtime evidence", async ({ pag
     for (const aperture of [5.6, 11, 22]) {
       await page.getByRole("radiogroup", { name: "Aperture" }).getByRole("radio", { name: `f/${aperture}` }).check();
       previousFrame = await waitForFrame(replay.rtt, previousFrame);
-      previewStates.push({ focusDistanceMm, aperture, mode: "processed", frameRequestId: previousFrame });
+      const state = await readPreviewState(replay.rtt, focusDistanceMm, aperture);
+      expect(state).toMatchObject({
+        orientation: "raw",
+        rawDebug: false,
+        dofProcessingEnabled: true,
+        frameRequestId: previousFrame,
+        lastCompletedRequestId: previousFrame,
+      });
+      previewStates.push(state);
     }
   }
   await rawToggle.check();
   previousFrame = await waitForFrame(replay.rtt, previousFrame);
-  previewStates.push({ focusDistanceMm: 5300, aperture: 22, mode: "raw", frameRequestId: previousFrame });
+  const bypassState = await readPreviewState(replay.rtt, 5300, 22);
+  expect(bypassState).toMatchObject({
+    orientation: "raw",
+    rawDebug: true,
+    dofProcessingEnabled: false,
+    frameRequestId: previousFrame,
+    lastCompletedRequestId: previousFrame,
+  });
+  previewStates.push(bypassState);
   await rawToggle.uncheck();
   previousFrame = await waitForFrame(replay.rtt, previousFrame);
   await page.getByRole("radio", { name: "Upright Assist" }).check();
   previousFrame = await waitForFrame(replay.rtt, previousFrame);
-  previewStates.push({ focusDistanceMm: 5300, aperture: 22, mode: "upright", frameRequestId: previousFrame });
+  const uprightState = await readPreviewState(replay.rtt, 5300, 22);
+  expect(uprightState).toMatchObject({
+    orientation: "upright",
+    rawDebug: false,
+    dofProcessingEnabled: true,
+    frameRequestId: previousFrame,
+    lastCompletedRequestId: previousFrame,
+  });
+  previewStates.push(uprightState);
   await page.getByRole("radio", { name: "Raw Ground Glass" }).check();
   previousFrame = await waitForFrame(replay.rtt, previousFrame);
 
