@@ -298,7 +298,7 @@ describe("procedural surface materials", () => {
     expect(disposed).toEqual([true, true, true]);
   });
 
-  it("keeps Architecture Rise recipe ownership and mapped surface shape", () => {
+  it("keeps Architecture Rise stone and physically mapped brick roles distinct", () => {
     const group = createArchitectureRiseGroup({
       presentation: ARCHITECTURE_RISE_PRESENTATION,
     });
@@ -310,49 +310,41 @@ describe("procedural surface materials", () => {
         return object;
       };
       const stoneBase = namedMesh("architecture-rise-primary-facade");
+      expect(stoneBase.userData.architectureRole).toBe("stone-base");
       const mainFacadeShell = group.getObjectByName("architecture-rise-main-facade-shell");
       expect(mainFacadeShell, "expected the mounted main facade shell").toBeInstanceOf(THREE.Group);
       if (!(mainFacadeShell instanceof THREE.Group)) throw new Error("Missing mounted main facade shell");
 
       const stoneBaseBounds = new THREE.Box3().setFromObject(stoneBase);
-      const upperFacadeCandidates: Array<{
-        mesh: THREE.Mesh;
-        facadeArea: number;
-      }> = [];
+      const brickFacadeCandidates: Array<{ mesh: THREE.Mesh; area: number }> = [];
       mainFacadeShell.traverse((object) => {
-        if (!(object instanceof THREE.Mesh) || object === stoneBase) return;
+        if (!(object instanceof THREE.Mesh) || object.userData.architectureRole !== "brick-facade") return;
         const bounds = new THREE.Box3().setFromObject(object);
         if (bounds.isEmpty()) return;
         const centerY = bounds.getCenter(new THREE.Vector3()).y;
         if (bounds.min.y < stoneBaseBounds.max.y - 1e-6 || centerY <= stoneBaseBounds.max.y) return;
         const size = bounds.getSize(new THREE.Vector3());
-        upperFacadeCandidates.push({ mesh: object, facadeArea: size.x * size.y });
+        brickFacadeCandidates.push({ mesh: object, area: size.x * size.y });
       });
-      upperFacadeCandidates.sort((left, right) => right.facadeArea - left.facadeArea);
-      const upperFacade = upperFacadeCandidates[0]?.mesh;
-      expect(upperFacade, "expected an upper facade wall segment above the mounted stone base").toBeInstanceOf(THREE.Mesh);
-      if (!(upperFacade instanceof THREE.Mesh)) throw new Error("Missing upper facade wall segment");
-
-      const upperFacadeBounds = new THREE.Box3().setFromObject(upperFacade);
-      expect(stoneBaseBounds.getCenter(new THREE.Vector3()).y).toBeLessThan(
-        upperFacadeBounds.getCenter(new THREE.Vector3()).y,
-      );
-      expect(upperFacadeBounds.min.y).toBeGreaterThanOrEqual(stoneBaseBounds.max.y - 1e-6);
-      expect(upperFacadeBounds.getCenter(new THREE.Vector3()).y).toBeGreaterThan(stoneBaseBounds.max.y);
-
-      const upperFacadeMaterial = upperFacade.material;
-      expect(upperFacadeCandidates.length).toBeGreaterThan(1);
-      expect(upperFacadeCandidates.every(({ mesh }) => mesh.material === upperFacadeMaterial)).toBe(true);
+      brickFacadeCandidates.sort((left, right) => right.area - left.area);
+      const brickFacade = brickFacadeCandidates[0]?.mesh;
+      expect(brickFacade, "expected a real brick wall segment above the stone base").toBeInstanceOf(THREE.Mesh);
+      if (!(brickFacade instanceof THREE.Mesh)) throw new Error("Missing upper brick facade segment");
+      expect(brickFacadeCandidates.length).toBeGreaterThan(1);
+      expect(brickFacadeCandidates.every(({ mesh }) => mesh.material === brickFacade.material)).toBe(true);
+      const brickFacadeBounds = new THREE.Box3().setFromObject(brickFacade);
+      expect(brickFacadeBounds.min.y).toBeGreaterThanOrEqual(stoneBaseBounds.max.y - 1e-6);
+      expect(brickFacadeBounds.getCenter(new THREE.Vector3()).y).toBeGreaterThan(stoneBaseBounds.max.y);
 
       const expectedSurfaces = [
-        { mesh: stoneBase, repeat: [5, 4], normalStrength: 0.2 },
-        { mesh: upperFacade, repeat: [5, 12], normalStrength: 0.18 },
+        { mesh: stoneBase, role: "stone-base", repeat: [5, 4], normalStrength: 0.2 },
         { mesh: namedMesh("architecture-rise-roof-parapet"), repeat: [1, 1], normalStrength: 0.18 },
         { mesh: namedMesh("architecture-rise-roof-coping-front"), repeat: [1, 1], normalStrength: 0.09 },
         { mesh: namedMesh("architecture-rise-sidewalk-slab"), repeat: [12, 10], normalStrength: 0.14 },
       ] as const;
       const recipeMaterials = new Set<THREE.MeshStandardMaterial>();
-      expectedSurfaces.forEach(({ mesh, repeat, normalStrength }) => {
+      expectedSurfaces.forEach(({ mesh, repeat, normalStrength, ...expected }) => {
+        if ("role" in expected) expect(mesh.userData.architectureRole).toBe(expected.role);
         expect(mesh.material).toBeInstanceOf(THREE.MeshStandardMaterial);
         if (!(mesh.material instanceof THREE.MeshStandardMaterial)) return;
         recipeMaterials.add(mesh.material);
@@ -365,40 +357,37 @@ describe("procedural surface materials", () => {
         expect(mesh.material.normalScale.y).toBe(normalStrength);
       });
 
-      ([
-        {
-          mesh: stoneBase,
-          color: "#d6c8ae",
-          pattern: "limestone",
-          repeat: [5, 4],
-          roughness: 0.92,
-          normalStrength: 0.2,
-        },
-        {
-          mesh: upperFacade,
-          color: "#9d513c",
-          pattern: "limestone",
-          repeat: [5, 12],
-          roughness: 0.9,
-          normalStrength: 0.18,
-        },
-      ] as const).forEach(({ mesh, color, pattern, repeat, roughness, normalStrength }) => {
-        if (!(mesh.material instanceof THREE.MeshStandardMaterial)) return;
-        const expectedRecipe = createProceduralSurfaceMaterial({
-          color,
-          pattern,
-          repeat,
-          roughness,
-          normalStrength,
-        });
-        try {
-          expect(mapBytes(mesh.material)).toEqual(mapBytes(expectedRecipe));
-        } finally {
-          disposeMaterial(expectedRecipe);
-        }
+      expect(brickFacade, "a true brick wall segment should carry semantic role metadata").toBeInstanceOf(THREE.Mesh);
+      if (!(brickFacade instanceof THREE.Mesh) || !(brickFacade.material instanceof THREE.MeshStandardMaterial)) return;
+      expect(brickFacade.material.map).toBeInstanceOf(THREE.DataTexture);
+      expect(brickFacade.material.roughnessMap).toBeInstanceOf(THREE.DataTexture);
+      expect(brickFacade.material.normalMap).toBeInstanceOf(THREE.DataTexture);
+      expect(brickFacade.material.map?.repeat.toArray()).toEqual([1, 1]);
+      expect(brickFacade.material.normalScale.x).toBeCloseTo(0.11);
+      expect(brickFacade.material.normalScale.y).toBeCloseTo(0.11);
+      expect(brickFacade.material.userData.architectureRiseBrick).toMatchObject({
+        brickLengthMm: 220,
+        brickHeightMm: 68,
+        mortarJointMm: 8,
+        tileWidthMm: 1824,
+        tileHeightMm: 608,
       });
 
-      expect(recipeMaterials.size).toBe(5);
+      if (!(stoneBase.material instanceof THREE.MeshStandardMaterial)) throw new Error("Stone base material is missing");
+      const expectedStoneBase = createProceduralSurfaceMaterial({
+        color: "#d6c8ae",
+        pattern: "limestone",
+        repeat: [5, 4],
+        roughness: 0.92,
+        normalStrength: 0.2,
+      });
+      try {
+        expect(mapBytes(stoneBase.material)).toEqual(mapBytes(expectedStoneBase));
+      } finally {
+        disposeMaterial(expectedStoneBase);
+      }
+
+      expect(recipeMaterials.size).toBe(4);
       expect(
         new Set(
           [...recipeMaterials].flatMap((material) => [
@@ -407,7 +396,7 @@ describe("procedural surface materials", () => {
             material.normalMap,
           ]),
         ).size,
-      ).toBe(15);
+      ).toBe(12);
     } finally {
       disposeArchitectureRiseGroup(group);
     }
