@@ -85,11 +85,17 @@ const waitForCompletedFrame = async (rtt: Locator): Promise<string> => {
   await expect.poll(async () => {
     const requestId = await rtt.getAttribute("data-frame-request-id");
     const completedRequestId = await rtt.getAttribute("data-last-completed-request-id");
-    return Boolean(requestId && requestId === completedRequestId);
+    const status = await rtt.getAttribute("data-frame-result-status");
+    const rawContentful = await rtt.getAttribute("data-rtt-raw-contentful");
+    const finalContentful = await rtt.getAttribute("data-rtt-final-contentful");
+    return Boolean(
+      requestId &&
+      requestId === completedRequestId &&
+      status === "completed" &&
+      rawContentful === "true" &&
+      finalContentful === "true",
+    );
   }, { timeout: 120_000 }).toBe(true);
-  await expect(rtt).toHaveAttribute("data-frame-result-status", "completed");
-  await expect(rtt).toHaveAttribute("data-rtt-raw-contentful", "true");
-  await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true");
   return (await rtt.getAttribute("data-frame-request-id")) ?? "";
 };
 

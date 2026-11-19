@@ -28,10 +28,12 @@ import { ARCHITECTURE_FOREGROUND_PRESENTATION } from "../../scenes/presentation/
 import { TABLE_TILT_PRESENTATION } from "../../scenes/presentation/tableTilt";
 import {
   ARCHITECTURE_FOREGROUND_MATERIAL_ROLE_IDS,
+  ARCHITECTURE_FOREGROUND_STYLE_IDS,
   resolveArchitectureForegroundMaterialVariations,
 } from "../../scenes/architectureForegroundMaterialVariation";
 import {
   TABLE_TILT_MATERIAL_ROLE_IDS,
+  TABLE_TILT_STYLE_IDS,
   resolveTableTiltMaterialVariations,
 } from "../../scenes/tableTiltMaterialVariation";
 import {
@@ -41,6 +43,17 @@ import {
 import type { SceneVariationDescriptor } from "../../types/sceneVariation";
 
 const SEEDS = [0, 1, 284719, 0xffff_ffff] as const;
+const FROZEN_FAMILY_COVERAGE_SEEDS = [
+  ...SEEDS,
+  17,
+  2024,
+  8675309,
+  123456789,
+  987654321,
+  2718281828,
+  3141592653,
+  4000000000,
+] as const;
 
 const descriptorFor = (
   scene: typeof architectureForegroundScene | typeof tableTiltScene,
@@ -56,6 +69,11 @@ const descriptorFor = (
 
 const hashBytes = (bytes: Uint8Array): string =>
   createHash("sha256").update(bytes).digest("hex");
+
+const relativeLuminance = (hex: string): number => {
+  const color = new THREE.Color(hex);
+  return color.r * 0.2126 + color.g * 0.7152 + color.b * 0.0722;
+};
 
 const materialSignature = (material: THREE.Material): unknown => {
   const candidate = material as THREE.Material & {
@@ -223,6 +241,7 @@ const disposalSpiesFor = (root: THREE.Group) => {
 
 const architectureRoleNames = [
   "architecture-foreground-building",
+  "architecture-foreground-front-facade",
   "architecture-foreground-roof-parapet",
   "architecture-foreground-ground",
   "architecture-foreground-forecourt-near-curb",
@@ -244,18 +263,31 @@ afterEach(() => {
 describe("Free Mode seeded material role resolvers", () => {
   it("resolves stable, bounded Architecture + Foreground material roles for every uint32 sample", () => {
     const signatures: string[] = [];
-    for (const seed of SEEDS) {
+    const families = new Set<string>();
+    for (const seed of FROZEN_FAMILY_COVERAGE_SEEDS) {
       const descriptor = descriptorFor(architectureForegroundScene, seed);
       const variations = resolveArchitectureForegroundMaterialVariations(descriptor);
       const replay = resolveArchitectureForegroundMaterialVariations(descriptorFor(architectureForegroundScene, seed));
       expect(variations).toEqual(replay);
       expect(variations).toBeDefined();
+      expect(ARCHITECTURE_FOREGROUND_STYLE_IDS).toContain(variations!.appearanceFamily);
+      expect(variations!.appearanceFamily).toBe(
+        descriptor.createRandomStream("materials", "scene-style")
+          .pick(ARCHITECTURE_FOREGROUND_STYLE_IDS),
+      );
+      families.add(variations!.appearanceFamily);
       Object.entries(ARCHITECTURE_FOREGROUND_MATERIAL_ROLE_IDS).forEach(([role, roleId]) => {
         expect(variations![role as keyof typeof ARCHITECTURE_FOREGROUND_MATERIAL_ROLE_IDS].variationSeed).toBe(
           descriptor.createRandomStream("materials", roleId).nextUint32(),
         );
       });
-      Object.values(variations!).forEach((role) => {
+      [
+        variations!.buildingShell,
+        variations!.roofParapet,
+        variations!.groundConcrete,
+        variations!.forecourtTrim,
+        variations!.windowFrame,
+      ].forEach((role) => {
         expect(role.color).toMatch(/^#[0-9a-f]{6}$/i);
         expect(role.repeat.every((value) => value > 0 && value <= 6)).toBe(true);
         expect(role.roughness).toBeGreaterThanOrEqual(0.78);
@@ -263,20 +295,35 @@ describe("Free Mode seeded material role resolvers", () => {
         expect(role.normalStrength).toBeGreaterThan(0);
         expect(role.normalStrength).toBeLessThanOrEqual(0.07);
       });
+      expect(variations!.frontFacade.primaryColor).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(variations!.frontFacade.secondaryColor).toMatch(/^#[0-9a-f]{6}$/i);
+      expect(variations!.frontFacade.repeat).toEqual([5, 4]);
+      expect(variations!.frontFacade.roughness).toBe(0.88);
+      expect(Math.abs(
+        relativeLuminance(variations!.frontFacade.primaryColor) -
+        relativeLuminance(variations!.frontFacade.secondaryColor),
+      )).toBeGreaterThanOrEqual(0.07);
       signatures.push(JSON.stringify(variations));
     }
-    expect(new Set(signatures).size).toBe(SEEDS.length);
+    expect(new Set(signatures).size).toBe(FROZEN_FAMILY_COVERAGE_SEEDS.length);
+    expect(families.size).toBeGreaterThanOrEqual(3);
     expect(resolveArchitectureForegroundMaterialVariations(undefined)).toBeUndefined();
   });
 
   it("resolves stable, bounded Table Tilt material roles for every uint32 sample", () => {
     const signatures: string[] = [];
+    const families = new Set<string>();
     for (const seed of SEEDS) {
       const descriptor = descriptorFor(tableTiltScene, seed);
       const variations = resolveTableTiltMaterialVariations(descriptor);
       const replay = resolveTableTiltMaterialVariations(descriptorFor(tableTiltScene, seed));
       expect(variations).toEqual(replay);
       expect(variations).toBeDefined();
+      expect(TABLE_TILT_STYLE_IDS).toContain(variations!.appearanceFamily);
+      expect(variations!.appearanceFamily).toBe(
+        descriptor.createRandomStream("materials", "scene-style").pick(TABLE_TILT_STYLE_IDS),
+      );
+      families.add(variations!.appearanceFamily);
       Object.entries(TABLE_TILT_MATERIAL_ROLE_IDS).forEach(([role, roleId]) => {
         const roleParameters = variations![role as keyof typeof TABLE_TILT_MATERIAL_ROLE_IDS];
         expect(roleParameters?.variationSeed).toBe(
@@ -287,7 +334,7 @@ describe("Free Mode seeded material role resolvers", () => {
         expect(role.color).toMatch(/^#[0-9a-f]{6}$/i);
         expect(role.repeat.every((value) => value > 0 && value <= 6)).toBe(true);
         expect(role.roughness).toBeGreaterThanOrEqual(0.78);
-        expect(role.roughness).toBeLessThanOrEqual(0.86);
+        expect(role.roughness).toBeLessThanOrEqual(0.9);
         expect(role.normalStrength).toBeGreaterThan(0);
         expect(role.normalStrength).toBeLessThanOrEqual(0.05);
       });
@@ -299,7 +346,21 @@ describe("Free Mode seeded material role resolvers", () => {
       signatures.push(JSON.stringify(variations));
     }
     expect(new Set(signatures).size).toBe(SEEDS.length);
+    expect(families.size).toBeGreaterThanOrEqual(2);
     expect(resolveTableTiltMaterialVariations(undefined)).toBeUndefined();
+  });
+
+  it("covers multiple curated families over the frozen twelve-seed visual sample", () => {
+    const architectureFamilies = new Set(FROZEN_FAMILY_COVERAGE_SEEDS.map((seed) =>
+      resolveArchitectureForegroundMaterialVariations(
+        descriptorFor(architectureForegroundScene, seed),
+      )!.appearanceFamily,
+    ));
+    const tableFamilies = new Set(FROZEN_FAMILY_COVERAGE_SEEDS.map((seed) =>
+      resolveTableTiltMaterialVariations(descriptorFor(tableTiltScene, seed))!.appearanceFamily,
+    ));
+    expect(architectureFamilies.size).toBeGreaterThanOrEqual(3);
+    expect(tableFamilies.size).toBe(TABLE_TILT_STYLE_IDS.length);
   });
 });
 
@@ -330,7 +391,7 @@ describe("Free Mode seeded material subject factories", () => {
   ])("replays seed maps and varies valid material realizations across representative seeds for $scene.id", ({ scene, make, names }) => {
     const signatures: string[] = [];
     const mapSignatures: string[] = [];
-    for (const seed of SEEDS) {
+    for (const seed of FROZEN_FAMILY_COVERAGE_SEEDS) {
       const group = make(seed);
       try {
         const signature = surfaceMapSignature(group, names);
@@ -356,6 +417,10 @@ describe("Free Mode seeded material subject factories", () => {
           const textures = [material.map, material.roughnessMap, material.normalMap];
           if (name === "table-tilt-apron-near" || name === "table-tilt-context-middle-canister") {
             expect(textures.every((texture) => texture === null)).toBe(true);
+          } else if (name === "architecture-foreground-front-facade") {
+            expect(textures[0]).toBeInstanceOf(THREE.DataTexture);
+            expect(textures[0]?.image).toMatchObject({ width: 64, height: 64 });
+            expect(textures.slice(1).every((texture) => texture === null)).toBe(true);
           } else {
             textures.forEach((texture) => {
               expect(texture).toBeInstanceOf(THREE.DataTexture);
@@ -371,8 +436,61 @@ describe("Free Mode seeded material subject factories", () => {
         }
       }
     }
-    expect(new Set(signatures).size).toBe(SEEDS.length);
-    expect(new Set(mapSignatures).size).toBe(SEEDS.length);
+    expect(new Set(signatures).size).toBe(FROZEN_FAMILY_COVERAGE_SEEDS.length);
+    expect(new Set(mapSignatures).size).toBe(FROZEN_FAMILY_COVERAGE_SEEDS.length);
+  });
+
+  it("records reviewed schema-v1 material-family map signatures for the four reference seeds", () => {
+    const signatures: Record<string, Record<string, string>> = {
+      "architecture-foreground": {},
+      "table-tilt": {},
+    };
+    for (const seed of SEEDS) {
+      const architecture = createArchitectureForegroundGroup({
+        presentation: ARCHITECTURE_FOREGROUND_PRESENTATION,
+        variationDescriptor: descriptorFor(architectureForegroundScene, seed),
+      });
+      const table = createTableTiltGroup({
+        presentation: TABLE_TILT_PRESENTATION,
+        variationDescriptor: descriptorFor(tableTiltScene, seed),
+      });
+      try {
+        const architectureFamily = resolveArchitectureForegroundMaterialVariations(
+          descriptorFor(architectureForegroundScene, seed),
+        )!.appearanceFamily;
+        const tableFamily = resolveTableTiltMaterialVariations(
+          descriptorFor(tableTiltScene, seed),
+        )!.appearanceFamily;
+        const architectureMapHash = hashBytes(new TextEncoder().encode(
+          mapBytesSignature(architecture, architectureRoleNames),
+        ));
+        const tableMapHash = hashBytes(new TextEncoder().encode(
+          mapBytesSignature(table, ["table-tilt-tabletop", "table-tilt-context-near-tray"]),
+        ));
+        signatures["architecture-foreground"]![String(seed)] =
+          `${architectureFamily}:${architectureMapHash}`;
+        signatures["table-tilt"]![String(seed)] = `${tableFamily}:${tableMapHash}`;
+      } finally {
+        disposeArchitectureForegroundGroup(architecture);
+        disposeTableTiltGroup(table);
+      }
+    }
+    expect(signatures).toMatchInlineSnapshot(`
+      {
+        "architecture-foreground": {
+          "0": "warm-stone:ee85f214380bf156fb4a0ec0db24b53df60b617ca59e28dd9edc0047574ec766",
+          "1": "light-mineral:0bdfadb9247b6cbf4d6fdd5686ebb70aa6ef53111fd06e27a8a06423799470b7",
+          "284719": "dark-contemporary:21b76e349cd111557e688783f8d376059537acfb0c4710b42a7cbb16cffbd0fb",
+          "4294967295": "light-mineral:3d64e0591b746301bf010301fd130cf52c62adc55d9ae16cbb54606d401d8744",
+        },
+        "table-tilt": {
+          "0": "medium-teak-like:e58e7a31f680a698538cf958bc9f4943db7f8407c343cee5bf745dbf945ae4d4",
+          "1": "dark-walnut-like:d3cfc73cd1a48c1af0d4d86f49df0cee78f8eb0db0e5bd5a255f57a511723bd2",
+          "284719": "light-oak-like:be906a80e99b36a0afb0d01a5e6ba14375c7e32b4605b687912b448153fa4614",
+          "4294967295": "light-oak-like:5a5dc87e5af354e1adb985890cfddfd5290ed9462aac6b06d1bd75150e7390f9",
+        },
+      }
+    `);
   });
 
   it("routes the Architecture + Foreground descriptor to independent Observer and RTT resources", () => {
@@ -478,7 +596,7 @@ describe("Free Mode seeded material subject factories", () => {
       make: (seed: number) => createArchitectureForegroundGroup({ presentation: ARCHITECTURE_FOREGROUND_PRESENTATION, variationDescriptor: descriptorFor(architectureForegroundScene, seed) }),
       dispose: disposeArchitectureForegroundGroup,
       facade: "architecture-foreground-front-facade",
-      protectedNames: ["architecture-foreground-front-facade"],
+      protectedNames: [],
     },
     {
       scene: tableTiltScene,
@@ -501,8 +619,33 @@ describe("Free Mode seeded material subject factories", () => {
           expect(geometrySignature(seeded)).toBe(expectedGeometry);
           expect(namedRoleSignature(seeded, protectedNames)).toEqual(expectedProtectedMaterials);
           if (facade) {
-            expect(materialSignature(materialFor(seeded, facade))).toEqual(
-              materialSignature(materialFor(canonical, facade)),
+            const seededFacade = materialFor(seeded, facade) as THREE.MeshStandardMaterial;
+            const canonicalFacade = materialFor(canonical, facade) as THREE.MeshStandardMaterial;
+            expect(seededFacade.type).toBe(canonicalFacade.type);
+            expect(seededFacade.color.getHexString()).toBe(canonicalFacade.color.getHexString());
+            expect(seededFacade.roughness).toBe(canonicalFacade.roughness);
+            expect(seededFacade.map?.repeat.toArray()).toEqual([5, 4]);
+            expect(canonicalFacade.map?.repeat.toArray()).toEqual([5, 4]);
+            expect(seededFacade.map?.image).toMatchObject({ width: 64, height: 64 });
+            expect(canonicalFacade.map?.image).toMatchObject({ width: 64, height: 64 });
+            const gridMask = (material: THREE.MeshStandardMaterial): number[] => {
+              const texture = material.map as THREE.DataTexture;
+              const image = texture.image as { data: Uint8Array };
+              const data = image.data;
+              const firstPixel = Array.from(data.slice(0, 3));
+              const primaryPixel = Array.from(data.slice((2 * 64 + 2) * 4, (2 * 64 + 2) * 4 + 3));
+              return Array.from({ length: data.length / 4 }, (_, index) => {
+                const rgb = Array.from(data.slice(index * 4, index * 4 + 3));
+                return rgb.every((channel, channelIndex) => channel === primaryPixel[channelIndex])
+                  ? 0
+                  : rgb.every((channel, channelIndex) => channel === firstPixel[channelIndex])
+                    ? 1
+                    : 2;
+              });
+            };
+            expect(gridMask(seededFacade)).toEqual(gridMask(canonicalFacade));
+            expect(mapBytesSignature(seeded, [facade])).not.toBe(
+              mapBytesSignature(canonical, [facade]),
             );
           }
         } finally {

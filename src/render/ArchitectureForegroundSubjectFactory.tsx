@@ -210,10 +210,10 @@ export const createArchitectureForegroundGroup = (
     : createStandardMaterial("#92a7b8", 0.92);
   const facadeMaterial = createFocusFriendlyMaterial({
     pattern: "fine-grid",
-    primaryColor: "#b3c1cc",
-    secondaryColor: "#a2b3bf",
-    repeat: [5, 4],
-    roughness: 0.88,
+    primaryColor: variations?.frontFacade.primaryColor ?? "#b3c1cc",
+    secondaryColor: variations?.frontFacade.secondaryColor ?? "#a2b3bf",
+    repeat: variations?.frontFacade.repeat ?? [5, 4],
+    roughness: variations?.frontFacade.roughness ?? 0.88,
   });
   const roofMaterial = variations
     ? createProceduralSurfaceMaterial({

@@ -6,6 +6,7 @@ export default defineConfig({
   testDir: "./src/tests/scene-variation-e2e",
   testMatch: [
     "free-mode-seeded-materials-wave1.spec.ts",
+    "material-appearance-families-wave1.spec.ts",
     "interior-corner-seeded-materials.spec.ts",
   ],
   timeout: 30_000,
