@@ -21,6 +21,7 @@ import architectureRiseGeometry from "../../scenes/architectureRiseGeometry";
 import obliqueArchitectureGeometry from "../../scenes/obliqueArchitectureGeometry";
 import tableTiltGeometry from "../../scenes/tableTiltGeometry";
 import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/architectureRise";
+import { ARCHITECTURE_RISE_PRESENTATION_LAYOUT } from "../../scenes/presentation/architectureRiseLayout";
 import { OBLIQUE_ARCHITECTURE_PRESENTATION } from "../../scenes/presentation/obliqueArchitecture";
 import { TABLE_TILT_PRESENTATION } from "../../scenes/presentation/tableTilt";
 import { reflectPointAcrossMirrorPlane } from "../../scenes/mirrorShiftGeometry";
@@ -34,6 +35,19 @@ const worldZBounds = (object: THREE.Object3D): { min: number; max: number } => {
   return { min: bounds.min.z, max: bounds.max.z };
 };
 
+// Float32 world-space geometry rounds at about 1e-6 m near the 10 m return;
+// this is 0.001 mm and remains far below a meaningful architectural offset.
+const ARCHITECTURE_RISE_BOUNDARY_EPSILON_M = 1e-6;
+
+const expectBoundsWithin = (actual: THREE.Box3, expected: THREE.Box3, epsilon: number): void => {
+  expect(actual.min.x).toBeGreaterThanOrEqual(expected.min.x - epsilon);
+  expect(actual.min.y).toBeGreaterThanOrEqual(expected.min.y - epsilon);
+  expect(actual.min.z).toBeGreaterThanOrEqual(expected.min.z - epsilon);
+  expect(actual.max.x).toBeLessThanOrEqual(expected.max.x + epsilon);
+  expect(actual.max.y).toBeLessThanOrEqual(expected.max.y + epsilon);
+  expect(actual.max.z).toBeLessThanOrEqual(expected.max.z + epsilon);
+};
+
 describe("core scene visual richness foundation", () => {
   it("adds architectural context at intended Architecture Rise scale without moving the canonical target", () => {
     const group = createArchitectureRiseGroup({
@@ -43,41 +57,47 @@ describe("core scene visual richness foundation", () => {
       group.updateMatrixWorld(true);
 
       const sideReturn = group.getObjectByName("architecture-rise-side-return");
-      const entryLintel = group.getObjectByName("architecture-rise-entry-recess-lintel");
+      const entryLintel = group.getObjectByName("architecture-rise-entry-stone-lintel");
+      const serviceAssembly = group.getObjectByName("architecture-rise-attached-service-return");
 
       expect(sideReturn).toBeInstanceOf(THREE.Mesh);
       expect(entryLintel).toBeInstanceOf(THREE.Mesh);
-      expect(worldBounds(sideReturn!)).toMatchObject({
-        x: expect.closeTo(toWorld(520), 6),
-        y: expect.closeTo(toWorld(3000), 6),
-        z: expect.closeTo(toWorld(760), 6),
-      });
-      expect(worldBounds(entryLintel!)).toMatchObject({
-        x: expect.closeTo(toWorld(652), 6),
-        y: expect.closeTo(toWorld(72), 6),
-        z: expect.closeTo(toWorld(90), 6),
-      });
+      expect(serviceAssembly).toBeInstanceOf(THREE.Group);
+      const sideReturnBounds = new THREE.Box3().setFromObject(sideReturn!);
+      const serviceReturn = ARCHITECTURE_RISE_PRESENTATION_LAYOUT.serviceReturn;
+      const serviceReturnEnvelope = new THREE.Box3(
+        new THREE.Vector3(toWorld(serviceReturn.minXMm), toWorld(serviceReturn.minYMm), toWorld(serviceReturn.minZMm)),
+        new THREE.Vector3(toWorld(serviceReturn.maxXMm), toWorld(serviceReturn.maxYMm), toWorld(serviceReturn.maxZMm)),
+      );
+      expectBoundsWithin(sideReturnBounds, serviceReturnEnvelope, ARCHITECTURE_RISE_BOUNDARY_EPSILON_M);
+      expect(serviceReturn.minXMm).toBe(ARCHITECTURE_RISE_PRESENTATION_LAYOUT.mainFacade.maxXMm);
+
+      const negativeControlDisplacementM = 0.01;
+      expect(negativeControlDisplacementM).toBeGreaterThan(ARCHITECTURE_RISE_BOUNDARY_EPSILON_M);
+      const displacedBounds = sideReturnBounds.clone().translate(
+        new THREE.Vector3(0, 0, -negativeControlDisplacementM),
+      );
+      expect(() =>
+        expectBoundsWithin(displacedBounds, serviceReturnEnvelope, ARCHITECTURE_RISE_BOUNDARY_EPSILON_M),
+      ).toThrow();
+      expectBoundsWithin(sideReturnBounds, serviceReturnEnvelope, ARCHITECTURE_RISE_BOUNDARY_EPSILON_M);
+      const entryLintelBounds = new THREE.Box3().setFromObject(entryLintel!);
+      expect(entryLintelBounds.min.x).toBeLessThan(toWorld(ARCHITECTURE_RISE_PRESENTATION_LAYOUT.door.centerXMm));
+      expect(entryLintelBounds.max.x).toBeGreaterThan(toWorld(ARCHITECTURE_RISE_PRESENTATION_LAYOUT.door.centerXMm));
+      expect(entryLintelBounds.min.y).toBeGreaterThan(toWorld(ARCHITECTURE_RISE_PRESENTATION_LAYOUT.door.centerYMm));
       expect(architectureRiseGeometry.focusTarget.worldPosition).toEqual({
         x: 0,
         y: architectureRiseGeometry.building.center.y,
         z: architectureRiseGeometry.facade.frontFacadeZ - 10,
       });
       expect(group.getObjectByName("cell-0")).toBeInstanceOf(THREE.Mesh);
-      expect(group.getObjectByName("architecture-rise-facade-window-bay-bay-1-1")).toBeInstanceOf(
-        THREE.Group,
-      );
-      const windowBay = group.getObjectByName("architecture-rise-facade-window-bay-bay-2-2");
-      expect(windowBay).toBeInstanceOf(THREE.Group);
-      expect(worldBounds(windowBay!)).toMatchObject({
-        x: expect.closeTo(toWorld(388), 6),
-        y: expect.closeTo(toWorld(518), 6),
-        z: expect.closeTo(toWorld(95), 6),
-      });
+      const windowAssembly = group.getObjectByName("architecture-rise-window-middle-right");
+      expect(windowAssembly).toBeInstanceOf(THREE.Group);
+      expect(group.getObjectByName("architecture-rise-window-top-center-glazing")).toBeInstanceOf(THREE.Mesh);
+      expect(group.getObjectByName("architecture-rise-window-service-east-lower-glazing")).toBeInstanceOf(THREE.Mesh);
+      expect(worldBounds(windowAssembly!).x).toBeGreaterThan(toWorld(ARCHITECTURE_RISE_PRESENTATION_LAYOUT.windows[4]!.openingWidthMm));
       expect(group.getObjectByName("architecture-rise-roof-coping-front")).toBeInstanceOf(
         THREE.Mesh,
-      );
-      expect(group.getObjectByName("architecture-rise-side-return-window-bay-side-2")).toBeInstanceOf(
-        THREE.Group,
       );
       expect(group.getObjectByName("architecture-rise-street-curb")).toBeInstanceOf(THREE.Mesh);
       expect(architectureRiseGeometry.sceneBounds.min.x).toBeLessThanOrEqual(
@@ -95,14 +115,13 @@ describe("core scene visual richness foundation", () => {
       const fineDetail = group.getObjectByName("architecture-rise-facade-fine-detail");
 
       expect(primaryFacade).toBeInstanceOf(THREE.Mesh);
-      expect(buildingMass).toBeInstanceOf(THREE.Mesh);
+      expect(buildingMass).toBeUndefined();
       expect(focusChart).toBeInstanceOf(THREE.Group);
       expect(crosshairHorizontal).toBeInstanceOf(THREE.Mesh);
       expect(crosshairVertical).toBeInstanceOf(THREE.Mesh);
       expect(fineDetail).toBeInstanceOf(THREE.Group);
 
       const primaryFacadeZ = worldZBounds(primaryFacade!);
-      const buildingMassZ = worldZBounds(buildingMass!);
       const focusChartZ = worldZBounds(focusChart!);
       const crosshairHorizontalZ = worldZBounds(crosshairHorizontal!);
       const crosshairVerticalZ = worldZBounds(crosshairVertical!);
@@ -112,7 +131,6 @@ describe("core scene visual richness foundation", () => {
       expect(crosshairHorizontalZ.max).toBeLessThan(primaryFacadeZ.min);
       expect(crosshairVerticalZ.max).toBeLessThan(primaryFacadeZ.min);
       expect(fineDetailZ.max).toBeLessThan(primaryFacadeZ.min);
-      expect(primaryFacadeZ.max).toBeLessThan(buildingMassZ.min);
     } finally {
       disposeArchitectureRiseGroup(group);
     }

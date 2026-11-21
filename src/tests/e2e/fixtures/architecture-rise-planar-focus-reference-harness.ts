@@ -61,13 +61,17 @@ import { ACCEPTABLE_COC_DIAMETER_MM } from "../../../core/optics/physicalSharpne
 import type { DerivedOpticsState } from "../../../types/optics";
 import { getGroundGlassSceneProfile } from "../../../render/groundGlassSceneProfiles";
 import { vecToWorld } from "../../../render/rttUtils";
+import {
+  addArchitectureRiseTestReflectionTarget,
+  ARCHITECTURE_RISE_TEST_REFLECTION_TARGET_NAME,
+} from "./architecture-rise-test-reflection-target";
 
 const WIDTH = 768;
 const HEIGHT = 614;
 const REFLECTION_WEIGHT = 0.18;
 const SKY_COLOR = new THREE.Color("#dfe5ec");
-const TARGET_PANE_NAME = "architecture-rise-facade-window-bay-bay-2-1-glazing";
-const TARGET_FACE_NAME = "architecture-rise-street-sign-face-back";
+const TARGET_PANE_NAME = "architecture-rise-window-top-left-glazing";
+const TARGET_FACE_NAME = ARCHITECTURE_RISE_TEST_REFLECTION_TARGET_NAME;
 const PANE_U = 0.3;
 const PANE_V = 0.3;
 const FOCUS_CASES = {
@@ -95,7 +99,7 @@ type FocusCaseMeasurement = {
     maxLinearSumDifference: number;
     finalDisplayRgba: readonly [number, number, number, number];
   };
-  reflectedSignSharpness: {
+  reflectedTargetSharpness: {
     crop: { minX: number; minYBottom: number; maxX: number; maxYBottom: number };
     edgeGradientEnergy: number;
     sampleCount: number;
@@ -169,7 +173,7 @@ type PlanarProof = {
     gpuQ: PointTuple;
     cpuQVirtual: PointTuple;
     gpuQVirtual: PointTuple;
-    gpuQInsideSignFace: boolean;
+    gpuQInsideTargetFace: boolean;
     gpuQDistanceFromCpuM: number;
     gpuQVirtualDistanceFromCpuM: number;
     reflectedRadiance: PointTuple;
@@ -971,9 +975,14 @@ const makeCompositeMaterial = (bundle: OwnedBundle): THREE.ShaderMaterial => {
       flipDisplayY: { value: 1 },
       groundGlassIlluminanceGain: { value: 1 },
       groundGlassNaturalIlluminationEnabled: { value: 0 },
+      groundGlassNaturalIlluminationModel: { value: 0 },
       groundGlassNaturalIlluminationImageDistanceMm: { value: 0 },
       groundGlassNaturalIlluminationOffsetXMm: { value: 0 },
       groundGlassNaturalIlluminationOffsetYMm: { value: 0 },
+      groundGlassNaturalIlluminationLensToFilmCenterLocalMm: { value: new THREE.Vector3() },
+      groundGlassNaturalIlluminationImageSideAxisLocal: { value: new THREE.Vector3() },
+      groundGlassNaturalIlluminationReferenceFilmIncidenceCosine: { value: 0 },
+      groundGlassNaturalIlluminationFilmNormalTowardLensSign: { value: 0 },
       groundGlassCoverageEnabled: { value: 0 },
       groundGlassCoverageMode: { value: 0 },
       groundGlassCoverageRadiusMm: { value: 0 },
@@ -1445,8 +1454,8 @@ const measureSharpness = (
   image: Float32Array,
   apparentPositions: Float32Array,
   plane: THREE.Plane,
-  signBounds: THREE.Box3,
-): FocusCaseMeasurement["reflectedSignSharpness"] => {
+  targetBounds: THREE.Box3,
+): FocusCaseMeasurement["reflectedTargetSharpness"] => {
   const valid = new Uint8Array(WIDTH * HEIGHT);
   let minX = WIDTH;
   let minY = HEIGHT;
@@ -1462,7 +1471,7 @@ const measureSharpness = (
         apparentPositions[offset + 2],
       );
       const realPoint = reflectPointAcrossPlane(virtualPoint, plane);
-      if (signBounds.distanceToPoint(realPoint) > 0.035) continue;
+      if (targetBounds.distanceToPoint(realPoint) > 0.035) continue;
       valid[y * WIDTH + x] = 1;
       minX = Math.min(minX, x);
       maxX = Math.max(maxX, x);
@@ -1620,7 +1629,11 @@ const runPlanarFocusReference = (): PlanarProof => {
     }
 
     const pane = findMesh(subject, TARGET_PANE_NAME);
-    const signFace = findMesh(subject, TARGET_FACE_NAME);
+    const paneFocusDistanceMm = FOCUS_CASES.paneFocus;
+    const paneFocusSetup = makeConfiguredGroundGlassCamera(paneFocusDistanceMm);
+    const initialLensOrigin = paneFocusSetup.camera.getWorldPosition(new THREE.Vector3());
+    addArchitectureRiseTestReflectionTarget(subject, pane, initialLensOrigin);
+    const reflectionTarget = findMesh(subject, TARGET_FACE_NAME);
     const sceneMeshes = createPositionSceneForSubject(subject, pane);
     const visibilityDepth = makeDataTexture(bundle, new Uint8Array([255, 255, 255, 255]), 1, 1);
 
@@ -1639,9 +1652,6 @@ const runPlanarFocusReference = (): PlanarProof => {
     const reflectedLayer = makeContributionLayer(renderer, bundle, visibilityDepth, radianceFilter);
     const reflectionLayers = [directLayer, reflectedLayer] as const;
 
-    const paneFocusDistanceMm = FOCUS_CASES.paneFocus;
-    const paneFocusSetup = makeConfiguredGroundGlassCamera(paneFocusDistanceMm);
-    const initialLensOrigin = paneFocusSetup.camera.getWorldPosition(new THREE.Vector3());
     const canonicalSample = getSignSample(subject, pane, initialLensOrigin);
     const qVirtualMm = canonicalSample.virtualPoint.clone().multiplyScalar(1000);
     const virtualFocusAxisDistanceMm = qVirtualMm
@@ -2039,7 +2049,7 @@ const runPlanarFocusReference = (): PlanarProof => {
         reflectedFocusedPixels,
         captured.mappedPositionPixels,
         captured.plane,
-        new THREE.Box3().setFromObject(signFace),
+        new THREE.Box3().setFromObject(reflectionTarget),
       );
       caseImages[caseId] = {
         reflection: reflectionSourceImage,
@@ -2078,7 +2088,7 @@ const runPlanarFocusReference = (): PlanarProof => {
           maxLinearSumDifference,
           finalDisplayRgba: displayRgba,
         },
-        reflectedSignSharpness: signSharpness,
+        reflectedTargetSharpness: signSharpness,
         reflectionSourceHash: hashDisplayPixels(reflectionSourceImage),
         reflectionOnlyHash: hashDisplayPixels(focusedReflectionImage),
         combinedDisplayHash: hashDisplayPixels(combinedDisplayImage),
@@ -2132,14 +2142,14 @@ const runPlanarFocusReference = (): PlanarProof => {
     const directFirstHitIsPane = paneFocusCaptured.directRayFirstHit === TARGET_PANE_NAME;
     const directRayHitsSign = paneFocusCaptured.directRayFirstHit.startsWith("architecture-rise-street-sign");
     const reflectedKnownFace = paneFocusCaptured.planarHitObject === TARGET_FACE_NAME;
-    const faceBounds = new THREE.Box3().setFromObject(signFace);
-    const gpuQInsideSignFace = faceBounds.distanceToPoint(selectedGpuQ) < 0.05;
-    const paneToQHitsExpectedFace = reflectedKnownFace && gpuQInsideSignFace;
+    const faceBounds = new THREE.Box3().setFromObject(reflectionTarget);
+    const gpuQInsideTargetFace = faceBounds.distanceToPoint(selectedGpuQ) < 0.05;
+    const paneToQHitsExpectedFace = reflectedKnownFace && gpuQInsideTargetFace;
     const paneToQPathClear = selectedReflectionFirstHit === TARGET_FACE_NAME;
     if (!paneFocusMeasurement || !paneToQHitsExpectedFace || !directFirstHitIsPane || directRayHitsSign) {
       throw new Error(
         `Architecture Rise pane/reflection sample failed: paneHit=${paneFocusCaptured.directRayFirstHit}, ` +
-        `reflectionHit=${paneFocusCaptured.planarHitObject}, gpuQInsideFace=${gpuQInsideSignFace}`,
+        `reflectionHit=${paneFocusCaptured.planarHitObject}, gpuQInsideFace=${gpuQInsideTargetFace}`,
       );
     }
 
@@ -2227,7 +2237,7 @@ const runPlanarFocusReference = (): PlanarProof => {
         gpuQ: pointToTuple(selectedGpuQ),
         cpuQVirtual: pointToTuple(canonicalSample.virtualPoint),
         gpuQVirtual: pointToTuple(selectedGpuQv),
-        gpuQInsideSignFace,
+        gpuQInsideTargetFace,
         gpuQDistanceFromCpuM: selectedGpuQ.distanceTo(canonicalSample.realPoint),
         gpuQVirtualDistanceFromCpuM: selectedGpuQv.distanceTo(canonicalSample.virtualPoint),
         reflectedRadiance: selectedPlanarRadiance,

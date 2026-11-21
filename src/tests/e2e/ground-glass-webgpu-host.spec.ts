@@ -2,6 +2,10 @@ import { expect, test, type Page } from "@playwright/test";
 import { REVISION } from "three";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import geometry from "../../scenes/architectureRiseGeometry";
+import {
+  ARCHITECTURE_RISE_PRESENTATION_LAYOUT,
+  getArchitectureRiseGlazingBoundsMm,
+} from "../../scenes/presentation/architectureRiseLayout";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION } from "../../render/webgpu/groundGlassRawWebGpuCompatibility";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
@@ -15,7 +19,7 @@ const ASYMMETRIC_POINTS = [
   { id: "left-upper-context", u: 0.29, v: 0.48 },
   { id: "left-upper-facade", u: 0.37, v: 0.32 },
   { id: "facade-focus-chart", u: 0.51, v: 0.65 },
-  { id: "right-facade-window", u: 0.63, v: 0.34 },
+  { id: "middle-right-window", u: 0.62, v: 0.767 },
   { id: "left-side-context", u: 0.25, v: 0.54 },
   { id: "right-side-return", u: 0.75, v: 0.54 },
   { id: "left-lower-context", u: 0.29, v: 0.67 },
@@ -219,20 +223,16 @@ const architectureRiseLandmarks = (): readonly FilmLandmark[] => {
       worldPoint: { x: cell.x, y: cell.y, z: cell.z - cell.depth / 2 - 1 },
     }] : [];
   });
-  const windowLandmarks: FilmLandmark[] = geometry.architectureRiseWindowBays
-    .filter((bay) => bay.y === 1100 && (bay.x === -1080 || bay.x === 1080))
-    .flatMap((bay) => [
-      {
-        id: `facade-window-${bay.id}-glass`,
-        expected: "dark" as const,
-        worldPoint: { x: bay.x, y: bay.y, z: geometry.facade.frontFacadeZ - 54 },
-      },
-      {
-        id: `facade-window-${bay.id}-upper-trim`,
-        expected: "light" as const,
-        worldPoint: { x: bay.x, y: bay.y + bay.height / 2 + 17, z: geometry.facade.frontFacadeZ - 76 },
-      },
-    ]);
+  const windowLandmarks: FilmLandmark[] = ARCHITECTURE_RISE_PRESENTATION_LAYOUT.windows
+    .filter((window) => window.id === "middle-left" || window.id === "middle-right")
+    .flatMap((window) => {
+      if (window.elevation !== "front") return [];
+      const glazing = getArchitectureRiseGlazingBoundsMm(window);
+      return [
+        { id: `facade-window-${window.id}-glass`, expected: "dark" as const, worldPoint: { x: window.centerXMm, y: window.centerYMm, z: (glazing.minZMm + glazing.maxZMm) / 2 } },
+        { id: `facade-window-${window.id}-upper-trim`, expected: "light" as const, worldPoint: { x: window.centerXMm, y: window.centerYMm + window.openingHeightMm / 2 + window.trimWidthMm / 2, z: geometry.facade.frontFacadeZ - 16 } },
+      ];
+    });
   return [...signLandmarks, ...focusCellLandmarks, ...windowLandmarks];
 };
 

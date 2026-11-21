@@ -1267,14 +1267,14 @@ const ArchitectureRiseVerificationProbe = () => {
       "architecture-rise-roof-parapet",
       "architecture-rise-side-return",
       "architecture-rise-ground",
-      "architecture-rise-facade-window-bay-bay-1-1-glazing",
-      "architecture-rise-side-return-window-bay-side-1-glazing",
+      "architecture-rise-window-ground-right-glazing",
+      "architecture-rise-window-service-east-lower-glazing",
     ];
     const featureObjects = {
       facade: "architecture-rise-primary-facade",
       roofParapet: "architecture-rise-roof-parapet",
-      frontGlazing: "architecture-rise-facade-window-bay-bay-1-1-glazing",
-      sideGlazing: "architecture-rise-side-return-window-bay-side-1-glazing",
+      frontGlazing: "architecture-rise-window-ground-right-glazing",
+      sideGlazing: "architecture-rise-window-service-east-lower-glazing",
       sideReturn: "architecture-rise-side-return",
       ground: "architecture-rise-ground",
       sidewalk: "architecture-rise-sidewalk-slab",
