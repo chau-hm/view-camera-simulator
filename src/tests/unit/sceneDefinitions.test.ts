@@ -11,6 +11,8 @@ import {
   sceneRegistry,
 } from "../../scenes/definitions";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
+import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
+import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
@@ -26,6 +28,23 @@ import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 describe("scene definitions", () => {
+  it("opts only Architecture + Foreground and Table Tilt into schema-v1 materials", () => {
+    expect(architectureForegroundScene.sceneVariation).toEqual({ enabled: true, schemaVersion: 1 });
+    expect(tableTiltScene.sceneVariation).toEqual({ enabled: true, schemaVersion: 1 });
+    expect(architectureRiseScene.sceneVariation).toBeUndefined();
+    expect(interiorCornerScene.sceneVariation).toEqual({
+      enabled: true,
+      schemaVersion: 2,
+      supportedSchemaVersions: [1, 2],
+    });
+    expect(shelfSwingScene.sceneVariation).toEqual({
+      enabled: true,
+      schemaVersion: 1,
+      supportedSchemaVersions: [1, 2],
+    });
+    expect(stillLifeStudioScene.sceneVariation).toEqual({ enabled: true, schemaVersion: 1 });
+  });
+
   it("registers the core scenes", () => {
     // allow additional debug scenes to be registered in tests/environments
     expect(Object.keys(sceneRegistry)).toEqual(

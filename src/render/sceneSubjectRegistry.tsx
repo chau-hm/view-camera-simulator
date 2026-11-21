@@ -160,9 +160,10 @@ export const ObliqueArchitectureRegisteredSubject = () => (
 
 export const ArchitectureForegroundRegisteredSubject = ({
   scene,
+  variationDescriptor,
 }: RegisteredSceneSubjectProps) => (
   <>
-    <ArchitectureForegroundSubject />
+    <ArchitectureForegroundSubject variationDescriptor={variationDescriptor} />
     {scene.focusTargets.map((target) => (
       <mesh
         key={target.id}
@@ -390,9 +391,10 @@ export const sceneSubjectRegistry = {
   },
   "architecture-foreground": {
     SceneSubject: ArchitectureForegroundRegisteredSubject,
-    createRttGroup: () =>
+    createRttGroup: (options) =>
       createRegisteredSceneAsset(ARCHITECTURE_FOREGROUND_ASSET_KEY, {
         presentation: ARCHITECTURE_FOREGROUND_PRESENTATION,
+        variationDescriptor: options?.variationDescriptor,
       }),
     disposeRttGroup: (group) =>
       disposeRegisteredSceneAsset(ARCHITECTURE_FOREGROUND_ASSET_KEY, group),
@@ -416,9 +418,10 @@ export const sceneSubjectRegistry = {
   },
   "table-tilt": {
     SceneSubject: TableTiltSubject,
-    createRttGroup: () =>
+    createRttGroup: (options) =>
       createRegisteredSceneAsset(TABLE_TILT_ASSET_KEY, {
         presentation: TABLE_TILT_PRESENTATION,
+        variationDescriptor: options?.variationDescriptor,
       }),
     disposeRttGroup: (group) =>
       disposeRegisteredSceneAsset(TABLE_TILT_ASSET_KEY, group),

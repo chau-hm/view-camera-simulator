@@ -6,6 +6,7 @@ const basePath = "/view-camera-simulator/";
 export default defineConfig({
   testDir: "./src/tests/scene-variation-e2e",
   testMatch: [
+    "free-mode-seeded-materials-wave1-base-production.spec.ts",
     "interior-corner-seeded-materials-subpath-production.spec.ts",
     "interior-corner-seeded-props-subpath-production.spec.ts",
     "shelf-swing-seeded-props-subpath-production.spec.ts",

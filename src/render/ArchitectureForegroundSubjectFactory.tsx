@@ -1,10 +1,13 @@
 import * as THREE from "three";
 import type { ArchitectureForegroundPresentation } from "../scenes/presentation/architectureForeground";
+import { resolveArchitectureForegroundMaterialVariations } from "../scenes/architectureForegroundMaterialVariation";
+import type { SceneVariationDescriptor } from "../types/sceneVariation";
 import { toWorld } from "./rttUtils";
 import {
   createFocusFriendlyMaterial,
   disposeTeachingSubjectResources,
 } from "./TeachingMaterials";
+import { createProceduralSurfaceMaterial } from "./ProceduralSurfaceMaterials";
 
 const createStandardMaterial = (color: string, roughness = 0.9) =>
   new THREE.MeshStandardMaterial({ color, roughness, metalness: 0 });
@@ -12,6 +15,7 @@ const createStandardMaterial = (color: string, roughness = 0.9) =>
 type ArchitectureForegroundGeometry = ArchitectureForegroundPresentation["geometry"];
 export type ArchitectureForegroundAssetRequest = Readonly<{
   presentation: ArchitectureForegroundPresentation;
+  variationDescriptor?: SceneVariationDescriptor;
 }>;
 
 const addWindow = ({
@@ -188,22 +192,70 @@ export const createArchitectureForegroundGroup = (
   request: ArchitectureForegroundAssetRequest,
 ): THREE.Group => {
   const { geometry } = request.presentation;
+  const variations = resolveArchitectureForegroundMaterialVariations(
+    request.variationDescriptor,
+  );
   const root = new THREE.Group();
   root.name = "architecture-foreground-subject";
 
-  const buildingMaterial = createStandardMaterial("#92a7b8", 0.92);
+  const buildingMaterial = variations
+    ? createProceduralSurfaceMaterial({
+        color: variations.buildingShell.color,
+        pattern: "plaster",
+        repeat: variations.buildingShell.repeat,
+        roughness: variations.buildingShell.roughness,
+        normalStrength: variations.buildingShell.normalStrength,
+        variationSeed: variations.buildingShell.variationSeed,
+      })
+    : createStandardMaterial("#92a7b8", 0.92);
   const facadeMaterial = createFocusFriendlyMaterial({
     pattern: "fine-grid",
-    primaryColor: "#b3c1cc",
-    secondaryColor: "#a2b3bf",
-    repeat: [5, 4],
-    roughness: 0.88,
+    primaryColor: variations?.frontFacade.primaryColor ?? "#b3c1cc",
+    secondaryColor: variations?.frontFacade.secondaryColor ?? "#a2b3bf",
+    repeat: variations?.frontFacade.repeat ?? [5, 4],
+    roughness: variations?.frontFacade.roughness ?? 0.88,
   });
-  const roofMaterial = createStandardMaterial("#dbe5ec", 0.8);
+  const roofMaterial = variations
+    ? createProceduralSurfaceMaterial({
+        color: variations.roofParapet.color,
+        pattern: "concrete",
+        repeat: variations.roofParapet.repeat,
+        roughness: variations.roofParapet.roughness,
+        normalStrength: variations.roofParapet.normalStrength,
+        variationSeed: variations.roofParapet.variationSeed,
+      })
+    : createStandardMaterial("#dbe5ec", 0.8);
   const windowMaterial = createStandardMaterial("#20384b", 0.62);
-  const frameMaterial = createStandardMaterial("#e5edf2", 0.82);
-  const groundMaterial = createStandardMaterial("#d8e1e7", 1);
-  const forecourtTrimMaterial = createStandardMaterial("#b9c5cc", 0.9);
+  const frameMaterial = variations
+    ? createProceduralSurfaceMaterial({
+        color: variations.windowFrame.color,
+        pattern: "plaster",
+        repeat: variations.windowFrame.repeat,
+        roughness: variations.windowFrame.roughness,
+        normalStrength: variations.windowFrame.normalStrength,
+        variationSeed: variations.windowFrame.variationSeed,
+      })
+    : createStandardMaterial("#e5edf2", 0.82);
+  const groundMaterial = variations
+    ? createProceduralSurfaceMaterial({
+        color: variations.groundConcrete.color,
+        pattern: "concrete",
+        repeat: variations.groundConcrete.repeat,
+        roughness: variations.groundConcrete.roughness,
+        normalStrength: variations.groundConcrete.normalStrength,
+        variationSeed: variations.groundConcrete.variationSeed,
+      })
+    : createStandardMaterial("#d8e1e7", 1);
+  const forecourtTrimMaterial = variations
+    ? createProceduralSurfaceMaterial({
+        color: variations.forecourtTrim.color,
+        pattern: "cut-stone",
+        repeat: variations.forecourtTrim.repeat,
+        roughness: variations.forecourtTrim.roughness,
+        normalStrength: variations.forecourtTrim.normalStrength,
+        variationSeed: variations.forecourtTrim.variationSeed,
+      })
+    : createStandardMaterial("#b9c5cc", 0.9);
 
   const building = new THREE.Mesh(
     new THREE.BoxGeometry(

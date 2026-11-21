@@ -1,11 +1,15 @@
 import * as THREE from "three";
 import type { TableTiltSubjectDefinition } from "../scenes/tableTiltGeometry";
 import type { TableTiltPresentation } from "../scenes/presentation/tableTilt";
+import { resolveTableTiltMaterialVariations } from "../scenes/tableTiltMaterialVariation";
+import type { TableTiltMaterialVariations } from "../scenes/tableTiltMaterialVariation";
+import type { SceneVariationDescriptor } from "../types/sceneVariation";
 import { toWorld } from "./rttUtils";
 import {
   createFocusFriendlyMaterial,
   disposeTeachingSubjectResources,
 } from "./TeachingMaterials";
+import { createProceduralSurfaceMaterial } from "./ProceduralSurfaceMaterials";
 
 const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180;
 
@@ -441,20 +445,34 @@ const createSemanticSubject = (
 const addTableTiltContext = (
   root: THREE.Group,
   presentation: TableTiltPresentation,
-): void => {
+  variations?: TableTiltMaterialVariations,
+): THREE.MeshStandardMaterial => {
   const { geometry } = presentation;
   const context = new THREE.Group();
   context.name = "table-tilt-context-structure";
 
-  const apronMaterial = standardMaterial("#57534e", 0.9);
-  const woodMaterial = createFocusFriendlyMaterial({
-    pattern: "linear-grain",
-    primaryColor: "#8b5e3c",
-    secondaryColor: "#6f452d",
-    repeat: [2, 8],
-    roughness: 0.82,
-  });
-  const accentMaterial = standardMaterial("#334155", 0.78);
+  const apronMaterial = variations
+    ? standardMaterial(variations.tableFrame.color, variations.tableFrame.roughness)
+    : standardMaterial("#57534e", 0.9);
+  const woodMaterial = variations
+    ? createProceduralSurfaceMaterial({
+        color: variations.contextWood.color,
+        pattern: "wood",
+        repeat: variations.contextWood.repeat,
+        roughness: variations.contextWood.roughness,
+        normalStrength: variations.contextWood.normalStrength,
+        variationSeed: variations.contextWood.variationSeed,
+      })
+    : createFocusFriendlyMaterial({
+        pattern: "linear-grain",
+        primaryColor: "#8b5e3c",
+        secondaryColor: "#6f452d",
+        repeat: [2, 8],
+        roughness: 0.82,
+      });
+  const accentMaterial = variations
+    ? standardMaterial(variations.contextAccent.color, variations.contextAccent.roughness)
+    : standardMaterial("#334155", 0.78);
 
   const tableStructure = new THREE.Group();
   tableStructure.name = "table-tilt-table-structure";
@@ -543,10 +561,12 @@ const addTableTiltContext = (
   });
 
   root.add(context);
+  return apronMaterial;
 };
 
 export type TableTiltAssetRequest = Readonly<{
   presentation: TableTiltPresentation;
+  variationDescriptor?: SceneVariationDescriptor;
 }>;
 
 /** Create the canonical Table Tilt subject for interactive and RTT use. */
@@ -555,6 +575,7 @@ export function createTableTiltGroup(
 ): THREE.Group {
   const { presentation } = request;
   const { geometry } = presentation;
+  const variations = resolveTableTiltMaterialVariations(request.variationDescriptor);
   const root = new THREE.Group();
   root.name = "table-tilt-subject";
 
@@ -586,13 +607,22 @@ export function createTableTiltGroup(
       toWorld(geometry.tabletop.thickness),
       toWorld(geometry.tabletop.depth),
     ),
-    createFocusFriendlyMaterial({
-      pattern: "linear-grain",
-      primaryColor: geometry.tabletop.color,
-      secondaryColor: "#9a7655",
-      repeat: [2, 12],
-      roughness: 0.82,
-    }),
+    variations
+      ? createProceduralSurfaceMaterial({
+          color: variations.tabletopWood.color,
+          pattern: "wood",
+          repeat: variations.tabletopWood.repeat,
+          roughness: variations.tabletopWood.roughness,
+          normalStrength: variations.tabletopWood.normalStrength,
+          variationSeed: variations.tabletopWood.variationSeed,
+        })
+      : createFocusFriendlyMaterial({
+          pattern: "linear-grain",
+          primaryColor: geometry.tabletop.color,
+          secondaryColor: "#9a7655",
+          repeat: [2, 12],
+          roughness: 0.82,
+        }),
   );
   tabletopMesh.name = "table-tilt-tabletop";
   tabletopAssembly.add(tabletopMesh);
@@ -623,7 +653,7 @@ export function createTableTiltGroup(
   }
   root.add(tabletopAssembly);
 
-  addTableTiltContext(root, presentation);
+  const tableFrameMaterial = addTableTiltContext(root, presentation, variations);
 
   geometry.tableSupports.forEach((support) => {
     const leg = new THREE.Mesh(
@@ -632,7 +662,9 @@ export function createTableTiltGroup(
         toWorld(support.height),
         toWorld(support.depth),
       ),
-      standardMaterial(support.color, 0.92),
+      variations
+        ? tableFrameMaterial
+        : standardMaterial(support.color, 0.92),
     );
     leg.name = `table-tilt-support-${support.id}`;
     leg.position.set(
