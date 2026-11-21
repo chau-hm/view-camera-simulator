@@ -375,7 +375,7 @@ describe("procedural surface materials", () => {
 
       if (!(stoneBase.material instanceof THREE.MeshStandardMaterial)) throw new Error("Stone base material is missing");
       const expectedStoneBase = createProceduralSurfaceMaterial({
-        color: "#d6c8ae",
+        color: "#c2b299",
         pattern: "limestone",
         repeat: [5, 4],
         roughness: 0.92,

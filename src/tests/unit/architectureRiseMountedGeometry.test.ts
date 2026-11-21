@@ -190,6 +190,18 @@ describe("Architecture Rise mounted geometry visibility", () => {
       raycaster.far = toWorld(geometry.building.depth + 40);
       expect(raycaster.intersectObjects(structuralMeshes, false), "the entry must be a real opening")
         .toHaveLength(0);
+      // Probe both the opening and the stone spandrel through the complete front assembly.
+      const doorRadius = door.openingWidthMm / 2;
+      const springY = door.centerYMm + door.openingHeightMm / 2 - doorRadius;
+      const frontHit = (xMm: number, yMm: number) => {
+        raycaster.set(
+          new THREE.Vector3(toWorld(door.centerXMm + xMm), toWorld(springY + yMm), front - 0.3),
+          new THREE.Vector3(0, 0, 1),
+        );
+        return raycaster.intersectObjects(mountedMeshes(root), false)[0]?.object.name;
+      };
+      expect(frontHit(0.3 * doorRadius, 0.65 * doorRadius)).toBe("architecture-rise-entry-fanlight");
+      expect(frontHit(0.9 * doorRadius, 0.65 * doorRadius)).toBe("architecture-rise-entry-arch-stones");
       const doorRect = {
         minX: door.centerXMm - door.openingWidthMm / 2,
         maxX: door.centerXMm + door.openingWidthMm / 2,
@@ -241,6 +253,130 @@ describe("Architecture Rise mounted geometry visibility", () => {
         glassInsetMm: ">= 80",
         serviceReturnJointXmm: serviceBounds.min.x * 1000,
       }));
+    } finally {
+      disposeArchitectureRiseGroup(root);
+    }
+  });
+
+  it("exposes recessed rear windows and the service door through the mounted masonry", () => {
+    const root = createArchitectureRiseGroup({ presentation: ARCHITECTURE_RISE_PRESENTATION });
+    try {
+      root.updateMatrixWorld(true);
+      const meshes = mountedMeshes(root);
+      const back = toWorld(geometry.facade.backFacadeZ);
+      const rearWall = root.getObjectByName("architecture-rise-rear-wall");
+      if (!rearWall) throw new Error("Missing structural rear wall");
+      const structuralMeshes = mountedMeshes(rearWall);
+      expect(structuralMeshes.length).toBeGreaterThan(0);
+      const castInward = (x: number, y: number, objects = meshes) => {
+        const ray = new THREE.Raycaster(
+          new THREE.Vector3(x, y, back + 0.35), new THREE.Vector3(0, 0, -1), 0, 0.7,
+        );
+        return ray.intersectObjects(objects, false)[0];
+      };
+      const requiredBounds = (name: string) => {
+        const mesh = root.getObjectByName(name);
+        if (!(mesh instanceof THREE.Mesh)) throw new Error(`Missing rear assembly part ${name}`);
+        return new THREE.Box3().setFromObject(mesh);
+      };
+      const openings = ["room-ground", "room-middle", "room-top", "stair-lower", "stair-upper"];
+      for (const id of openings) {
+        const prefix = `architecture-rise-rear-${id}`;
+        const glass = requiredBounds(`${prefix}-glazing`);
+        const center = glass.getCenter(new THREE.Vector3());
+        const size = glass.getSize(new THREE.Vector3());
+        const sill = requiredBounds(`${prefix}-sill`);
+        const lintel = requiredBounds(`${prefix}-lintel`);
+        expect(back - glass.max.z, id).toBeGreaterThanOrEqual(toWorld(80));
+        expect(sill.intersectsBox(glass), `${id} sill clears glazing`).toBe(false);
+        expect(lintel.intersectsBox(glass), `${id} lintel clears glazing`).toBe(false);
+
+        // The stone and brick meet inside the reveal. A ray from the void must
+        // encounter the exposed stone before the masonry to avoid coplanar faces.
+        const insideReveal = new THREE.Vector3(center.x + size.x / 4, center.y, back - toWorld(40));
+        for (const [part, directionY] of [["sill", -1], ["lintel", 1]] as const) {
+          const ray = new THREE.Raycaster(insideReveal, new THREE.Vector3(0, directionY, 0), 0, 1);
+          const stone = ray.intersectObjects(meshes, false)[0];
+          const brick = ray.intersectObjects(structuralMeshes, false)[0];
+          expect(stone?.object.name, `${id} first visible ${part} surface`).toBe(`${prefix}-${part}`);
+          if (!brick || !stone) throw new Error(`Missing mounted ${part} or its masonry bearing for ${id}`);
+          expect(brick.distance - stone.distance, `${id} separates ${part} from its bearing`)
+            .toBeGreaterThan(toWorld(0.1));
+        }
+
+        // Cast from the service yard into each quadrant, clear of the intended sash bars.
+        for (const signX of [-1, 1]) {
+          for (const signY of [-1, 1]) {
+            const x = center.x + signX * size.x / 4;
+            const y = center.y + signY * size.y / 4;
+            expect(castInward(x, y, structuralMeshes), id).toBeUndefined();
+            expect(castInward(x, y)?.object.name, id).toBe(`${prefix}-glazing`);
+          }
+        }
+        const transom = requiredBounds(`${prefix}-transom`);
+        const transomY = transom.getCenter(new THREE.Vector3()).y;
+        expect(castInward(center.x + size.x / 4, transomY)?.object.name, id).toBe(`${prefix}-transom`);
+        // A masonry hit just beyond each jamb makes the through-opening probes meaningful.
+        for (const x of [glass.min.x - 0.1, glass.max.x + 0.1]) {
+          expect(castInward(x, center.y, structuralMeshes), `${id} jamb`).toBeDefined();
+        }
+      }
+      const door = requiredBounds("architecture-rise-rear-service-door-leaf");
+      const doorCenter = door.getCenter(new THREE.Vector3());
+      expect(castInward(doorCenter.x, doorCenter.y, structuralMeshes)).toBeUndefined();
+      expect(castInward(doorCenter.x, doorCenter.y)?.object.name).toBe("architecture-rise-rear-service-door-leaf");
+    } finally {
+      disposeArchitectureRiseGroup(root);
+    }
+  });
+
+  it("joins the recessed roof deck to all four parapet walls", () => {
+    const root = createArchitectureRiseGroup({ presentation: ARCHITECTURE_RISE_PRESENTATION });
+    try {
+      root.updateMatrixWorld(true);
+      const roofBounds = (name: string) => {
+        const mesh = root.getObjectByName(`architecture-rise-roof-${name}`);
+        if (!(mesh instanceof THREE.Mesh)) throw new Error(`Missing roof part ${name}`);
+        return new THREE.Box3().setFromObject(mesh);
+      };
+      const deck = roofBounds("deck");
+      const front = roofBounds("parapet");
+      const rear = roofBounds("parapet-rear");
+      const west = roofBounds("parapet-west");
+      const east = roofBounds("parapet-east");
+      expect(deck.min.z).toBeCloseTo(front.max.z, 6);
+      expect(deck.max.z).toBeCloseTo(rear.min.z, 6);
+      expect(deck.min.x).toBeCloseTo(west.max.x, 6);
+      expect(deck.max.x).toBeCloseTo(east.min.x, 6);
+      for (const wall of [front, rear, west, east]) {
+        expect(deck.max.y).toBeGreaterThan(wall.min.y);
+        expect(deck.max.y).toBeLessThan(wall.max.y);
+      }
+      const center = deck.getCenter(new THREE.Vector3());
+      center.y = toWorld(geometry.facade.parapetTopY + 100);
+      const fromAbove = new THREE.Raycaster(center, new THREE.Vector3(0, -1, 0));
+      const meshes = mountedMeshes(root);
+      expect(fromAbove.intersectObjects(meshes, false)[0]?.object.name).toBe("architecture-rise-roof-deck");
+
+      // Probe both ends and the centre of each run, just inside the wall footprint.
+      // Deduplicate the two triangles of a single face when a probe lies on its diagonal.
+      const half = toWorld(geometry.building.width / 2 - 10);
+      const frontZ = toWorld(geometry.facade.frontFacadeZ + 10);
+      const rearZ = toWorld(geometry.facade.backFacadeZ - 10);
+      const capProbes = [
+        ...[-half, -0.4, half].flatMap(x => [[x, frontZ], [x, rearZ]] as const),
+        [-half, center.z], [half, center.z],
+        [toWorld(geometry.building.width / 2 - 120), frontZ],
+      ] as const;
+      for (const [x, z] of capProbes) {
+        fromAbove.ray.origin.set(x, center.y, z);
+        const hits = fromAbove.intersectObjects(meshes, false);
+        const top = hits[0];
+        expect(top?.object.name).toMatch(/(?:coping|pier-cap)/);
+        if (!top) throw new Error("Missing roof finish");
+        const coincident = hits.filter(hit => Math.abs(hit.distance - top.distance) < toWorld(0.1));
+        expect(new Set(coincident.map(hit => hit.object)).size, `coincident cap faces at (${x}, ${z})`).toBe(1);
+      }
     } finally {
       disposeArchitectureRiseGroup(root);
     }
