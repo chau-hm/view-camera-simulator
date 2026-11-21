@@ -453,8 +453,15 @@ const runFullMultiProbeStudy = async (page: Page): Promise<void> => {
   });
 
   expect(proof.search.rawCandidateCount).toBe(80);
-  expect(proof.search.rejectedCandidateCount).toBe(9);
-  expect(proof.search.validCandidateCount).toBe(71);
+  // The batched ashlar joints conservatively exclude grid-35. Its near-solid
+  // AABB clearance is 61 mm against the unchanged 62.5 mm placement rule.
+  expect(proof.search.rejectionCounts).toEqual({
+    outsideCorridor: 0, duplicateProbeA: 0, glazingIntersection: 0,
+    insideSceneAabb: 2, nearSolidGeometry: 8,
+  });
+  expect(proof.search.probeOrigins.some(({ id }) => id === "probe-grid-35")).toBe(false);
+  expect(proof.search.rejectedCandidateCount).toBe(10);
+  expect(proof.search.validCandidateCount).toBe(70);
   expect(proof.search.evaluatedCandidateCount).toBe(proof.search.validCandidateCount);
   expect(proof.search.probeOrigins).toHaveLength(proof.search.validCandidateCount);
   expect(proof.search.selectedProbeOrigins).toHaveLength(2);
@@ -476,7 +483,7 @@ const runFullMultiProbeStudy = async (page: Page): Promise<void> => {
     "lower B grid index, then lower C grid index for unordered triples",
   ]);
   expect(proof.placement.evaluatedProbeBPairCount).toBe(proof.search.validCandidateCount);
-  expect(proof.placement.evaluatedProbeBPairCount).toBe(71);
+  expect(proof.placement.evaluatedProbeBPairCount).toBe(70);
   expect(proof.placement.topPairRankings).toHaveLength(5);
   expect(proof.placement.topPairRankings.map((row) => row.rank)).toEqual([1, 2, 3, 4, 5]);
   expect(proof.placement.bestTwo.placementRank).toBe(1);
@@ -487,7 +494,7 @@ const runFullMultiProbeStudy = async (page: Page): Promise<void> => {
   expect(proof.placement.probeBMateriallyImprovesProbeA).toBe(true);
   const expectedTripleCount = proof.search.validCandidateCount * (proof.search.validCandidateCount - 1) / 2;
   expect(proof.placement.evaluatedThreeProbeConfigurationCount).toBe(expectedTripleCount);
-  expect(proof.placement.evaluatedThreeProbeConfigurationCount).toBe(2_485);
+  expect(proof.placement.evaluatedThreeProbeConfigurationCount).toBe(2_415);
   expect(proof.placement.topTripleRankings).toHaveLength(5);
   expect(proof.placement.topTripleRankings.map((row) => row.rank)).toEqual([1, 2, 3, 4, 5]);
   const globalBestThree = proof.placement.globalBestThree;

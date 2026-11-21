@@ -1,7 +1,6 @@
 import * as THREE from "three";
 import type { ArchitectureRisePresentation } from "../../scenes/presentation/architectureRise";
 import type { ArchitectureRiseDetailStyle } from "./ArchitectureRiseDetailConfig";
-import type { ArchitectureRiseWindowFactory } from "./ArchitectureRiseWindowDetails";
 import { toWorld } from "../rttUtils";
 
 export function getArchitectureRiseCorniceBracketCentersMm(options: {
@@ -55,31 +54,22 @@ export function createArchitectureRiseCorniceBracketGeometry(
   const height = toWorld(style.bracketHeightMm);
   const depth = toWorld(style.bracketDepthMm);
   const shape = new THREE.Shape();
-  shape.moveTo(-width / 2, 0);
-  shape.lineTo(width / 2, 0);
-  shape.lineTo(width * 0.42, height * 0.18);
-  shape.lineTo(width * 0.29, height * 0.34);
-  shape.lineTo(width * 0.2, height * 0.54);
-  shape.lineTo(width * 0.33, height * 0.7);
-  shape.lineTo(width / 2, height * 0.82);
-  shape.lineTo(width / 2, height);
-  shape.lineTo(-width / 2, height);
-  shape.lineTo(-width / 2, height * 0.82);
-  shape.lineTo(-width * 0.33, height * 0.7);
-  shape.lineTo(-width * 0.2, height * 0.54);
-  shape.lineTo(-width * 0.29, height * 0.34);
-  shape.lineTo(-width * 0.42, height * 0.18);
+  // A corbel grows outward from its narrow foot to the cornice soffit.
+  // Draw its side section, then extrude across the street elevation.
+  shape.moveTo(0, 0);
+  shape.lineTo(depth * 0.26, 0);
+  shape.lineTo(depth * 0.26, height * 0.12);
+  shape.bezierCurveTo(depth * 0.28, height * 0.55, depth * 0.74, height * 0.32, depth * 0.82, height * 0.74);
+  shape.lineTo(depth, height * 0.82);
+  shape.lineTo(depth, height);
+  shape.lineTo(0, height);
   shape.closePath();
   const geometry = new THREE.ExtrudeGeometry(shape, {
-    depth,
-    bevelEnabled: true,
-    bevelSegments: 1,
-    bevelSize: toWorld(4),
-    bevelThickness: toWorld(4),
-    steps: 1,
-    curveSegments: 1,
+    depth: width, bevelEnabled: true, bevelSegments: 1,
+    bevelSize: toWorld(3), bevelThickness: toWorld(3), steps: 1, curveSegments: 3,
   });
-  geometry.translate(0, 0, -depth / 2);
+  geometry.rotateY(Math.PI / 2);
+  geometry.translate(-width / 2, 0, depth / 2);
   geometry.computeVertexNormals();
   geometry.userData.architectureRiseRole = "cornice-support-bracket";
   return geometry;
@@ -94,7 +84,7 @@ export function addArchitectureRiseCorniceBrackets(options: {
   style: ArchitectureRiseDetailStyle;
   material: THREE.Material;
   bracketGeometry: THREE.BufferGeometry;
-  corniceDepthMm: number;
+  soffitYMm: number;
 }): THREE.Mesh[] {
   const {
     parent,
@@ -105,7 +95,7 @@ export function addArchitectureRiseCorniceBrackets(options: {
     style,
     material,
     bracketGeometry,
-    corniceDepthMm,
+    soffitYMm,
   } = options;
   const corniceBottomYMm = corniceCenterYMm - style.cornice.bandHeightMm / 2;
   const centers = getArchitectureRiseCorniceBracketCentersMm({
@@ -114,14 +104,13 @@ export function addArchitectureRiseCorniceBrackets(options: {
     layout,
     style,
   });
-  const corniceFrontZMm = frontFacadeZMm + 20 - corniceDepthMm / 2;
-  const bracketCenterZMm = corniceFrontZMm + style.cornice.bracketDepthMm / 2 - 8;
+  const bracketCenterZMm = frontFacadeZMm - style.cornice.bracketDepthMm / 2 - 12;
   const meshes = centers.map((centerXMm, index) => {
     const bracket = new THREE.Mesh(bracketGeometry, material);
     bracket.name = `architecture-rise-cornice-bracket-${index + 1}`;
     bracket.position.set(
       toWorld(centerXMm),
-      toWorld(corniceBottomYMm - style.cornice.bracketHeightMm),
+      toWorld(soffitYMm - style.cornice.bracketHeightMm),
       toWorld(bracketCenterZMm),
     );
     bracket.castShadow = true;
@@ -136,35 +125,54 @@ export function addArchitectureRiseCorniceBrackets(options: {
   return meshes;
 }
 
-export function addArchitectureRiseParapetPierCaps(options: {
+type ProfilePoint = readonly [heightMm: number, projectionMm: number];
+
+/** Sweep one stone moulding around all four corners with mitred face edges. */
+export function addArchitectureRiseCorniceProfile(options: {
   parent: THREE.Group;
-  addBox: ArchitectureRiseWindowFactory;
-  facadeWidthMm: number;
-  parapetTopYMm: number;
-  frontFacadeZMm: number;
+  facade: ArchitectureRisePresentation["layout"]["mainFacade"];
+  names: readonly [string, string, string, string];
+  profile: readonly ProfilePoint[];
   material: THREE.Material;
-  style: ArchitectureRiseDetailStyle["cornice"];
 }): void {
-  const { parent, addBox, facadeWidthMm, parapetTopYMm, frontFacadeZMm, material, style } = options;
-  const pierWidthMm = 96;
-  const pierDepthMm = 140;
-  const capHeightMm = 46;
-  const capDepthMm = 160;
-  [-1, 1].forEach((sign) => {
-    const centerXMm = sign * (facadeWidthMm / 2 - 120);
-    addBox({
-      name: `architecture-rise-parapet-pier-${sign < 0 ? "left" : "right"}`,
-      size: [pierWidthMm, style.parapetCourseHeightMm, pierDepthMm],
-      position: [centerXMm, parapetTopYMm - style.parapetCourseHeightMm / 2, frontFacadeZMm - 18],
-      material,
-      parent,
-    });
-    addBox({
-      name: `architecture-rise-parapet-pier-cap-${sign < 0 ? "left" : "right"}`,
-      size: [pierWidthMm + 44, capHeightMm, capDepthMm],
-      position: [centerXMm, parapetTopYMm - capHeightMm / 2, frontFacadeZMm - 20],
-      material,
-      parent,
-    });
-  });
+  const { parent, facade, names, profile, material } = options;
+  const corners = [[1, -1], [-1, -1], [-1, 1], [1, 1]] as const;
+  function point(corner: typeof corners[number], [height, projection]: ProfilePoint) {
+    const [sx, sz] = corner;
+    return new THREE.Vector3(
+      toWorld(sx < 0 ? facade.minXMm - projection : facade.maxXMm + projection),
+      toWorld(height),
+      toWorld(sz < 0 ? facade.frontZMm - projection : facade.backZMm + projection),
+    );
+  }
+  for (let side = 0; side < corners.length; side++) {
+    const start = corners[side]!;
+    const end = corners[(side + 1) % corners.length]!;
+    const positions: number[] = [];
+    const uv: number[] = [];
+    const indices: number[] = [];
+    let sectionDistance = 0;
+    for (let i = 1; i < profile.length; i++) {
+      const a = point(start, profile[i - 1]!);
+      const b = point(end, profile[i - 1]!);
+      const c = point(end, profile[i]!);
+      const d = point(start, profile[i]!);
+      const offset = positions.length / 3;
+      for (const v of [a, b, c, d]) positions.push(v.x, v.y, v.z);
+      const next = sectionDistance + a.distanceTo(d);
+      uv.push(0, sectionDistance, a.distanceTo(b), sectionDistance, c.distanceTo(d), next, 0, next);
+      indices.push(offset, offset + 1, offset + 2, offset, offset + 2, offset + 3);
+      sectionDistance = next;
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.name = names[side]!;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    parent.add(mesh);
+  }
 }

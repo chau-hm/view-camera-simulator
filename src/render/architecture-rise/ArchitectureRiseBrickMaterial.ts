@@ -12,14 +12,14 @@ type BrickTextureSet = Readonly<{
 type BrickColor = readonly [number, number, number];
 
 const BRICK_PALETTE: readonly BrickColor[] = [
-  [151, 78, 57],
-  [164, 88, 64],
-  [143, 73, 56],
-  [174, 101, 72],
-  [158, 83, 60],
-  [135, 70, 54],
-  [168, 94, 66],
-  [148, 82, 64],
+  [151, 83, 62],
+  [157, 89, 67],
+  [145, 79, 61],
+  [165, 96, 72],
+  [153, 86, 64],
+  [142, 78, 59],
+  [160, 92, 68],
+  [149, 83, 64],
 ];
 
 const clampByte = (value: number): number => Math.max(0, Math.min(255, Math.round(value)));
@@ -82,8 +82,8 @@ export function createArchitectureRiseBrickTextures(
       const wrappedColumn = positiveMod(column, style.tileBrickPitches);
       const value = hash(style.seed, row, wrappedColumn);
       const palette = BRICK_PALETTE[value % BRICK_PALETTE.length]!;
-      const shade = 0.9 + ((value >>> 8) % 23) / 100;
-      const mottling = ((value >>> 16) % 15) - 7;
+      const shade = 0.96 + ((value >>> 8) % 10) / 100;
+      const mottling = ((value >>> 16) % 7) - 3;
       const offset = pixelIndex * 4;
       colorBytes[offset] = clampByte(palette[0] * shade + mottling);
       colorBytes[offset + 1] = clampByte(palette[1] * shade + mottling * 0.6);
@@ -100,7 +100,7 @@ export function createArchitectureRiseBrickTextures(
     }
   }
 
-  const mortarColor: BrickColor = [185, 169, 143];
+  const mortarColor: BrickColor = [160, 144, 123];
   const mortarRoughness = 238;
   for (let index = 0; index < brickPixels.length; index += 1) {
     if (brickPixels[index] !== -1) continue;

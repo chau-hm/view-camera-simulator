@@ -10,7 +10,7 @@ import type { ArchitectureRiseDetailStyle } from "./architecture-rise/Architectu
 import { createArchitectureRiseBrickMaterial } from "./architecture-rise/ArchitectureRiseBrickMaterial";
 import {
   addArchitectureRiseCorniceBrackets,
-  addArchitectureRiseParapetPierCaps,
+  addArchitectureRiseCorniceProfile,
   createArchitectureRiseCorniceBracketGeometry,
 } from "./architecture-rise/ArchitectureRiseCornice";
 import { addArchitectureRiseEntrance } from "./architecture-rise/ArchitectureRiseEntrance";
@@ -21,8 +21,13 @@ import {
   createWorldAlignedBrickBoxGeometry,
   isInsideArchitectureRiseQuietZone,
   type ArchitectureRiseMmBounds,
+  type ArchitectureRiseWallOpening,
 } from "./architecture-rise/ArchitectureRiseMasonry";
 import { addArchitectureRiseWindowAssembly } from "./architecture-rise/ArchitectureRiseWindowDetails";
+import {
+  addArchitectureRiseRearJoinery,
+  getArchitectureRiseRearOpenings,
+} from "./architecture-rise/ArchitectureRiseRearElevation";
 import {
   disposeTeachingSubjectResources,
 } from "./TeachingMaterials";
@@ -65,10 +70,10 @@ export const ARCHITECTURE_RISE_DETAIL_STYLE: ArchitectureRiseDetailStyle = {
     quietZoneMarginMm: 100,
   },
   base: {
-    heightAboveGroundMm: 420,
-    blockCourseHeightMm: 140,
-    blockWidthMm: 420,
-    jointWidthMm: 8,
+    heightAboveGroundMm: 1520,
+    blockCourseHeightMm: 240,
+    blockWidthMm: 540,
+    jointWidthMm: 12,
   },
   window: {
     outerSillProjectionMm: 44,
@@ -84,9 +89,9 @@ export const ARCHITECTURE_RISE_DETAIL_STYLE: ArchitectureRiseDetailStyle = {
   cornice: {
     bandHeightMm: 120,
     projectionMm: 280,
-    bracketWidthMm: 76,
-    bracketHeightMm: 70,
-    bracketDepthMm: 124,
+    bracketWidthMm: 92,
+    bracketHeightMm: 150,
+    bracketDepthMm: 158,
     bracketSpacingMm: 210,
     bracketCornerClearanceMm: 110,
     parapetCourseHeightMm: 110,
@@ -109,7 +114,7 @@ const createResources = (
   facade: createArchitectureRiseBrickMaterial(style.masonry),
   quietFacade: standard("#98553f", 0.94),
   base: createProceduralSurfaceMaterial({
-    color: "#d6c8ae",
+    color: "#c2b299",
     pattern: "limestone",
     repeat: [5, 4],
     roughness: 0.92,
@@ -180,14 +185,6 @@ const addBox = ({ name, size, position, material, parent }: BoxSpec): THREE.Mesh
   return mesh;
 };
 
-type FacadeOpening = Readonly<{
-  id: string;
-  centerHorizontalMm: number;
-  centerVerticalMm: number;
-  widthMm: number;
-  heightMm: number;
-}>;
-
 const addSegmentedWall = (
   root: THREE.Group,
   resources: ArchitectureRiseResources,
@@ -199,7 +196,7 @@ const addSegmentedWall = (
     verticalMaxMm: number;
     depthMinMm: number;
     depthMaxMm: number;
-    openings: readonly FacadeOpening[];
+    openings: readonly ArchitectureRiseWallOpening[];
     horizontalAxis: "x" | "z";
     primaryMeshName?: string;
     baseStoneTopMm?: number;
@@ -235,6 +232,7 @@ const addSegmentedWall = (
     const verticalEdges = new Set([options.verticalMinMm, options.verticalMaxMm]);
     if (options.horizontalAxis === "x") {
       options.quietZones?.forEach((zone) => {
+        if (horizontalCenter < zone.minXMm || horizontalCenter > zone.maxXMm) return;
         if (zone.minYMm > options.verticalMinMm && zone.minYMm < options.verticalMaxMm) {
           verticalEdges.add(zone.minYMm);
         }
@@ -268,7 +266,7 @@ const addSegmentedWall = (
       const depthCenter = (options.depthMaxMm + options.depthMinMm) / 2;
       const horizontalSize = horizontalMax - horizontalMin;
       const verticalSize = verticalMax - verticalMin;
-      const isBaseStone = verticalCenter < (options.baseStoneTopMm ?? 0);
+      const isBaseStone = options.baseStoneTopMm !== undefined && verticalCenter < options.baseStoneTopMm;
       const position: [number, number, number] = options.horizontalAxis === "x"
         ? [horizontalCenter, verticalCenter, depthCenter]
         : [depthCenter, verticalCenter, horizontalCenter];
@@ -419,25 +417,40 @@ const addArchitectureContext = (
     horizontalMinMm: serviceReturn.minZMm,
     horizontalMaxMm: serviceReturn.maxZMm,
     verticalMinMm: serviceReturn.minYMm,
-    verticalMaxMm: serviceReturn.maxYMm,
+    verticalMaxMm: serviceReturn.maxYMm - 72,
     depthMinMm: serviceReturn.minXMm,
     depthMaxMm: serviceReturn.maxXMm,
     openings: wingOpenings,
     horizontalAxis: "z",
     primaryMeshName: "architecture-rise-side-return",
+    baseStoneTopMm: serviceReturn.minYMm + 240,
     brickStyle: style.masonry,
   });
+  const wingWidth = serviceReturn.maxXMm - serviceReturn.minXMm;
+  const wingDepth = serviceReturn.maxZMm - serviceReturn.minZMm;
+  const wingCenterX = (serviceReturn.minXMm + serviceReturn.maxXMm) / 2;
+  const wingCenterZ = (serviceReturn.minZMm + serviceReturn.maxZMm) / 2;
   addBox({
     name: "architecture-rise-service-return-roof",
-    size: [serviceReturn.maxXMm - serviceReturn.minXMm, 72, serviceReturn.maxZMm - serviceReturn.minZMm],
-    position: [
-      (serviceReturn.minXMm + serviceReturn.maxXMm) / 2,
-      serviceReturn.maxYMm - 36,
-      (serviceReturn.minZMm + serviceReturn.maxZMm) / 2,
-    ],
-    material: resources.roof,
-    parent: returnGroup,
+    size: [wingWidth, 36, wingDepth],
+    position: [wingCenterX, serviceReturn.maxYMm - 54, wingCenterZ],
+    material: resources.pavement, parent: returnGroup,
   });
+  const copingWidth = 48;
+  for (const sign of [-1, 1]) {
+    addBox({
+      name: `architecture-rise-service-roof-coping-${sign < 0 ? "front" : "back"}`,
+      size: [wingWidth, 36, copingWidth],
+      position: [wingCenterX, serviceReturn.maxYMm - 18, wingCenterZ + sign * (wingDepth - copingWidth) / 2],
+      material: resources.roof, parent: returnGroup,
+    });
+    addBox({
+      name: `architecture-rise-service-roof-coping-${sign < 0 ? "west" : "east"}`,
+      size: [copingWidth, 36, wingDepth - 2 * copingWidth],
+      position: [wingCenterX + sign * (wingWidth - copingWidth) / 2, serviceReturn.maxYMm - 18, wingCenterZ],
+      material: resources.roof, parent: returnGroup,
+    });
+  }
   eastWindows.forEach((window) => addWindow(returnGroup, resources, geometry, window, style));
 
   const entryGroup = addArchitectureRiseEntrance({
@@ -445,7 +458,7 @@ const addArchitectureContext = (
     door: layout.door,
     groundYmm: geometry.ground.y,
     frontFacadeZmm: geometry.facade.frontFacadeZ,
-    materials: { door: resources.door, stone: resources.trim, base: resources.base },
+    materials: { door: resources.door, stone: resources.trim, base: resources.base, glass: resources.glass },
     addBox,
   });
   entryGroup.userData.resources = resources;
@@ -665,20 +678,15 @@ export function createArchitectureRiseGroup(
   const frontWindows = layout.windows.filter((window): window is ArchitectureRiseFrontWindow =>
     window.elevation === "front",
   );
-  const lowestWindowSillY = Math.min(...frontWindows.map((window) =>
-    window.centerYMm - window.openingHeightMm / 2,
-  ));
-  const baseStoneTopY = Math.min(
-    geometry.ground.y + style.base.heightAboveGroundMm,
-    lowestWindowSillY - style.window.outerSillThicknessMm - 8,
-  );
   const facadeQuietZones = collectCanonicalFacadeQuietZones(
     geometry.getArchitectureFocusChartCells,
     geometry.getArchitectureFocusChartBars,
     geometry.getArchitectureFacadeFineDetailPieces,
     style.masonry.quietZoneMarginMm,
   );
-  const mainOpenings: FacadeOpening[] = [
+  const baseStoneTopY = Math.min(geometry.ground.y + style.base.heightAboveGroundMm,
+    ...facadeQuietZones.map(zone => zone.minYMm - 80));
+  const mainOpenings: ArchitectureRiseWallOpening[] = [
     ...frontWindows.map((window) => ({
       id: window.id,
       centerHorizontalMm: window.centerXMm,
@@ -698,6 +706,8 @@ export function createArchitectureRiseGroup(
   mainFacadeShell.name = "architecture-rise-main-facade-shell";
   mainFacadeShell.userData.resources = resources;
   root.add(mainFacadeShell);
+  const facade = layout.mainFacade;
+  const wallThickness = 160;
   addSegmentedWall(mainFacadeShell, resources, {
     name: "architecture-rise-main-facade-wall",
     horizontalMinMm: layout.mainFacade.minXMm,
@@ -705,7 +715,7 @@ export function createArchitectureRiseGroup(
     verticalMinMm: layout.mainFacade.minYMm,
     verticalMaxMm: layout.mainFacade.maxYMm,
     depthMinMm: layout.mainFacade.frontZMm,
-    depthMaxMm: layout.mainFacade.backZMm,
+    depthMaxMm: facade.frontZMm + wallThickness,
     openings: mainOpenings,
     horizontalAxis: "x",
     primaryMeshName: "architecture-rise-primary-facade",
@@ -714,15 +724,68 @@ export function createArchitectureRiseGroup(
     brickStyle: style.masonry,
   });
 
-  const parapet = addBox({
-    name: "architecture-rise-roof-parapet",
-    size: [geometry.building.width, geometry.building.topHeight, geometry.building.depth],
-    position: [geometry.building.center.x, geometry.facade.mainBodyTopY + geometry.building.topHeight / 2, geometry.building.center.z],
-    material: resources.roof,
-    parent: root,
+  for (const east of [false, true]) {
+    addSegmentedWall(mainFacadeShell, resources, {
+      name: `architecture-rise-${east ? "east" : "west"}-flank`,
+      horizontalMinMm: facade.frontZMm + wallThickness,
+      horizontalMaxMm: facade.backZMm - wallThickness,
+      verticalMinMm: facade.minYMm,
+      verticalMaxMm: facade.maxYMm,
+      depthMinMm: east ? facade.maxXMm - wallThickness : facade.minXMm,
+      depthMaxMm: east ? facade.maxXMm : facade.minXMm + wallThickness,
+      openings: [], horizontalAxis: "z",
+      baseStoneTopMm: baseStoneTopY, brickStyle: style.masonry,
+    });
+  }
+  const rearWall = new THREE.Group();
+  rearWall.name = "architecture-rise-rear-wall";
+  rearWall.userData.resources = resources;
+  root.add(rearWall);
+  const rearOpenings = getArchitectureRiseRearOpenings(layout);
+  addSegmentedWall(rearWall, resources, {
+    name: "architecture-rise-rear-wall",
+    horizontalMinMm: facade.minXMm, horizontalMaxMm: facade.maxXMm,
+    verticalMinMm: facade.minYMm, verticalMaxMm: facade.maxYMm,
+    depthMinMm: facade.backZMm - wallThickness, depthMaxMm: facade.backZMm,
+    openings: rearOpenings, horizontalAxis: "x",
+    baseStoneTopMm: baseStoneTopY, brickStyle: style.masonry,
   });
-  parapet.castShadow = true;
-  parapet.receiveShadow = true;
+  addArchitectureRiseRearJoinery({
+    parent: root, openings: rearOpenings, rearZMm: facade.backZMm, addBox,
+    materials: { stone: resources.roof, timber: resources.door, glass: resources.glass },
+  });
+
+  const copingHeight = 60;
+  const wallHeight = geometry.building.topHeight - copingHeight;
+  const parapetCenterY = geometry.facade.mainBodyTopY + wallHeight / 2;
+  const parapetThickness = 160;
+  const panelInset = 98;
+  const parapetDepth = geometry.building.depth - 2 * parapetThickness;
+  for (const rear of [false, true]) {
+    const parapet = addBox({
+      name: rear ? "architecture-rise-roof-parapet-rear" : "architecture-rise-roof-parapet",
+      size: [geometry.building.width, wallHeight, rear ? parapetThickness : parapetThickness - panelInset],
+      position: [0, parapetCenterY, rear ? facade.backZMm - parapetThickness / 2 : front + (parapetThickness + panelInset) / 2],
+      material: resources.roof, parent: root,
+    });
+    parapet.castShadow = true;
+    parapet.receiveShadow = true;
+  }
+  for (const side of [-1, 1]) {
+    addBox({
+      name: `architecture-rise-roof-parapet-${side < 0 ? "west" : "east"}`,
+      size: [parapetThickness, wallHeight, parapetDepth],
+      position: [side * (geometry.building.width - parapetThickness) / 2, parapetCenterY, geometry.building.center.z],
+      material: resources.roof, parent: root,
+    });
+  }
+  const deck = addBox({
+    name: "architecture-rise-roof-deck",
+    size: [geometry.building.width - 2 * parapetThickness, 80, parapetDepth],
+    position: [0, geometry.facade.mainBodyTopY + geometry.building.topHeight / 2 - 40, geometry.building.center.z],
+    material: resources.pavement, parent: root,
+  });
+  deck.receiveShadow = true;
 
   const masonryDetail = new THREE.Group();
   masonryDetail.name = "architecture-rise-masonry-relief";
@@ -730,158 +793,84 @@ export function createArchitectureRiseGroup(
   root.add(masonryDetail);
   const halfWidth = geometry.building.width / 2;
   const corniceY = geometry.facade.mainBodyTopY - 20;
-  const cornice = {
-    width: geometry.building.width,
-    height: style.cornice.bandHeightMm,
-    depth: style.cornice.projectionMm,
-  };
-  addBox({
-    name: "architecture-rise-cornice-front",
-    size: [cornice.width, cornice.height, cornice.depth],
-    position: [0, corniceY, front + 20],
-    material: resources.trim,
-    parent: masonryDetail,
+  const bedY = corniceY - style.cornice.bandHeightMm / 2 - 30;
+  const friezeY = bedY + 48;
+  const soffitY = friezeY + style.cornice.bracketHeightMm;
+  const reach = style.cornice.projectionMm * 0.62;
+  const corniceTopY = soffitY + 70;
+  addArchitectureRiseCorniceProfile({
+    parent: masonryDetail, facade, material: resources.trim,
+    names: ["architecture-rise-cornice-underband", "architecture-rise-cornice-underband-return-west",
+      "architecture-rise-cornice-underband-back", "architecture-rise-cornice-underband-return-east"],
+    profile: [[bedY, -10], [bedY, 27], [bedY + 12, 42], [bedY + 24, 42],
+      [bedY + 34, 59], [friezeY, 59], [friezeY, 26]],
   });
-  addBox({
-    name: "architecture-rise-cornice-underband",
-    size: [cornice.width + 60, 30, cornice.depth + 40],
-    position: [0, corniceY - cornice.height / 2 - 15, front + 20],
-    material: resources.trim,
-    parent: masonryDetail,
+  // A recessed frieze sits behind the pale projecting corbels under the corona.
+  addArchitectureRiseCorniceProfile({
+    parent: masonryDetail, facade, material: resources.stoneJoint,
+    names: ["architecture-rise-cornice-front", "architecture-rise-cornice-return-west",
+      "architecture-rise-cornice-back", "architecture-rise-cornice-return-east"],
+    profile: [[friezeY, 26], [soffitY, 26]],
   });
-  [-1, 1].forEach((sign) =>
-    addBox({
-      name: `architecture-rise-cornice-underband-return-${sign < 0 ? "west" : "east"}`,
-      size: [cornice.depth + 40, 30, geometry.building.depth + 40],
-      position: [
-        sign * (halfWidth + 30 - (cornice.depth + 40) / 2),
-        corniceY - cornice.height / 2 - 15,
-        geometry.building.center.z,
-      ],
-      material: resources.trim,
-      parent: masonryDetail,
-    }),
-  );
-  addBox({
-    name: "architecture-rise-cornice-underband-back",
-    size: [cornice.width + 60, 30, 100],
-    position: [0, corniceY - cornice.height / 2 - 15, geometry.facade.backFacadeZ + 20],
-    material: resources.trim,
-    parent: masonryDetail,
-  });
-  addBox({
-    name: "architecture-rise-cornice-cap",
-    size: [cornice.width + 120, 32, cornice.depth + 60],
-    position: [0, corniceY + cornice.height / 2 + 16, front + 20],
-    material: resources.trim,
-    parent: masonryDetail,
-  });
-  [-1, 1].forEach((sign) =>
-    addBox({
-      name: `architecture-rise-cornice-cap-return-${sign < 0 ? "west" : "east"}`,
-      size: [cornice.depth + 60, 32, geometry.building.depth + 60],
-      position: [
-        sign * (halfWidth + 60 - (cornice.depth + 60) / 2),
-        corniceY + cornice.height / 2 + 16,
-        geometry.building.center.z,
-      ],
-      material: resources.trim,
-      parent: masonryDetail,
-    }),
-  );
-  addBox({
-    name: "architecture-rise-cornice-cap-back",
-    size: [cornice.width + 120, 32, 120],
-    position: [0, corniceY + cornice.height / 2 + 16, geometry.facade.backFacadeZ + 40],
-    material: resources.trim,
-    parent: masonryDetail,
-  });
-  [-1, 1].forEach((sign) =>
-    addBox({
-      name: `architecture-rise-cornice-return-${sign < 0 ? "west" : "east"}`,
-      size: [cornice.depth, cornice.height, geometry.building.depth + 32],
-      position: [sign * (halfWidth - cornice.depth / 2), corniceY, geometry.building.center.z],
-      material: resources.trim,
-      parent: masonryDetail,
-    }),
-  );
-  addBox({
-    name: "architecture-rise-cornice-back",
-    size: [cornice.width, cornice.height, 80],
-    position: [0, corniceY, geometry.facade.backFacadeZ + 40],
-    material: resources.trim,
-    parent: masonryDetail,
+  addArchitectureRiseCorniceProfile({
+    parent: masonryDetail, facade, material: resources.trim,
+    names: ["architecture-rise-cornice-cap", "architecture-rise-cornice-cap-return-west",
+      "architecture-rise-cornice-cap-back", "architecture-rise-cornice-cap-return-east"],
+    profile: [[soffitY, 26], [soffitY, reach], [soffitY + 27, reach],
+      [soffitY + 44, reach + 18], [soffitY + 58, reach + 18], [corniceTopY, reach - 2],
+      [corniceTopY, -panelInset]],
   });
   addArchitectureRiseCorniceBrackets({
     parent: masonryDetail,
     frontFacadeZMm: front,
     facadeWidthMm: geometry.building.width,
-    corniceCenterYMm: corniceY,
-    layout,
-    style,
-    material: resources.trim,
-    bracketGeometry: resources.corniceBracketGeometry,
-    corniceDepthMm: cornice.depth,
+    corniceCenterYMm: corniceY, soffitYMm: soffitY,
+    layout, style, material: resources.trim, bracketGeometry: resources.corniceBracketGeometry,
   });
 
-  const parapetCenterY = geometry.facade.mainBodyTopY + geometry.building.topHeight / 2;
-  [-1, 1].forEach((sign) => {
-    const panelX = sign * geometry.building.width / 4;
-    const panelWidth = geometry.building.width / 2 - 240;
-    const panelHeight = geometry.building.topHeight - 210;
-    const panelZ = front - 24;
-    [-1, 1].forEach((edge) => {
-      addBox({
-        name: `architecture-rise-parapet-panel-${sign}-horizontal-${edge}`,
-        size: [panelWidth, 22, 42],
-        position: [panelX, parapetCenterY + edge * panelHeight / 2, panelZ],
-        material: resources.trim,
-        parent: masonryDetail,
-      });
-      addBox({
-        name: `architecture-rise-parapet-panel-${sign}-vertical-${edge}`,
-        size: [22, panelHeight, 42],
-        position: [panelX + edge * panelWidth / 2, parapetCenterY, panelZ],
-        material: resources.trim,
-        parent: masonryDetail,
-      });
+  const wallTopY = geometry.facade.parapetTopY - copingHeight;
+  const panelBottomY = corniceTopY;
+  const railHeight = style.cornice.parapetCourseHeightMm * 0.7;
+  for (const upper of [false, true]) {
+    addBox({
+      name: `architecture-rise-parapet-${upper ? "upper" : "lower"}-rail`,
+      size: [geometry.building.width, railHeight, panelInset],
+      position: [0, upper ? wallTopY - railHeight / 2 : panelBottomY + railHeight / 2, front + panelInset / 2],
+      material: resources.trim, parent: masonryDetail,
     });
-  });
+  }
+  for (const pier of [-1, 0, 1]) {
+    const width = pier === 0 ? 150 : 184;
+    addBox({
+      name: `architecture-rise-parapet-panel-pier-${pier}`,
+      size: [width, wallTopY - panelBottomY - 2 * railHeight, panelInset],
+      position: [pier * (geometry.building.width - width) / 2, (wallTopY + panelBottomY) / 2, front + panelInset / 2],
+      material: resources.trim, parent: masonryDetail,
+    });
+  }
 
-  const copingY = geometry.facade.parapetTopY - 30;
-  addBox({
-    name: "architecture-rise-roof-coping-front",
-    size: [geometry.building.width + 80, 60, 100],
-    position: [0, copingY, front - 20],
-    material: resources.trim,
-    parent: masonryDetail,
-  });
-  addBox({
-    name: "architecture-rise-roof-coping-back",
-    size: [geometry.building.width + 80, 60, 100],
-    position: [0, copingY, geometry.facade.backFacadeZ + 20],
-    material: resources.trim,
-    parent: masonryDetail,
-  });
-  [-1, 1].forEach((sign) =>
+  // The coping overhangs both faces of the parapet. The long pieces own the
+  // corner squares, so each exposed roof point has a single top surface.
+  const copingOut = 35;
+  const copingIn = 12;
+  const copingDepth = copingOut + parapetThickness + copingIn;
+  const copingY = wallTopY + copingHeight / 2;
+  for (const rear of [false, true]) {
+    addBox({
+      name: `architecture-rise-roof-coping-${rear ? "back" : "front"}`,
+      size: [geometry.building.width + 2 * copingOut, copingHeight, copingDepth],
+      position: [0, copingY, rear ? facade.backZMm + copingOut - copingDepth / 2 : front - copingOut + copingDepth / 2],
+      material: resources.trim, parent: masonryDetail,
+    });
+  }
+  for (const sign of [-1, 1]) {
     addBox({
       name: `architecture-rise-roof-coping-return-${sign}`,
-      size: [100, 60, geometry.building.depth + 40],
-      position: [sign * halfWidth, copingY, geometry.building.center.z],
-      material: resources.trim,
-      parent: masonryDetail,
-    }),
-  );
-  addArchitectureRiseParapetPierCaps({
-    parent: masonryDetail,
-    addBox,
-    facadeWidthMm: geometry.building.width,
-    parapetTopYMm: geometry.facade.parapetTopY,
-    frontFacadeZMm: front,
-    material: resources.trim,
-    style: style.cornice,
-  });
-
+      size: [copingDepth, copingHeight, geometry.building.depth - 2 * (parapetThickness + copingIn)],
+      position: [sign * (halfWidth + copingOut - copingDepth / 2), copingY, geometry.building.center.z],
+      material: resources.trim, parent: masonryDetail,
+    });
+  }
   [-1, 1].forEach((sign) =>
     addBox({
       name: `architecture-rise-facade-corner-pilaster-${sign < 0 ? "left" : "right"}`,
@@ -900,16 +889,6 @@ export function createArchitectureRiseGroup(
     material: resources.trim,
     style: style.base,
   });
-  const stringCourseY = baseStoneTopY;
-  [-1, 1].forEach((sign) =>
-    addBox({
-      name: `architecture-rise-base-string-course-${sign < 0 ? "left" : "right"}`,
-      size: [halfWidth - layout.door.openingWidthMm / 2, 28, 64],
-      position: [sign * (halfWidth + layout.door.openingWidthMm / 2) / 2, stringCourseY, front - 28],
-      material: resources.trim,
-      parent: masonryDetail,
-    }),
-  );
   addBox({
     name: "architecture-rise-base-foot",
     size: [geometry.building.width + 120, 48, 240],
@@ -920,13 +899,10 @@ export function createArchitectureRiseGroup(
   addArchitectureRiseStoneBaseJoints({
     parent: masonryDetail,
     addBox,
-    layout,
-    groundYmm: geometry.ground.y,
+    facade, frontOpenings: mainOpenings, rearOpenings,
     baseTopYmm: baseStoneTopY,
-    facadeFrontZmm: layout.mainFacade.frontZMm,
-    facadeBackZmm: layout.mainFacade.backZMm,
-    facadeWidthMm: geometry.building.width,
     material: resources.stoneJoint,
+    trim: resources.trim,
     style: style.base,
   });
 

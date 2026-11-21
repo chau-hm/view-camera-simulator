@@ -10,6 +10,14 @@ export type ArchitectureRiseMmBounds = Readonly<{
   maxYMm: number;
 }>;
 
+export type ArchitectureRiseWallOpening = Readonly<{
+  id: string;
+  centerHorizontalMm: number;
+  centerVerticalMm: number;
+  widthMm: number;
+  heightMm: number;
+}>;
+
 export type ArchitectureRiseMasonryAxis = "x" | "z";
 
 export function expandArchitectureRiseBounds(
@@ -112,85 +120,97 @@ export function isInsideArchitectureRiseQuietZone(
   );
 }
 
+type Span = readonly [number, number];
+
+function masonrySpans(min: number, max: number, openings: Span[]): Span[] {
+  const spans: Span[] = [];
+  let edge = min;
+  for (const [left, right] of openings.sort((a, b) => a[0] - b[0])) {
+    if (right <= edge || left >= max) continue;
+    if (left > edge) spans.push([edge, left]);
+    edge = Math.max(edge, right);
+  }
+  if (edge < max) spans.push([edge, max]);
+  return spans;
+}
+
 export function addArchitectureRiseStoneBaseJoints(options: {
   parent: THREE.Group;
   addBox: ArchitectureRiseWindowFactory;
-  layout: ArchitectureRisePresentation["layout"];
-  groundYmm: number;
+  facade: ArchitectureRisePresentation["layout"]["mainFacade"];
+  frontOpenings: readonly ArchitectureRiseWallOpening[];
+  rearOpenings: readonly ArchitectureRiseWallOpening[];
   baseTopYmm: number;
-  facadeFrontZmm: number;
-  facadeBackZmm: number;
-  facadeWidthMm: number;
   material: THREE.Material;
+  trim: THREE.Material;
   style: ArchitectureRiseDetailStyle["base"];
 }): void {
-  const {
-    parent,
-    addBox,
-    layout,
-    groundYmm,
-    baseTopYmm,
-    facadeFrontZmm,
-    facadeBackZmm,
-    facadeWidthMm,
-    material,
-    style,
-  } = options;
-  const facadeMinX = -facadeWidthMm / 2;
-  const facadeMaxX = facadeWidthMm / 2;
-  const doorMinX = layout.door.centerXMm - layout.door.openingWidthMm / 2;
-  const doorMaxX = layout.door.centerXMm + layout.door.openingWidthMm / 2;
-  const jointZ = facadeFrontZmm - 3;
-  const jointDepth = 6;
+  const { facade, frontOpenings, rearOpenings, baseTopYmm, material, trim, style, parent, addBox } = options;
+  const { minXMm, maxXMm, frontZMm, backZMm, minYMm } = facade;
+  const faces = [
+    { name: "front", alongX: true, outward: -1, plane: frontZMm, min: minXMm, max: maxXMm, openings: frontOpenings },
+    { name: "rear", alongX: true, outward: 1, plane: backZMm, min: minXMm, max: maxXMm, openings: rearOpenings },
+    { name: "west", alongX: false, outward: -1, plane: minXMm, min: frontZMm, max: backZMm, openings: [] },
+    { name: "east", alongX: false, outward: 1, plane: maxXMm, min: frontZMm, max: backZMm, openings: [] },
+  ];
+  // The flush lime joints share one draw. Clip their actual triangles to every
+  // opening so mortar never stretches over a pane, even when seen obliquely.
+  const vertices: number[] = [];
+  const indices: number[] = [];
   const joint = style.jointWidthMm;
-  const course = style.blockCourseHeightMm;
-  const depth = facadeBackZmm - facadeFrontZmm + 8;
-  const depthCenter = (facadeBackZmm + facadeFrontZmm) / 2;
-  const horizontalSpans = [
-    [facadeMinX, doorMinX],
-    [doorMaxX, facadeMaxX],
-  ] as const;
+  for (const face of faces) {
+    const rects = face.openings.map(o => ({
+      left: o.centerHorizontalMm - o.widthMm / 2, right: o.centerHorizontalMm + o.widthMm / 2,
+      bottom: o.centerVerticalMm - o.heightMm / 2, top: o.centerVerticalMm + o.heightMm / 2,
+    }));
+    function patch(left: number, right: number, bottom: number, top: number) {
+      const offset = vertices.length / 3;
+      const plane = face.plane + face.outward * 1.5;
+      for (const [h, y] of [[left, bottom], [right, bottom], [right, top], [left, top]] as const) {
+        vertices.push((face.alongX ? h : plane) / 1000, y / 1000, (face.alongX ? plane : h) / 1000);
+      }
+      const forward = face.alongX ? face.outward > 0 : face.outward < 0;
+      for (const i of forward ? [0, 1, 2, 0, 2, 3] : [0, 2, 1, 0, 3, 2]) indices.push(offset + i);
+    }
+    const horizontalSpans = (bottom: number, top: number) => masonrySpans(face.min, face.max,
+      rects.filter(o => o.top > bottom && o.bottom < top).map(o => [o.left, o.right]));
+    let row = 0;
+    for (let bottom = minYMm; bottom < baseTopYmm; bottom += style.blockCourseHeightMm) {
+      const top = Math.min(bottom + style.blockCourseHeightMm, baseTopYmm);
+      const bedBottom = Math.max(bottom, top - joint);
+      for (const [left, right] of horizontalSpans(bedBottom, top)) patch(left, right, bedBottom, top);
+      const firstJoint = face.min + style.blockWidthMm * (row % 2 === 0 ? 0.5 : 1);
+      for (let h = firstJoint; h + joint < face.max; h += style.blockWidthMm) {
+        const cuts: Span[] = rects.filter(o => o.right > h && o.left < h + joint).map(o => [o.bottom, o.top]);
+        for (const [low, high] of masonrySpans(bottom, bedBottom, cuts)) patch(h, h + joint, low, high);
+      }
+      row++;
+    }
 
-  let courseIndex = 0;
-  for (let y = groundYmm + course; y < baseTopYmm; y += course) {
-    const faceY = y - joint / 2;
-    horizontalSpans.forEach(([spanMin, spanMax], spanIndex) => {
-      if (spanMax <= spanMin) return;
+    // Front and rear caps own the projecting corner squares. Side returns
+    // abut them along Z. The lower stair light interrupts the rear cap.
+    const capHeight = 80;
+    const projection = 55;
+    for (const [start, end] of horizontalSpans(baseTopYmm - capHeight / 2, baseTopYmm + capHeight / 2)) {
+      const left = start - (face.alongX && start === face.min ? projection : 0);
+      const right = end + (face.alongX && end === face.max ? projection : 0);
+      const h = (left + right) / 2;
+      const d = face.plane + face.outward * projection / 2;
       addBox({
-        name: `architecture-rise-stone-base-bed-joint-${courseIndex + 1}-${spanIndex + 1}`,
-        size: [spanMax - spanMin, joint, jointDepth],
-        position: [(spanMin + spanMax) / 2, faceY, jointZ],
-        material,
-        parent,
-      });
-    });
-
-    const courseBottom = groundYmm + courseIndex * course;
-    const courseTop = Math.min(courseBottom + course, baseTopYmm);
-    const verticalJointHeight = Math.max(0, courseTop - courseBottom - joint * 2);
-    const staggerMm = courseIndex % 2 === 0 ? style.blockWidthMm / 2 : 0;
-    for (let x = facadeMinX + style.blockWidthMm + staggerMm; x < facadeMaxX; x += style.blockWidthMm) {
-      if (x > doorMinX - joint && x < doorMaxX + joint) continue;
-      addBox({
-        name: `architecture-rise-stone-base-head-joint-${courseIndex + 1}-${Math.round(x)}`,
-        size: [joint, verticalJointHeight, jointDepth],
-        position: [x, courseBottom + (courseTop - courseBottom) / 2, jointZ],
-        material,
-        parent,
+        name: `architecture-rise-base-string-course-${face.name}-${start}`,
+        size: face.alongX ? [right - left, capHeight, projection] : [projection, capHeight, right - left],
+        position: face.alongX ? [h, baseTopYmm, d] : [d, baseTopYmm, h],
+        material: trim, parent,
       });
     }
-    courseIndex += 1;
   }
-
-  parent.userData.stoneBaseCourses = courseIndex + 1;
-  parent.userData.stoneBaseJointPattern = {
-    blockWidthMm: style.blockWidthMm,
-    blockCourseHeightMm: style.blockCourseHeightMm,
-    jointWidthMm: joint,
-    frontWorldAlignedMm: [facadeMinX, facadeMinX + style.blockWidthMm / 2],
-    throughDepthMm: depth,
-    throughDepthCenterMm: depthCenter,
-  };
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  const joints = new THREE.Mesh(geometry, material);
+  joints.name = "architecture-rise-stone-base-joints";
+  parent.add(joints);
 }
 
 export function addArchitectureRiseCornerQuoins(options: {
@@ -204,21 +224,21 @@ export function addArchitectureRiseCornerQuoins(options: {
 }): void {
   const { parent, addBox, geometry, facadeFrontZmm, baseTopYmm, material, style } = options;
   const halfWidth = geometry.building.width / 2;
-  const blockHeight = style.blockCourseHeightMm * 1.8;
-  const blockWidth = 112;
-  const blockDepth = 92;
+  const blockHeight = style.blockCourseHeightMm;
   const joint = Math.max(style.jointWidthMm, 8);
   const startY = baseTopYmm + joint / 2;
   const endY = geometry.facade.mainBodyTopY - style.jointWidthMm;
   let courseIndex = 0;
   for (let minY = startY; minY + blockHeight <= endY; minY += blockHeight + joint) {
     const height = blockHeight;
+    const blockWidth = courseIndex % 2 === 0 ? 164 : 116;
+    const blockDepth = courseIndex % 2 === 0 ? 98 : 146;
     [-1, 1].forEach((sign) => {
-      const x = sign * (halfWidth - blockWidth / 2 + 2);
+      const x = sign * (halfWidth - blockWidth / 2 + 12);
       addBox({
         name: `architecture-rise-corner-quoin-${sign < 0 ? "west" : "east"}-${courseIndex + 1}`,
         size: [blockWidth, height, blockDepth],
-        position: [x, minY + height / 2, facadeFrontZmm - 28],
+        position: [x, minY + height / 2, facadeFrontZmm - 52 + blockDepth / 2],
         material,
         parent,
       });
