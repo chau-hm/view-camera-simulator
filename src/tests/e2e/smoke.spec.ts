@@ -9,22 +9,11 @@ test("smoke: app boots at home", async ({ page }) => {
 });
 
 test("smoke: Architecture Rise navigates to contentful WebGL Ground Glass controls", async ({ page }) => {
+  // Diagnostics must be enabled before Ground Glass mounts so its first completed frame is observed.
   // First WebGL RTT readiness varies substantially on hosted Linux runners.
   test.setTimeout(150_000);
-  await page.goto("/");
-  await page.getByTestId("landing-hero-cta").click();
-  await expect(page).toHaveURL(/\/scenes$/);
-
-  const architectureRise = page
-    .getByRole("article")
-    .filter({ has: page.getByRole("heading", { name: "Architecture Rise" }) });
-  await architectureRise.getByRole("link", { name: "Open Scene" }).click();
-  await expect(page).toHaveURL(/\/simulator\/free\/architecture-rise$/);
-  await page.evaluate(() => {
-    const url = new URL(window.location.href);
-    url.searchParams.set("rttDiagnostics", "1");
-    window.history.replaceState(window.history.state, "", url);
-  });
+  await page.goto("/simulator/free/architecture-rise?rttDiagnostics=1");
+  await expect(page).toHaveURL(/\/simulator\/free\/architecture-rise\?rttDiagnostics=1(?:&|$)/);
 
   const observer = page.getByTestId("scene-canvas");
   await expect(observer).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 60_000 });
