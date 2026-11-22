@@ -144,7 +144,7 @@ describe("Architecture + Foreground foundation", () => {
     expect(group?.name).toBe("architecture-foreground-subject");
     expect(group?.getObjectByName("architecture-foreground-building")).toBeDefined();
     expect(group?.getObjectByName("architecture-foreground-ground")).toBeDefined();
-    expect(group?.getObjectByName("architecture-foreground-window-1-1-recess")).toBeDefined();
+    expect(group?.getObjectByName("architecture-foreground-front-window-stone")).toBeDefined();
     expect(group?.getObjectByName("architecture-foreground-forecourt-structure")).toBeDefined();
     disposeRegisteredRttSubject(architectureForegroundScene.id, group!);
   });
