@@ -1,28 +1,30 @@
 # Architecture Rise Seeded Materials — Wave 2
 
+Evidence and canonical baselines are refreshed against `origin/main` at `ee2d18bb3064e66847a33c7fcdb47289bee4b01d`, which includes PR #352.
+
 ## Objective and scope
 
 Architecture Rise Free Mode now uses the existing Scene Variation schema v1 contract to resolve deterministic, coordinated finishes for its existing modeled surfaces. Regenerate changes the material appearance family while the building geometry, teaching targets, lighting, and camera calibration remain fixed.
 
 The scene previously had no Scene Variation capability, so Free Mode had no standard seed display or Regenerate Scene control. This work adds that existing UI path and threads the same descriptor through the registered Observer and Ground Glass subject factories. It does not modify scene publication configuration.
 
-This work covers material appearance only. The rear and side elevations remain less developed than the front elevation. The missing architectural features are a separate geometry project; they are not filled in or implied by the new materials.
+This work covers material appearance only. Its authoritative base now includes PR #352, which added a modeled rear elevation with window openings and joinery, a service door, and roof-deck/parapet continuity. Wave 2 adds no geometry; it applies the selected material family to the existing modeled surfaces. The front elevation remains more richly articulated than the rear and sides, so any remaining all-elevation refinement is separate geometry work.
 
 ## Geometry baseline and protected contracts
 
-The accepted Architecture Rise v2 presentation includes the segmented principal facade, world-aligned running-bond brick, front windows and surrounds, east service-return windows, stone base and joints, entrance, cornice, parapet, sidewalk, street details, focus chart, and fine-detail geometry. The existing [screen-space audit](../architecture/architecture-rise-v2-visual-gap-screen-space-audit.md) documents the front-facade detail and the remaining elevation-coverage gap.
+The current `origin/main` presentation includes PR #352's complete-building pass in addition to the segmented principal facade, world-aligned running-bond brick, front windows and surrounds, east service-return windows, stone base and joints, entrance, cornice, parapet, sidewalk, street details, focus chart, and fine-detail geometry. It now also has rear window openings and joinery, a service door, and roof-deck/parapet continuity. The earlier [screen-space audit](../architecture/architecture-rise-v2-visual-gap-screen-space-audit.md) predates PR #352 and is historical evidence for the former geometry baseline, not a description of the current rear elevation.
 
 Canonical and seeded subjects have the same mounted capacity:
 
 | Per subject | Canonical | Seeded |
 | --- | ---: | ---: |
-| Meshes / renderable meshes | 465 / 465 | 465 / 465 |
-| Unique geometries | 73 | 73 |
+| Meshes / renderable meshes | 474 / 474 | 474 / 474 |
+| Unique geometries | 63 | 63 |
 | Unique materials | 17 | 17 |
 | Unique textures | 18 | 18 |
-| Triangles / effective triangles | 6,242 / 6,242 | 6,242 / 6,242 |
+| Triangles / effective triangles | 6,734 / 6,734 | 6,734 / 6,734 |
 
-The full mounted-geometry signature is unchanged. The canonical focus target remains `(0, 900, 8890) mm`; composition bounds remain fixed at building-top `(-900, 2920, 8500)–(900, 3730, 10500) mm` and main-body `(-1400, -1000, 8300)–(1400, 2600, 11500) mm`.
+The current-main mounted-geometry signature is `280080d8806991845b56aaf2f2ea2ad5aba6b0407213bbcc29fdbf168e9f4da4`; canonical and seeded subjects match it. The canonical focus target remains `(0, 900, 8890) mm`; composition bounds remain fixed at building-top `(-900, 2920, 8500)–(900, 3730, 10500) mm` and main-body `(-1400, -1000, 8300)–(1400, 2600, 11500) mm`.
 
 The existing physical-lens mounted-geometry suite passed: 111 of 111 samples visible in each of six camera states (666 rays total), with its intentional obstruction negative control detected. The procedural-detail suite also detected its separate obstruction negative control.
 
@@ -63,13 +65,13 @@ With no descriptor, the brick implementation follows its original palette, fixed
 
 Canonical regression signatures remain:
 
-- Mounted geometry SHA-256: `317e463d8abc79bdad6cb4eb2e8dd0b9bd32c77fa46fe2b220efd88801563490`
-- Canonical material snapshot SHA-256: `5181f7188b35351e91c88af56b467bd94d41d1cbc1711ac4b6a52525f8b24a16`
-- Brick albedo bytes SHA-256: `ebc0d5d6eea0c8ee4c5a74e29cbe514959361a87c9748a9fdcc78ee58ae2680d`
+- Mounted geometry SHA-256 on current `origin/main`: `280080d8806991845b56aaf2f2ea2ad5aba6b0407213bbcc29fdbf168e9f4da4`
+- Canonical material snapshot SHA-256 on current `origin/main`: `eb7c64c6ce11ba1330fd533b6a16d6b68ad251e8b039fe0b91865ecf31ce71bc`
+- Brick albedo bytes SHA-256 on current `origin/main`: `1640a923fda3bef2da1123a633e02ea4f4962e6e116e4bd821ddf81cd6d27fc4`
 - Brick roughness bytes SHA-256: `12ec52ae47528dded4a86eaeddf6287acce3790de9c55ca7e9792339bbe9bc98`
 - Brick normal bytes SHA-256: `a03c6cbb2779c57f1ad4f7f2c50a1d1cc2ddd367720c6d38ec9c6401eea00cb2`
 
-The tests compare same-seed map bytes from independent material construction and verify distinct families resolve to different valid material snapshots. No shared procedural generator defaults or other scenes' seed contracts were changed.
+The tests compare same-seed map bytes from independent material construction and verify distinct families resolve to different valid material snapshots. The canonical hashes above are the current-main values after PR #352; they remain unchanged by this branch. No shared procedural generator defaults or other scenes' seed contracts were changed.
 
 ## Observer, Ground Glass, and resource ownership
 
@@ -93,7 +95,7 @@ At normal Observer size, the red, brown, light-clay, and dark-fired families are
 
 ### Existing east return and rear coverage
 
-The east service-return capture shows the seeded masonry family continuing onto the existing side elevation and its modeled windows. The rear diagnostic shows the currently modeled rear surfaces, including its simpler wall treatment. No rear windows or other absent geometry were added; the sheet is evidence of existing material coverage, not a completeness claim.
+The east service-return capture shows the seeded masonry family continuing onto the existing side elevation and its modeled windows. The rear diagnostic shows the current main-branch rear wall, rear window assemblies, service door, and roofline, with the same selected material family. Those elements arrived in PR #352; Wave 2 changed their appearance only. The sheet documents existing material coverage, not a claim that every elevation has the same ornamental detail as the front.
 
 ![East service-return and rear diagnostic captures](evidence/architecture-rise-seeded-materials-wave2/observer-side-and-rear-coverage.png)
 
@@ -101,7 +103,7 @@ The east service-return capture shows the seeded masonry family continuing onto 
 
 For seeds `284719` (traditional red), `3079748268` (light clay), and `2130322642` (dark fired), normal f/11 Raw and Upright captures used focus `8890 mm`, Front Rise `0 mm`, and DOF bypass disabled. The building facade and focus chart are visible; the chart remains distinguishable against all three material families. Request IDs matched completed-frame IDs for every saved frame. The existing raster-orientation regression sampled the Architecture Rise raster and passed the Raw/Upright X/Y mapping checks.
 
-The f/5.6 Raw and Front Rise 20 mm Raw frames are supporting views for seed `284719`, not replacements for the neutral f/11 comparisons. The f/5.6 support image is noticeably brighter in the existing optical presentation; no lighting, exposure, optics, or shader changes were made to adjust it. Raw orientation is not Raw RTT DOF bypass: all saved qualification frames have DOF processing enabled and bypass disabled.
+The f/5.6 Raw and Front Rise 20 mm Raw frames are supporting views for seed `284719`, not replacements for the f/11 comparisons. At f/5.6, the existing photographic presentation is markedly brighter and visibly washed out, so that frame is not used to qualify material color. No lighting, exposure, optics, or shader changes were made to adjust it. Raw orientation is not Raw RTT DOF bypass: all saved qualification frames have DOF processing enabled and bypass disabled.
 
 ![Three-seed Ground Glass Raw and Upright comparisons, plus f/5.6 and Rise support views](evidence/architecture-rise-seeded-materials-wave2/ground-glass-three-seed-orientations.png)
 
@@ -109,11 +111,11 @@ The capture manifest records source-image hashes, seed/schema identity, focus an
 
 ## Regenerate and URL behavior
 
-Production Chromium checks passed for direct seeded URLs, seed/schema v1 identity, deterministic replay, Share URL, Regenerate, browser Back/Forward, Guided Mode query cleanup, and the `/view-camera-simulator/` deployment base. Regenerate changed the seed while preserving the measured Focus, Aperture, Rise, Observer camera position/orbit target, Ground Glass orientation, and live canvas/context identities. Ten successive Regenerate actions completed without replacing the renderer or RTT render-target generation.
+The root production Chromium suite passed 6/6 tests against a 1440 × 1000 viewport at DPR 1, including all 12 frozen seed captures, byte-identical replay for `284719`, east/rear views, camera-preserving Regenerate, ten successive Regenerate actions, three-family Ground Glass Raw/Upright at f/11 plus f/5.6 and Rise support views, and Guided Mode canonical behavior. The `/view-camera-simulator/` production suite passed 1/1 test for seeded URL, Share URL, Regenerate, and browser history. Regenerate changed the seed while preserving the measured Focus, Aperture, Rise, Observer camera position/orbit target, Ground Glass orientation, and live canvas/context identities. Ten successive Regenerate actions completed without replacing the renderer or RTT render-target generation.
 
 ## Validation and verdict
 
-Focused evidence passed for material-family resolution, deterministic texture bytes, canonical geometry and material signatures, brick-tile seam continuity across representative seeds, independent Observer/RTT ownership and disposal, the 666-ray mounted-geometry visibility suite, Raw/Upright raster mapping, three-family Ground Glass capture, fixed-seed Observer replay, Regenerate lifecycle, Guided Mode, and root/subpath URL behavior.
+Validation passed locally: `npm test -- --maxWorkers=4` (346 files, 4,257 tests), `npm run typecheck`, `npm run lint`, `npm run check:css`, and `npm run build`. The Architecture Rise mounted-geometry suite retained 111/111 visible samples in each of six camera states (666 rays total) and detected its obstruction negative control. Focused material, detail, and subject-registry tests passed 52/52; the production Chromium root suite passed 6/6, the `/view-camera-simulator/` suite passed 1/1, and the Raw/Upright orientation regression passed 2/2. The current-main Still-Life Studio publication switch remains unchanged; its stale catalog-test assertion was aligned with the existing false production flag and true qualification-mode override. Remote CI is reported in the PR handoff.
 
 **Technical qualification: PASS** — local regression and browser checks establish deterministic materials, unchanged geometry/teaching targets, canonical compatibility, and stable subject lifecycle. Final remote CI status is reported separately in the PR handoff.
 
@@ -123,6 +125,6 @@ Focused evidence passed for material-family resolution, deterministic texture by
 
 ## Known limitation and recommended follow-up
 
-Architecture Rise still has much richer front-facade detail than rear detail. This is a geometry coverage gap, not a material issue. Recommended separate work: **Architecture Rise — Rear and Side Procedural Geometry Completion**, covering rear wall structure and window assemblies, side-wall continuity, corner masonry, all-elevation architectural detailing, and roof/parapet continuity. That work should preserve the established focus-chart visibility and mounted-geometry contracts.
+Architecture Rise still has richer front-facade articulation than rear/side detail. PR #352 has already added rear openings and joinery, a service door, and roof-deck/parapet continuity. Any follow-up should first review the current 360-degree coverage and focus on remaining elevation articulation, side-wall transitions, and corner masonry rather than reimplementing those existing elements. Preserve focus-chart visibility and mounted-geometry contracts.
 
-Wave 2 does not complete the building's missing elevations and should not be described as doing so.
+Wave 2 does not add to or complete the geometry delivered by PR #352 and should not be described as doing so.
