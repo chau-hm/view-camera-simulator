@@ -2,10 +2,9 @@ import * as THREE from "three";
 import type { TableTiltSubjectDefinition } from "../scenes/tableTiltGeometry";
 import type { TableTiltPresentation } from "../scenes/presentation/tableTilt";
 import { toWorld } from "./rttUtils";
-import {
-  createFocusFriendlyMaterial,
-  disposeTeachingSubjectResources,
-} from "./TeachingMaterials";
+import { createProceduralSurfaceMaterial } from "./ProceduralSurfaceMaterials";
+import { disposeTeachingSubjectResources } from "./TeachingMaterials";
+import { ceramicGlaze, cupShell, easedBox, paperEdges } from "./table-tilt/TableTiltFinishes";
 
 const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180;
 
@@ -22,69 +21,29 @@ const addCup = (
   const { width, height, depth } = subject.dimensions;
   const radius = Math.min(width, depth) / 2;
   const detail = presentation.geometry.detailGeometry.cup;
-  const body = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      toWorld(radius),
-      toWorld(radius * detail.bottomRadiusRatio),
-      toWorld(height),
-      detail.bodyRadialSegments,
-    ),
-    standardMaterial(subject.materialHints.primary, 0.72),
-  );
+  const glaze = ceramicGlaze();
+  const body = new THREE.Mesh(cupShell(radius, height, detail.bodyRadialSegments), glaze);
   body.name = subject.semanticName;
-  body.position.y = toWorld(height / 2);
   parent.add(body);
 
-  const stripeMaterial = basicMaterial(subject.materialHints.detail);
-  detail.stripes.anglesDeg.forEach((angleDeg, index) => {
-    const angle = degreesToRadians(angleDeg);
-    const stripe = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        toWorld(detail.stripes.width),
-        toWorld(height * detail.stripes.heightRatio),
-        toWorld(detail.stripes.depth),
-      ),
-      stripeMaterial,
-    );
-    stripe.name = `${subject.semanticName}-stripe-${index + 1}`;
-    stripe.position.set(
-      toWorld(Math.sin(angle) * (radius + detail.stripes.surfaceGap)),
-      toWorld(height * detail.stripes.centerHeightRatio),
-      toWorld(-Math.cos(angle) * (radius + detail.stripes.surfaceGap)),
-    );
-    stripe.rotation.y = Math.PI - angle;
-    parent.add(stripe);
-  });
-
   const rim = new THREE.Mesh(
-    new THREE.TorusGeometry(
-      toWorld(radius + detail.rim.radiusOffset),
-      toWorld(detail.rim.tubeRadius),
-      detail.rim.radialSegments,
-      detail.rim.tubularSegments,
-    ),
-    standardMaterial(subject.materialHints.secondary, 0.68),
+    new THREE.TorusGeometry(toWorld(radius - 2.8), toWorld(2.8), 8, 40),
+    standardMaterial("#eddbc4", 0.52),
   );
   rim.name = `${subject.semanticName}-rim`;
-  rim.position.y = toWorld(height + detail.rim.heightOffset);
+  rim.position.y = toWorld(height - 3);
   rim.rotation.x = Math.PI / 2;
   parent.add(rim);
 
-  const handle = new THREE.Mesh(
-    new THREE.TorusGeometry(
-      toWorld(detail.handle.radius),
-      toWorld(detail.handle.tubeRadius),
-      detail.handle.radialSegments,
-      detail.handle.tubularSegments,
-    ),
-    standardMaterial(subject.materialHints.primary, 0.72),
-  );
+  const handlePath = new THREE.CatmullRomCurve3([
+    [radius - 7, 138], [radius + 30, 144], [radius + 65, 122],
+    [radius + 73, 87], [radius + 51, 50], [radius - 14, 55],
+  ].map(([x, y]) => new THREE.Vector3(toWorld(x), toWorld(y), 0)));
+  const handleMaterial = glaze.clone();
+  handleMaterial.vertexColors = false;
+  handleMaterial.color.set("#e9d7bd");
+  const handle = new THREE.Mesh(new THREE.TubeGeometry(handlePath, 24, toWorld(11), 8), handleMaterial);
   handle.name = `${subject.semanticName}-handle`;
-  handle.position.set(
-    toWorld(radius + detail.handle.centerXOffsetFromBodyRadius),
-    toWorld(height * detail.handle.centerHeightRatio),
-    0,
-  );
   parent.add(handle);
 
   const card = detail.focusCard;
@@ -112,14 +71,14 @@ const addCup = (
   }
 
   const bandDepth = card.depth / card.bandCount;
+  const bandGeometry = new THREE.BoxGeometry(
+    toWorld(card.width * 0.86), toWorld(card.bandThickness), toWorld(bandDepth * 0.56),
+  );
+  const bandMaterials = [basicMaterial(subject.materialHints.detail), basicMaterial("#1e3a8a")];
   for (let index = 0; index < card.bandCount; index += 1) {
     const band = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        toWorld(card.width * 0.86),
-        toWorld(card.bandThickness),
-        toWorld(bandDepth * 0.56),
-      ),
-      basicMaterial(index % 2 === 0 ? subject.materialHints.detail : "#1e3a8a"),
+      bandGeometry,
+      bandMaterials[index % 2],
     );
     band.name = `${subject.semanticName}-focus-card-band-${index + 1}`;
     band.position.set(
@@ -132,14 +91,15 @@ const addCup = (
 
   const fineBands = card.fineBands;
   const fineBandDepth = card.depth / fineBands.count;
+  const fineBandGeometry = new THREE.BoxGeometry(
+    toWorld(card.width * fineBands.widthRatio), toWorld(fineBands.thickness),
+    toWorld(fineBandDepth * fineBands.depthRatio),
+  );
+  const fineBandMaterials = [basicMaterial("#f8fafc"), bandMaterials[0]];
   for (let index = 0; index < fineBands.count; index += 1) {
     const band = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        toWorld(card.width * fineBands.widthRatio),
-        toWorld(fineBands.thickness),
-        toWorld(fineBandDepth * fineBands.depthRatio),
-      ),
-      basicMaterial(index % 2 === 0 ? "#f8fafc" : subject.materialHints.detail),
+      fineBandGeometry,
+      fineBandMaterials[index % 2],
     );
     band.name = `${subject.semanticName}-focus-card-fine-band-${index + 1}`;
     band.position.set(
@@ -158,27 +118,31 @@ const addNotebook = (
 ) => {
   const { width, height, depth } = subject.dimensions;
   const detail = presentation.geometry.detailGeometry.notebook;
+  const paperMaterial = createProceduralSurfaceMaterial({
+    pattern: "paper", color: "#eee2cc", repeat: [3, 1], roughness: 0.94, normalStrength: 0.24,
+  });
+  paperMaterial.vertexColors = true;
   const pageBlock = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      toWorld(width - detail.pageInset * 2),
-      toWorld(height - detail.pageHeightReduction),
-      toWorld(depth - detail.pageInset * 2),
-    ),
-    standardMaterial(subject.materialHints.secondary, 0.96),
+    paperEdges(width - detail.pageInset * 2, height - detail.pageHeightReduction, depth - detail.pageInset * 2, 9),
+    paperMaterial,
   );
+  pageBlock.name = `${subject.semanticName}-pages`;
   pageBlock.position.y = toWorld(height / 2);
   parent.add(pageBlock);
 
-  const coverMaterial = standardMaterial(subject.materialHints.primary, 0.78);
+  const coverMaterial = createProceduralSurfaceMaterial({
+    pattern: "fabric", color: "#a09674", repeat: [3, 2], roughness: 0.89, normalStrength: 0.42,
+  });
+  const coverGeometry = easedBox(width, detail.coverThickness, depth, 1.5);
   const bottomCover = new THREE.Mesh(
-    new THREE.BoxGeometry(toWorld(width), toWorld(detail.coverThickness), toWorld(depth)),
+    coverGeometry,
     coverMaterial,
   );
   bottomCover.position.y = toWorld(detail.coverThickness / 2);
   parent.add(bottomCover);
 
   const topCover = new THREE.Mesh(
-    new THREE.BoxGeometry(toWorld(width), toWorld(detail.coverThickness), toWorld(depth)),
+    coverGeometry,
     coverMaterial,
   );
   topCover.name = subject.semanticName;
@@ -211,13 +175,12 @@ const addNotebook = (
   }
 
   const lineMaterial = basicMaterial(subject.materialHints.detail);
+  const lineGeometry = new THREE.BoxGeometry(
+    toWorld(panel.width * panel.lineWidthRatio), toWorld(panel.lineThickness), toWorld(panel.lineDepth),
+  );
   for (let index = 0; index < panel.lineCount; index += 1) {
     const line = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        toWorld(panel.width * panel.lineWidthRatio),
-        toWorld(panel.lineThickness),
-        toWorld(panel.lineDepth),
-      ),
+      lineGeometry,
       lineMaterial,
     );
     line.name = `${subject.semanticName}-line-${index + 1}`;
@@ -234,13 +197,12 @@ const addNotebook = (
 
   const fineLines = panel.fineLines;
   const fineLineMaterial = basicMaterial("#b45309");
+  const fineLineGeometry = new THREE.BoxGeometry(
+    toWorld(fineLines.width), toWorld(fineLines.thickness), toWorld(fineLines.depth),
+  );
   for (let index = 0; index < fineLines.count; index += 1) {
     const line = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        toWorld(fineLines.width),
-        toWorld(fineLines.thickness),
-        toWorld(fineLines.depth),
-      ),
+      fineLineGeometry,
       fineLineMaterial,
     );
     line.name = `${subject.semanticName}-fine-line-${index + 1}`;
@@ -252,21 +214,20 @@ const addNotebook = (
     parent.add(line);
   }
 
-  const binding = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      toWorld(detail.binding.width),
-      toWorld(detail.binding.height),
-      toWorld(depth * detail.binding.depthRatio),
-    ),
-    basicMaterial("#111827"),
-  );
+  const binding = new THREE.Mesh(easedBox(16, height, depth - 3, 3), coverMaterial);
   binding.name = `${subject.semanticName}-binding`;
-  binding.position.set(
-    toWorld(-width / 2 + detail.binding.insetFromLeftEdge),
-    toWorld(height + detail.binding.centerOffsetAboveTop),
-    0,
-  );
+  binding.position.set(toWorld(-width / 2 + 8), toWorld(height / 2), 0);
   parent.add(binding);
+
+  // Keep the elevated card and both canonical posts. The inset wooden saddle
+  // makes the posts read as part of a small holder when seen from the side.
+  const saddle = new THREE.Mesh(
+    easedBox(panel.width * 0.7, supportHeight, 19, 3),
+    standardMaterial("#9c7755", 0.85),
+  );
+  saddle.name = `${subject.semanticName}-card-holder`;
+  saddle.position.y = toWorld(height + supportHeight / 2);
+  parent.add(saddle);
 };
 
 const addBook = (
@@ -276,32 +237,41 @@ const addBook = (
 ) => {
   const { width, height, depth } = subject.dimensions;
   const detail = presentation.geometry.detailGeometry.book;
+  const paperMaterial = createProceduralSurfaceMaterial({
+    pattern: "paper", color: "#ded2bf", repeat: [3, 1], roughness: 0.94, normalStrength: 0.24,
+  });
+  paperMaterial.vertexColors = true;
   const pageBlock = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      toWorld(width - detail.pageHorizontalInset * 2),
-      toWorld(height - detail.pageHeightReduction),
-      toWorld(depth - detail.pageDepthInset * 2),
-    ),
-    standardMaterial(subject.materialHints.secondary, 0.98),
+    paperEdges(width - detail.pageHorizontalInset * 2, height - detail.pageHeightReduction, depth - detail.pageDepthInset * 2, 21),
+    paperMaterial,
   );
+  pageBlock.name = `${subject.semanticName}-pages`;
   pageBlock.position.y = toWorld(height / 2);
   parent.add(pageBlock);
 
-  const coverMaterial = standardMaterial(subject.materialHints.primary, 0.8);
+  const coverMaterial = createProceduralSurfaceMaterial({
+    pattern: "fabric", color: "#34414c", repeat: [3, 2], roughness: 0.89, normalStrength: 0.42,
+  });
+  const coverGeometry = easedBox(width, detail.coverThickness, depth, 1.5);
   const bottomCover = new THREE.Mesh(
-    new THREE.BoxGeometry(toWorld(width), toWorld(detail.coverThickness), toWorld(depth)),
+    coverGeometry,
     coverMaterial,
   );
   bottomCover.position.y = toWorld(detail.coverThickness / 2);
   parent.add(bottomCover);
 
   const topCover = new THREE.Mesh(
-    new THREE.BoxGeometry(toWorld(width), toWorld(detail.coverThickness), toWorld(depth)),
+    coverGeometry,
     coverMaterial,
   );
   topCover.name = subject.semanticName;
   topCover.position.y = toWorld(height - detail.coverThickness / 2);
   parent.add(topCover);
+
+  const spine = new THREE.Mesh(easedBox(19, height, depth - 2, 5), coverMaterial);
+  spine.name = `${subject.semanticName}-spine`;
+  spine.position.set(toWorld(-width / 2 + 9.5), toWorld(height / 2), 0);
+  parent.add(spine);
 
   const chart = detail.focusChart;
   const chartPanel = new THREE.Mesh(
@@ -334,15 +304,13 @@ const addBook = (
   const rows = detail.focusChart.rows;
   const cellWidth = chartWidth / columns;
   const cellDepth = chartDepth / rows;
+  const cellGeometry = new THREE.BoxGeometry(toWorld(cellWidth), toWorld(chart.cellThickness), toWorld(cellDepth));
+  const checkerMaterials = [basicMaterial(subject.materialHints.detail), basicMaterial("#f8fafc")];
   for (let column = 0; column < columns; column += 1) {
     for (let row = 0; row < rows; row += 1) {
       const cell = new THREE.Mesh(
-        new THREE.BoxGeometry(
-          toWorld(cellWidth),
-          toWorld(chart.cellThickness),
-          toWorld(cellDepth),
-        ),
-        basicMaterial((column + row) % 2 === 0 ? subject.materialHints.detail : "#f8fafc"),
+        cellGeometry,
+        checkerMaterials[(column + row) % 2],
       );
       cell.name = `${subject.semanticName}-chart-${column}-${row}`;
       cell.position.set(
@@ -357,15 +325,15 @@ const addBook = (
   const fineGrid = chart.fineGrid;
   const fineCellWidth = fineGrid.width / fineGrid.columns;
   const fineCellDepth = fineGrid.depth / fineGrid.rows;
+  const fineCellGeometry = new THREE.BoxGeometry(
+    toWorld(fineCellWidth - fineGrid.cellGap), toWorld(fineGrid.cellThickness),
+    toWorld(fineCellDepth - fineGrid.cellGap),
+  );
   for (let column = 0; column < fineGrid.columns; column += 1) {
     for (let row = 0; row < fineGrid.rows; row += 1) {
       const cell = new THREE.Mesh(
-        new THREE.BoxGeometry(
-          toWorld(fineCellWidth - fineGrid.cellGap),
-          toWorld(fineGrid.cellThickness),
-          toWorld(fineCellDepth - fineGrid.cellGap),
-        ),
-        basicMaterial((column + row) % 2 === 0 ? subject.materialHints.detail : "#f8fafc"),
+        fineCellGeometry,
+        checkerMaterials[(column + row) % 2],
       );
       cell.name = `${subject.semanticName}-fine-grid-${column + 1}-${row + 1}`;
       cell.position.set(
@@ -441,20 +409,12 @@ const createSemanticSubject = (
 const addTableTiltContext = (
   root: THREE.Group,
   presentation: TableTiltPresentation,
+  frameMaterial: THREE.MeshStandardMaterial,
+  woodMaterial: THREE.MeshStandardMaterial,
 ): void => {
   const { geometry } = presentation;
   const context = new THREE.Group();
   context.name = "table-tilt-context-structure";
-
-  const apronMaterial = standardMaterial("#57534e", 0.9);
-  const woodMaterial = createFocusFriendlyMaterial({
-    pattern: "linear-grain",
-    primaryColor: "#8b5e3c",
-    secondaryColor: "#6f452d",
-    repeat: [2, 8],
-    roughness: 0.82,
-  });
-  const accentMaterial = standardMaterial("#334155", 0.78);
 
   const tableStructure = new THREE.Group();
   tableStructure.name = "table-tilt-table-structure";
@@ -464,21 +424,24 @@ const addTableTiltContext = (
     toWorld(geometry.tabletop.center.z),
   );
   tableStructure.rotation.x = geometry.tabletop.tiltAngleRad;
-  [-1, 1].forEach((sign) => {
-    const apron = new THREE.Mesh(
-      new THREE.BoxGeometry(toWorld(2200), toWorld(180), toWorld(90)),
-      apronMaterial,
-    );
+  const [nearSupport, , farSupport] = geometry.tableSupports;
+  const apronGeometry = easedBox(Math.abs(nearSupport.localX) * 2, 135, 76, 6);
+  const railGeometry = easedBox(76, 135, farSupport.localDepth - nearSupport.localDepth, 6);
+  const jointHeight = -geometry.tabletop.thickness / 2 - 65;
+  for (const sign of [-1, 1]) {
+    const apron = new THREE.Mesh(apronGeometry, frameMaterial);
     apron.name = `table-tilt-apron-${sign < 0 ? "near" : "far"}`;
-    apron.position.set(0, toWorld(-140), toWorld(sign * 1500));
+    apron.position.set(0, toWorld(jointHeight), toWorld(sign * farSupport.localDepth));
     tableStructure.add(apron);
-  });
-  const crossbar = new THREE.Mesh(
-    new THREE.BoxGeometry(toWorld(2100), toWorld(100), toWorld(80)),
-    apronMaterial,
-  );
+
+    const rail = new THREE.Mesh(railGeometry, frameMaterial);
+    rail.name = `table-tilt-side-rail-${sign < 0 ? "left" : "right"}`;
+    rail.position.set(toWorld(sign * farSupport.localX), toWorld(jointHeight), 0);
+    tableStructure.add(rail);
+  }
+  const crossbar = new THREE.Mesh(easedBox(1900, 80, 76, 5), frameMaterial);
   crossbar.name = "table-tilt-underframe-crossbar";
-  crossbar.position.set(0, toWorld(-280), 0);
+  crossbar.position.set(0, toWorld(jointHeight), 0);
   tableStructure.add(crossbar);
   context.add(tableStructure);
 
@@ -499,13 +462,13 @@ const addTableTiltContext = (
     depth: number;
     material: THREE.Material;
   }) => {
-      const position = geometry.tabletopLocalToWorld({
+    const position = geometry.tabletopLocalToWorld({
       localX,
       localDepth,
       verticalOffsetMm: height / 2,
     });
     const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(toWorld(width), toWorld(height), toWorld(depth)),
+      easedBox(width, height, depth, 7),
       material,
     );
     mesh.name = name;
@@ -519,7 +482,7 @@ const addTableTiltContext = (
     localX: 760,
     localDepth: -820,
     width: 360,
-    height: 70,
+    height: 29,
     depth: 240,
     material: woodMaterial,
   });
@@ -528,16 +491,16 @@ const addTableTiltContext = (
     localX: -720,
     localDepth: 420,
     width: 180,
-    height: 250,
+    height: 97,
     depth: 180,
-    material: accentMaterial,
+    material: frameMaterial,
   });
   addLocalBox({
     name: "table-tilt-context-far-block",
     localX: 720,
     localDepth: 1420,
     width: 220,
-    height: 220,
+    height: 44,
     depth: 180,
     material: woodMaterial,
   });
@@ -580,34 +543,31 @@ export function createTableTiltGroup(
   );
   tabletopAssembly.rotation.x = geometry.tabletop.tiltAngleRad;
 
-  const tabletopMesh = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      toWorld(geometry.tabletop.width),
-      toWorld(geometry.tabletop.thickness),
-      toWorld(geometry.tabletop.depth),
-    ),
-    createFocusFriendlyMaterial({
-      pattern: "linear-grain",
-      primaryColor: geometry.tabletop.color,
-      secondaryColor: "#9a7655",
-      repeat: [2, 12],
-      roughness: 0.82,
-    }),
+  const woodMaterial = createProceduralSurfaceMaterial({
+    pattern: "wood", color: "#b58859", repeat: [2, 4], roughness: 0.72, normalStrength: 0.37,
+  });
+  const frameMaterial = standardMaterial("#4d3b30", 0.84);
+  const tabletopGeometry = easedBox(
+    geometry.tabletop.width, geometry.tabletop.thickness, geometry.tabletop.depth, 9,
   );
+  // Longitudinal grain across the top, matching the existing guide direction.
+  const normals = tabletopGeometry.attributes.normal;
+  const uv = tabletopGeometry.attributes.uv;
+  for (let i = 0; i < uv.count; i++) {
+    if (Math.abs(normals.getY(i)) > 0.5) uv.setXY(i, uv.getY(i), uv.getX(i));
+  }
+  const tabletopMesh = new THREE.Mesh(tabletopGeometry, woodMaterial);
   tabletopMesh.name = "table-tilt-tabletop";
   tabletopAssembly.add(tabletopMesh);
 
-  const edgeMaterial = basicMaterial(geometry.tabletop.edgeColor);
+  const edgeMaterial = standardMaterial("#af8255", 0.77);
   const guideDefinition = geometry.detailGeometry.tabletopGuides;
+  const guideGeometry = new THREE.BoxGeometry(
+    toWorld(guideDefinition.width), toWorld(guideDefinition.height),
+    toWorld(geometry.tabletop.depth - guideDefinition.edgeMargin * 2),
+  );
   for (let index = 0; index < guideDefinition.count; index += 1) {
-    const guideMesh = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        toWorld(guideDefinition.width),
-        toWorld(guideDefinition.height),
-        toWorld(geometry.tabletop.depth - guideDefinition.edgeMargin * 2),
-      ),
-      edgeMaterial,
-    );
+    const guideMesh = new THREE.Mesh(guideGeometry, edgeMaterial);
     guideMesh.name = `table-tilt-tabletop-guide-${index + 1}`;
     guideMesh.position.set(
       toWorld(
@@ -623,17 +583,12 @@ export function createTableTiltGroup(
   }
   root.add(tabletopAssembly);
 
-  addTableTiltContext(root, presentation);
+  addTableTiltContext(root, presentation, frameMaterial, woodMaterial);
 
+  const referenceLeg = geometry.tableSupports[0];
+  const legGeometry = easedBox(referenceLeg.width, referenceLeg.height, referenceLeg.depth, 7);
   geometry.tableSupports.forEach((support) => {
-    const leg = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        toWorld(support.width),
-        toWorld(support.height),
-        toWorld(support.depth),
-      ),
-      standardMaterial(support.color, 0.92),
-    );
+    const leg = new THREE.Mesh(legGeometry, frameMaterial);
     leg.name = `table-tilt-support-${support.id}`;
     leg.position.set(
       toWorld(support.center.x),
