@@ -47,13 +47,13 @@ const renderRoute = (initialEntry: string) =>
 
 describe("simulator route availability", () => {
   it("ignores seed activation for a scene without the variation capability", async () => {
-    renderRoute("/simulator/free/architecture-rise?keep=one&seed=123&other=two");
+    renderRoute("/simulator/free/oblique-architecture?keep=one&seed=123&other=two");
     expect(await screen.findByTestId("simulator-workspace")).toHaveTextContent(
-      "free:architecture-rise:none:lesson=false",
+      "free:oblique-architecture:none:lesson=false",
     );
     await waitFor(() => {
       expect(screen.getByTestId("route-location")).toHaveTextContent(
-        "/simulator/free/architecture-rise?keep=one&other=two",
+        "/simulator/free/oblique-architecture?keep=one&other=two",
       );
     });
     expect(screen.getByTestId("route-location")).not.toHaveTextContent("seed=");

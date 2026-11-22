@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import type { ArchitectureRiseDetailStyle } from "./ArchitectureRiseDetailConfig";
+import type { ArchitectureRiseBrickAppearance } from "../../scenes/architectureRiseMaterialVariation";
 
 type BrickTextureSet = Readonly<{
   map: THREE.DataTexture;
@@ -47,6 +48,7 @@ const makeTexture = (data: Uint8Array, width: number, height: number, srgb = fal
 
 export function createArchitectureRiseBrickTextures(
   style: ArchitectureRiseDetailStyle["masonry"],
+  appearance?: ArchitectureRiseBrickAppearance,
 ): BrickTextureSet {
   const brickPitchMm = style.brickLengthMm + style.mortarJointMm;
   const coursePitchMm = style.brickHeightMm + style.mortarJointMm;
@@ -80,8 +82,9 @@ export function createArchitectureRiseBrickTextures(
       }
 
       const wrappedColumn = positiveMod(column, style.tileBrickPitches);
-      const value = hash(style.seed, row, wrappedColumn);
-      const palette = BRICK_PALETTE[value % BRICK_PALETTE.length]!;
+      const value = hash(appearance?.realizationSeed ?? style.seed, row, wrappedColumn);
+      const familyPalette = appearance?.palette ?? BRICK_PALETTE;
+      const palette = familyPalette[value % familyPalette.length]!;
       const shade = 0.96 + ((value >>> 8) % 10) / 100;
       const mottling = ((value >>> 16) % 7) - 3;
       const offset = pixelIndex * 4;
@@ -100,12 +103,13 @@ export function createArchitectureRiseBrickTextures(
     }
   }
 
-  const mortarColor: BrickColor = [160, 144, 123];
+  const mortarColor: BrickColor = appearance?.mortarColor ?? [160, 144, 123];
+  const mortarSeed = appearance?.mortarSeed ?? style.seed;
   const mortarRoughness = 238;
   for (let index = 0; index < brickPixels.length; index += 1) {
     if (brickPixels[index] !== -1) continue;
     const offset = index * 4;
-    const variation = ((hash(style.seed, index, 0) % 7) - 3);
+    const variation = ((hash(mortarSeed, index, 0) % 7) - 3);
     colorBytes[offset] = clampByte(mortarColor[0] + variation);
     colorBytes[offset + 1] = clampByte(mortarColor[1] + variation);
     colorBytes[offset + 2] = clampByte(mortarColor[2] + variation);
@@ -143,15 +147,16 @@ export function createArchitectureRiseBrickTextures(
 
 export function createArchitectureRiseBrickMaterial(
   style: ArchitectureRiseDetailStyle["masonry"],
+  appearance?: ArchitectureRiseBrickAppearance,
 ): THREE.MeshStandardMaterial {
-  const textures = createArchitectureRiseBrickTextures(style);
+  const textures = createArchitectureRiseBrickTextures(style, appearance);
   const material = new THREE.MeshStandardMaterial({
     color: "#ffffff",
     map: textures.map,
     roughnessMap: textures.roughnessMap,
     normalMap: textures.normalMap,
-    roughness: 0.91,
-    normalScale: new THREE.Vector2(0.11, 0.11),
+    roughness: appearance?.roughness ?? 0.91,
+    normalScale: new THREE.Vector2(appearance?.normalStrength ?? 0.11, appearance?.normalStrength ?? 0.11),
   });
   material.userData.architectureRiseBrick = {
     seed: style.seed,
@@ -160,6 +165,7 @@ export function createArchitectureRiseBrickMaterial(
     mortarJointMm: style.mortarJointMm,
     tileWidthMm: textures.tileWidthMm,
     tileHeightMm: textures.tileHeightMm,
+    ...(appearance ? { familyPalette: appearance.palette, realizationSeed: appearance.realizationSeed } : {}),
   };
   return material;
 }

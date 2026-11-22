@@ -215,12 +215,22 @@ const mirrorShiftViewportRequest: SceneAssetRequestMap[
 });
 
 /** Interactive scene consumers share the exact registered factories used by RTT. */
-export const ArchitectureRiseSubject = () => (
-  <RegisteredSceneAsset
-    assetKey={ARCHITECTURE_RISE_ASSET_KEY}
-    request={architectureRiseRequest}
-  />
-);
+export const ArchitectureRiseSubject = ({
+  variationDescriptor,
+}: {
+  variationDescriptor?: SceneVariationDescriptor;
+}) => {
+  const request = useMemo(
+    () => ({ ...architectureRiseRequest, variationDescriptor }),
+    [variationDescriptor],
+  );
+  return (
+    <RegisteredSceneAsset
+      assetKey={ARCHITECTURE_RISE_ASSET_KEY}
+      request={request}
+    />
+  );
+};
 
 export const ObliqueArchitectureSubject = () => (
   <RegisteredSceneAsset

@@ -33,6 +33,11 @@ import {
 } from "./TeachingMaterials";
 import { createProceduralSurfaceMaterial } from "./ProceduralSurfaceMaterials";
 import { toWorld } from "./rttUtils";
+import type { SceneVariationDescriptor } from "../types/sceneVariation";
+import {
+  resolveArchitectureRiseMaterialVariation,
+  type ArchitectureRiseMaterialVariation,
+} from "../scenes/architectureRiseMaterialVariation";
 
 type ArchitectureRiseResources = {
   box: THREE.BoxGeometry;
@@ -108,51 +113,57 @@ const standard = (
 const createResources = (
   geometry: ArchitectureRisePresentation["geometry"],
   style: ArchitectureRiseDetailStyle,
+  variation?: ArchitectureRiseMaterialVariation,
 ): ArchitectureRiseResources => ({
   box: new THREE.BoxGeometry(1, 1, 1),
   ground: new THREE.PlaneGeometry(toWorld(geometry.ground.width), toWorld(geometry.ground.depth)),
-  facade: createArchitectureRiseBrickMaterial(style.masonry),
-  quietFacade: standard("#98553f", 0.94),
+  facade: createArchitectureRiseBrickMaterial(style.masonry, variation?.brick),
+  quietFacade: standard(variation?.quietFacadeColor ?? "#98553f", 0.94),
   base: createProceduralSurfaceMaterial({
-    color: "#c2b299",
+    color: variation?.base.color ?? "#c2b299",
     pattern: "limestone",
-    repeat: [5, 4],
-    roughness: 0.92,
-    normalStrength: 0.2,
+    repeat: variation?.base.repeat ?? [5, 4],
+    roughness: variation?.base.roughness ?? 0.92,
+    normalStrength: variation?.base.normalStrength ?? 0.2,
+    ...(variation ? { variationSeed: variation.base.variationSeed } : {}),
   }),
-  stoneJoint: standard("#9b8b75", 0.97),
+  stoneJoint: standard(variation?.mortarJointColor ?? "#9b8b75", 0.97),
   door: createProceduralSurfaceMaterial({
-    color: "#50352b",
+    color: variation?.door.color ?? "#50352b",
     pattern: "wood",
-    repeat: [1, 2],
-    roughness: 0.86,
-    normalStrength: 0.14,
+    repeat: variation?.door.repeat ?? [1, 2],
+    roughness: variation?.door.roughness ?? 0.86,
+    normalStrength: variation?.door.normalStrength ?? 0.14,
+    ...(variation ? { variationSeed: variation.door.variationSeed } : {}),
   }),
   roof: createProceduralSurfaceMaterial({
-    color: "#c7b9a2",
+    color: variation?.roof.color ?? "#c7b9a2",
     pattern: "cut-stone",
-    repeat: [1, 1],
-    roughness: 0.9,
-    normalStrength: 0.18,
+    repeat: variation?.roof.repeat ?? [1, 1],
+    roughness: variation?.roof.roughness ?? 0.9,
+    normalStrength: variation?.roof.normalStrength ?? 0.18,
+    ...(variation ? { variationSeed: variation.roof.variationSeed } : {}),
   }),
   trim: createProceduralSurfaceMaterial({
-    color: "#e5dac5",
+    color: variation?.trim.color ?? "#e5dac5",
     pattern: "cut-stone",
-    repeat: [1, 1],
-    roughness: 0.78,
-    normalStrength: 0.09,
+    repeat: variation?.trim.repeat ?? [1, 1],
+    roughness: variation?.trim.roughness ?? 0.78,
+    normalStrength: variation?.trim.normalStrength ?? 0.09,
+    ...(variation ? { variationSeed: variation.trim.variationSeed } : {}),
   }),
   glass: standard("#233b43", 0.3, 0.12),
   recess: standard("#101c22", 0.68),
-  pavement: standard("#696c68", 0.94),
+  pavement: standard(variation?.pavementColor ?? "#696c68", 0.94),
   sidewalk: createProceduralSurfaceMaterial({
-    color: "#9b988e",
+    color: variation?.sidewalk.color ?? "#9b988e",
     pattern: "concrete",
-    repeat: [12, 10],
-    roughness: 0.96,
-    normalStrength: 0.14,
+    repeat: variation?.sidewalk.repeat ?? [12, 10],
+    roughness: variation?.sidewalk.roughness ?? 0.96,
+    normalStrength: variation?.sidewalk.normalStrength ?? 0.14,
+    ...(variation ? { variationSeed: variation.sidewalk.variationSeed } : {}),
   }),
-  groundMaterial: standard("#9a9c95", 0.97),
+  groundMaterial: standard(variation?.groundColor ?? "#9a9c95", 0.97),
   reference: standard("#8799a5", 0.94),
   referenceLight: standard("#edf2f3", 0.97),
   focusDark: new THREE.MeshBasicMaterial({ color: "#172331" }),
@@ -661,6 +672,7 @@ const addReferenceObjects = (
 export type ArchitectureRiseAssetRequest = Readonly<{
   presentation: ArchitectureRisePresentation;
   detailStyle?: ArchitectureRiseDetailStyle;
+  variationDescriptor?: SceneVariationDescriptor;
 }>;
 
 export function createArchitectureRiseGroup(
@@ -670,7 +682,8 @@ export function createArchitectureRiseGroup(
   const { geometry } = presentation;
   const { layout } = presentation;
   const style = request.detailStyle ?? ARCHITECTURE_RISE_DETAIL_STYLE;
-  const resources = createResources(geometry, style);
+  const materialVariation = resolveArchitectureRiseMaterialVariation(request.variationDescriptor);
+  const resources = createResources(geometry, style, materialVariation);
   const root = new THREE.Group();
   root.name = "architecture-rise-subject";
   root.userData.resources = resources;

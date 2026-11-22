@@ -16,6 +16,8 @@ import geometry from "../../scenes/architectureRiseGeometry";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/architectureRise";
 import { ARCHITECTURE_RISE_PRESENTATION_LAYOUT } from "../../scenes/presentation/architectureRiseLayout";
+import { resolveArchitectureRiseMaterialVariation } from "../../scenes/architectureRiseMaterialVariation";
+import { createSceneVariantIdentity, resolveSceneVariationDescriptor } from "../../scenes/sceneVariation";
 import type { CameraState } from "../../types/camera";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
@@ -51,6 +53,7 @@ type BrickTextureEdgeSample = Readonly<{
   isBrick: boolean;
   albedo: readonly number[];
   roughness: number;
+  normal: readonly number[];
 }>;
 
 const positiveMod = (value: number, modulus: number): number => ((value % modulus) + modulus) % modulus;
@@ -83,6 +86,7 @@ const sampleBrickTextureEdge = (
   const offset = (y * width + x) * 4;
   const albedoData = textures.map.image.data as Uint8Array;
   const roughnessData = textures.roughnessMap.image.data as Uint8Array;
+  const normalData = textures.normalMap.image.data as Uint8Array;
   return {
     row: sampledRow,
     rawColumn,
@@ -90,6 +94,7 @@ const sampleBrickTextureEdge = (
     isBrick,
     albedo: Array.from(albedoData.slice(offset, offset + 3)),
     roughness: roughnessData[offset]!,
+    normal: Array.from(normalData.slice(offset, offset + 3)),
   };
 };
 
@@ -206,6 +211,32 @@ describe("Architecture Rise procedural detail system", () => {
         expect(right.roughness, `${configuration} repeat-edge roughness: ${JSON.stringify({ left, right })}`).toBe(
           left.roughness,
         );
+      } finally {
+        textures.map.dispose();
+        textures.roughnessMap.dispose();
+        textures.normalMap.dispose();
+      }
+    });
+  });
+
+  it("preserves seeded palette, roughness and normal continuity across the repeat seam", () => {
+    const style = ARCHITECTURE_RISE_DETAIL_STYLE.masonry;
+    [0, 1, 284719, 3079748268, 2130322642, 4294967295].forEach((seed) => {
+      const descriptor = resolveSceneVariationDescriptor(
+        architectureRiseScene,
+        createSceneVariantIdentity(architectureRiseScene.id, seed, 1),
+      )!;
+      const appearance = resolveArchitectureRiseMaterialVariation(descriptor)!.brick;
+      const textures = createArchitectureRiseBrickTextures(style, appearance);
+      try {
+        const left = sampleBrickTextureEdge(textures, style, 1, "left");
+        const right = sampleBrickTextureEdge(textures, style, 1, "right");
+        expect(left.isBrick, `seed ${seed} left sample must be a brick`).toBe(true);
+        expect(right.isBrick, `seed ${seed} right sample must be a brick`).toBe(true);
+        expect(left.periodicBrickIdentity, `seed ${seed} periodic identity`).toBe(right.periodicBrickIdentity);
+        expect(right.albedo, `seed ${seed} albedo seam`).toEqual(left.albedo);
+        expect(right.roughness, `seed ${seed} roughness seam`).toBe(left.roughness);
+        expect(right.normal, `seed ${seed} normal seam`).toEqual(left.normal);
       } finally {
         textures.map.dispose();
         textures.roughnessMap.dispose();

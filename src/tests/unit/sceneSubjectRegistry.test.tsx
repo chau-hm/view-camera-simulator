@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { cleanup, render } from "@testing-library/react";
 import { StrictMode } from "react";
 import type { ComponentType } from "react";
@@ -155,6 +156,57 @@ const collectDisposableSpies = (group: THREE.Group) => {
     ...[...geometries].map((resource) => vi.spyOn(resource, "dispose")),
     ...[...materials].map((resource) => vi.spyOn(resource, "dispose")),
   ];
+};
+
+const architectureRiseMaterialSignature = (group: THREE.Group) => {
+  const resources = group.userData.resources as Record<string, unknown>;
+  const textureSignature = (texture: THREE.Texture | null) => {
+    if (!texture) return null;
+    const image = texture.image as { data?: ArrayBufferView; width?: number; height?: number };
+    const bytes = image.data
+      ? createHash("sha256")
+        .update(Buffer.from(image.data.buffer, image.data.byteOffset, image.data.byteLength))
+        .digest("hex")
+      : null;
+    return {
+      width: image.width,
+      height: image.height,
+      bytes,
+      colorSpace: texture.colorSpace,
+      repeat: texture.repeat.toArray(),
+    };
+  };
+  return Object.fromEntries(Object.entries(resources)
+    .filter(([, resource]) => resource instanceof THREE.Material)
+    .map(([name, rawMaterial]) => {
+      const material = rawMaterial as THREE.Material;
+      const standard = material as THREE.MeshStandardMaterial;
+      return [name, {
+        type: material.type,
+        color: "color" in material && material.color instanceof THREE.Color
+          ? material.color.getHexString(THREE.SRGBColorSpace)
+          : undefined,
+        roughness: "roughness" in material ? standard.roughness : undefined,
+        normalScale: "normalScale" in material ? standard.normalScale.toArray() : undefined,
+        map: textureSignature(standard.map ?? null),
+        roughnessMap: textureSignature(standard.roughnessMap ?? null),
+        normalMap: textureSignature(standard.normalMap ?? null),
+      }];
+    })
+    .sort(([left], [right]) => String(left).localeCompare(String(right))));
+};
+
+const collectTextureDisposalSpies = (group: THREE.Group) => {
+  const resources = group.userData.resources as Record<string, unknown>;
+  const textures = new Set<THREE.Texture>();
+  Object.values(resources)
+    .filter((resource): resource is THREE.Material => resource instanceof THREE.Material)
+    .forEach((material) => {
+      const standard = material as THREE.MeshStandardMaterial;
+      [standard.map, standard.roughnessMap, standard.normalMap]
+        .forEach((texture) => { if (texture) textures.add(texture); });
+    });
+  return [...textures].map((texture) => vi.spyOn(texture, "dispose"));
 };
 
 type BoardFootprint = {
@@ -315,6 +367,59 @@ describe("scene subject registry", () => {
       expect(disposedGroups.filter((disposedGroup) => disposedGroup === group)).toHaveLength(1);
     });
   });
+
+  it("routes the same seeded Architecture Rise plan to independently owned Observer and RTT subjects", () => {
+    const descriptor = resolveSceneVariationDescriptor(
+      architectureRiseScene,
+      createSceneVariantIdentity("architecture-rise", 284719, 1),
+    )!;
+    const factory = vi.spyOn(architectureRiseAsset, "createArchitectureRiseGroup");
+    const disposer = vi.spyOn(architectureRiseAsset, "disposeArchitectureRiseGroup");
+    const view = render(<ArchitectureRiseSubject variationDescriptor={descriptor} />);
+    const observer = factory.mock.results[0]?.value as THREE.Group;
+    view.rerender(<ArchitectureRiseSubject variationDescriptor={descriptor} />);
+    expect(factory).toHaveBeenCalledTimes(1);
+    const rtt = createRegisteredRttSubject("architecture-rise", {
+      variationDescriptor: descriptor,
+    })!;
+
+    try {
+      expect(factory).toHaveBeenCalledTimes(2);
+      expect(factory.mock.calls[0]?.[0].variationDescriptor?.identity)
+        .toEqual(factory.mock.calls[1]?.[0].variationDescriptor?.identity);
+      expect(architectureRiseMaterialSignature(observer)).toEqual(architectureRiseMaterialSignature(rtt));
+
+      const observerResources = observer.userData.resources as Record<string, unknown>;
+      const rttResources = rtt.userData.resources as Record<string, unknown>;
+      expect(observerResources.facade).not.toBe(rttResources.facade);
+      expect((observerResources.facade as THREE.MeshStandardMaterial).map)
+        .not.toBe((rttResources.facade as THREE.MeshStandardMaterial).map);
+      const brickMeshes: THREE.Mesh[] = [];
+      observer.traverse((object) => {
+        if (object instanceof THREE.Mesh && object.userData.architectureRole === "brick-facade") {
+          brickMeshes.push(object);
+        }
+      });
+      expect(brickMeshes.length).toBeGreaterThan(1);
+      brickMeshes.forEach((mesh) => expect(mesh.material).toBe(observerResources.facade));
+
+      const observerDisposal = collectDisposableSpies(observer);
+      const rttDisposal = collectDisposableSpies(rtt);
+      const observerTextureDisposal = collectTextureDisposalSpies(observer);
+      const rttTextureDisposal = collectTextureDisposalSpies(rtt);
+      view.unmount();
+      disposeRegisteredRttSubject("architecture-rise", rtt);
+      [...observerDisposal, ...rttDisposal, ...observerTextureDisposal, ...rttTextureDisposal]
+        .forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+      expect(disposer).toHaveBeenCalledTimes(2);
+    } finally {
+      view.unmount();
+      // Ensure cleanup if an assertion fails before the explicit lifecycle assertions.
+      if (!disposer.mock.calls.some(([group]) => group === rtt)) {
+        disposeRegisteredRttSubject("architecture-rise", rtt);
+      }
+    }
+  }, 20_000);
 
   it("registers the Lesson 0 subject with canonical RTT bounds", () => {
     const registration = getSceneSubjectRegistration("view-camera-anatomy");
