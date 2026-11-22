@@ -8,7 +8,7 @@ test("smoke: app boots at home", async ({ page }) => {
   await expect(page.getByTestId("landing-hero-cta")).toBeVisible();
 });
 
-test("smoke: Architecture Rise renders contentful WebGL Ground Glass controls", async ({ page }) => {
+test("smoke: Architecture Rise navigates to contentful WebGL Ground Glass controls", async ({ page }) => {
   // Diagnostics must be enabled before Ground Glass mounts so its first completed frame is observed.
   // First WebGL RTT readiness varies substantially on hosted Linux runners.
   test.setTimeout(150_000);
