@@ -82,7 +82,8 @@ test("Dream Loop pilot captures teaching and clean observer views", async ({ pag
   await expect(page).toHaveTitle(/.+/);
 
   const scene = page.locator(manifest.optimizationSurface.sceneSelector);
-  await expect(scene).toBeVisible();
+  // The simulator route lazy-loads its workspace before the Observer mounts.
+  await expect(scene).toBeVisible({ timeout: 60_000 });
   await expect(scene).toHaveAttribute("data-scene-subject-id", manifest.sceneId);
   await expect(scene).toHaveAttribute("data-optics-fallback-applied", "false");
   await expect(scene).toHaveAttribute("data-view-focus", "scene");

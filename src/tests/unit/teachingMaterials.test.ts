@@ -88,8 +88,9 @@ describe("focus-friendly teaching materials", () => {
 
     try {
       expectMappedStandardMaterial(
-        architecture.getObjectByName("architecture-foreground-front-facade"),
+        architecture.getObjectByName("architecture-foreground-building"),
       );
+      expectMappedStandardMaterial(architecture.getObjectByName("architecture-foreground-ground"));
       expectMappedStandardMaterial(tableTilt.getObjectByName("table-tilt-tabletop"));
       expectMappedStandardMaterial(
         obliqueTabletop.getObjectByName("oblique-tabletop-subject-board-plan-surface"),
