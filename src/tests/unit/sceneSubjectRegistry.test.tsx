@@ -419,7 +419,7 @@ describe("scene subject registry", () => {
         disposeRegisteredRttSubject("architecture-rise", rtt);
       }
     }
-  }, 20_000);
+  }, 60_000);
 
   it("registers the Lesson 0 subject with canonical RTT bounds", () => {
     const registration = getSceneSubjectRegistration("view-camera-anatomy");

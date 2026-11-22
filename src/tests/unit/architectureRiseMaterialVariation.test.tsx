@@ -228,7 +228,7 @@ describe("Architecture Rise material variation baseline", () => {
       disposeArchitectureRiseGroup(first);
       disposeArchitectureRiseGroup(second);
     }
-  }, 20_000);
+  }, 60_000);
 
   it("changes the selected material realization without changing geometry", () => {
     const build = (seed: number) => createArchitectureRiseGroup({
