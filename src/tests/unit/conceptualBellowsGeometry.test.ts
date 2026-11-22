@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Quaternion } from "three";
+import { Quaternion, Vector3 } from "three";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import {
   buildConceptualBellowsGeometry,
@@ -19,9 +19,10 @@ import {
   focusFundamentalsReferenceFocusDepthMm,
 } from "../../scenes/focusFundamentalsTargets";
 import { focusFundamentalsTwoTargets } from "../../scenes/definitions/focus-fundamentals-two-targets";
+import { stillLifeStudioScene } from "../../scenes/definitions/still-life-studio";
 import type { CameraState } from "../../types/camera";
 import type { Vec3 } from "../../types/optics";
-import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
+import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const cameraFor = (overrides: Partial<CameraState> = {}): CameraState => ({
   ...DEFAULT_CAMERA_STATE,
@@ -256,4 +257,62 @@ describe("conceptual deformable bellows geometry", () => {
       buildConceptualBellowsGeometry(frames).triangleIndices,
     );
   });
+
+  it.each([-1, 1])(
+    "keeps one continuous outward-facing bellows under opposed translations and rotations (%i)",
+    (direction) => {
+      const {
+        riseMaxMm,
+        shiftMaxMm,
+        tiltMaxDeg,
+        swingMaxDeg,
+      } = CAMERA_CONSTANTS;
+      const optics = deriveOpticsState({
+        ...DEFAULT_CAMERA_STATE,
+        ...stillLifeStudioScene.cameraPreset,
+        activeSceneId: stillLifeStudioScene.id,
+        focusDistanceMm: stillLifeStudioScene.focusDistanceRangeMm!.min,
+        frontRiseMm: direction > 0 ? riseMaxMm : 0,
+        rearRiseMm: direction < 0 ? riseMaxMm : 0,
+        frontShiftMm: direction * shiftMaxMm,
+        rearShiftMm: -direction * shiftMaxMm,
+        frontTiltDeg: direction * tiltMaxDeg,
+        rearTiltDeg: -direction * tiltMaxDeg,
+        frontSwingDeg: -direction * swingMaxDeg,
+        rearSwingDeg: direction * swingMaxDeg,
+      }, stillLifeStudioScene);
+      const frames = resolveConceptualBellowsAttachmentFrames({
+        frontCenter: optics.cameraBodyLocalGeometry.lensCenterLocal,
+        frontNormal: optics.cameraBodyLocalGeometry.lensNormalLocal,
+        rearFrame: optics.cameraBodyLocalGeometry.rearStandardFrameLocal,
+      });
+      const geometry = buildConceptualBellowsGeometry(frames);
+      expectValidGeometry(geometry);
+      expectVecClose(geometry.sections[0].center, frames.rear.center);
+      expectVecClose(geometry.sections.at(-1)!.center, frames.front.center);
+
+      const vertex = (index: number) => new Vector3().fromArray(geometry.positions, index * 3);
+      const centerFor = (index: number) => {
+        const { center } = geometry.sections[Math.floor(index / 4)];
+        return new Vector3(center.x, center.y, center.z);
+      };
+      const edges = new Map<string, number>();
+      for (let index = 0; index < geometry.triangleIndices.length; index += 3) {
+        const [a, b, c] = geometry.triangleIndices.slice(index, index + 3);
+        const faceNormal = vertex(b).sub(vertex(a)).cross(vertex(c).sub(vertex(a)));
+        const outward = vertex(a).add(vertex(b)).add(vertex(c))
+          .sub(centerFor(a)).sub(centerFor(b)).sub(centerFor(c));
+        expect(faceNormal.dot(outward)).toBeGreaterThan(0);
+
+        for (const [first, second] of [[a, b], [b, c], [c, a]]) {
+          const edge = [first, second].sort((left, right) => left - right).join(":");
+          edges.set(edge, (edges.get(edge) ?? 0) + 1);
+        }
+      }
+      // There are exactly four boundary edges per mouth. All wall seams share two faces.
+      const edgeCounts = [...edges.values()];
+      expect(edgeCounts.filter((count) => count === 1)).toHaveLength(8);
+      expect(edgeCounts.every((count) => count === 1 || count === 2)).toBe(true);
+    },
+  );
 });
