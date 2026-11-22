@@ -4,7 +4,7 @@ import type { TableTiltPresentation } from "../scenes/presentation/tableTilt";
 import { toWorld } from "./rttUtils";
 import { createProceduralSurfaceMaterial } from "./ProceduralSurfaceMaterials";
 import { disposeTeachingSubjectResources } from "./TeachingMaterials";
-import { ceramicGlaze, cupShell, easedBox, paperEdges } from "./table-tilt/TableTiltFinishes";
+import { ceramicGlaze, cupShell, easedBox, paperEdges, recessedTray } from "./table-tilt/TableTiltFinishes";
 
 const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180;
 
@@ -131,7 +131,7 @@ const addNotebook = (
   parent.add(pageBlock);
 
   const coverMaterial = createProceduralSurfaceMaterial({
-    pattern: "fabric", color: "#a09674", repeat: [3, 2], roughness: 0.89, normalStrength: 0.42,
+    pattern: "fabric", color: "#aaa084", repeat: [3, 2], roughness: 0.89, normalStrength: 0.42,
   });
   const coverGeometry = easedBox(width, detail.coverThickness, depth, 1.5);
   const bottomCover = new THREE.Mesh(
@@ -160,6 +160,7 @@ const addNotebook = (
 
   const panelBottom = panel.centerHeight - panel.thickness / 2;
   const supportHeight = Math.max(0, panelBottom - height);
+  const holderMaterial = standardMaterial("#9c7755", 0.85);
   for (const x of [-panel.width * 0.4, panel.width * 0.4]) {
     const support = new THREE.Mesh(
       new THREE.BoxGeometry(
@@ -167,7 +168,7 @@ const addNotebook = (
         toWorld(supportHeight),
         toWorld(panel.supportWidth),
       ),
-      standardMaterial(subject.materialHints.primary, 0.82),
+      holderMaterial,
     );
     support.name = `${subject.semanticName}-focus-panel-support`;
     support.position.set(toWorld(x), toWorld(height + supportHeight / 2), 0);
@@ -223,7 +224,7 @@ const addNotebook = (
   // makes the posts read as part of a small holder when seen from the side.
   const saddle = new THREE.Mesh(
     easedBox(panel.width * 0.7, supportHeight, 19, 3),
-    standardMaterial("#9c7755", 0.85),
+    holderMaterial,
   );
   saddle.name = `${subject.semanticName}-card-holder`;
   saddle.position.y = toWorld(height + supportHeight / 2);
@@ -453,6 +454,7 @@ const addTableTiltContext = (
     height,
     depth,
     material,
+    createGeometry = easedBox,
   }: {
     name: string;
     localX: number;
@@ -461,6 +463,7 @@ const addTableTiltContext = (
     height: number;
     depth: number;
     material: THREE.Material;
+    createGeometry?: (width: number, height: number, depth: number, radius: number) => THREE.BufferGeometry;
   }) => {
     const position = geometry.tabletopLocalToWorld({
       localX,
@@ -468,7 +471,7 @@ const addTableTiltContext = (
       verticalOffsetMm: height / 2,
     });
     const mesh = new THREE.Mesh(
-      easedBox(width, height, depth, 7),
+      createGeometry(width, height, depth, 7),
       material,
     );
     mesh.name = name;
@@ -482,9 +485,10 @@ const addTableTiltContext = (
     localX: 760,
     localDepth: -820,
     width: 360,
-    height: 29,
+    height: 70,
     depth: 240,
     material: woodMaterial,
+    createGeometry: recessedTray,
   });
   addLocalBox({
     name: "table-tilt-context-middle-canister",
@@ -544,7 +548,7 @@ export function createTableTiltGroup(
   tabletopAssembly.rotation.x = geometry.tabletop.tiltAngleRad;
 
   const woodMaterial = createProceduralSurfaceMaterial({
-    pattern: "wood", color: "#b58859", repeat: [2, 4], roughness: 0.72, normalStrength: 0.37,
+    pattern: "wood", color: "#c09264", repeat: [2, 4], roughness: 0.72, normalStrength: 0.37,
   });
   const frameMaterial = standardMaterial("#4d3b30", 0.84);
   const tabletopGeometry = easedBox(
@@ -560,7 +564,7 @@ export function createTableTiltGroup(
   tabletopMesh.name = "table-tilt-tabletop";
   tabletopAssembly.add(tabletopMesh);
 
-  const edgeMaterial = standardMaterial("#af8255", 0.77);
+  const edgeMaterial = standardMaterial("#ba8b5d", 0.77);
   const guideDefinition = geometry.detailGeometry.tabletopGuides;
   const guideGeometry = new THREE.BoxGeometry(
     toWorld(guideDefinition.width), toWorld(guideDefinition.height),

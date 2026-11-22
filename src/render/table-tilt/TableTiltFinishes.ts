@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/addons/geometries/RoundedBoxGeometry.js";
+import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { toWorld } from "../rttUtils";
 
 export const easedBox = (width: number, height: number, depth: number, radius: number) =>
@@ -19,10 +20,10 @@ export const cupShell = (radius: number, height: number, segments: number) => {
     profile.map(([r, y]) => new THREE.Vector2(toWorld(r * radius), toWorld(y))),
     segments,
   );
-  const colors = [];
+  const colors: number[] = [];
   const clay = new THREE.Color("#b48f6b");
-  const glaze = new THREE.Color("#f0dfc9");
-  const innerGlaze = new THREE.Color("#d4c0a6");
+  const glaze = new THREE.Color("#f5e6d5");
+  const innerGlaze = new THREE.Color("#d8c6af");
   for (let segment = 0; segment <= segments; segment++) {
     profile.forEach(([, y], row) => {
       const color = glaze.clone().lerp(clay, 1 - THREE.MathUtils.smoothstep(y, 9, 25));
@@ -84,5 +85,38 @@ export const paperEdges = (
     colors.set([value, value, value], vertex * 3);
   }
   geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  return geometry;
+};
+
+/** Recess the existing tray while retaining the original outer envelope. */
+export const recessedTray = (width: number, height: number, depth: number) => {
+  const outline = (path: THREE.Path, halfWidth: number, halfDepth: number, radius: number) => {
+    path.moveTo(-halfWidth + radius, -halfDepth);
+    path.lineTo(halfWidth - radius, -halfDepth);
+    path.quadraticCurveTo(halfWidth, -halfDepth, halfWidth, -halfDepth + radius);
+    path.lineTo(halfWidth, halfDepth - radius);
+    path.quadraticCurveTo(halfWidth, halfDepth, halfWidth - radius, halfDepth);
+    path.lineTo(-halfWidth + radius, halfDepth);
+    path.quadraticCurveTo(-halfWidth, halfDepth, -halfWidth, halfDepth - radius);
+    path.lineTo(-halfWidth, -halfDepth + radius);
+    path.quadraticCurveTo(-halfWidth, -halfDepth, -halfWidth + radius, -halfDepth);
+  };
+  const wallThickness = 14;
+  const floorThickness = 15;
+  const outside = new THREE.Shape();
+  const inside = new THREE.Path();
+  outline(outside, toWorld(width / 2), toWorld(depth / 2), toWorld(16));
+  outline(inside, toWorld(width / 2 - wallThickness), toWorld(depth / 2 - wallThickness), toWorld(7));
+  outside.holes.push(inside);
+  const sides = new THREE.ExtrudeGeometry(outside, {
+    depth: toWorld(height), bevelEnabled: false, curveSegments: 3,
+  });
+  sides.rotateX(-Math.PI / 2);
+  sides.translate(0, -toWorld(height / 2), 0);
+  const floor = easedBox(width - wallThickness * 1.5, floorThickness, depth - wallThickness * 1.5, 3);
+  floor.translate(0, toWorld((floorThickness - height) / 2), 0);
+  const geometry = mergeGeometries([sides, floor]);
+  sides.dispose();
+  floor.dispose();
   return geometry;
 };
