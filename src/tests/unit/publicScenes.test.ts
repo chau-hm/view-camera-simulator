@@ -73,33 +73,86 @@ describe("public scene catalog integrity", () => {
     expect(Object.values(scenePublication).every((value) => typeof value === "boolean")).toBe(true);
   });
 
-  it("publishes the qualified Still-Life Studio in production and qualification mode", () => {
-    const entry = publicSceneCatalog.find(({ id }) => id === "still-life-studio")!;
+  it.each([false, true])(
+    "applies the manual Still-Life Studio publication setting in production (%s)",
+    (isManuallyPublished) => {
+      const entry = publicSceneCatalog.find(({ id }) => id === "still-life-studio")!;
+      const publication: ScenePublicationConfig = {
+        ...scenePublication,
+        "still-life-studio": isManuallyPublished,
+      };
 
-    expect(scenePublication["still-life-studio"]).toBe(true);
-    expect(entry).toMatchObject({
-      id: "still-life-studio",
-      groupId: "free-practice",
-      availability: "available",
-      availableModes: ["free"],
-      thumbnailAsset: "assets/still-life-studio.webp",
-    });
-    expect(entry.guidedTaskId).toBeUndefined();
-    expect(entry.guidedTaskIds).toBeUndefined();
-    expect(entry.guidedLesson).toBeUndefined();
-    expect(entry.lesson).toBeUndefined();
+      expect(entry).toMatchObject({
+        id: "still-life-studio",
+        groupId: "free-practice",
+        availability: "available",
+        availableModes: ["free"],
+        thumbnailAsset: "assets/still-life-studio.webp",
+      });
+      expect(entry.guidedTaskId).toBeUndefined();
+      expect(entry.guidedTaskIds).toBeUndefined();
+      expect(entry.guidedLesson).toBeUndefined();
+      expect(entry.lesson).toBeUndefined();
+      expect(getSceneById(entry.id)).toBeDefined();
+      expect(validate([entry])).toEqual({ valid: true, errors: [] });
+
+      expect(isScenePublished(entry.id, publication)).toBe(isManuallyPublished);
+      const productionEntry = getPublicSceneEntryById(entry.id, publication);
+      expect(productionEntry !== undefined).toBe(isManuallyPublished);
+      expect(
+        getPublishedPublicSceneEntries(publication).some(({ meta }) => meta.id === entry.id),
+      ).toBe(isManuallyPublished);
+      expect(
+        getPublicSceneEntries(publication).some(({ meta }) => meta.id === entry.id),
+      ).toBe(isManuallyPublished);
+      expect(
+        getAvailablePublicSceneEntries(publication).some(({ meta }) => meta.id === entry.id),
+      ).toBe(isManuallyPublished);
+      expect(getPublicScenes(publication).some(({ id }) => id === entry.id)).toBe(
+        isManuallyPublished,
+      );
+      expect(
+        getGroupedPublicSceneEntries(publication)
+          .flatMap(({ entries }) => entries.map(({ meta }) => meta.id))
+          .includes(entry.id),
+      ).toBe(isManuallyPublished);
+
+      const productionRouteIsValid =
+        productionEntry !== undefined &&
+        isValidSimulatorRoute({ mode: "free", sceneId: entry.id, publicEntry: productionEntry });
+      expect(productionRouteIsValid).toBe(isManuallyPublished);
+    },
+  );
+
+  it("adds only the Still-Life Studio qualification override without changing manual publication", () => {
+    const entry = publicSceneCatalog.find(({ id }) => id === "still-life-studio")!;
+    const manualPublicationBeforeQualification = { ...scenePublication };
     const productionPublication = resolveScenePublication("production");
+
+    expect(productionPublication).toEqual(scenePublication);
     const productionEntry = getPublicSceneEntryById(entry.id, productionPublication);
-    expect(productionPublication["still-life-studio"]).toBe(true);
-    if (productionEntry === undefined) throw new Error("Published Still-Life Studio should be visible in production");
-    expect(productionEntry).toMatchObject(entry);
-    expect(isValidSimulatorRoute({ mode: "free", sceneId: entry.id, publicEntry: productionEntry })).toBe(true);
+    expect(productionEntry !== undefined).toBe(isScenePublished(entry.id, scenePublication));
+    const productionRouteIsValid =
+      productionEntry !== undefined &&
+      isValidSimulatorRoute({ mode: "free", sceneId: entry.id, publicEntry: productionEntry });
+    expect(productionRouteIsValid).toBe(isScenePublished(entry.id, productionPublication));
 
     const qualificationPublication = resolveScenePublication("still-life-studio-qualification");
     const qualificationEntry = getPublicSceneEntryById(entry.id, qualificationPublication);
     if (qualificationEntry === undefined) throw new Error("Still-Life Studio should remain available in qualification mode");
     expect(qualificationPublication["still-life-studio"]).toBe(true);
-    expect(qualificationPublication["shelf-swing"]).toBe(scenePublication["shelf-swing"]);
+    expect(qualificationPublication).toEqual({
+      ...manualPublicationBeforeQualification,
+      "still-life-studio": true,
+    });
+    expect(scenePublication).toEqual(manualPublicationBeforeQualification);
+    const productionPublishedSceneIds = getPublishedPublicSceneEntries(productionPublication)
+      .map(({ meta }) => meta.id)
+      .filter((sceneId) => sceneId !== entry.id);
+    const qualificationPublishedSceneIds = getPublishedPublicSceneEntries(qualificationPublication)
+      .map(({ meta }) => meta.id)
+      .filter((sceneId) => sceneId !== entry.id);
+    expect(qualificationPublishedSceneIds).toEqual(productionPublishedSceneIds);
     expect(qualificationEntry).toMatchObject(entry);
     expect(isValidSimulatorRoute({ mode: "free", sceneId: entry.id, publicEntry: qualificationEntry })).toBe(true);
     expect(isValidSimulatorRoute({
