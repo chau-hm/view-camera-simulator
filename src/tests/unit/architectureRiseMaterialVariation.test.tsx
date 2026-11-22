@@ -17,14 +17,14 @@ import { collectSceneGraphCapacity } from "../../render/sceneCapacityProfiling";
 type ArchitectureRiseResources = Readonly<Record<string, unknown>>;
 
 const EXPECTED_ARCHITECTURE_RISE_CAPACITY = {
-  meshCount: 465,
-  renderableMeshCount: 465,
-  uniqueGeometryCount: 73,
+  meshCount: 474,
+  renderableMeshCount: 474,
+  uniqueGeometryCount: 63,
   uniqueMaterialCount: 17,
   uniqueTextureCount: 18,
-  triangleCount: 6242,
-  effectiveTriangleCount: 6242,
-  renderableEffectiveTriangleCount: 6242,
+  triangleCount: 6734,
+  effectiveTriangleCount: 6734,
+  renderableEffectiveTriangleCount: 6734,
 } as const;
 
 const sha256 = (bytes: ArrayBufferView): string =>
@@ -99,18 +99,18 @@ describe("Architecture Rise material variation baseline", () => {
     const resources = group.userData.resources as ArchitectureRiseResources;
     try {
       expect(groupGeometrySignature(group)).toBe(
-        "317e463d8abc79bdad6cb4eb2e8dd0b9bd32c77fa46fe2b220efd88801563490",
+        "280080d8806991845b56aaf2f2ea2ad5aba6b0407213bbcc29fdbf168e9f4da4",
       );
       expect(collectSceneGraphCapacity(group)).toMatchObject(EXPECTED_ARCHITECTURE_RISE_CAPACITY);
       expect(createHash("sha256").update(JSON.stringify(resourceMaterialSnapshot(resources))).digest("hex"))
-        .toBe("5181f7188b35351e91c88af56b467bd94d41d1cbc1711ac4b6a52525f8b24a16");
+        .toBe("eb7c64c6ce11ba1330fd533b6a16d6b68ad251e8b039fe0b91865ecf31ce71bc");
       const facade = resources.facade as THREE.MeshStandardMaterial;
       expect([
         textureSignature(facade.map),
         textureSignature(facade.roughnessMap),
         textureSignature(facade.normalMap),
       ]).toEqual([
-        expect.objectContaining({ bytes: "ebc0d5d6eea0c8ee4c5a74e29cbe514959361a87c9748a9fdcc78ee58ae2680d" }),
+        expect.objectContaining({ bytes: "1640a923fda3bef2da1123a633e02ea4f4962e6e116e4bd821ddf81cd6d27fc4" }),
         expect.objectContaining({ bytes: "12ec52ae47528dded4a86eaeddf6287acce3790de9c55ca7e9792339bbe9bc98" }),
         expect.objectContaining({ bytes: "a03c6cbb2779c57f1ad4f7f2c50a1d1cc2ddd367720c6d38ec9c6401eea00cb2" }),
       ]);
@@ -183,7 +183,7 @@ describe("Architecture Rise material variation baseline", () => {
     const secondResources = second.userData.resources as ArchitectureRiseResources;
     try {
       expect(groupGeometrySignature(first)).toBe(
-        "317e463d8abc79bdad6cb4eb2e8dd0b9bd32c77fa46fe2b220efd88801563490",
+        "280080d8806991845b56aaf2f2ea2ad5aba6b0407213bbcc29fdbf168e9f4da4",
       );
       expect(groupGeometrySignature(second)).toBe(groupGeometrySignature(first));
       expect(collectSceneGraphCapacity(first)).toMatchObject(EXPECTED_ARCHITECTURE_RISE_CAPACITY);
