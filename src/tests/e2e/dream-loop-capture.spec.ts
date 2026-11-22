@@ -4,6 +4,7 @@ import { dirname, relative, resolve, sep } from "node:path";
 import { expect, test } from "@playwright/test";
 import { getSceneById } from "../../scenes/definitions";
 import type { SceneCapacitySnapshot } from "../../render/sceneCapacityProfiling";
+import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 import type { CameraMovementField } from "../../types/scene";
 import { isDreamLoopSubjectCaptureReady } from "../helpers/dreamLoopCaptureReadiness";
 
@@ -128,7 +129,7 @@ test("Dream Loop pilot captures teaching and clean observer views", async ({ pag
     sceneDefinition.cameraControlPolicy?.movement === "fixed";
   const focusResetValue = resetUsesScenePreset
     ? sceneDefinition.cameraPreset.focusDistanceMm
-    : focusMinValue;
+    : DEFAULT_CAMERA_STATE.focusDistanceMm;
   const expectedFocus = Math.max(
     focusMinValue,
     Math.min(focusMaxValue, focusResetValue),
