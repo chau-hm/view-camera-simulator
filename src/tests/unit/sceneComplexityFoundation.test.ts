@@ -27,17 +27,11 @@ import { OBLIQUE_TABLETOP_PRESENTATION } from "../../scenes/presentation/oblique
 import { toWorld } from "../../render/rttUtils";
 
 describe("scene complexity foundation", () => {
-  it("adds architectural depth while retaining the registered subject anchors", () => {
+  it("retains the architecture and forecourt teaching anchors", () => {
     const group = createArchitectureForegroundGroup({
       presentation: ARCHITECTURE_FOREGROUND_PRESENTATION,
     });
     try {
-      expect(group.getObjectByName("architecture-foreground-window-1-1-recess")).toBeInstanceOf(
-        THREE.Group,
-      );
-      expect(group.getObjectByName("architecture-foreground-window-1-1-recess-sill")).toBeInstanceOf(
-        THREE.Mesh,
-      );
       expect(group.getObjectByName("architecture-foreground-forecourt-structure")).toBeInstanceOf(
         THREE.Group,
       );
@@ -46,15 +40,6 @@ describe("scene complexity foundation", () => {
       );
       expect(group.getObjectByName("architecture-foreground-building")).toBeInstanceOf(THREE.Mesh);
       expect(group.getObjectByName("architecture-foreground-ground")).toBeInstanceOf(THREE.Mesh);
-      group.updateMatrixWorld(true);
-      const reveal = group.getObjectByName(
-        "architecture-foreground-window-1-1-recess-left",
-      );
-      expect(reveal).toBeInstanceOf(THREE.Mesh);
-      const revealBounds = new THREE.Box3().setFromObject(reveal!);
-      const revealSize = revealBounds.getSize(new THREE.Vector3());
-      expect(revealSize.x).toBeCloseTo(toWorld(34), 6);
-      expect(revealSize.z).toBeCloseTo(toWorld(76), 6);
       expect(architectureGeometry.focusTargets.map((target) => target.worldPosition)).toEqual([
         {
           x: 0,

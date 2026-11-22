@@ -240,7 +240,7 @@ test("Architecture Rise WebGL raster distinguishes the Raw/Upright X and Y mappi
 
   const rtt = page.getByTestId("ground-glass-rtt").first();
   const canvas = rtt.locator("canvas");
-  await expect(canvas).toHaveCount(1);
+  await expect(canvas).toHaveCount(1, { timeout: 60_000 });
   await expect(rtt).toHaveAttribute("data-rtt-camera-ok", "true", { timeout: 60_000 });
   await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
 

@@ -3,6 +3,7 @@ import geometry from "../architectureRiseGeometry";
 
 export const architectureRiseScene: SceneDefinition = {
   id: "architecture-rise",
+  sceneVariation: { enabled: true, schemaVersion: 1 },
   name: "Architecture Rise",
   description: "Use rise to include building top without tilting camera body.",
   assets: [

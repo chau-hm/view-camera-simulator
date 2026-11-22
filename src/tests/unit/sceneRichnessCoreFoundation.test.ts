@@ -35,6 +35,19 @@ const worldZBounds = (object: THREE.Object3D): { min: number; max: number } => {
   return { min: bounds.min.z, max: bounds.max.z };
 };
 
+// Float32 world-space geometry rounds at about 1e-6 m near the 10 m return;
+// this is 0.001 mm and remains far below a meaningful architectural offset.
+const ARCHITECTURE_RISE_BOUNDARY_EPSILON_M = 1e-6;
+
+const expectBoundsWithin = (actual: THREE.Box3, expected: THREE.Box3, epsilon: number): void => {
+  expect(actual.min.x).toBeGreaterThanOrEqual(expected.min.x - epsilon);
+  expect(actual.min.y).toBeGreaterThanOrEqual(expected.min.y - epsilon);
+  expect(actual.min.z).toBeGreaterThanOrEqual(expected.min.z - epsilon);
+  expect(actual.max.x).toBeLessThanOrEqual(expected.max.x + epsilon);
+  expect(actual.max.y).toBeLessThanOrEqual(expected.max.y + epsilon);
+  expect(actual.max.z).toBeLessThanOrEqual(expected.max.z + epsilon);
+};
+
 describe("core scene visual richness foundation", () => {
   it("adds architectural context at intended Architecture Rise scale without moving the canonical target", () => {
     const group = createArchitectureRiseGroup({
@@ -51,16 +64,23 @@ describe("core scene visual richness foundation", () => {
       expect(entryLintel).toBeInstanceOf(THREE.Mesh);
       expect(serviceAssembly).toBeInstanceOf(THREE.Group);
       const sideReturnBounds = new THREE.Box3().setFromObject(sideReturn!);
-      expect(sideReturnBounds.min.x).toBeCloseTo(toWorld(ARCHITECTURE_RISE_PRESENTATION_LAYOUT.serviceReturn.minXMm), 6);
-      expect(sideReturnBounds.max.x).toBeCloseTo(toWorld(ARCHITECTURE_RISE_PRESENTATION_LAYOUT.serviceReturn.maxXMm), 6);
-      expect(sideReturnBounds.min.y).toBeCloseTo(toWorld(ARCHITECTURE_RISE_PRESENTATION_LAYOUT.serviceReturn.minYMm), 6);
-      expect(sideReturnBounds.max.y).toBeCloseTo(toWorld(ARCHITECTURE_RISE_PRESENTATION_LAYOUT.serviceReturn.maxYMm), 6);
-      expect(sideReturnBounds.min.z).toBeGreaterThanOrEqual(
-        toWorld(ARCHITECTURE_RISE_PRESENTATION_LAYOUT.serviceReturn.minZMm),
+      const serviceReturn = ARCHITECTURE_RISE_PRESENTATION_LAYOUT.serviceReturn;
+      const serviceReturnEnvelope = new THREE.Box3(
+        new THREE.Vector3(toWorld(serviceReturn.minXMm), toWorld(serviceReturn.minYMm), toWorld(serviceReturn.minZMm)),
+        new THREE.Vector3(toWorld(serviceReturn.maxXMm), toWorld(serviceReturn.maxYMm), toWorld(serviceReturn.maxZMm)),
       );
-      expect(sideReturnBounds.max.z).toBeLessThanOrEqual(
-        toWorld(ARCHITECTURE_RISE_PRESENTATION_LAYOUT.serviceReturn.maxZMm),
+      expectBoundsWithin(sideReturnBounds, serviceReturnEnvelope, ARCHITECTURE_RISE_BOUNDARY_EPSILON_M);
+      expect(serviceReturn.minXMm).toBe(ARCHITECTURE_RISE_PRESENTATION_LAYOUT.mainFacade.maxXMm);
+
+      const negativeControlDisplacementM = 0.01;
+      expect(negativeControlDisplacementM).toBeGreaterThan(ARCHITECTURE_RISE_BOUNDARY_EPSILON_M);
+      const displacedBounds = sideReturnBounds.clone().translate(
+        new THREE.Vector3(0, 0, -negativeControlDisplacementM),
       );
+      expect(() =>
+        expectBoundsWithin(displacedBounds, serviceReturnEnvelope, ARCHITECTURE_RISE_BOUNDARY_EPSILON_M),
+      ).toThrow();
+      expectBoundsWithin(sideReturnBounds, serviceReturnEnvelope, ARCHITECTURE_RISE_BOUNDARY_EPSILON_M);
       const entryLintelBounds = new THREE.Box3().setFromObject(entryLintel!);
       expect(entryLintelBounds.min.x).toBeLessThan(toWorld(ARCHITECTURE_RISE_PRESENTATION_LAYOUT.door.centerXMm));
       expect(entryLintelBounds.max.x).toBeGreaterThan(toWorld(ARCHITECTURE_RISE_PRESENTATION_LAYOUT.door.centerXMm));

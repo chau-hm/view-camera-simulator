@@ -209,15 +209,17 @@ describe("Architecture Rise reflected-world context", () => {
       expect(chart).toBeInstanceOf(THREE.Group);
       if (!sign || !chart || !facade) throw new Error("Expected Architecture Rise context and teaching geometry");
 
-      const panes = { front: [] as THREE.Mesh[], side: [] as THREE.Mesh[] };
+      const panes = { front: [] as THREE.Mesh[], side: [] as THREE.Mesh[], rear: [] as THREE.Mesh[] };
       group.traverse((object) => {
         if (!(object instanceof THREE.Mesh) || !object.name.endsWith("-glazing")) return;
-        if (object.name.includes("service-east-")) panes.side.push(object);
+        if (object.name.startsWith("architecture-rise-rear-")) panes.rear.push(object);
+        else if (object.name.includes("service-east-")) panes.side.push(object);
         else panes.front.push(object);
       });
       expect(panes.front).toHaveLength(7);
       expect(panes.side).toHaveLength(2);
-      expect(new Set([...panes.front, ...panes.side].map((mesh) => mesh.material)).size).toBe(1);
+      expect(panes.rear).toHaveLength(5);
+      expect(new Set([...panes.front, ...panes.side, ...panes.rear].map((mesh) => mesh.material)).size).toBe(1);
 
       const paneBounds = new THREE.Box3().setFromObject(pane);
       const panePoint = new THREE.Vector3(

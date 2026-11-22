@@ -134,9 +134,10 @@ export type SceneSubjectRttOptions = SceneVariationSubjectInput & {
 
 export const ArchitectureRiseRegisteredSubject = ({
   scene,
+  variationDescriptor,
 }: RegisteredSceneSubjectProps) => (
   <>
-    <ArchitectureRiseSubject />
+    <ArchitectureRiseSubject variationDescriptor={variationDescriptor} />
     {scene.focusTargets.map((target) => (
       <mesh
         key={target.id}
@@ -378,9 +379,10 @@ export const sceneSubjectRegistry = {
   },
   "architecture-rise": {
     SceneSubject: ArchitectureRiseRegisteredSubject,
-    createRttGroup: () =>
+    createRttGroup: (options) =>
       createRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, {
         presentation: ARCHITECTURE_RISE_PRESENTATION,
+        variationDescriptor: options?.variationDescriptor,
       }),
     disposeRttGroup: (group) =>
       disposeRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, group),
