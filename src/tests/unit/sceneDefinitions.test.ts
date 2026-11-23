@@ -28,10 +28,10 @@ import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
 import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 describe("scene definitions", () => {
-  it("opts only Architecture + Foreground and Table Tilt into schema-v1 materials", () => {
+  it("opts the Wave 1 scenes into schema-v1 while preserving existing variation contracts", () => {
     expect(architectureForegroundScene.sceneVariation).toEqual({ enabled: true, schemaVersion: 1 });
     expect(tableTiltScene.sceneVariation).toEqual({ enabled: true, schemaVersion: 1 });
-    expect(architectureRiseScene.sceneVariation).toBeUndefined();
+    expect(architectureRiseScene.sceneVariation).toEqual({ enabled: true, schemaVersion: 1 });
     expect(interiorCornerScene.sceneVariation).toEqual({
       enabled: true,
       schemaVersion: 2,

@@ -54,6 +54,8 @@ const SCENES: readonly SceneCase[] = [
   },
 ];
 
+const CAPTURE_OVERLAY_MASK = ".learning-overlay-panel, .scene-overlay-responsive, .btn--viewport-action, .groundglass-view-control, .groundglass-focus-label, .groundglass-scale-cue, [data-testid='ground-glass-blur-display-hint'], [data-testid='ground-glass-focus-loupe'], [data-testid='ground-glass-image-layer'] + div { visibility: hidden !important; pointer-events: none !important; }";
+
 const evidenceDirectory = async (testInfo: TestInfo): Promise<string> => {
   const directory = process.env.SCENE_VARIATION_EVIDENCE_DIR
     ? path.resolve(process.env.SCENE_VARIATION_EVIDENCE_DIR)
@@ -113,7 +115,6 @@ const prepareCleanObserver = async (page: Page, sceneId: string) => {
   if (await overlayTrigger.count() && await overlayTrigger.getAttribute("aria-expanded") === "true") {
     await overlayTrigger.click();
   }
-
   await page.getByRole("button", { name: "Reset 3D view", exact: true }).click();
   await page.evaluate(() => new Promise<void>((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
@@ -158,6 +159,7 @@ const readObserverState = async (page: Page, scene: ReturnType<Page["getByTestId
 };
 
 const captureObserver = async (
+  page: Page,
   scene: ReturnType<Page["getByTestId"]>,
   directory: string,
   filename: string,
@@ -167,13 +169,151 @@ const captureObserver = async (
   const bounds = await canvas.boundingBox();
   if (!bounds) throw new Error(`Observer canvas is hidden for ${filename}`);
   const output = path.join(directory, filename);
-  await canvas.screenshot({ path: output });
+  const captureMask = await page.addStyleTag({
+    content: CAPTURE_OVERLAY_MASK,
+  });
+  try {
+    await canvas.screenshot({ path: output });
+  } finally {
+    await captureMask.evaluate((element) => element.parentNode?.removeChild(element));
+  }
   const bytes = await readFile(output);
   return {
     filename,
     width: Math.round(bounds.width),
     height: Math.round(bounds.height),
     sha256: createHash("sha256").update(bytes).digest("hex"),
+  };
+};
+
+type ObserverCrop = Readonly<{ x: number; y: number; width: number; height: number }>;
+
+const captureObserverCrop = async (
+  page: Page,
+  scene: ReturnType<Page["getByTestId"]>,
+  directory: string,
+  filename: string,
+  crop: ObserverCrop,
+) => {
+  const canvas = scene.locator("canvas").first();
+  await expect(canvas).toBeVisible();
+  const bounds = await canvas.boundingBox();
+  if (!bounds) throw new Error(`Observer canvas is hidden for ${filename}`);
+  const clip = {
+    x: Math.round(bounds.x + bounds.width * crop.x),
+    y: Math.round(bounds.y + bounds.height * crop.y),
+    width: Math.round(bounds.width * crop.width),
+    height: Math.round(bounds.height * crop.height),
+  };
+  const captureMask = await page.addStyleTag({ content: CAPTURE_OVERLAY_MASK });
+  const output = path.join(directory, filename);
+  try {
+    await page.screenshot({ path: output, clip });
+  } finally {
+    await captureMask.evaluate((element) => element.parentNode?.removeChild(element));
+  }
+  const bytes = await readFile(output);
+  return {
+    filename,
+    width: clip.width,
+    height: clip.height,
+    sha256: createHash("sha256").update(bytes).digest("hex"),
+  };
+};
+
+type ArchitectureDetailView = "front-facade" | "side" | "window-limestone" | "roofline-cornice" | "paving-close-up";
+type ArchitectureDetailCapture = Readonly<{
+  filename: string;
+  label: string;
+  cameraPosition: string;
+  orbitTarget: string;
+  sha256: string;
+}>;
+
+const captureArchitectureDetailViews = async (
+  page: Page,
+  scene: ReturnType<Page["getByTestId"]>,
+  directory: string,
+  seed: number,
+  baselinePose: string,
+): Promise<Record<ArchitectureDetailView, ArchitectureDetailCapture>> => {
+  const canvas = scene.locator("canvas").first();
+  const resetView = page.getByRole("button", { name: "Reset 3D view", exact: true });
+  const pose = async () => scene.evaluate((element) => ({
+    cameraPosition: element.getAttribute("data-observer-camera-position") ?? "",
+    orbitTarget: element.getAttribute("data-orbit-target") ?? "",
+  }));
+  const currentPose = async () => {
+    const value = await pose();
+    return `${value.cameraPosition}|${value.orbitTarget}`;
+  };
+  const reset = async () => {
+    await resetView.click();
+    await expect.poll(currentPose).toBe(baselinePose);
+    await page.evaluate(() => new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    }));
+  };
+  const canvasCenter = async () => {
+    const bounds = await canvas.boundingBox();
+    if (!bounds) throw new Error("Architecture Observer canvas is not visible for detail capture");
+    return { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
+  };
+  const orbit = async (deltaX: number, deltaY: number) => {
+    const center = await canvasCenter();
+    await page.mouse.move(center.x, center.y);
+    await page.mouse.down();
+    await page.mouse.move(center.x + deltaX, center.y + deltaY, { steps: 12 });
+    await page.mouse.up();
+    await expect.poll(currentPose).not.toBe(baselinePose);
+  };
+  const zoomIn = async (steps: number) => {
+    const center = await canvasCenter();
+    await page.mouse.move(center.x, center.y);
+    for (let index = 0; index < steps; index += 1) {
+      await page.mouse.wheel(0, -120);
+    }
+    await expect.poll(currentPose).not.toBe(baselinePose);
+    await page.evaluate(() => new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    }));
+  };
+  const capture = async (
+    view: ArchitectureDetailView,
+    action: () => Promise<void>,
+    crop?: ObserverCrop,
+  ): Promise<ArchitectureDetailCapture> => {
+    await reset();
+    await action();
+    const actualPose = await pose();
+    const filename = `architecture-foreground-v2-${view}-seed-${seed}.png`;
+    const image = crop
+      ? await captureObserverCrop(page, scene, directory, filename, crop)
+      : await captureObserver(page, scene, directory, filename);
+    return {
+      filename,
+      label: `Seed ${seed}`,
+      cameraPosition: actualPose.cameraPosition,
+      orbitTarget: actualPose.orbitTarget,
+      sha256: image.sha256,
+    };
+  };
+
+  return {
+    "front-facade": await capture("front-facade", async () => {}, {
+      x: 0.2, y: 0.13, width: 0.52, height: 0.62,
+    }),
+    side: await capture("side", () => orbit(230, 0)),
+    "window-limestone": await capture("window-limestone", () => zoomIn(20)),
+    "roofline-cornice": await capture("roofline-cornice", async () => {}, {
+      x: 0.18, y: 0.17, width: 0.66, height: 0.25,
+    }),
+    "paving-close-up": await capture("paving-close-up", async () => {
+      await orbit(0, 26);
+      await zoomIn(16);
+    }, {
+      x: 0.05, y: 0.55, width: 0.9, height: 0.4,
+    }),
   };
 };
 
@@ -242,6 +382,7 @@ const captureScene = async (page: Page, testInfo: TestInfo, scene: SceneCase) =>
   await expect(page.getByTestId("scene-variation-controls")).toHaveCount(0);
   const canonicalState = await readObserverState(page, guided.scene);
   const canonicalCapture = await captureObserver(
+    page,
     guided.scene,
     directory,
     `${scene.id}-appearance-family-guided-canonical.png`,
@@ -284,7 +425,7 @@ const captureScene = async (page: Page, testInfo: TestInfo, scene: SceneCase) =>
     if (!descriptor) throw new Error(`Missing scene variation descriptor for ${scene.id}`);
     const materialParameters = scene.resolveMaterials(descriptor);
     const filename = `${scene.id}-appearance-family-seed-${seed}.png`;
-    const capture = await captureObserver(runtime.scene, directory, filename);
+    const capture = await captureObserver(page, runtime.scene, directory, filename);
     expect(capture.width).toBe(canonicalCapture.width);
     expect(capture.height).toBe(canonicalCapture.height);
     expect(capture.width).toBeGreaterThanOrEqual(480);
@@ -324,7 +465,7 @@ const captureScene = async (page: Page, testInfo: TestInfo, scene: SceneCase) =>
   const replayState = await readObserverState(page, replayRuntime.scene);
   expect(replayState.position + "|" + replayState.target).toBe(baselinePose);
   const replayFilename = `${scene.id}-appearance-family-seed-284719-url-replay.png`;
-  const replayCapture = await captureObserver(replayRuntime.scene, directory, replayFilename);
+  const replayCapture = await captureObserver(page, replayRuntime.scene, directory, replayFilename);
   const replayCaptureSha = replayCapture.sha256;
   expect(replayCaptureSha).toBe(replayReferenceSha);
   sheetEntries.push({ filename: replayFilename, label: "Seed 284719 · URL replay" });
@@ -434,7 +575,7 @@ test("Architecture + Foreground renders the unrepresented cool-contemporary cand
   const state = await readObserverState(page, runtime.scene);
   expect(state.viewFocus).toBe("scene");
   const filename = "architecture-foreground-cool-contemporary-family-diagnostic.png";
-  const capture = await captureObserver(runtime.scene, directory, filename);
+  const capture = await captureObserver(page, runtime.scene, directory, filename);
   const requestId = await waitForCompletedGroundGlass(page);
   const rtt = await page.getByTestId("ground-glass-rtt").evaluate((element) => ({
     requestId: element.getAttribute("data-frame-request-id"),
@@ -459,6 +600,112 @@ test("Architecture + Foreground renders the unrepresented cool-contemporary cand
       materials,
       observerCapture: capture,
       groundGlass: { ...rtt, requestId },
+    }, null, 2),
+  );
+});
+
+test("Architecture + Foreground v2 captures matched facade and material detail views", async ({ page }, testInfo) => {
+  test.setTimeout(600_000);
+  const scene = SCENES[0]!;
+  const directory = await evidenceDirectory(testInfo);
+  const viewport = { width: 1440, height: 1000 };
+  const seeds = [0, 284719, 0xffff_ffff] as const;
+  const captures: Record<ArchitectureDetailView, ArchitectureDetailCapture[]> = {
+    "front-facade": [],
+    side: [],
+    "window-limestone": [],
+    "roofline-cornice": [],
+    "paving-close-up": [],
+  };
+  const frameRecords: Array<Record<string, unknown>> = [];
+  let baselinePose: string | undefined;
+  let baselineCameraState: Awaited<ReturnType<typeof readObserverState>> | undefined;
+
+  await page.setViewportSize(viewport);
+  expect(await page.evaluate(() => window.devicePixelRatio)).toBe(1);
+
+  for (const seed of seeds) {
+    const route = `/simulator/free/${scene.id}?seed=${seed}&sv=1&${DIAGNOSTICS}`;
+    await page.goto(appRoute(testInfo, route));
+    const runtime = await prepareCleanObserver(page, scene.id);
+    const controls = page.getByTestId("scene-variation-controls");
+    await expect(controls).toHaveAttribute("data-active-seed", String(seed));
+    await expect(controls).toHaveAttribute("data-active-schema", "1");
+    const resolvedUrl = new URL(page.url());
+    expect(resolvedUrl.pathname).toBe(appRoute(testInfo, `/simulator/free/${scene.id}`));
+    expect(resolvedUrl.searchParams.get("seed")).toBe(String(seed));
+    expect(resolvedUrl.searchParams.get("sv")).toBe("1");
+
+    const state = await readObserverState(page, runtime.scene);
+    expect(state.viewFocus).toBe("scene");
+    const pose = state.position + "|" + state.target;
+    if (baselinePose && baselineCameraState) {
+      expect(pose).toBe(baselinePose);
+      expect(state.focusDistanceMm).toBe(baselineCameraState.focusDistanceMm);
+      expect(state.aperture).toBe(baselineCameraState.aperture);
+      expect(state.movements).toEqual(baselineCameraState.movements);
+    } else {
+      baselinePose = pose;
+      baselineCameraState = state;
+    }
+
+    const detailViews = await captureArchitectureDetailViews(
+      page,
+      runtime.scene,
+      directory,
+      seed,
+      baselinePose,
+    );
+    Object.entries(detailViews).forEach(([view, capture]) => {
+      captures[view as ArchitectureDetailView].push(capture);
+    });
+
+    const requestId = await waitForCompletedGroundGlass(page);
+    const rtt = await page.getByTestId("ground-glass-rtt").evaluate((element) => ({
+      requestId: element.getAttribute("data-frame-request-id"),
+      completedRequestId: element.getAttribute("data-last-completed-request-id"),
+      sceneId: element.getAttribute("data-frame-scene-id"),
+      status: element.getAttribute("data-frame-result-status"),
+      orientation: element.getAttribute("data-rtt-preview-mode"),
+      dofProcessingEnabled: element.getAttribute("data-rtt-dof-processing-enabled"),
+    }));
+    expect(rtt.requestId).toBe(rtt.completedRequestId);
+    expect(rtt.sceneId).toBe(scene.id);
+    expect(rtt.status).toBe("completed");
+    frameRecords.push({ seed, state, requestId, rtt });
+  }
+
+  const contactSheets: Record<string, string> = {};
+  for (const [view, viewCaptures] of Object.entries(captures) as Array<[
+    ArchitectureDetailView,
+    ArchitectureDetailCapture[],
+  ]>) {
+    expect(viewCaptures).toHaveLength(seeds.length);
+    expect(new Set(viewCaptures.map(({ cameraPosition, orbitTarget }) =>
+      `${cameraPosition}|${orbitTarget}`,
+    )).size).toBe(1);
+    const filename = `architecture-foreground-v2-${view}-seed-comparison.png`;
+    await writeContactSheet(page, directory, filename, viewCaptures);
+    contactSheets[view] = filename;
+  }
+
+  await writeFile(
+    path.join(directory, "architecture-foreground-v2-detail-views-report.json"),
+    JSON.stringify({
+      captureHead: process.env.SCENE_VARIATION_CAPTURE_HEAD ?? "unspecified working tree",
+      captureMode: process.env.SCENE_VARIATION_CAPTURE_MODE ?? "unspecified",
+      sceneId: scene.id,
+      schemaVersion: 1,
+      viewport,
+      devicePixelRatio: await page.evaluate(() => window.devicePixelRatio),
+      renderQuality: "standard",
+      seeds,
+      observerPoseMustMatchAcrossSeeds: true,
+      focusApertureAndMovementValuesMustMatchAcrossSeeds: true,
+      detailViews: captures,
+      groundGlassFrames: frameRecords,
+      contactSheets,
+      detailCrops: "Front facade, roofline and paving captures are native browser pixels cropped from clean Observer canvases without scaling or retouching; no brightness treatment or retouching was applied.",
     }, null, 2),
   );
 });
