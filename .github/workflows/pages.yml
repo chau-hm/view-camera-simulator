@@ -390,40 +390,66 @@ jobs:
         uses: actions/deploy-pages@v4
 
   feature-push-routing:
-    if: github.event_name == 'push' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production'
     runs-on: ubuntu-latest
+    continue-on-error: true
     permissions:
       actions: read
       contents: read
       pull-requests: read
     outputs:
-      decision: ${{ steps.deleted.outputs.decision || steps.route.outputs.decision || 'run-ci' }}
-      reason: ${{ steps.deleted.outputs.reason || steps.route.outputs.reason || 'routing-unavailable' }}
+      decision: ${{ steps.deleted.outputs.decision || steps.not_feature_push.outputs.decision || steps.route.outputs.decision || 'run-ci' }}
+      reason: ${{ steps.deleted.outputs.reason || steps.not_feature_push.outputs.reason || steps.route.outputs.reason || 'routing-unavailable' }}
     steps:
       - name: Recognize branch deletion
         id: deleted
-        if: github.event.deleted == true || github.event.after == '0000000000000000000000000000000000000000'
+        if: >-
+          github.event_name == 'push' &&
+          github.ref != 'refs/heads/main' &&
+          github.ref != 'refs/heads/production' &&
+          (github.event.deleted == true || github.event.after == '0000000000000000000000000000000000000000')
         run: |
           echo "decision=no-commit" >> "$GITHUB_OUTPUT"
           echo "reason=branch-deleted" >> "$GITHUB_OUTPUT"
 
+      - name: Allow full CI for non-feature-push events
+        id: not_feature_push
+        if: github.event_name != 'push' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/production'
+        run: |
+          echo "decision=run-ci" >> "$GITHUB_OUTPUT"
+          echo "reason=not-feature-push" >> "$GITHUB_OUTPUT"
+
       - name: Checkout routing helper
-        if: steps.deleted.outputs.decision != 'no-commit'
+        if: >-
+          github.event_name == 'push' &&
+          github.ref != 'refs/heads/main' &&
+          github.ref != 'refs/heads/production' &&
+          steps.deleted.outputs.decision != 'no-commit'
         uses: actions/checkout@v4
+        continue-on-error: true
         with:
           ref: ${{ github.sha }}
           fetch-depth: 1
 
       - name: Setup Node.js for routing helper
-        if: steps.deleted.outputs.decision != 'no-commit'
+        if: >-
+          github.event_name == 'push' &&
+          github.ref != 'refs/heads/main' &&
+          github.ref != 'refs/heads/production' &&
+          steps.deleted.outputs.decision != 'no-commit'
         uses: actions/setup-node@v4
+        continue-on-error: true
         with:
           node-version: 24
 
       - name: Classify feature push against current PR validation
         id: route
-        if: steps.deleted.outputs.decision != 'no-commit'
+        if: >-
+          github.event_name == 'push' &&
+          github.ref != 'refs/heads/main' &&
+          github.ref != 'refs/heads/production' &&
+          steps.deleted.outputs.decision != 'no-commit'
         run: node --experimental-strip-types scripts/feature-push-routing.ts
+        continue-on-error: true
         env:
           GITHUB_API_URL: ${{ github.api_url }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
