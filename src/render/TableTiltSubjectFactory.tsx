@@ -5,6 +5,10 @@ import { toWorld } from "./rttUtils";
 import { createProceduralSurfaceMaterial } from "./ProceduralSurfaceMaterials";
 import { disposeTeachingSubjectResources } from "./TeachingMaterials";
 import { ceramicGlaze, cupShell, easedBox, paperEdges, recessedTray } from "./table-tilt/TableTiltFinishes";
+import {
+  createTableTiltStudioEnvironment,
+  createTableTiltStudioFloorMaterial,
+} from "./table-tilt/TableTiltStudioEnvironment";
 
 const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180;
 
@@ -527,7 +531,7 @@ export function createTableTiltGroup(
 
   const floorMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(toWorld(geometry.floor.width), toWorld(geometry.floor.depth)),
-    standardMaterial(geometry.floor.color, 1),
+    createTableTiltStudioFloorMaterial(geometry.floor),
   );
   floorMesh.name = "table-tilt-floor";
   floorMesh.rotation.x = -Math.PI / 2;
@@ -536,7 +540,7 @@ export function createTableTiltGroup(
     toWorld(geometry.floor.center.y),
     toWorld(geometry.floor.center.z),
   );
-  root.add(floorMesh);
+  root.add(floorMesh, createTableTiltStudioEnvironment(geometry.floor));
 
   const tabletopAssembly = new THREE.Group();
   tabletopAssembly.name = "table-tilt-tabletop-assembly";
