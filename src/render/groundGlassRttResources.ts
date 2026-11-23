@@ -4,6 +4,7 @@ import {
   type GroundGlassCocStorageFormat,
 } from "./groundGlassCocTarget";
 import type { RendererCapabilities } from "./backend/rendererCapabilities";
+import { resolveRendererCapabilities } from "./backend/rendererCapabilities";
 
 type GroundGlassRttRenderer = Pick<
   THREE.WebGLRenderer,
@@ -60,14 +61,29 @@ const disposeAndCollectFailure = (
 const createCleanupAggregate = (failures: readonly unknown[], message: string): AggregateError =>
   new AggregateError(failures, message);
 
+export const assertGroundGlassHdrColorTargets = (
+  renderer: GroundGlassRttRenderer,
+  targets: readonly (readonly [string, THREE.WebGLRenderTarget])[],
+): void => {
+  for (const [name, target] of targets) {
+    if (!resolveRendererCapabilities(renderer, target)?.colorRenderTargetRenderable) {
+      throw new Error(`Experimental HDR ${name} framebuffer is unsupported or incomplete`);
+    }
+  }
+};
+
 /** Creates the concrete Three.js resources for the current Ground Glass passes. */
 export const createGroundGlassRttResources = (input: {
   renderer: GroundGlassRttRenderer;
   widthPx: number;
   heightPx: number;
   gatherScale: number;
+  /** Caller is responsible for limiting this experimental format to development. */
+  colorFormat?: "byte" | "half-float";
 }): GroundGlassRttResources => {
-  const { renderer, widthPx, heightPx, gatherScale } = input;
+  const { renderer, widthPx, heightPx, gatherScale, colorFormat = "byte" } = input;
+  const hdr = colorFormat === "half-float";
+  const colorOptions = hdr ? { type: THREE.HalfFloatType } : {};
   const safeGatherScale =
     Number.isFinite(gatherScale) && gatherScale > 0 ? gatherScale : 1;
   const gatherWidthPx = Math.max(1, Math.floor(widthPx * safeGatherScale));
@@ -76,7 +92,7 @@ export const createGroundGlassRttResources = (input: {
   let depthFallback: THREE.DataTexture | null = null;
 
   try {
-    const colorDepthTarget = new THREE.WebGLRenderTarget(widthPx, heightPx);
+    const colorDepthTarget = new THREE.WebGLRenderTarget(widthPx, heightPx, colorOptions);
     ownedTargets.push(colorDepthTarget);
 
     // Keep the runtime constructor check used by the existing Three.js integration.
@@ -104,6 +120,7 @@ export const createGroundGlassRttResources = (input: {
     ownedTargets.push(coc.target);
 
     const farTarget = new THREE.WebGLRenderTarget(gatherWidthPx, gatherHeightPx, {
+      ...colorOptions,
       minFilter: THREE.LinearFilter,
       magFilter: THREE.LinearFilter,
       depthBuffer: false,
@@ -113,6 +130,7 @@ export const createGroundGlassRttResources = (input: {
     ownedTargets.push(farTarget);
 
     const nearTarget = new THREE.WebGLRenderTarget(gatherWidthPx, gatherHeightPx, {
+      ...colorOptions,
       minFilter: THREE.LinearFilter,
       magFilter: THREE.LinearFilter,
       depthBuffer: false,
@@ -121,7 +139,7 @@ export const createGroundGlassRttResources = (input: {
     nearTarget.depthBuffer = false;
     ownedTargets.push(nearTarget);
 
-    const outputTarget = new THREE.WebGLRenderTarget(widthPx, heightPx);
+    const outputTarget = new THREE.WebGLRenderTarget(widthPx, heightPx, colorOptions);
     outputTarget.depthBuffer = false;
     ownedTargets.push(outputTarget);
 
@@ -132,6 +150,15 @@ export const createGroundGlassRttResources = (input: {
     const compositeOutputTarget = new THREE.WebGLRenderTarget(32, 32);
     compositeOutputTarget.depthBuffer = false;
     ownedTargets.push(compositeOutputTarget);
+
+    if (hdr) {
+      // Check real allocations, including the scene's depth attachment. A
+      // constructed target alone does not establish framebuffer support.
+      assertGroundGlassHdrColorTargets(renderer, [
+        ["scene", colorDepthTarget], ["far gather", farTarget],
+        ["near gather", nearTarget], ["composite", outputTarget],
+      ]);
+    }
 
     let disposed = false;
     let disposalFailure: AggregateError | null = null;

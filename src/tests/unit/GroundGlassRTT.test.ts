@@ -347,6 +347,33 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(subject.parent).toBeNull();
   });
 
+  it("prepares renderer-owned development resources after mounting and disposes them before the subject", () => {
+    const subject = new THREE.Group();
+    const calls: string[] = [];
+    const developmentProfile: GroundGlassSceneProfile = {
+      configureRttShadowParticipation: vi.fn(),
+      mountSubject: (scene) => {
+        scene.add(subject);
+        return { group: subject, dispose: () => { calls.push("subject"); subject.removeFromParent(); } };
+      },
+      resolveRenderBounds: () => architectureRiseScene.bounds,
+    };
+    const prepare = vi.fn((scene: THREE.Scene, renderer: THREE.WebGLRenderer) => {
+      expect(scene).toBe(subject.parent);
+      expect(renderer).toBe(fiberTestState.gl);
+      return () => { expect(subject.parent).toBe(scene); calls.push("renderer-resource"); };
+    });
+    const camera = { ...DEFAULT_CAMERA_STATE, ...architectureRiseScene.cameraPreset };
+    const view = render(React.createElement(UnconnectedGroundGlassRTT, {
+      opticsState: deriveOpticsState(camera, architectureRiseScene), focalLengthMm: camera.focalLengthMm,
+      scene: architectureRiseScene, widthPx: 500, heightPx: 400,
+      developmentSceneProfileOverride: developmentProfile, developmentPrepareScene: prepare,
+    }));
+    expect(prepare).toHaveBeenCalledTimes(1);
+    view.unmount();
+    expect(calls).toEqual(["renderer-resource", "subject"]);
+  });
+
   it("mounts the resolved Interior Corner practical in the RTT scene outside the subject", () => {
     const scene = interiorCornerScene;
     const camera = {

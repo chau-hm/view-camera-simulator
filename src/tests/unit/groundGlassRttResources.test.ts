@@ -46,6 +46,30 @@ afterEach(() => {
 });
 
 describe("Ground Glass RTT semantic resource ownership", () => {
+  it("probes every HalfFloat color role without changing CoC or diagnostic formats", () => {
+    const { renderer, context, boundTargets, previousTarget } = createRenderer();
+    const resources = createGroundGlassRttResources({ renderer, widthPx: 80, heightPx: 64, gatherScale: 0.5, colorFormat: "half-float" });
+    const colors = [resources.scene.colorDepthTarget, resources.gather.farTarget, resources.gather.nearTarget, resources.composite.outputTarget];
+    expect(colors.map((target) => target.texture.type)).toEqual(Array(4).fill(THREE.HalfFloatType));
+    expect(resources.diagnostics.rawSceneTarget.texture.type).toBe(THREE.UnsignedByteType);
+    expect(resources.diagnostics.compositeOutputTarget.texture.type).toBe(THREE.UnsignedByteType);
+    expect(context.checkFramebufferStatus).toHaveBeenCalledTimes(5);
+    for (const target of colors) expect(boundTargets).toContain(target);
+    expect(boundTargets.at(-1)).toBe(previousTarget);
+    resources.dispose();
+  });
+
+  it("fails closed and disposes allocated targets when HDR color framebuffer is incomplete", () => {
+    const { renderer, context, boundTargets, previousTarget } = createRenderer();
+    vi.mocked(context.checkFramebufferStatus).mockReturnValueOnce(FRAMEBUFFER_COMPLETE).mockReturnValue(0);
+    const dispose = vi.spyOn(THREE.WebGLRenderTarget.prototype, "dispose");
+    const disposeTexture = vi.spyOn(THREE.DataTexture.prototype, "dispose");
+    expect(() => createGroundGlassRttResources({ renderer, widthPx: 80, heightPx: 64, gatherScale: 1, colorFormat: "half-float" })).toThrow(/Experimental HDR scene framebuffer/);
+    expect(dispose).toHaveBeenCalledTimes(7);
+    expect(disposeTexture).toHaveBeenCalledTimes(1);
+    expect(boundTargets.at(-1)).toBe(previousTarget);
+  });
+
   it("creates stage-owned targets, preserves the W1 CoC probe, and resizes the consuming resources", () => {
     const { renderer, context, boundTargets, previousTarget } = createRenderer();
     const resources = createGroundGlassRttResources({

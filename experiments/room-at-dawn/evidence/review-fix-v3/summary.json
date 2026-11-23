@@ -1,0 +1,72 @@
+{
+  "base": "34b6628c86ef0ace6b4ebe71f1f64536ea6eaa31",
+  "renderer": "Chromium 149 WebGL2, ANGLE SwiftShader",
+  "gi": {
+    "matched": 302,
+    "expected": 302
+  },
+  "reflectionComparison": {
+    "meanAbsoluteRgb8": 0.4110861034164358,
+    "changedPixelFractionAboveTwoMeanChannelLevels": 0.0382617728531856,
+    "caveat": "display referred; not independent specular-radiance measurement"
+  },
+  "apertureAt3500mm": {
+    "f56": 3.662536703456894,
+    "f11": 0.9492326530612245,
+    "f22": 0.23730816326530613
+  },
+  "retirement": {
+    "generation": {
+      "generationId": "room-generation-1",
+      "channelId": "default"
+    },
+    "outcome": "confirmed",
+    "reason": null
+  },
+  "limitations": [
+    "No linear HDR readback or calibrated clipping measurement",
+    "ROI visibility/occlusion unverified",
+    "Prior movement/lateral case changed focus; use rig-orientation/lateral instead",
+    "Current public E2E result recorded separately"
+  ],
+  "rawUprightComparison": {
+    "sameOrientationMeanAbsoluteRgb8": 37.13848491843644,
+    "rawRotated180MeanAbsoluteRgb8": 0.5422014465989535,
+    "method": "per-channel RGB8 comparison of matched combined Raw and Upright PNGs; 480×361 screenshots",
+    "caveat": "display-referred screenshot comparison, not independent ray-geometry proof"
+  },
+  "publicDofTransition": {
+    "base": "pass ~2.0 minutes",
+    "reviewedHead": "timeout 120 s",
+    "currentWorkingTree": "pass 1.9 minutes",
+    "caveat": "single runs, no proven deterministic cause"
+  },
+  "latestCapture": "final-neutral; after abort-controller and retirement callback changes",
+  "finalNeutralSourceGitBlobs": {
+    "experiments/room-at-dawn/optics.jsx": "2e38441be1f5a65b5429b66a3e7c6144004b5d0f",
+    "experiments/room-at-dawn/capture-evidence.cjs": "275a16f8dbadd02b8a5adf899867910a789074df",
+    "experiments/room-at-dawn/reflection-capture.js": "016dc8cae64ad8649fb00997f65aa17de54a4cf1",
+    "src/render/GroundGlassRTT.tsx": "787ea250c3841a239b75f1c694bc44ca15d3f5f4",
+    "src/render/groundGlassRttResources.ts": "d7bfbe8c1d4a94c41d8d6474991b38f03dccedc2"
+  },
+  "provenanceNotes": [
+    "Final neutral uses the blobs listed above; other cases were captured during the same review-fix round before the later bake-abort or lifecycle-observation-only edits.",
+    "Desk-focus ROI metrics were remeasured offline after correcting the vertical coordinate mapping, and candidate validity flags were added when packaging.",
+    "The initial reflection A/B contaminated by the borrowed Architecture Rise environment was excluded."
+  ],
+  "validation": {
+    "unit": {
+      "files": 353,
+      "tests": 4299,
+      "status": "passed"
+    },
+    "typecheck": "passed",
+    "lint": "passed",
+    "css": "passed",
+    "build": "passed",
+    "productionExperimentalAssets": "absent by filename and content search",
+    "publicDofTransition": "passed current working tree in 1.9 minutes",
+    "fullLocalE2e": "not run",
+    "independentReview": "not ready; unresolved HDR radiance, focus and lifecycle scope"
+  }
+}
