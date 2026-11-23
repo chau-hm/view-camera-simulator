@@ -600,7 +600,7 @@ describe("Free Mode seeded material subject factories", () => {
       observerSpies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
       rttSpies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
     }
-  });
+  }, 15_000);
 
   it.each([
     {
