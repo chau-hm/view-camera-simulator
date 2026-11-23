@@ -17,13 +17,31 @@ concurrency:
 jobs:
   ci:
     name: ${{ github.event_name == 'push' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && 'feature-push-validation' || 'ci' }}
-    needs: feature-push-validation-gate
+    needs:
+      - feature-push-routing
+      - feature-push-validation-gate
+      - historical-qualification
+    if: >-
+      always() &&
+      !cancelled() &&
+      !(needs.feature-push-routing.result == 'success' &&
+        (needs.feature-push-routing.outputs.decision == 'covered-by-pr' ||
+         needs.feature-push-routing.outputs.decision == 'no-commit'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 50
+
+      - name: Require successful historical qualification and fail-open routing
+        env:
+          FEATURE_ROUTING_RESULT: ${{ needs.feature-push-routing.result }}
+          FEATURE_ROUTING_DECISION: ${{ needs.feature-push-routing.outputs.decision }}
+          FEATURE_GATE_RESULT: ${{ needs.feature-push-validation-gate.result }}
+          HISTORICAL_RESULT: ${{ needs.historical-qualification.result }}
+          HISTORICAL_DECISION: ${{ needs.historical-qualification.outputs.decision }}
+        run: node scripts/historical-qualification-ci-gate.mjs
 
       # M7E native captures name a source commit from PR #303. That PR was
       # squash-merged, so fetch its retained head ref for strict source checks.
@@ -469,3 +487,17 @@ jobs:
     steps:
       - name: Allow full CI unless exact PR validation covers this push
         run: echo "Full CI is required for this event."
+  historical-qualification:
+    needs: feature-push-routing
+    if: >-
+      always() &&
+      !cancelled() &&
+      !(needs.feature-push-routing.result == 'success' &&
+        (needs.feature-push-routing.outputs.decision == 'covered-by-pr' ||
+         needs.feature-push-routing.outputs.decision == 'no-commit'))
+    uses: ./.github/workflows/historical-qualification.yml
+    with:
+      mode: changed
+    permissions:
+      contents: read
+      pull-requests: read

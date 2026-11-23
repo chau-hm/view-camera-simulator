@@ -342,15 +342,22 @@ describe("M7K capture workflow provenance", () => {
     }
   }, 20_000);
 
-  it("requires the accepted schema-v1 and selected schema-v2 evidence checks in the CI job", () => {
+  it("keeps the original archive checks while the independent qualification lane is compared", () => {
     const workflow = readFileSync(resolve(process.cwd(), ".github/workflows/pages.yml"), "utf8");
+    const archiveWorkflow = readFileSync(resolve(process.cwd(), ".github/workflows/historical-qualification.yml"), "utf8");
+    const evidenceManifest = JSON.parse(readFileSync(resolve(process.cwd(), "scripts/historical-evidence-manifest.json"), "utf8")) as {
+      families: Array<{ id: string; commands: Array<{ args: string[] }> }>;
+    };
     const ciStart = workflow.indexOf("  ci:\n");
     const deployStart = workflow.indexOf("\n  deploy:", ciStart);
     expect(ciStart).toBeGreaterThanOrEqual(0);
     expect(deployStart).toBeGreaterThan(ciStart);
     const ciJob = workflow.slice(ciStart, deployStart);
+    expect(ciJob).toContain("always() &&");
+    expect(ciJob).toContain("- historical-qualification");
+    expect(ciJob).toContain("HISTORICAL_RESULT");
+    expect(ciJob).toContain("run: node scripts/historical-qualification-ci-gate.mjs");
     expect(workflow).toContain("  push:\n    branches:\n      - \"**\"\n");
-    expect(ciJob).not.toContain("if:");
     expect(ciJob).toContain("name: Fetch M7E native capture source history");
     expect(ciJob).toContain("name: Fetch M7F native capture source history");
     expect(ciJob).toContain("name: Fetch M7J retained capture source history");
@@ -364,7 +371,20 @@ describe("M7K capture workflow provenance", () => {
     expect(ciJob).toContain("--retained-ref=refs/pull/309/head");
     expect(ciJob).toContain("--verify-path=scripts/run-m7k-broad-e2e.mjs");
     expect(ciJob).toContain("--verify-path=src/render/testing/groundGlassM7kBroadE2eQualification.ts");
+    expect(ciJob).toContain("run: npm run evidence:check:m7r");
+    expect(ciJob).toContain("run: npm run evidence:check:m7v");
+    expect(ciJob).toContain("run: npm run evidence:check:m7w");
     expect(ciJob).not.toContain("continue-on-error: true");
+    expect(archiveWorkflow).toContain("  workflow_call:");
+    expect(archiveWorkflow).toContain("  workflow_dispatch:");
+    expect(archiveWorkflow).toContain("fetch-depth: 1");
+    expect(archiveWorkflow).toContain("persist-credentials: false");
+    expect(archiveWorkflow).toContain("pull-requests: read");
+    expect(archiveWorkflow).toContain("node scripts/run-historical-qualification.mjs");
+    expect(evidenceManifest.families.find(({ id }) => id === "M7R")?.commands).toHaveLength(1);
+    expect(evidenceManifest.families.find(({ id }) => id === "M7V")).toBeUndefined();
+    expect(evidenceManifest.families.find(({ id }) => id === "M7K")?.commands).toHaveLength(2);
+    expect(workflow).toContain("  historical-qualification:\n");
     expect(workflow).toContain("  deploy:\n    if: github.event_name == 'push' && github.ref == 'refs/heads/production'\n    needs: ci\n");
   });
 });

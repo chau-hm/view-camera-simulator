@@ -1,0 +1,333 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+const manifestPath = resolve(process.cwd(), "scripts/historical-evidence-manifest.json");
+export const HISTORICAL_EVIDENCE_MANIFEST = JSON.parse(readFileSync(manifestPath, "utf8"));
+const supported = HISTORICAL_EVIDENCE_MANIFEST.families;
+const supportedIds = new Set(supported.map(({ id }) => id));
+const ordinaryCiOnly = supported.filter((family) => family.alwaysInOrdinaryCi === true);
+const automaticallyRouted = supported.filter((family) => family.alwaysInOrdinaryCi !== true);
+const ordinaryCiOwners = ordinaryCiOnly.map(({ owner }) => owner);
+const idToFamily = new Map(supported.map((family) => [family.id, family]));
+const globalPaths = HISTORICAL_EVIDENCE_MANIFEST.sharedQualificationPaths;
+const familyPattern = /m7([a-z])/i;
+const shaPattern = /^[0-9a-f]{40}$/i;
+
+const normalizePath = (value) => value.replaceAll("\\", "/").replace(/^\.\//, "");
+const isWithin = (path, prefix) => prefix.endsWith("/") ? path.startsWith(prefix) : path === prefix;
+const isSharedQualificationPath = (path) => globalPaths.some((prefix) => isWithin(path, prefix));
+const familyPathMatches = (path, family) => {
+  const normalized = path.toLowerCase();
+  if (family.artifactRoots.some((root) => normalized.startsWith(root.toLowerCase()))) return true;
+  if (HISTORICAL_EVIDENCE_MANIFEST.sourcePins.some((pin) =>
+    pin.families.includes(family.id) && pin.verifyPaths.some((sourcePath) => normalizePath(sourcePath) === path))) return true;
+  if (!/^(?:scripts|src)\//i.test(path)) return false;
+  return normalized.includes(family.id.toLowerCase());
+};
+
+function allFamilies({ includeOrdinaryCiOnly = false } = {}) {
+  const families = includeOrdinaryCiOnly ? supported : automaticallyRouted;
+  return families.map(({ id }) => id);
+}
+
+function closeDependencies(initialIds) {
+  const closure = new Set(initialIds);
+  const queue = [...closure];
+  while (queue.length > 0) {
+    const current = queue.shift();
+    for (const dependent of HISTORICAL_EVIDENCE_MANIFEST.dependencies[current] ?? []) {
+      if (!closure.has(dependent)) {
+        closure.add(dependent);
+        queue.push(dependent);
+      }
+    }
+  }
+  return supported.map(({ id }) => id).filter((id) => closure.has(id));
+}
+
+function broadDecision(reason, { unverified = true, paths = [] } = {}) {
+  return {
+    decision: unverified ? "UNVERIFIED" : "QUALIFIED",
+    families: allFamilies(),
+    changedPaths: paths,
+    broad: true,
+    reasons: [reason],
+    currentOwners: [...ordinaryCiOwners, "ordinary-ci:evidence:check:m7v"],
+    unsupported: [],
+  };
+}
+
+/** Classifies actual repository paths and closes each match over known report consumers. */
+export function classifyChangedPaths(changedPaths, options = {}) {
+  if (options.forceFull === true) {
+    const unsupported = options.includeUnsupported === true
+      ? Object.entries(HISTORICAL_EVIDENCE_MANIFEST.unsupportedFamilies).map(([id, reason]) => ({ id, reason }))
+      : [];
+    return {
+      decision: unsupported.length > 0 ? "UNVERIFIED" : "QUALIFIED",
+      families: allFamilies({ includeOrdinaryCiOnly: true }),
+      changedPaths: [],
+      broad: true,
+      reasons: options.reason ? [options.reason] : ["full-historical-qualification-requested"],
+      currentOwners: ["ordinary-ci:evidence:check:m7v"],
+      unsupported,
+    };
+  }
+
+  if (!Array.isArray(changedPaths) || changedPaths.length === 0) {
+    return broadDecision("changed-file-set-empty-or-unavailable", { paths: [] });
+  }
+
+  const paths = [...new Set(changedPaths.map((path) => normalizePath(String(path))))];
+  if (paths.some((path) => !path || path.startsWith("/") || path.split("/").includes(".."))) {
+    return broadDecision("changed-file-path-invalid", { paths });
+  }
+
+  const matched = new Set();
+  const unsupported = new Map();
+  const reasons = [];
+  const currentOwners = new Set();
+  let broad = false;
+  let unverified = false;
+
+  for (const path of paths) {
+    if (isSharedQualificationPath(path)) {
+      broad = true;
+      allFamilies().forEach((id) => matched.add(id));
+      ordinaryCiOwners.forEach((owner) => currentOwners.add(owner));
+      currentOwners.add("ordinary-ci:evidence:check:m7v");
+      reasons.push(`shared-qualification-path:${path}`);
+      continue;
+    }
+
+    const lower = path.toLowerCase();
+    const token = lower.match(familyPattern);
+    let matchedKnownFamily = false;
+
+    if (token) {
+      const candidate = `M7${token[1].toUpperCase()}`;
+      if (candidate === "M7V") {
+        currentOwners.add("ordinary-ci:evidence:check:m7v");
+        matched.add("M7W");
+        reasons.push(`current-m7v-input-also-feeds-m7w:${path}`);
+        matchedKnownFamily = true;
+      } else if (supportedIds.has(candidate) && idToFamily.get(candidate).alwaysInOrdinaryCi === true
+        && familyPathMatches(path, idToFamily.get(candidate))) {
+        currentOwners.add(idToFamily.get(candidate).owner);
+        reasons.push(`family-retained-in-ordinary-ci:${candidate}:${path}`);
+        matchedKnownFamily = true;
+      } else if (supportedIds.has(candidate) && familyPathMatches(path, idToFamily.get(candidate))) {
+        matched.add(candidate);
+        reasons.push(`family-input:${candidate}:${path}`);
+        matchedKnownFamily = true;
+      } else {
+        const unsupportedReason = HISTORICAL_EVIDENCE_MANIFEST.unsupportedFamilies[candidate]
+          ?? `No qualification manifest or retained validator is registered for ${candidate}.`;
+        unsupported.set(candidate, unsupportedReason);
+        unverified = true;
+        broad = true;
+        allFamilies().forEach((id) => matched.add(id));
+        ordinaryCiOwners.forEach((owner) => currentOwners.add(owner));
+        currentOwners.add("ordinary-ci:evidence:check:m7v");
+        reasons.push(`unsupported-or-unmapped-historical-family:${candidate}:${path}`);
+        matchedKnownFamily = true;
+      }
+    }
+
+    if (!matchedKnownFamily && isEvidenceLikeUnknownPath(path)) {
+      unverified = true;
+      broad = true;
+      allFamilies().forEach((id) => matched.add(id));
+      ordinaryCiOwners.forEach((owner) => currentOwners.add(owner));
+      currentOwners.add("ordinary-ci:evidence:check:m7v");
+      reasons.push(`unmapped-evidence-verification-dependency:${path}`);
+    }
+  }
+
+  const dependencyClosure = closeDependencies(matched);
+  for (const familyId of dependencyClosure) {
+    const family = idToFamily.get(familyId);
+    if (family?.alwaysInOrdinaryCi === true) currentOwners.add(family.owner);
+  }
+  const families = dependencyClosure.filter((id) => idToFamily.get(id)?.alwaysInOrdinaryCi !== true);
+  if (families.length === 0 && !unverified) {
+    return {
+      decision: "NOT_APPLICABLE",
+      families: [],
+      changedPaths: paths,
+      broad: false,
+      reasons: ["complete-path-set-has-no-frozen-historical-qualification-dependency"],
+      currentOwners: [...currentOwners],
+      unsupported: [],
+    };
+  }
+
+  return {
+    decision: unverified ? "UNVERIFIED" : "QUALIFIED",
+    families,
+    changedPaths: paths,
+    broad,
+    reasons: [...new Set(reasons)],
+    currentOwners: [...currentOwners],
+    unsupported: [...unsupported].map(([id, reason]) => ({ id, reason })),
+  };
+}
+
+/** Classifies a path set only after event discovery proved the set complete. */
+export function classifyCompleteChangedPaths(changedPaths) {
+  if (!Array.isArray(changedPaths)) return failedClosedRoute("complete-changed-file-set-invalid");
+  if (changedPaths.length === 0) {
+    return {
+      decision: "NOT_APPLICABLE",
+      families: [],
+      changedPaths: [],
+      broad: false,
+      reasons: ["complete-changed-file-set-is-empty"],
+      currentOwners: [...ordinaryCiOwners, "ordinary-ci:evidence:check:m7v"],
+      unsupported: [],
+    };
+  }
+  return classifyChangedPaths(changedPaths);
+}
+
+function isEvidenceLikeUnknownPath(path) {
+  if (/^docs\/architecture\//i.test(path) && /(?:evidence|capture|qualification|provenance|report|m7)/i.test(path)) return true;
+  if (/^scripts\//i.test(path) && /(?:evidence|capture|qualification|provenance|replay|normaliz|evaluate|historical)/i.test(path)) return true;
+  if (/^src\//i.test(path) && /(?:evidence|capture|qualification|provenance|m7)/i.test(path)) return true;
+  return false;
+}
+
+export function parseNameStatusZ(output) {
+  const entries = output.split("\0");
+  const paths = [];
+  for (let index = 0; index < entries.length;) {
+    const status = entries[index++];
+    if (!status) continue;
+    const pathCount = /^[RC]/.test(status) ? 2 : 1;
+    for (let pathIndex = 0; pathIndex < pathCount; pathIndex += 1) {
+      const path = entries[index++];
+      if (!path) throw new Error("Git returned an incomplete name-status record");
+      paths.push(path);
+    }
+  }
+  return paths;
+}
+
+function checkedPrIdentity(event, repository) {
+  const pull = event?.pull_request;
+  const base = pull?.base;
+  const head = pull?.head;
+  if (event?.repository?.full_name !== repository || base?.repo?.full_name !== repository ||
+      !Number.isSafeInteger(pull?.number) || pull.number < 1 ||
+      !shaPattern.test(head?.sha ?? "") || !shaPattern.test(base?.sha ?? "") ||
+      typeof head?.ref !== "string" || typeof base?.ref !== "string") {
+    throw new Error("pull-request-event-identity-incomplete");
+  }
+  return { pullNumber: pull.number, eventHeadSha: head.sha, eventBaseSha: base.sha, baseRef: base.ref };
+}
+
+/** Re-reads the PR, verifies its exact event revision, then retrieves every changed-file page. */
+export async function discoverPullRequestPaths(event, { repository, apiRequest, maxPages = 30 }) {
+  const identity = checkedPrIdentity(event, repository);
+  if (typeof apiRequest !== "function") throw new Error("pull-request-api-client-unavailable");
+  const detail = await apiRequest(`/repos/${repository}/pulls/${identity.pullNumber}`);
+  if (detail?.number !== identity.pullNumber || detail?.state !== "open" ||
+      detail?.base?.repo?.full_name !== repository || detail?.base?.ref !== identity.baseRef ||
+      detail?.base?.sha !== identity.eventBaseSha || detail?.head?.sha !== identity.eventHeadSha ||
+      typeof detail?.changed_files !== "number" || !Number.isSafeInteger(detail.changed_files) || detail.changed_files < 0) {
+    throw new Error("pull-request-head-base-or-state-is-stale");
+  }
+
+  const files = [];
+  let fileCount = 0;
+  let complete = false;
+  for (let page = 1; page <= maxPages; page += 1) {
+    const rows = await apiRequest(`/repos/${repository}/pulls/${identity.pullNumber}/files?per_page=100&page=${page}`);
+    if (!Array.isArray(rows)) throw new Error("pull-request-files-response-invalid");
+    for (const row of rows) {
+      if (!row || typeof row.filename !== "string" || row.filename.length === 0 ||
+          !["added", "modified", "removed", "renamed", "copied", "changed"].includes(row.status)) {
+        throw new Error("pull-request-file-row-incomplete");
+      }
+      fileCount += 1;
+      files.push(row.filename);
+      if (row.status === "renamed") {
+        if (typeof row.previous_filename !== "string" || row.previous_filename.length === 0) {
+          throw new Error("pull-request-rename-source-missing");
+        }
+        files.push(row.previous_filename);
+      }
+    }
+    if (rows.length < 100) {
+      complete = true;
+      break;
+    }
+  }
+  if (!complete || fileCount !== detail.changed_files) {
+    throw new Error("pull-request-file-pagination-incomplete");
+  }
+  const finalDetail = await apiRequest(`/repos/${repository}/pulls/${identity.pullNumber}`);
+  if (finalDetail?.number !== identity.pullNumber || finalDetail?.state !== "open" ||
+      finalDetail?.base?.repo?.full_name !== repository || finalDetail?.base?.ref !== identity.baseRef ||
+      finalDetail?.base?.sha !== identity.eventBaseSha || finalDetail?.head?.sha !== identity.eventHeadSha ||
+      finalDetail?.changed_files !== detail.changed_files) {
+    throw new Error("pull-request-changed-during-file-pagination");
+  }
+  return {
+    paths: files,
+    pullNumber: identity.pullNumber,
+    headSha: identity.eventHeadSha,
+    baseSha: identity.eventBaseSha,
+    baseRef: identity.baseRef,
+  };
+}
+
+/** Compares the exact push trees. A new branch uses main's merge-base; uncertainty is surfaced. */
+export async function discoverPushPaths(event, { runGit, repositoryRoot = process.cwd() }) {
+  const before = event?.before;
+  const after = event?.after;
+  if (event?.deleted === true || after === "0".repeat(40)) return { paths: [], noCommit: true, reason: "branch-deleted" };
+  if (typeof runGit !== "function" || !shaPattern.test(after ?? "")) throw new Error("push-commit-identity-invalid");
+
+  const head = await runGit(["rev-parse", "HEAD"], repositoryRoot);
+  if (head.trim() !== after) throw new Error("checked-out-head-does-not-match-push-after-sha");
+  const afterObject = await runGit(["cat-file", "-e", `${after}^{commit}`], repositoryRoot, true);
+  if (afterObject.status !== 0) throw new Error("push-after-commit-unavailable");
+
+  let base = before;
+  if (before === "0".repeat(40)) {
+    const shallow = (await runGit(["rev-parse", "--is-shallow-repository"], repositoryRoot)).trim() === "true";
+    const fetchArgs = shallow
+      ? ["fetch", "--unshallow", "--no-tags", "origin", "refs/heads/main:refs/remotes/origin/main"]
+      : ["fetch", "--no-tags", "origin", "refs/heads/main:refs/remotes/origin/main"];
+    await runGit(fetchArgs, repositoryRoot);
+    base = (await runGit(["merge-base", "refs/remotes/origin/main", after], repositoryRoot)).trim();
+    if (!shaPattern.test(base)) throw new Error("new-branch-has-no-main-merge-base");
+  } else {
+    if (!shaPattern.test(before ?? "")) throw new Error("push-before-sha-invalid");
+    const beforeObject = await runGit(["cat-file", "-e", `${before}^{commit}`], repositoryRoot, true);
+    if (beforeObject.status !== 0) {
+      await runGit(["fetch", "--no-tags", "--depth=1", "origin", before], repositoryRoot);
+    }
+    const confirmedBefore = await runGit(["cat-file", "-e", `${before}^{commit}`], repositoryRoot, true);
+    if (confirmedBefore.status !== 0) throw new Error("push-before-commit-unavailable");
+  }
+
+  const diff = await runGit(["diff", "--name-status", "-M", "-z", base, after], repositoryRoot);
+  return { paths: parseNameStatusZ(diff), beforeSha: before, afterSha: after, comparisonBaseSha: base, noCommit: false };
+}
+
+export function failedClosedRoute(reason) {
+  return broadDecision(reason, { unverified: true });
+}
+
+export function determineQualificationDecision({ routeDecision, hasFamilies, sourceFailure = false, missingArtifacts = false, validatorFailure = false, unsupported = false }) {
+  if (!hasFamilies && routeDecision === "NOT_APPLICABLE") return "NOT_APPLICABLE";
+  if (routeDecision === "UNVERIFIED" || sourceFailure || missingArtifacts || unsupported) return "UNVERIFIED";
+  if (validatorFailure) return "FAILED";
+  return routeDecision === "QUALIFIED" ? "QUALIFIED" : "UNVERIFIED";
+}
+
+export function manifestPathForDiagnostics() {
+  return manifestPath;
+}
