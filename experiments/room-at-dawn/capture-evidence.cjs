@@ -46,12 +46,16 @@ fs.mkdirSync(out, { recursive: true });
         : ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"],
   });
   const page = await browser.newPage({ viewport: { width: 1200, height: 950 } });
+  // A software reflection capture can keep controls busy past the Playwright
+  // action default; completed-frame checks remain independently bounded.
+  page.setDefaultTimeout(timeout);
   const problems = [];
   page.on("pageerror", (error) => problems.push(`pageerror: ${error.message}`));
   page.on("console", (message) => {
     if (message.type() === "error") problems.push(`console: ${message.text()}`);
   });
   await page.addInitScript({ path: path.join(__dirname, "capture-sync.cjs") });
+  await page.addInitScript({ path: path.join(__dirname, "observer-sync.cjs") });
   try {
     await page.goto(url);
     await page.waitForFunction(
@@ -170,6 +174,94 @@ fs.mkdirSync(out, { recursive: true });
         expected,
       );
       if (snapshot.result.status !== "ready") throw new Error(`${name}: ${snapshot.result.reason}`);
+      await page.waitForFunction(
+        () => {
+          const result = window.__roomInspectObserver(window.__roomOptics, window.__roomObserver);
+          return (
+            result.status === "ready" ||
+            result.status === "failed" ||
+            window.__roomObserver?.status === "failed"
+          );
+        },
+        null,
+        { timeout },
+      );
+      const observerSnapshot = await page.evaluate(() => ({
+        result: window.__roomInspectObserver(window.__roomOptics, window.__roomObserver),
+        frame: window.__roomObserver,
+        request: window.__roomOptics?.observerRequest,
+      }));
+      if (observerSnapshot.result.status !== "ready")
+        throw new Error(`${name}: Observer not ready: ${JSON.stringify(observerSnapshot)}`);
+      const observerCanvas = page
+        .locator("section")
+        .filter({ has: page.getByRole("heading", { name: "Room observer" }) })
+        .locator("canvas");
+      if ((await observerCanvas.count()) !== 1)
+        throw new Error(`${name}: expected one Observer canvas`);
+      const observerPath = path.join(out, `${name}-observer.png`);
+      await observerCanvas.screenshot({ path: observerPath, timeout });
+      const observerAfter = await page.evaluate(() =>
+        window.__roomInspectObserver(window.__roomOptics, window.__roomObserver),
+      );
+      if (
+        observerAfter.status !== "ready" ||
+        observerAfter.requestId !== observerSnapshot.result.requestId ||
+        observerAfter.generationId !== observerSnapshot.result.generationId
+      )
+        throw new Error(`${name}: Observer request or generation changed during capture`);
+      const observerPng = fs.readFileSync(observerPath).toString("base64");
+      const observerMetrics = await page.evaluate(async (png) => {
+        const bytes = Uint8Array.from(atob(png), (c) => c.charCodeAt(0));
+        const image = await createImageBitmap(new Blob([bytes], { type: "image/png" }));
+        const c = document.createElement("canvas");
+        c.width = image.width;
+        c.height = image.height;
+        const ctx = c.getContext("2d", { willReadFrequently: true });
+        ctx.drawImage(image, 0, 0);
+        image.close();
+        const { data, width, height } = ctx.getImageData(0, 0, c.width, c.height);
+        function measure(x0, y0, x1, y1) {
+          let total = 0,
+            dark = 0,
+            white = 0,
+            n = 0;
+          for (let y = y0; y < y1; y++)
+            for (let x = x0; x < x1; x++) {
+              const i = (y * width + x) * 4;
+              const l = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2];
+              total += l;
+              n++;
+              if (l <= 5) dark++;
+              if (l >= 250) white++;
+            }
+          return {
+            meanLuma8: total / n,
+            nearBlackFraction: dark / n,
+            nearWhiteFraction: white / n,
+            pixels: n,
+          };
+        }
+        return {
+          space: "display-referred RGB8; not linear radiance",
+          wholeImage: measure(0, 0, width, height),
+          centerRegion: {
+            bounds: [
+              Math.floor(width * 0.35),
+              Math.floor(height * 0.35),
+              Math.floor(width * 0.65),
+              Math.floor(height * 0.65),
+            ],
+            materialUnverified: true,
+            ...measure(
+              Math.floor(width * 0.35),
+              Math.floor(height * 0.35),
+              Math.floor(width * 0.65),
+              Math.floor(height * 0.65),
+            ),
+          },
+        };
+      }, observerPng);
       const canvas = page.locator('[data-rtt-resource-channel="default"] canvas');
       if ((await canvas.count()) !== 1)
         throw new Error(`${name}: expected exactly one Ground Glass canvas`);
@@ -277,6 +369,8 @@ fs.mkdirSync(out, { recursive: true });
           {
             expected,
             snapshot,
+            observer: observerSnapshot,
+            observerMetrics,
             imageMetrics,
             canvas: await canvas.evaluate((el) => {
               const gl = el.getContext("webgl2") || el.getContext("webgl");

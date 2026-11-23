@@ -6,9 +6,9 @@ import * as THREE from "three";
  * caller must have adapted vGiW to the upstream frame before mounting the scene.
  *
  * RTT and Observer cannot share this WebGL render-target texture. The original
- * glass ShaderMaterial is intentionally not assigned an environment: it is
- * shared with the Observer and uses a samplerCube/world-position contract that
- * needs a separate renderer-local material adaptation.
+ * glass ShaderMaterial is intentionally not assigned an environment: its
+ * samplerCube/world-position contract needs a separate renderer-local shader
+ * adaptation even though each view now owns its material variants.
  *
  * Three r187's PMREMGenerator accepts an output cube target. Supplying our own
  * with its required mip layout means a failed generation cannot strand an

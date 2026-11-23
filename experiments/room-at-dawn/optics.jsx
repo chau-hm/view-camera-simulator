@@ -1,6 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { buildScene } from "./vendor/src/scene/index.js";
 import { inspectBake } from "./bake-check.js";
@@ -8,6 +8,7 @@ import { GI } from "./vendor/src/core/gi.js";
 import { LOOK } from "./vendor/src/render/look.js";
 import { ROOM_PRESETS } from "./presets.js";
 import { captureRoomReflections } from "./reflection-capture.js";
+import { createRoomView } from "./view-resources.js";
 import bakeUrl from "./vendor/bake/gi.bin?url";
 import { deriveOpticsState } from "../../src/core/optics/deriveOpticsState.ts";
 import { GroundGlassRTT } from "../../src/render/GroundGlassRTT.tsx";
@@ -24,8 +25,9 @@ import {
 // One rigid translation maps the desired upstream camera position to the VCS rig origin.
 // Both render worlds use metres; only the scene metadata/optics boundary uses mm.
 const roomOrigin = { value: new THREE.Vector3(...ROOM_PRESETS.wide.origin) };
-const roomPreExposure = { value: 1 };
 let requestSequence = 0;
+let observerRequestSequence = 0;
+let observerGenerationSequence = 0;
 const roomBounds = { min: { x: -2400, y: -1400, z: -15000 }, max: { x: 3000, y: 3000, z: 10000 } };
 const sceneDefinition = {
   ...architectureRiseScene,
@@ -68,27 +70,11 @@ function adaptGiMaterials(root) {
         shader.vertexShader =
           "uniform vec3 roomOrigin;\n" +
           shader.vertexShader.replace(before, "vGiW = gw.xyz + roomOrigin;");
-        // HDR uses unity scene radiance; only the labelled byte comparison uses upstream pre-exposure.
-        if (!shader.fragmentShader.includes("#include <opaque_fragment>"))
-          throw new Error("Upstream PBR output hook missing");
-        if (roomPreExposure.value !== 1) {
-          shader.fragmentShader = shader.fragmentShader.replace(
-            "#include <opaque_fragment>",
-            `outgoingLight *= ${LOOK.exposure.toFixed(1)};\n#include <opaque_fragment>`,
-          );
-        }
       };
       const oldKey = m.customProgramCacheKey.bind(m);
-      m.customProgramCacheKey = () =>
-        oldKey() + "|room-translation|" + (roomPreExposure.value === 1 ? "hdr" : "byte");
+      m.customProgramCacheKey = () => oldKey() + "|room-translation";
     }
   });
-}
-function makeGroup(source, origin) {
-  const group = new THREE.Group();
-  for (const child of source.children) group.add(child.clone(true));
-  group.position.set(...origin.map((n) => -n));
-  return group;
 }
 // Authored source coordinates, not yet confirmed unoccluded surface samples.
 const SOURCE_FEATURES = [
@@ -170,6 +156,175 @@ class RenderBoundary extends React.Component {
     );
   }
 }
+class ObserverBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { error: String(error?.message || error) };
+  }
+  componentDidCatch(error) {
+    window.__roomObserver = {
+      requestId: window.__roomOptics?.observerRequest?.requestId,
+      status: "failed",
+      error: String(error?.message || error),
+    };
+  }
+  render() {
+    return this.state.error ? (
+      <p role="alert">Observer renderer failed: {this.state.error}</p>
+    ) : (
+      this.props.children
+    );
+  }
+}
+function ObserverView({
+  owner,
+  preset,
+  reflectionsEnabled,
+  displayExposure,
+  request,
+  lensCenterWorld,
+  onStatus,
+}) {
+  const { gl, scene, camera, invalidate } = useThree();
+  const [generation] = useState(() => `observer-generation-${++observerGenerationSequence}`);
+  const sequence = useRef(0);
+  const current = useRef(null);
+  const lastReported = useRef(null);
+
+  useLayoutEffect(() => {
+    camera.position.set(
+      lensCenterWorld.x * 0.001,
+      lensCenterWorld.y * 0.001,
+      lensCenterWorld.z * 0.001,
+    );
+    camera.up.set(0, 1, 0);
+    camera.lookAt(camera.position.x, camera.position.y, camera.position.z + 1);
+    camera.updateMatrixWorld(true);
+    invalidate();
+  }, [camera, invalidate, lensCenterWorld.x, lensCenterWorld.y, lensCenterWorld.z]);
+
+  useLayoutEffect(() => {
+    gl.outputColorSpace = THREE.SRGBColorSpace;
+    gl.toneMapping = THREE.ReinhardToneMapping;
+    gl.toneMappingExposure = displayExposure;
+    invalidate();
+  }, [gl, displayExposure, invalidate]);
+
+  useLayoutEffect(() => {
+    const view = createRoomView(owner.scene, preset.origin, GI.uniforms);
+    let disposeReflection = () => {};
+    let reflectionError = null;
+    try {
+      scene.add(view.group);
+    } catch (error) {
+      view.dispose();
+      throw error;
+    }
+    try {
+      if (reflectionsEnabled) {
+        disposeReflection = captureRoomReflections({
+          renderer: gl,
+          scene,
+          giUniforms: view.uniforms,
+          roomBox: owner.ctx.roomBox,
+          probe: new THREE.Vector3(2.35, 1.3, 2),
+          roomOrigin: new THREE.Vector3(...preset.origin),
+          captureExteriorScale: LOOK.ext,
+        });
+      }
+    } catch (error) {
+      reflectionError = String(error?.message || error);
+    }
+    current.current = { view, reflectionError };
+    window.__roomObserverDebug = {
+      setGiScale(value) {
+        view.uniforms.giScale.value = value;
+        invalidate();
+      },
+      giUniforms: view.uniforms,
+      viewGroup: view.group,
+    };
+    invalidate();
+    return () => {
+      const errors = [];
+      try {
+        disposeReflection();
+      } catch (error) {
+        errors.push(String(error));
+      }
+      try {
+        scene.remove(view.group);
+      } catch (error) {
+        errors.push(String(error));
+      }
+      try {
+        view.dispose();
+      } catch (error) {
+        errors.push(String(error));
+      }
+      if (current.current?.view === view) current.current = null;
+      if (window.__roomObserverDebug?.viewGroup === view.group) delete window.__roomObserverDebug;
+      if (window.__roomObserver?.generationId === generation) delete window.__roomObserver;
+      window.__roomObserverRetirements ||= [];
+      window.__roomObserverRetirements.push({
+        generationId: generation,
+        reflectionDisposed: errors.length === 0,
+        materialVariantsDisposed: errors.length === 0,
+        errors,
+      });
+    };
+  }, [owner, preset, reflectionsEnabled, gl, scene, invalidate, generation]);
+
+  useLayoutEffect(() => {
+    invalidate();
+  }, [request, invalidate]);
+  useFrame(() => {
+    const active = current.current;
+    if (!active) return;
+    try {
+      gl.render(scene, camera);
+      const state = {
+        requestId: request.requestId,
+        generationId: generation,
+        frameId: `${generation}:frame:${++sequence.current}`,
+        status: active.reflectionError ? "failed" : "completed",
+        error: active.reflectionError,
+        presetKey: request.presetKey,
+        hdrDiagnostic: request.hdr,
+        reflectionsEnabled,
+        displayExposure,
+        toneMapping: gl.toneMapping,
+        toneMappingExposure: gl.toneMappingExposure,
+        outputColorSpace: gl.outputColorSpace,
+        renderer: gl.constructor.name,
+        environmentInstalled: Boolean(scene.environment),
+        materialVariants: active.view.materialCount,
+        giScale: active.view.uniforms.giScale.value,
+        cameraPosition: camera.position.toArray(),
+        cameraForward: camera.getWorldDirection(new THREE.Vector3()).toArray(),
+      };
+      window.__roomObserver = state;
+      if (lastReported.current !== request.requestId) {
+        lastReported.current = request.requestId;
+        onStatus(state);
+      }
+    } catch (error) {
+      const state = {
+        requestId: request.requestId,
+        generationId: generation,
+        status: "failed",
+        error: String(error?.message || error),
+      };
+      window.__roomObserver = state;
+      onStatus(state);
+    }
+  }, 1);
+  return null;
+}
+
 function App() {
   const [owner, setOwner] = useState(null),
     [error, setError] = useState(""),
@@ -179,6 +334,9 @@ function App() {
   const [generationEpoch, setGenerationEpoch] = useState(1);
   const [hdr, setHdr] = useState(true);
   const [reflectionsEnabled, setReflectionsEnabled] = useState(true);
+  const [observerEnabled, setObserverEnabled] = useState(true);
+  const [groundEnabled, setGroundEnabled] = useState(true);
+  const [observerStatus, setObserverStatus] = useState(null);
   const [displayExposure, setDisplayExposure] = useState(LOOK.exposure);
   const [camera, setCamera] = useState({
     ...DEFAULT_CAMERA_STATE,
@@ -239,9 +397,24 @@ function App() {
   }, []);
   const optics = useMemo(() => deriveOpticsState(camera, sceneDefinition), [camera]);
   const features = useMemo(() => inspectFeatures(optics, camera, preset), [optics, camera, preset]);
-  const observerGroup = useMemo(
-    () => (owner ? makeGroup(owner.scene, preset.origin) : null),
-    [owner, preset, presetKey],
+  const observerRequest = useMemo(
+    () => ({
+      requestId: `observer-request-${++observerRequestSequence}`,
+      presetKey,
+      hdr,
+      displayExposure,
+      reflectionsEnabled,
+      lensCenterWorld: { ...optics.lensCenterWorld },
+    }),
+    [
+      presetKey,
+      hdr,
+      displayExposure,
+      reflectionsEnabled,
+      optics.lensCenterWorld.x,
+      optics.lensCenterWorld.y,
+      optics.lensCenterWorld.z,
+    ],
   );
   const profile = useMemo(
     () =>
@@ -251,7 +424,12 @@ function App() {
             configureRttShadowParticipation: () => {},
             resolveRenderBounds: () => roomBounds,
             mountSubject: (scene) => {
-              const group = makeGroup(owner.scene, preset.origin);
+              const view = createRoomView(owner.scene, preset.origin, GI.uniforms, {
+                bytePreExposure: hdr ? null : LOOK.exposure,
+              });
+              const group = view.group;
+              const previousGiUniforms = scene.userData.roomGiUniforms;
+              scene.userData.roomGiUniforms = view.uniforms;
               const previousEnvironment = scene.environment;
               scene.environment = null;
               const lights = [];
@@ -264,6 +442,8 @@ function App() {
               const restore = () => {
                 scene.remove(group);
                 scene.environment = previousEnvironment;
+                scene.userData.roomGiUniforms = previousGiUniforms;
+                view.dispose();
                 lights.forEach(([light, visible]) => {
                   light.visible = visible;
                 });
@@ -286,7 +466,7 @@ function App() {
             },
           }
         : undefined,
-    [owner, preset, presetKey],
+    [owner, preset, presetKey, hdr],
   );
   const generation = useMemo(
     () => ({ generationId: `room-generation-${generationEpoch}`, channelId: "default" }),
@@ -328,7 +508,7 @@ function App() {
       return captureRoomReflections({
         scene,
         renderer,
-        giUniforms: GI.uniforms,
+        giUniforms: scene.userData.roomGiUniforms,
         roomBox: owner.ctx.roomBox,
         probe: new THREE.Vector3(2.35, 1.3, 2),
         roomOrigin: roomOrigin.value,
@@ -338,6 +518,7 @@ function App() {
     [owner, reflectionsEnabled, preset],
   );
   const handleInfo = useCallback((_channel, next) => setInfo(next), []);
+  const handleObserverStatus = useCallback((next) => setObserverStatus(next), []);
   const set = (key, value) => setCamera((c) => ({ ...c, [key]: value }));
   const range = (label, key, min, max, step) => (
     <label style={{ display: "block" }}>
@@ -376,6 +557,7 @@ function App() {
       hdr,
       displayExposure,
       reflectionsEnabled,
+      observerRequest,
     };
   }, [
     camera,
@@ -393,6 +575,7 @@ function App() {
     hdr,
     displayExposure,
     reflectionsEnabled,
+    observerRequest,
   ]);
   return (
     <main style={{ padding: 16 }}>
@@ -412,20 +595,35 @@ function App() {
         <section>
           <h2>Room observer</h2>
           <div style={{ width: 480, height: 360, background: "#111" }}>
-            {owner && show && (
-              <Canvas
-                frameloop="demand"
-                camera={{ position: [0, 0, -0.15], fov: 65, near: 0.02, far: 100 }}
-              >
-                <primitive object={observerGroup} dispose={null} />
-              </Canvas>
+            {owner && show && observerEnabled && (
+              <ObserverBoundary>
+                <Canvas
+                  frameloop="demand"
+                  camera={{ position: [0, 0, 0], fov: 65, near: 0.02, far: 100 }}
+                >
+                  <ObserverView
+                    owner={owner}
+                    preset={preset}
+                    reflectionsEnabled={reflectionsEnabled}
+                    displayExposure={displayExposure}
+                    request={observerRequest}
+                    lensCenterWorld={optics.lensCenterWorld}
+                    onStatus={handleObserverStatus}
+                  />
+                </Canvas>
+              </ObserverBoundary>
+            )}
+            {observerStatus?.status === "failed" && (
+              <p role="alert">
+                Observer renderer or reflection capture failed: {observerStatus.error}
+              </p>
             )}
           </div>
         </section>
         <section>
           <h2>Ground Glass ({mode})</h2>
           <div style={{ width: 480, height: 360, background: "#111" }}>
-            {owner && show && (
+            {owner && show && groundEnabled && (
               <RenderBoundary key={generationEpoch}>
                 <GroundGlassRTT
                   key={generationEpoch}
@@ -474,15 +672,6 @@ function App() {
             value={hdr ? "hdr" : "byte"}
             onChange={(e) => {
               const enabled = e.target.value === "hdr";
-              roomPreExposure.value = enabled ? 1 : LOOK.exposure;
-              owner?.scene.traverse((o) => {
-                for (const material of Array.isArray(o.material)
-                  ? o.material
-                  : o.material
-                    ? [o.material]
-                    : [])
-                  if (material.defines?.USE_GI !== undefined) material.needsUpdate = true;
-              });
               setHdr(enabled);
               setGenerationEpoch((n) => n + 1);
             }}
@@ -581,6 +770,17 @@ function App() {
         </button>{" "}
         <button
           onClick={() => {
+            if (!groundEnabled) setGenerationEpoch((n) => n + 1);
+            setGroundEnabled((v) => !v);
+          }}
+        >
+          {groundEnabled ? "Unmount Ground Glass" : "Remount Ground Glass"}
+        </button>{" "}
+        <button onClick={() => setObserverEnabled((v) => !v)}>
+          {observerEnabled ? "Unmount Observer" : "Remount Observer"}
+        </button>{" "}
+        <button
+          onClick={() => {
             if (!show) setGenerationEpoch((n) => n + 1);
             setShow((s) => !s);
           }}
@@ -599,6 +799,7 @@ function App() {
             sceneColor: hdr ? "RGBA half-float (requested)" : "RGBA unsigned byte",
             displayExposure,
             reflectionsEnabled,
+            observer: observerStatus,
             nearM: info?.cameraNearWorld,
             farM: info?.cameraFarWorld,
             cameraOk: info?.cameraConfigurationOk,
