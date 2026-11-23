@@ -1,8 +1,10 @@
 # Free Mode Seeded Materials — Wave 1
 
+> **Current integration status:** This report began as qualification for the original Wave 1 Architecture + Foreground building. PR #355 replaced that building with the current modular classical v2 scene. The original Architecture screenshots, signatures, and resource counts below are retained as pre-#355 history; they do not qualify the current v2 model. The final section records the current-main baseline and new v2 evidence.
+
 ## Scope
 
-Wave 1 adds schema-v1, seed-driven material variation to the existing **Architecture + Foreground** and **Table Tilt** scenes in Free Mode. It does not change scene geometry, object placement, lighting, camera controls, optical calibration, focus targets, or Ground Glass shaders. Architecture Rise and the unfinished Procedural Architecture Rise upgrade are out of scope.
+Wave 1 adds schema-v1, seed-driven material variation to **Architecture + Foreground** and **Table Tilt** in Free Mode. The final integration adopts the current-main Architecture + Foreground v2 geometry and adds variation to its existing materials; it does not change that geometry, object placement, lighting, camera controls, optical calibration, focus targets, or Ground Glass shaders. Architecture Rise and its separate materials work are outside the seeded-material port described here.
 
 The material work complements high-quality scene geometry; surface textures do not replace missing architectural detail or complete the separate Architecture Rise work.
 
@@ -10,7 +12,7 @@ The material work complements high-quality scene geometry; surface textures do n
 
 | Scene | Stable role IDs | Seeded surface treatment |
 | --- | --- | --- |
-| Architecture + Foreground | `scene-style`, `building-shell`, `front-facade`, `roof-parapet`, `ground-concrete`, `forecourt-trim`, `window-frame` | Coherent appearance-family palettes with existing plaster, concrete, and cut-stone patterns; the seeded facade retains its focus-friendly fine grid. |
+| Architecture + Foreground v2 | `scene-style`, `plaster`, `rusticated-limestone`, `limestone-trim`, `limestone-cap`, `mullion`, `roof-slate`, `paving`, `curb`, `returns` | Coherent family palettes for existing plaster, limestone, roof, paving, and stone finishes. The current v2 geometry has no separate Wave 1 fine-grid facade mesh. |
 | Table Tilt | `tabletop-wood`, `table-frame`, `context-wood`, `context-accent` | Procedural wood maps on the tabletop and context tray; bounded palette and roughness variation on the frame and context accent. |
 
 The scene style resolves through `descriptor.createRandomStream("materials", "scene-style")`; each role continues through its own `descriptor.createRandomStream("materials", roleId)`. Role streams are independent, so adding or resolving another role does not consume a shared sequence. Surface maps continue to come from `createProceduralSurfaceMaterial()` at its existing 128×128 resolution. There is no second generator or global texture cache.
@@ -21,9 +23,9 @@ Table Tilt reuses its seeded frame material across the table structure. Repeated
 
 Both target scene definitions opt into `sceneVariation: { enabled: true, schemaVersion: 1 }`. Free Mode without an explicit seed keeps the existing implicit-seed workflow. A seed in the URL, such as `/simulator/free/table-tilt?seed=284719&sv=1`, replays the same role parameters and material maps; Regenerate requests another seed through the existing controls.
 
-When no variation descriptor is supplied, both factories take their original canonical material path. Guided Mode uses that path and does not receive a seeded descriptor. The front facade's focus-friendly fine grid and the Table Tilt tabletop's original grain remain canonical. Scene definitions for Architecture Rise, Interior Corner, Shelf Swing, and Still-Life Studio retain their existing variation contracts.
+When no variation descriptor is supplied, both factories take their canonical material path. Guided Mode uses that path and does not receive a seeded descriptor. Architecture + Foreground's current-main v2 materials and the Table Tilt tabletop's original grain remain canonical. The fine-grid facade mentioned in the earlier Wave 1 review was part of the superseded pre-#355 building and is preserved only as historical context below. Scene definitions for Architecture Rise, Interior Corner, Shelf Swing, and Still-Life Studio retain their existing variation contracts.
 
-Canonical subject signatures captured before the change are locked in the regression tests:
+Original Wave 1 canonical subject signatures (the Architecture value is pre-#355 and historical) were:
 
 - Architecture + Foreground: `9df7d060bf087b997143dc8c21767455083f392879b79d59230a13d7be349061`
 - Table Tilt: `f2a65b0dab19898cd2235a17b02c23f04f84982992b5ea909873d31de0291fdc`
@@ -32,7 +34,7 @@ The tests also hash each generated map's bytes, check repeated generation at see
 
 ## Teaching detail preserved
 
-Architecture + Foreground keeps its fine-grid front facade and all existing building, roof, window, ground, paving-seam, curb, and forecourt geometry. Ground focus-target coordinates, composition bounds, and Front Rise/Tilt calibration remain unchanged.
+The original Wave 1 Architecture + Foreground checks protected the then-current fine-grid facade and scene geometry. After #355, the accepted detail contract is the current v2 plaster, limestone, trim, window, cornice, roof, and custom paving system documented in the final integration section. The seeded-material integration preserves current-main geometry and material structure. Ground focus-target coordinates, composition bounds, and Front Rise/Tilt calibration remain unchanged.
 
 Table Tilt keeps its original Guided Mode grain. Seeded materials do not touch focus-card patterns, measurement stripes, focus probes, detail markers, panel markings, subject coordinates, tabletop inclination, or the canonical focusing solution. Focus, aperture, rise, and tilt adjustments do not recreate seeded material subjects.
 
@@ -42,7 +44,9 @@ Real Chromium captures use a 1440×1000 viewport, DPR 1, Standard quality, a fix
 
 The Observer capture for seed `284719` has the same PNG SHA-256 as its same-seed URL replay in both scenes, and every report records capture hashes and subject/resource counts.
 
-### Architecture + Foreground
+### Architecture + Foreground — original pre-#355 evidence
+
+The following captures show the superseded simple building from the original Wave 1 branch. They remain in the repository as historical evidence and are not the visual qualification for Architecture + Foreground v2.
 
 ![Architecture + Foreground canonical and seeded Observer captures](evidence/free-mode-seeded-materials-wave1/architecture-foreground-observer-contact-sheet.png)
 
@@ -58,7 +62,7 @@ The screenshots show restrained but visible material differences at ordinary Obs
 
 ## Resource and performance findings
 
-Counts below are unique resources on one subject. Observer and RTT own separate subject resources. Each procedural surface role contributes three 128×128 maps to each seeded subject: color, roughness, and normal.
+The Architecture counts below describe the superseded pre-#355 building and are retained as history, not as the current v2 baseline. Table Tilt remains the previously qualified scene. Counts are unique resources on one subject; Observer and RTT own separate subjects. Procedural surfaces use color, roughness, and normal maps at the existing resolution.
 
 | Scene / mode | Objects | Meshes | Geometries | Materials | Textures | Triangles |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -87,11 +91,12 @@ Full capture metadata and ten-action resource traces:
 - [Architecture + Foreground report](evidence/free-mode-seeded-materials-wave1/architecture-foreground-report.json)
 - [Table Tilt report](evidence/free-mode-seeded-materials-wave1/table-tilt-report.json)
 
-## Known limitations
+## Known limitations from the original Wave 1 qualification
 
 - Procedural maps provide subtle surface finish and grain; they do not add architectural geometry or detail.
 - Headless CPU-fallback timings do not predict user-device frame rate.
-- Seeded maps add up to 15 textures per Architecture subject and 4 per Table Tilt subject compared with the corresponding canonical subject; each renderer owns its own copies.
+- The original simple-building resource estimate predates #355. Current Architecture + Foreground v2 resource counts are reported separately in the final integration section.
+- Seeded Table Tilt maps add four textures per subject compared with its canonical subject; each renderer owns its own copies.
 - The URL replay evidence is for the existing root and deployment-subpath route handling; it does not change URL normalization.
 
 ## Recommended Wave 2 candidates
@@ -260,3 +265,87 @@ No geometry, mesh count, triangle count, material count, map count, or texture r
 Table Tilt's previously documented Ground Glass framing limitation remains **LIMITED** and is not corrected or obscured by this materials-only round. The Ground Glass evidence is regression evidence; the new material-appearance qualification is based on the normal Observer photographs where the relevant surfaces are visible.
 
 Validation for this round: `npm test` passed (345 files / 4,251 tests); typecheck, lint, CSS check, build, and `git diff --check` passed. The focused role/map unit tests passed; the matched twelve-seed family capture suite passed (2/2), the separate cool-family candidate capture passed, and the complete Wave 1 seeded-material browser suite passed (4/4), including calibrated Ground Glass, ten regenerations per scene, and movement-control stability. Root and `/view-camera-simulator/` production-base URL checks passed. The final PR #350 CI result is recorded in the PR handoff.
+
+## Final Integration — Architecture + Foreground v2
+
+### Main integration and source authority
+
+PR #350's reviewed head was `57480375ff4b64368639213853d5e14eb8cf65e2`, based on `62eb670dae6ccaed83beff681b3e9dfac8c22b46`. The first merge integrated `origin/main` at `2fca13103504b6c714979ccfcd853516df0e2ab3`, including PR #355's modular classical Architecture + Foreground v2. During this review-fix, main advanced again through PR #356; `658487f468d14d6129f4ac7091ebd71c32afd5ed` was fetched and merged before final validation.
+
+The conflicts in `playwright.scene-variation.production.config.ts`, `playwright.scene-variation.subpath-production.config.ts`, and `src/render/ArchitectureForegroundSubjectFactory.tsx` were resolved against their current-main behavior. The current modular factory remains authoritative: it builds the v2 elevations, roofline, and forecourt structures, then receives optional role variations through the existing material helpers. `SceneAssetSubjects` and the registered RTT adapter pass the same descriptor to independently owned Observer and Ground Glass subjects. The generalized current-main `publicScenes.test.ts` coverage remains intact. The production publication config matches current main and is unchanged in the final PR diff.
+
+No Architecture + Foreground geometry source, Architecture Rise or Oblique Architecture implementation, camera controls, focus/composition coordinates, lighting, or optics changed relative to current main. The existing simple-building and fine-grid screenshots above remain historical pre-#355 evidence; the v2 screenshots below qualify the current classical building.
+
+### V2 material roles and families
+
+The resolver keeps schema v1, the existing `materials` PRNG domain, and the independent `scene-style` selection. Stable v2 material role IDs map to physical surfaces:
+
+| Role ID | Current v2 surface | Seeded properties |
+| --- | --- | --- |
+| `plaster` | Main plaster surfaces | Existing plaster realization; family color, fixed repeat `[1, 1]`, bounded roughness `0.89–0.93`, normal strength `0.13–0.18`. |
+| `rusticated-limestone` | Rusticated limestone blocks | Existing limestone realization; family color, repeat `[1.12, 2.1]`, bounded roughness `0.89–0.93`, normal strength `0.22–0.27`. |
+| `limestone-trim` | Window surrounds and trim | Coordinated limestone color and roughness `0.82–0.88`. |
+| `limestone-cap` | Caps and edge stones | Coordinated stone color and roughness `0.80–0.88`. |
+| `mullion` | Window mullions | Family-compatible color and roughness `0.76–0.84`. |
+| `roof-slate` | Existing roof finish | Restrained slate color and roughness `0.90–0.97`. |
+| `paving` | Existing jointed paving | Family color and roughness `0.975–0.995`; the texture's joint network is unchanged. |
+| `curb` / `returns` | Existing curb and return stones | Coordinated stone colors and roughness `0.82–0.90`. |
+
+The four coordinated families remain `cool-contemporary`, `warm-stone`, `dark-contemporary`, and `light-mineral`. Reference seeds resolve to: `0` warm stone, `1` light mineral, `284719` dark contemporary, and `4294967295` light mineral. The frozen twelve-seed sample covers warm stone, light mineral, and dark contemporary; a separate deterministic candidate capture at seed `14` covers cool contemporary. Each role still uses its own stable substream, and the shared `createProceduralSurfaceMaterial()` remains the sole procedural map generator.
+
+### Canonical, seeded, and geometry contracts
+
+The current-main no-descriptor Architecture + Foreground subject signature is `57f9feb2d4e3a194d30bc35c526a7409b63994160dcea180e228aedfc5912e68`; the original pre-#355 Wave 1 signature `9df7d060bf087b997143dc8c21767455083f392879b79d59230a13d7be349061` is historical and changed because the current canonical v2 building and surfaces replaced the old subject. Table Tilt's canonical signature remains `f2a65b0dab19898cd2235a17b02c23f04f84982992b5ea909873d31de0291fdc`.
+
+The v2 Architecture seeded material map signatures intentionally use the new physical roles. The current tests pin these values for the four reference seeds:
+
+| Seed | Family | Combined seeded role-map SHA-256 |
+| ---: | --- | --- |
+| `0` | warm stone | `ef25db0b656897e27ad5895a60bb40b0a83b99787f58a63a7aa73e46b5545a5c` |
+| `1` | light mineral | `867459ad05bff7cb84780eb640723baf3f50be0dd18b636b3f5eb23c6386deeb` |
+| `284719` | dark contemporary | `96297aced6689cfc1bd4e29f728d987ddaaeba796af5faa3c274eabd411cfde6` |
+| `4294967295` | light mineral | `ce734dd2a7c856678a7e6783bfc0fb84ee084973569b4c6f73a83f651c7793b1` |
+
+Table Tilt's accepted seeded signatures remain unchanged: `0` → `e58e7a31f680a698538cf958bc9f4943db7f8407c343cee5bf745dbf945ae4d4`, `1` → `d3cfc73cd1a48c1af0d4d86f49df0cee78f8eb0db0e5bd5a255f57a511723bd2`, `284719` → `be906a80e99b36a0afb0d01a5e6ba14375c7e32b4605b687912b448153fa4614`, and `4294967295` → `5a5dc87e5af354e1adb985890cfddfd5290ed9462aac6b06d1bd75150e7390f9`.
+
+Canonical Guided/no-descriptor output is protected against current main. Seeded and canonical v2 subjects retain equal geometry signatures; the current Architecture + Foreground focus targets and composition bounds match their scene geometry contracts. Paving variation changes only the compatible material color and roughness: the 256×256 DataTexture bytes, slab joints, repeat, and V offset match canonical output for the reference seeds. `ProceduralSurfaceMaterials` and its canonical map hashes were not changed.
+
+### Current-main browser evidence
+
+The new post-#356 captures use genuine Chromium at 1440×1000, DPR 1, Standard quality, fixed Observer pose, and disabled teaching overlays. Observer panels retain their native 514×410 size; Ground Glass panels retain native 514×411 output.
+
+![Architecture + Foreground v2 — current-main Guided and three-seed Observer comparison](evidence/free-mode-seeded-materials-wave1/architecture-foreground-v2/observer-current-main-three-seed-comparison.png)
+
+![Architecture + Foreground v2 — current-main three-seed Raw and Upright Ground Glass comparison](evidence/free-mode-seeded-materials-wave1/architecture-foreground-v2/ground-glass-current-main-three-seed-orientations.png)
+
+The current-main run verified Guided canonical, seeds `0`, `284719`, and `4294967295`, and same-seed URL replay. Within the run, seed `284719` and its replay produced the same Observer SHA-256 (`56c3a6e34a9107c99ac6ca878a9b5942a31d1f1bb68d57bc377ed20f880106b0`). Ground Glass was captured at the reachable 8000 mm focus and f/11 with Rise and Tilt neutral. For every Raw and Upright request, the current request ID matched completion, the scene ID matched Architecture + Foreground, the frame completed, and normal DOF processing remained enabled. The workflow separately toggled Raw RTT DOF bypass and asserted that bypass disabled normal DOF processing; bypass is not presented as a normal photographic image.
+
+At normal display size, the plaster, limestone, surrounds, mullions, cornice, and paving remain visible. The three seeded families are perceptible while retaining coherent stone and slate colors. Fine map grain is naturally subtle at Ground Glass size; no claim depends on every texture pixel being distinguishable. The twelve-seed grid and matched front, side, window/limestone, roofline, and paving detail sheets were captured against the same v2 subject before the additional PR #356 camera-anatomy-only merge. The current-main three-seed and Ground Glass captures confirm that the scene subject and its material appearance remain consistent after that merge.
+
+The new current-main screenshots, RTT identities, resource data, and browser state are recorded in the [current-main capture report](evidence/free-mode-seeded-materials-wave1/architecture-foreground-v2/current-main-observer-ground-glass-resource-report.json). V2 detail comparisons are available as [front facade](evidence/free-mode-seeded-materials-wave1/architecture-foreground-v2/front-facade-detail.png), [side elevation](evidence/free-mode-seeded-materials-wave1/architecture-foreground-v2/side-elevation-detail.png), [window and limestone](evidence/free-mode-seeded-materials-wave1/architecture-foreground-v2/window-limestone-detail.png), [roofline and cornice](evidence/free-mode-seeded-materials-wave1/architecture-foreground-v2/roofline-cornice-detail.png), and [paving joints](evidence/free-mode-seeded-materials-wave1/architecture-foreground-v2/paving-joints-detail.png). The twelve-seed comparison is [here](evidence/free-mode-seeded-materials-wave1/architecture-foreground-v2/observer-twelve-seed-grid.png), and the separate cool-family candidate is [here](evidence/free-mode-seeded-materials-wave1/architecture-foreground-v2/observer-cool-contemporary-candidate.png).
+
+### Resources, Table Tilt, and known limitation
+
+Current-main canonical and seeded Architecture subjects have the same counts:
+
+| Subject | Objects | Meshes | Geometries | Materials | Textures | Triangles |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| Observer | 71 | 68 | 67 | 16 | 7 | 28,574 |
+| RTT | 66 | 64 | 63 | 12 | 7 | 27,518 |
+
+The ten-action Regenerate run held renderer resources at 64 geometries / 18 textures, Observer and RTT subject counts stayed flat, and renderer / RTT-resource generations stayed stable while subject generation advanced. The browser's available timing backend is `cpu-fallback`: the Guided p50/p95 frame cadence was 178.6/192.4 ms and seed `284719` was 184.9/197.9 ms. These readings are local software-renderer observations, not hardware GPU benchmarks.
+
+Table Tilt's accepted oak/teak/walnut-like material behavior and all four reference-seed map signatures remain unchanged; no Table Tilt material or geometry was tuned. The current production-base browser workflow still exercises both target scenes, but the inherited Table Tilt Ground Glass framing limit remains: its tabletop is too narrowly framed to qualify the seeded grain photographically. That pre-existing camera/scene-composition issue remains separate from the unchanged, manually accepted Table Tilt material families.
+
+### Final integration validation and decision
+
+- `npm test -- --maxWorkers=4`: 350 files / 4,292 tests passed. This includes the refreshed v2 Architecture baseline and the preserved Architecture Rise v1 contract.
+- `npm run typecheck`, `npm run lint`, `npm run check:css`, `npm run build`, and final `git diff --check`: passed.
+- Current-main Architecture + Foreground Chromium qualification: 1 passed, including canonical output, three fixed seeds, URL replay, Raw/Upright RTT, DOF-bypass state, ten Regenerates, and stable resource counts.
+- Root and `/view-camera-simulator/` production-base workflows: 1 passed each, covering both target scenes, implicit and explicit seeds, replay, Regenerate, browser Back/Forward, Guided query cleanup, and current RTT completion.
+- Focus/Aperture/Rise/Tilt subject-stability browser check: 1 passed on the latest-main tree across both scenes; subject generations and texture counts remained stable.
+- Current-head GitHub CI status is recorded in the updated PR handoff after publication.
+
+**Technical Qualification:** PASS. **Architecture v2 Visual Qualification:** IMPROVED. **Table Tilt Materials:** ACCEPTED_UNCHANGED. **Architecture v2 Manual User Acceptance:** PENDING_USER_REVIEW.
+
+**Merge recommendation:** Ready for final manual review of the current-main Architecture v2 evidence. Keep the existing Table Tilt photographic-framing follow-up separate. Do not merge until the user accepts the new Architecture v2 presentation.
