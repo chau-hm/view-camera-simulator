@@ -17,7 +17,15 @@ concurrency:
 jobs:
   ci:
     name: ${{ github.event_name == 'push' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/production' && 'feature-push-validation' || 'ci' }}
-    needs: feature-push-validation-gate
+    needs:
+      - feature-push-routing
+      - feature-push-validation-gate
+      - historical-qualification
+    if: >-
+      always() &&
+      !(needs.feature-push-routing.result == 'success' &&
+        (needs.feature-push-routing.outputs.decision == 'covered-by-pr' ||
+         needs.feature-push-routing.outputs.decision == 'no-commit'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -25,40 +33,30 @@ jobs:
         with:
           fetch-depth: 50
 
-      # M7E native captures name a source commit from PR #303. That PR was
-      # squash-merged, so fetch its retained head ref for strict source checks.
-      - name: Fetch M7E native capture source history
-        run: git fetch --no-tags --depth=50 origin refs/pull/303/head
+      - name: Require successful historical qualification and fail-open routing
+        env:
+          FEATURE_ROUTING_RESULT: ${{ needs.feature-push-routing.result }}
+          FEATURE_ROUTING_DECISION: ${{ needs.feature-push-routing.outputs.decision }}
+          FEATURE_GATE_RESULT: ${{ needs.feature-push-validation-gate.result }}
+          HISTORICAL_RESULT: ${{ needs.historical-qualification.result }}
+          HISTORICAL_DECISION: ${{ needs.historical-qualification.outputs.decision }}
+        run: node scripts/historical-qualification-ci-gate.mjs
 
-      # M7F native captures name a source commit from PR #304. That PR was
-      # squash-merged, so the capture commit is not reachable from main; fetch
-      # its retained head ref so strict source-commit verification can inspect it.
+      # Dedicated M7E–M7Q and M7W evidence commands run in the change-triggered
+      # archive lane. Keep source history required by provenance tests inside
+      # full Vitest, and retain the M7R/M7V ordinary evidence owners.
       - name: Fetch M7F native capture source history
         run: git fetch --no-tags --depth=50 origin refs/pull/304/head
 
-      # M7J records a candidate capture from PR #308. The PR may be squash-merged,
-      # leaving its original capture commit outside main's history. Keep strict
-      # provenance checks by fetching the retained PR head and verifying that SHA.
-      - name: Fetch M7J retained capture source history
-        run: |
-          git fetch --no-tags --depth=50 origin refs/pull/308/head
-          git cat-file -e '17a2616b151aa50ad34b2d137eee0a43c5759ad3^{commit}'
-
-      # Fetch the exact M7K baseline commit. If the remote does not permit a
-      # direct SHA fetch, the helper unshallows main and verifies the same SHA.
       - name: Fetch M7K execution source history
         run: node scripts/fetch-m7k-execution-source.mjs --sha=e6066a244510387c32995c1e973a771667b04d10
 
-      # M7M selected captures were run against this exact main commit below.
-      # Keep that source and the full Playwright discovery/test tree available.
       - name: Fetch M7M scene-readiness execution source history
         run: >-
           node scripts/fetch-m7k-execution-source.mjs
           --sha=0c32f113c1e3d16a8fd42e7748c64909366c6ae8
           --verify-path=playwright.config.ts
 
-      # The retained normalizer and original M7M evaluator were introduced in
-      # PR #311. Keep their exact source revision retrievable after squash merge.
       - name: Fetch M7M retained normalizer and evaluator source history
         run: |
           node scripts/fetch-m7k-execution-source.mjs \
@@ -71,10 +69,6 @@ jobs:
           git update-ref refs/m7m/retained-tooling e6c139ef60974a544f75a45d062b92101d31d115
           git cat-file -e 'e6c139ef60974a544f75a45d062b92101d31d115^{commit}'
 
-      # M7N retains application execution, capture tooling, normalization, and
-      # evaluation at distinct PR commits. Retrieve each pinned source from the
-      # retained M7N head so the offline evidence check remains valid after a
-      # squash merge removes those commits from main's reachable history.
       - name: Fetch M7N renderer lifecycle evidence source history
         run: |
           node scripts/fetch-m7k-execution-source.mjs \
@@ -111,9 +105,6 @@ jobs:
             --verify-path=scripts/evaluateM7nRendererLifecycle.ts \
             --verify-path=scripts/run-m7n-renderer-lifecycle.mjs
 
-      # M7O's capture, matrix normalizer, and evaluator use separate pinned
-      # commits. Retain each exact source through this PR head so evidence
-      # provenance remains checkable after a future squash merge.
       - name: Fetch M7O Canvas assertion timing evidence source history
         run: |
           node scripts/fetch-m7k-execution-source.mjs \
@@ -140,9 +131,6 @@ jobs:
             --verify-path=scripts/run-m7o-evidence.mjs \
             --verify-path=src/tests/unit/m7oCanvasAssertionTimingEvidence.test.ts
 
-      # M7P's execution, normalizer, and evaluator sources are separately
-      # pinned. Fetch from this PR's retained head when squash merge removes
-      # those commits from main, and verify every declared source tree path.
       - name: Fetch M7P assertion scheduling evidence source history
         run: |
           node scripts/fetch-m7k-execution-source.mjs \
@@ -179,9 +167,6 @@ jobs:
             --verify-path=scripts/run-m7p-evidence.mjs \
             --verify-path=src/tests/unit/m7pAssertionSchedulingEvidence.test.ts
 
-      # M7Q captures were executed with this runner source. Its offline
-      # normalizer/evaluator are pinned independently because a squash merge
-      # may remove these original commits from main's reachable history.
       - name: Fetch M7Q matched tracing A/B evidence source history
         run: |
           node scripts/fetch-m7k-execution-source.mjs \
@@ -201,18 +186,6 @@ jobs:
             --verify-path=scripts/evaluateM7qLightPeerTraceAb.ts \
             --verify-path=scripts/run-m7q-evidence.mjs \
             --verify-path=src/tests/unit/m7qLightPeerTraceAbEvidence.test.ts
-
-      # Schema-v2 selected evidence also names its original tooling/evaluator
-      # commit. It is an ancestor of PR #309, not necessarily of squash-merged
-      # main, so fetch that exact commit or its retained PR history and verify
-      # both source tree entries before either M7K report is evaluated.
-      - name: Fetch M7K schema-v2 tooling and evaluator source history
-        run: >-
-          node scripts/fetch-m7k-execution-source.mjs
-          --sha=23104069bc3acb2078722979b9591b0293e4fa39
-          --retained-ref=refs/pull/309/head
-          --verify-path=scripts/run-m7k-broad-e2e.mjs
-          --verify-path=src/render/testing/groundGlassM7kBroadE2eQualification.ts
 
       # M7R uses the M7Q merge source, while its original capture runner and
       # corrected analysis tools may disappear from main after this PR is
@@ -271,54 +244,6 @@ jobs:
           --project=chromium-production-preview --workers=1
           src/tests/e2e/architecture-rise-webgpu-production.spec.ts
 
-      - name: Replay persisted M7F presentation evidence
-        run: |
-          M7F_REPLAY_REPORT="$GITHUB_WORKSPACE/.m7f-presentation-replay.json"
-          trap 'rm -f "$M7F_REPLAY_REPORT"' EXIT
-          npm run evidence:replay:m7f -- --report-output="$M7F_REPLAY_REPORT"
-
-      - name: Validate M7G consolidated evidence integrity
-        run: |
-          M7G_REPORT="$GITHUB_WORKSPACE/.m7g-consolidation-report.json"
-          M7G_EVALUATION="$GITHUB_WORKSPACE/.m7g-consolidation-evaluation.json"
-          trap 'rm -f "$M7G_REPORT" "$M7G_EVALUATION"' EXIT
-          npm run evidence:report:m7g -- --report-output="$M7G_REPORT" --evaluation-output="$M7G_EVALUATION"
-
-      - name: Validate M7H historical broad E2E triage integrity
-        run: npm run evidence:check:m7h
-
-      - name: Validate M7I broad E2E remediation evidence integrity
-        run: npm run evidence:check:m7i
-
-      - name: Validate M7J four-worker stability evidence integrity
-        run: npm run evidence:check:m7j
-
-      - name: Validate M7K accepted schema-v1 full-suite evidence integrity
-        run: npm run evidence:check:m7k
-
-      - name: Validate M7K schema-v2 selected evidence integrity
-        run: >-
-          npm run evidence:check:m7k --
-          --report-path=docs/architecture/ground-glass-m7k-broad-e2e/review-fix-r1/selected/qualification-report.json
-
-      - name: Validate M7L Learning Drawer remediation evidence integrity
-        run: npm run evidence:check:m7l
-
-      - name: Validate M7M Scene / Ground Glass readiness evidence integrity
-        run: npm run evidence:check:m7m
-
-      - name: Validate M7N renderer lifecycle evidence integrity
-        run: npm run evidence:check:m7n
-
-      - name: Validate M7O Canvas assertion timing evidence integrity
-        run: npm run evidence:check:m7o
-
-      - name: Validate M7P assertion scheduling evidence integrity
-        run: npm run evidence:check:m7p
-
-      - name: Validate M7Q matched light-peer tracing A/B evidence integrity
-        run: npm run evidence:check:m7q
-
       - name: Validate M7R broad E2E recovery evidence integrity
         run: npm run evidence:check:m7r
 
@@ -333,20 +258,6 @@ jobs:
       - name: Validate M7V E2E qualification lane and skip governance policy
         run: npm run evidence:check:m7v
 
-      # M7W pins its offline analysis code to a commit introduced in this PR.
-      # Preserve strict source/tree verification after squash merge by fetching
-      # the exact commit first and falling back to the retained PR head history.
-      - name: Fetch M7W offline analysis source history
-        run: |
-          node scripts/fetch-m7k-execution-source.mjs \
-            --sha=32a919a68f52e3fa4bb1c2d0c63eae2af8cb660c \
-            --retained-ref=refs/pull/321/head \
-            --verify-path=scripts/evaluateM7wQualification.mjs \
-            --verify-path=scripts/normalizeM7wQualificationCapture.mjs \
-            --verify-path=scripts/run-m7w-evidence.mjs
-
-      - name: Validate M7W Ordinary WebGL and Renderer-Serial execution evidence
-        run: npm run evidence:check:m7w
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'
@@ -469,3 +380,17 @@ jobs:
     steps:
       - name: Allow full CI unless exact PR validation covers this push
         run: echo "Full CI is required for this event."
+  historical-qualification:
+    needs: feature-push-routing
+    if: >-
+      always() &&
+      !cancelled() &&
+      !(needs.feature-push-routing.result == 'success' &&
+        (needs.feature-push-routing.outputs.decision == 'covered-by-pr' ||
+         needs.feature-push-routing.outputs.decision == 'no-commit'))
+    uses: ./.github/workflows/historical-qualification.yml
+    with:
+      mode: changed
+    permissions:
+      contents: read
+      pull-requests: read
