@@ -126,9 +126,10 @@ test("Dream Loop pilot captures teaching and clean observer views", async ({ pag
   expect(Number.isFinite(focusMaxValue)).toBe(true);
   const resetUsesScenePreset = Boolean(sceneDefinition.movementCapabilities) ||
     sceneDefinition.cameraControlPolicy?.movement === "fixed";
+  const { DEFAULT_CAMERA_STATE } = await import("../../utils/constants");
   const focusResetValue = resetUsesScenePreset
     ? sceneDefinition.cameraPreset.focusDistanceMm
-    : focusMinValue;
+    : DEFAULT_CAMERA_STATE.focusDistanceMm;
   const expectedFocus = Math.max(
     focusMinValue,
     Math.min(focusMaxValue, focusResetValue),
