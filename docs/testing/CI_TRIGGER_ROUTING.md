@@ -1,6 +1,6 @@
 # GitHub CI Trigger Routing
 
-This note records the feature-push routing added to `pages.yml`. It changes when the existing full CI job runs; it does not change the commands, tests, browser settings, M7 checks, or deployment artifact.
+This note records the feature-push routing from PR #360 and the historical qualification dependency added by PR B2. Feature-push routing still controls when the full application job runs. B2 moves eligible frozen M7 replay responsibility to a change-triggered workflow while preserving current application checks and the production deployment boundary.
 
 ## Routing decisions
 
@@ -24,15 +24,29 @@ The routing helper uses read-only `GITHUB_TOKEN` permissions for pull requests, 
 
 The existing `ci` job stays unconditional and keeps the name `ci` on PR events, protected-branch pushes, and manual dispatch. Feature push runs have a distinct `feature-push-validation` check name, including when the redundant job is skipped. Therefore, a skipped feature-push result cannot substitute for the independently executed PR `ci` result.
 
-Repository branch-protection/ruleset configuration was not accessible to the implementation token. The PR check name was retained to avoid requiring a Required Check migration; reviewers should confirm the live PR check context and current ruleset in GitHub before merge.
+The GitHub API reported `main` as unprotected with no required status checks, and the repository ruleset collection was empty when checked for this implementation. The workflow therefore enforces the archive decision inside `ci`; it does not establish a GitHub merge restriction. The PR check name remains `ci` for compatibility with existing consumers and future policy configuration.
 
 Concurrency groups separate each PR number, each pushed branch, and each manual run. Newer commits can replace older work on the same PR or branch. PR and feature-push runs cannot cancel one another; manual runs cannot cancel protected-branch validation or deployment. A newer production push may supersede an older production push, matching the existing same-ref cancellation policy.
 
 The `deploy` condition and `needs: ci` dependency are unchanged. Only a successful CI run caused by a push to `production` reaches deployment.
 
+## Historical evidence qualification
+
+`pages.yml` retains the PR #360 router and calls `.github/workflows/historical-qualification.yml` for every event that is not a verified redundant feature push or branch deletion. That reusable workflow classifies the actual PR changed-file pages or push before/after tree diff against `scripts/historical-evidence-manifest.json`. A feature push before a PR exists is still validated automatically by the distinct `feature-push-validation` path.
+
+The ordinary Pages job retains eight historical source-fetch groups because full Vitest includes provenance tests that inspect exact M7F, M7K, M7M, and M7N–M7Q source trees. An initial trial removing those fetches failed 9 tests across 7 files in run [#45235154628](https://github.com/chau-hm/view-camera-simulator/actions/runs/45235154628): `groundGlassM7fReplayCli.test.ts`, `groundGlassM7kBroadE2eQualification.test.ts`, `m7mSceneReadiness.test.ts`, and the M7N–M7Q evidence tests. Restoring the exact pins is necessary to keep the full suite passing. The dedicated replay and integrity commands remain in the qualification lane. This is a known overlap between historical provenance tests and ordinary application CI, not evidence that frozen report replay belongs in every PR.
+
+The `ci` job now depends on the feature-push gate and the reusable qualification result. Its `always()` condition preserves the named `ci` job when historical validation fails or cannot run; the first step checks both dependency results and accepts only `QUALIFIED` or justified `NOT_APPLICABLE`. This prevents a failed, unverified, or unexpectedly skipped archive job from appearing as a successful application `ci` result. A covered feature push keeps the B1 suppression behavior: the push validation job and its archive job are skipped only after the exact source SHA has a current PR `ci` run, while that PR `ci` remains authoritative.
+
+For an ordinary application change, the archive decision is `NOT_APPLICABLE` and does not install dependencies or fetch historical sources. Evidence changes select their affected family closure; shared workflow, manifest, package, Playwright, or provenance-fetch changes select the broad automatically routed archive. M7R remains in ordinary CI because its frozen verifier requires an unconditional Pages workflow step and exact historical source parity; routing reports that existing owner instead of executing M7R twice. M7V current-policy and skip-governance validation also remains in ordinary CI. The full Vitest suite is unchanged. Full family ownership, the M7R exception, and known M7S–M7U gaps are documented in [Historical Evidence Qualification](HISTORICAL_EVIDENCE_QUALIFICATION.md).
+
+Dispatching `pages.yml` still requests ordinary application CI without deployment. A separate manual `Historical Evidence Qualification` dispatch runs the full supported archive independently; it reports M7S–M7U as `UNVERIFIED` because no complete archive validators are currently registered for those families.
+
 ## Verification and limits
 
-The routing helper's unit tests cover no-PR, absent or stale checks, active and successful PR checks, multiple PRs, API failure, forks, branch deletion, and non-feature events. The repository's M7 workflow assertions remain unchanged and continue to require the broad push trigger and unconditional full validation definition.
+The routing helper's unit tests cover no-PR, absent or stale checks, active and successful PR checks, multiple PRs, API failure, forks, branch deletion, and non-feature events. M7 workflow assertions continue to require the broad push trigger, the full application suite, the mandatory M7V policy check, and M7R's frozen unconditional workflow owner.
+
+On the pre-migration base run, ordinary Pages CI executed 14 named historical source-fetch steps and 16 evidence validator/replay commands. The migrated job retains 10 named source-fetch steps and two evidence checks: eight source-history groups are required by provenance tests inside full Vitest, and the other two support M7R and M7V. The reusable workflow handles the dedicated historical validators when a relevant change or uncertainty requires it. This is a work-count comparison, not a runner-time claim. The baseline `ci` job elapsed 14m47s in [Actions run #45202761520](https://github.com/chau-hm/view-camera-simulator/actions/runs/45202761520). A successful post-migration Pages run on the corrected source-fetch set is still pending, so post-migration wall time and runner time remain `NOT_MEASURED`.
 
 Live Actions runs are the evidence for event timing and Required Check identity. Local routing tests cannot prove GitHub event ordering, branch protection configuration, fork-token visibility, or runner behavior. API uncertainty deliberately causes an extra full validation rather than a skipped validation.
 

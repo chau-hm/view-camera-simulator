@@ -43,9 +43,151 @@ jobs:
           HISTORICAL_DECISION: ${{ needs.historical-qualification.outputs.decision }}
         run: node scripts/historical-qualification-ci-gate.mjs
 
-      # M7E–M7Q and M7W integrity checks run through the change-triggered
-      # archive workflow. Keep M7R's workflow-contract check and M7V's current
-      # policy check as ordinary CI owners.
+      # Dedicated M7E–M7Q and M7W evidence commands run in the change-triggered
+      # archive lane. Keep source history required by provenance tests inside
+      # full Vitest, and retain the M7R/M7V ordinary evidence owners.
+      - name: Fetch M7F native capture source history
+        run: git fetch --no-tags --depth=50 origin refs/pull/304/head
+
+      - name: Fetch M7K execution source history
+        run: node scripts/fetch-m7k-execution-source.mjs --sha=e6066a244510387c32995c1e973a771667b04d10
+
+      - name: Fetch M7M scene-readiness execution source history
+        run: >-
+          node scripts/fetch-m7k-execution-source.mjs
+          --sha=0c32f113c1e3d16a8fd42e7748c64909366c6ae8
+          --verify-path=playwright.config.ts
+
+      - name: Fetch M7M retained normalizer and evaluator source history
+        run: |
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=e6c139ef60974a544f75a45d062b92101d31d115 \
+            --retained-ref=refs/pull/311/head \
+            --verify-path=scripts/normalize-m7m-playwright-capture.mjs \
+            --verify-path=src/render/testing/groundGlassM7mSceneReadiness.ts \
+            --verify-path=scripts/evaluateM7mSceneReadiness.ts \
+            --verify-path=scripts/run-m7m-scene-readiness.mjs
+          git update-ref refs/m7m/retained-tooling e6c139ef60974a544f75a45d062b92101d31d115
+          git cat-file -e 'e6c139ef60974a544f75a45d062b92101d31d115^{commit}'
+
+      - name: Fetch M7N renderer lifecycle evidence source history
+        run: |
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=5034edf1551466649623a920024057b57f8dddbf \
+            --retained-ref=refs/pull/312/head \
+            --verify-path=src/app/pages.tsx \
+            --verify-path=src/components/layout/SimulatorWorkspace.tsx \
+            --verify-path=src/components/simulator/SceneViewport.tsx \
+            --verify-path=src/components/simulator/useObserverRendererLifecycle.ts \
+            --verify-path=src/render/GroundGlassRenderHost.tsx \
+            --verify-path=src/render/SceneRenderer.tsx \
+            --verify-path=src/render/testing/m7nRendererLifecycleTrace.ts
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=3ec85599c3cd28019126ce00cff6115c1bcdf059 \
+            --retained-ref=refs/pull/312/head \
+            --verify-path=src/tests/e2e/helpers/m7nRendererLifecycleCapture.ts \
+            --verify-path=src/tests/e2e/architecture-rise-focus-range.spec.ts \
+            --verify-path=src/tests/e2e/architecture-rise-webgpu-production.spec.ts \
+            --verify-path=scripts/m7n-spa-generation-probe.mjs \
+            --verify-path=package.json \
+            --verify-path=src/tests/unit/m7nRendererLifecycleTrace.test.ts \
+            --verify-path=src/tests/unit/m7nRendererLifecycleEvidence.test.ts
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=a5fbc9e6b7db00ce818edfaebeeb5ce4ab79da07 \
+            --retained-ref=refs/pull/312/head \
+            --verify-path=src/tests/e2e/helpers/m7nRendererLifecycleCapture.ts
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=efdd29ddcea206b07a2dbd197ff813ccfb2479b1 \
+            --retained-ref=refs/pull/312/head \
+            --verify-path=scripts/normalizeM7nRendererLifecycleCapture.mjs
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=ef79ee9886dacc0a1402fd9271318564e7ccfae6 \
+            --retained-ref=refs/pull/312/head \
+            --verify-path=scripts/evaluateM7nRendererLifecycle.ts \
+            --verify-path=scripts/run-m7n-renderer-lifecycle.mjs
+
+      - name: Fetch M7O Canvas assertion timing evidence source history
+        run: |
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=e5150fdaa6d9660c99ac3c36086cfaa1439e4bcb \
+            --retained-ref=refs/pull/313/head \
+            --verify-path=playwright.config.ts \
+            --verify-path=src/components/simulator/SceneViewport.tsx
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=c1135c8f7be9c3530eaeaad030a98079457ff8c0 \
+            --retained-ref=refs/pull/313/head \
+            --verify-path=src/tests/e2e/helpers/m7oCanvasAssertionTimingCapture.ts \
+            --verify-path=src/tests/e2e/architecture-rise-focus-range.spec.ts \
+            --verify-path=scripts/run-m7o-canvas-assertion-timing.mjs \
+            --verify-path=scripts/normalizeM7oCanvasAssertionTimingCapture.mjs
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=817f534dc0e61068cf20c586947ea3d6b4b5b481 \
+            --retained-ref=refs/pull/313/head \
+            --verify-path=scripts/normalizeM7oCanvasAssertionTimingMatrix.mjs \
+            --verify-path=scripts/normalizeM7oCanvasAssertionTimingCapture.mjs
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=26a856a52e7d2809727588813e65dc40684abc97 \
+            --retained-ref=refs/pull/313/head \
+            --verify-path=scripts/evaluateM7oCanvasAssertionTiming.ts \
+            --verify-path=scripts/run-m7o-evidence.mjs \
+            --verify-path=src/tests/unit/m7oCanvasAssertionTimingEvidence.test.ts
+
+      - name: Fetch M7P assertion scheduling evidence source history
+        run: |
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=3131da63a608a4591a345c3b03a072eafd1f8783 \
+            --retained-ref=refs/pull/314/head \
+            --verify-path=playwright.config.ts \
+            --verify-path=src/tests/e2e/architecture-rise-focus-range.spec.ts \
+            --verify-path=src/tests/e2e/helpers/m7pAssertionSchedulingCapture.ts \
+            --verify-path=scripts/run-m7p-assertion-scheduling.mjs \
+            --verify-path=scripts/normalizeM7pAssertionSchedulingCapture.mjs \
+            --verify-path=scripts/evaluateM7pAssertionScheduling.ts \
+            --verify-path=scripts/run-m7p-evidence.mjs \
+            --verify-path=src/tests/unit/m7pAssertionSchedulingEvidence.test.ts
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=97d17110fff4c6d412e156c9281deac5a44bdb11 \
+            --retained-ref=refs/pull/314/head \
+            --verify-path=playwright.config.ts \
+            --verify-path=src/tests/e2e/architecture-rise-focus-range.spec.ts \
+            --verify-path=src/tests/e2e/helpers/m7pAssertionSchedulingCapture.ts \
+            --verify-path=scripts/run-m7p-assertion-scheduling.mjs \
+            --verify-path=scripts/normalizeM7pAssertionSchedulingCapture.mjs \
+            --verify-path=scripts/evaluateM7pAssertionScheduling.ts \
+            --verify-path=scripts/run-m7p-evidence.mjs \
+            --verify-path=src/tests/unit/m7pAssertionSchedulingEvidence.test.ts
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=e9a65d31327cd1e8cd135aeae5ff444c39988e27 \
+            --retained-ref=refs/pull/314/head \
+            --verify-path=playwright.config.ts \
+            --verify-path=src/tests/e2e/architecture-rise-focus-range.spec.ts \
+            --verify-path=src/tests/e2e/helpers/m7pAssertionSchedulingCapture.ts \
+            --verify-path=scripts/run-m7p-assertion-scheduling.mjs \
+            --verify-path=scripts/normalizeM7pAssertionSchedulingCapture.mjs \
+            --verify-path=scripts/evaluateM7pAssertionScheduling.ts \
+            --verify-path=scripts/run-m7p-evidence.mjs \
+            --verify-path=src/tests/unit/m7pAssertionSchedulingEvidence.test.ts
+
+      - name: Fetch M7Q matched tracing A/B evidence source history
+        run: |
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=cde9e31fb299bf436e9dd5afd6509e3409e6add1 \
+            --retained-ref=refs/pull/315/head \
+            --verify-path=playwright.config.ts \
+            --verify-path=src/tests/e2e/architecture-rise-focus-range.spec.ts \
+            --verify-path=src/tests/e2e/home.spec.ts \
+            --verify-path=src/tests/e2e/simulator-header.spec.ts \
+            --verify-path=src/tests/e2e/smoke.spec.ts \
+            --verify-path=src/tests/e2e/helpers/m7pAssertionSchedulingCapture.ts \
+            --verify-path=scripts/run-m7q-light-peer-trace-ab.mjs
+          node scripts/fetch-m7k-execution-source.mjs \
+            --sha=a33897808decbff0ccc7acc1a54d3e1497f5cd35 \
+            --retained-ref=refs/pull/315/head \
+            --verify-path=scripts/normalizeM7qLightPeerTraceAb.mjs \
+            --verify-path=scripts/evaluateM7qLightPeerTraceAb.ts \
+            --verify-path=scripts/run-m7q-evidence.mjs \
+            --verify-path=src/tests/unit/m7qLightPeerTraceAbEvidence.test.ts
+
       # M7R uses the M7Q merge source, while its original capture runner and
       # corrected analysis tools may disappear from main after this PR is
       # squash-merged. Fetch exact pinned commits from retained refs and

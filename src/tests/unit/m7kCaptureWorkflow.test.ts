@@ -358,16 +358,21 @@ describe("M7K capture workflow provenance", () => {
     expect(ciJob).toContain("HISTORICAL_RESULT");
     expect(ciJob).toContain("run: node scripts/historical-qualification-ci-gate.mjs");
     expect(workflow).toContain("  push:\n    branches:\n      - \"**\"\n");
-    for (const historicalStep of [
-      "Fetch M7E native capture source history",
+    for (const provenanceFetchRequiredByVitest of [
       "Fetch M7F native capture source history",
-      "Fetch M7J retained capture source history",
       "Fetch M7K execution source history",
       "Fetch M7M scene-readiness execution source history",
+      "Fetch M7M retained normalizer and evaluator source history",
       "Fetch M7N renderer lifecycle evidence source history",
       "Fetch M7O Canvas assertion timing evidence source history",
       "Fetch M7P assertion scheduling evidence source history",
       "Fetch M7Q matched tracing A/B evidence source history",
+    ]) {
+      expect(ciJob).toContain(provenanceFetchRequiredByVitest);
+    }
+    for (const archiveOnlyStep of [
+      "Fetch M7E native capture source history",
+      "Fetch M7J retained capture source history",
       "Fetch M7K schema-v2 tooling and evaluator source history",
       "Replay persisted M7F presentation evidence",
       "Validate M7G consolidated evidence integrity",
@@ -385,7 +390,7 @@ describe("M7K capture workflow provenance", () => {
       "Fetch M7W offline analysis source history",
       "Validate M7W Ordinary WebGL and Renderer-Serial execution evidence",
     ]) {
-      expect(ciJob).not.toContain(historicalStep);
+      expect(ciJob).not.toContain(archiveOnlyStep);
     }
     expect(ciJob).toContain("run: npm run lint");
     expect(ciJob).toContain("run: npm run typecheck");
@@ -396,6 +401,10 @@ describe("M7K capture workflow provenance", () => {
     expect(ciJob).toContain("name: Fetch M7V reviewed source-declaration baseline");
     expect(ciJob).toContain("run: npm run evidence:check:m7r");
     expect(ciJob).toContain("run: npm run evidence:check:m7v");
+    expect(ciJob.match(/npm run evidence:(?:check|replay):m7[a-z]/g)).toEqual([
+      "npm run evidence:check:m7r",
+      "npm run evidence:check:m7v",
+    ]);
     expect(ciJob).not.toContain("continue-on-error: true");
     expect(archiveWorkflow).toContain("  workflow_call:");
     expect(archiveWorkflow).toContain("  workflow_dispatch:");
