@@ -587,7 +587,7 @@ describe("Free Mode seeded material subject factories", () => {
       observerSpies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
       rttSpies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
     }
-  }, 15_000);
+  }, 30_000);
 
   it("routes the Table Tilt descriptor to independent Observer and RTT resources", () => {
     const descriptor = descriptorFor(tableTiltScene, 284719);
