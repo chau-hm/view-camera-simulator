@@ -2278,6 +2278,27 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     view.unmount();
   });
 
+  it("reports a failing development HDR probe without aborting the photographic frame", () => {
+    const camera = { ...DEFAULT_CAMERA_STATE, ...architectureRiseScene.cameraPreset, activeSceneId: architectureRiseScene.id };
+    const generation = { generationId: "hdr-probe-generation", channelId: "default" } as const;
+    const request = { requestId: "hdr-probe-request", channelId: "default", sceneId: architectureRiseScene.id } as const;
+    const results: GroundGlassFrameResult[] = [];
+    const probe = vi.fn(() => { throw new Error("probe failure"); });
+    const report = vi.spyOn(console, "error").mockImplementation(() => {});
+    const view = render(React.createElement(UnconnectedGroundGlassRTT, {
+      opticsState: deriveOpticsState(camera, architectureRiseScene), focalLengthMm: camera.focalLengthMm,
+      scene: architectureRiseScene, widthPx: 500, heightPx: 400, renderQuality: "standard", previewMode: "upright",
+      rendererGeneration: generation, acceptedRequestIdentity: request, onFrameResult: (result) => results.push(result),
+      developmentHdrColor: true, developmentProbeFrame: probe,
+    }));
+    act(() => fiberTestState.frameCallback?.({}, 1 / 60));
+    expect(probe).toHaveBeenCalledTimes(1);
+    expect(report).toHaveBeenCalledWith("Ground Glass development probe failed:", expect.any(Error));
+    expect(results.at(-1)).toMatchObject({ status: "completed", generation, request });
+    view.unmount();
+    report.mockRestore();
+  });
+
   it("does not construct placeholder pipeline targets or cameras for an RTT renderer", () => {
     const camera = {
       ...DEFAULT_CAMERA_STATE,

@@ -67,6 +67,8 @@ fs.mkdirSync(out, { recursive: true });
     if (bootError) throw new Error(`Scene initialization failed: ${bootError}`);
     if (process.env.ROOM_OPTICS_PRESET)
       await page.getByLabel("Composition").selectOption(process.env.ROOM_OPTICS_PRESET);
+    if (process.env.ROOM_OPTICS_QUALITY)
+      await page.getByLabel("Render quality").selectOption(process.env.ROOM_OPTICS_QUALITY);
     if (process.env.ROOM_OPTICS_COLOR)
       await page.getByLabel("Color path").selectOption(process.env.ROOM_OPTICS_COLOR);
     if (process.env.ROOM_OPTICS_REFLECTIONS === "off")
@@ -76,6 +78,7 @@ fs.mkdirSync(out, { recursive: true });
       await page.getByLabel("Display exposure").fill(process.env.ROOM_OPTICS_EXPOSURE);
     const requestedSettings = {
       presetKey: process.env.ROOM_OPTICS_PRESET || null,
+      renderQuality: process.env.ROOM_OPTICS_QUALITY || null,
       hdr: process.env.ROOM_OPTICS_COLOR ? process.env.ROOM_OPTICS_COLOR === "hdr" : null,
       reflectionsEnabled: process.env.ROOM_OPTICS_REFLECTIONS
         ? process.env.ROOM_OPTICS_REFLECTIONS === "on"
@@ -98,12 +101,15 @@ fs.mkdirSync(out, { recursive: true });
     const configured = await page.evaluate(() => ({
       camera: window.__roomOptics.camera,
       presetKey: window.__roomOptics.presetKey,
+      renderQuality: window.__roomOptics.renderQuality,
       hdr: window.__roomOptics.hdr,
       displayExposure: window.__roomOptics.displayExposure,
       reflectionsEnabled: window.__roomOptics.reflectionsEnabled,
     }));
     if (process.env.ROOM_OPTICS_PRESET && configured.presetKey !== process.env.ROOM_OPTICS_PRESET)
       throw new Error("Preset change did not commit");
+    if (process.env.ROOM_OPTICS_QUALITY && configured.renderQuality !== process.env.ROOM_OPTICS_QUALITY)
+      throw new Error("Render quality change did not commit");
     if (
       process.env.ROOM_OPTICS_COLOR &&
       configured.hdr !== (process.env.ROOM_OPTICS_COLOR === "hdr")
@@ -405,6 +411,7 @@ fs.mkdirSync(out, { recursive: true });
         "camera.focusDistanceMm": configured.camera.focusDistanceMm,
         "camera.focalLengthMm": configured.camera.focalLengthMm,
         presetKey: configured.presetKey,
+        renderQuality: configured.renderQuality,
         hdr: configured.hdr,
         displayExposure: configured.displayExposure,
         reflectionsEnabled: configured.reflectionsEnabled,

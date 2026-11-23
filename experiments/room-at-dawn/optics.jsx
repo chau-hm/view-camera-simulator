@@ -9,6 +9,12 @@ import { LOOK } from "./vendor/src/render/look.js";
 import { ROOM_PRESETS } from "./presets.js";
 import { captureRoomReflections } from "./reflection-capture.js";
 import { createRoomView } from "./view-resources.js";
+import { createOpticalFixtureProfile } from "./optical-fixture.js";
+import { inspectOpticalFixture, measureVerticalEdgeRgba } from "./optical-measurement.js";
+import { createHdrConstantFieldProfile } from "./hdr-fixture.js";
+import { createHdrReadback } from "./hdr-readback.js";
+import { calculateGroundGlassNaturalIlluminationGain } from "../../src/core/optics/groundGlassNaturalIllumination.ts";
+import { calculateGroundGlassCoverageRenderGain } from "../../src/render/groundGlassCoverage.ts";
 import bakeUrl from "./vendor/bake/gi.bin?url";
 import { deriveOpticsState } from "../../src/core/optics/deriveOpticsState.ts";
 import { GroundGlassRTT } from "../../src/render/GroundGlassRTT.tsx";
@@ -22,12 +28,11 @@ import {
   CAMERA_CONTROL_STEPS,
 } from "../../src/utils/constants.ts";
 
-// One rigid translation maps the desired upstream camera position to the VCS rig origin.
-// Both render worlds use metres; only the scene metadata/optics boundary uses mm.
-const roomOrigin = { value: new THREE.Vector3(...ROOM_PRESETS.wide.origin) };
+// Each view owns its rigid room translation in metres. Canonical optics use mm.
 let requestSequence = 0;
 let observerRequestSequence = 0;
 let observerGenerationSequence = 0;
+const HDR_FIELDS = { "0.1": [0.1, 0.1, 0.1], "0.5": [0.5, 0.5, 0.5], "1": [1, 1, 1], "2": [2, 2, 2], "4": [4, 4, 4], "8": [8, 8, 8], mixed: [0.1, 2, 8] };
 const roomBounds = { min: { x: -2400, y: -1400, z: -15000 }, max: { x: 3000, y: 3000, z: 10000 } };
 const sceneDefinition = {
   ...architectureRiseScene,
@@ -53,28 +58,6 @@ function disposeRoom(root) {
   textures.forEach((t) => t.dispose());
   materials.forEach((m) => m.dispose());
   geometries.forEach((g) => g.dispose());
-}
-function adaptGiMaterials(root) {
-  const done = new Set();
-  root.traverse((o) => {
-    for (const m of Array.isArray(o.material) ? o.material : o.material ? [o.material] : []) {
-      if (!m.defines || m.defines.USE_GI === undefined || done.has(m)) continue;
-      done.add(m);
-      const original = m.onBeforeCompile;
-      m.onBeforeCompile = function (shader, renderer) {
-        original.call(this, shader, renderer);
-        const before = "vGiW = gw.xyz;";
-        if (!shader.vertexShader.includes(before))
-          throw new Error("Upstream GI shader world-position hook missing");
-        shader.uniforms.roomOrigin = roomOrigin;
-        shader.vertexShader =
-          "uniform vec3 roomOrigin;\n" +
-          shader.vertexShader.replace(before, "vGiW = gw.xyz + roomOrigin;");
-      };
-      const oldKey = m.customProgramCacheKey.bind(m);
-      m.customProgramCacheKey = () => oldKey() + "|room-translation";
-    }
-  });
 }
 // Authored source coordinates, not yet confirmed unoccluded surface samples.
 const SOURCE_FEATURES = [
@@ -231,7 +214,7 @@ function ObserverView({
           giUniforms: view.uniforms,
           roomBox: owner.ctx.roomBox,
           probe: new THREE.Vector3(2.35, 1.3, 2),
-          roomOrigin: new THREE.Vector3(...preset.origin),
+          roomOrigin: view.roomOrigin,
           captureExteriorScale: LOOK.ext,
         });
       }
@@ -333,6 +316,11 @@ function App() {
   const preset = ROOM_PRESETS[presetKey];
   const [generationEpoch, setGenerationEpoch] = useState(1);
   const [hdr, setHdr] = useState(true);
+  const [renderQuality, setRenderQuality] = useState("low");
+  const [subjectMode, setSubjectMode] = useState("room");
+  const [hdrField, setHdrField] = useState("mixed");
+  const [hdrDepth, setHdrDepth] = useState(2.5);
+  const probedRequest = useRef(null);
   const [reflectionsEnabled, setReflectionsEnabled] = useState(true);
   const [observerEnabled, setObserverEnabled] = useState(true);
   const [groundEnabled, setGroundEnabled] = useState(true);
@@ -371,7 +359,6 @@ function App() {
       if (cancelled) return;
       const report = inspectBake(scene, buffer);
       GI.uniforms.giExt.value = 1;
-      adaptGiMaterials(scene);
       if (cancelled) {
         disposeRoom(scene);
         owned = null;
@@ -417,8 +404,28 @@ function App() {
     ],
   );
   const profile = useMemo(
-    () =>
-      owner
+    () => {
+      if (subjectMode === "hdr-probe") {
+        return createHdrConstantFieldProfile({ rgb: HDR_FIELDS[hdrField], depthMetres: hdrDepth });
+      }
+      if (subjectMode === "fixture") {
+        return createOpticalFixtureProfile({
+          onMount(group) {
+            window.__roomFixtureGroup = group;
+            window.__roomFixtureInspect = (dimensions) =>
+              inspectOpticalFixture(group, window.__roomOptics.optics, window.__roomOptics.camera, dimensions);
+            window.__roomMeasureVerticalEdge = measureVerticalEdgeRgba;
+          },
+          onDispose(group) {
+            if (window.__roomFixtureGroup === group) {
+              delete window.__roomFixtureGroup;
+              delete window.__roomFixtureInspect;
+              delete window.__roomMeasureVerticalEdge;
+            }
+          },
+        });
+      }
+      return owner
         ? {
             renderSanityIdentity: `room-at-dawn:${presetKey}`,
             configureRttShadowParticipation: () => {},
@@ -429,7 +436,9 @@ function App() {
               });
               const group = view.group;
               const previousGiUniforms = scene.userData.roomGiUniforms;
+              const previousRoomOrigin = scene.userData.roomOrigin;
               scene.userData.roomGiUniforms = view.uniforms;
+              scene.userData.roomOrigin = view.roomOrigin;
               const previousEnvironment = scene.environment;
               scene.environment = null;
               const lights = [];
@@ -443,6 +452,7 @@ function App() {
                 scene.remove(group);
                 scene.environment = previousEnvironment;
                 scene.userData.roomGiUniforms = previousGiUniforms;
+                scene.userData.roomOrigin = previousRoomOrigin;
                 view.dispose();
                 lights.forEach(([light, visible]) => {
                   light.visible = visible;
@@ -465,8 +475,9 @@ function App() {
               };
             },
           }
-        : undefined,
-    [owner, preset, presetKey, hdr],
+        : undefined;
+    },
+    [owner, preset, presetKey, hdr, subjectMode, hdrField, hdrDepth],
   );
   const generation = useMemo(
     () => ({ generationId: `room-generation-${generationEpoch}`, channelId: "default" }),
@@ -478,7 +489,7 @@ function App() {
       channelId: "default",
       sceneId: sceneDefinition.id,
     }),
-    [camera, mode, rawDebug, presetKey, generationEpoch, hdr, displayExposure, reflectionsEnabled],
+    [camera, mode, rawDebug, presetKey, generationEpoch, hdr, displayExposure, reflectionsEnabled, renderQuality, subjectMode, hdrField, hdrDepth],
   );
   const handleFrame = useCallback((frame) => {
     if (window.__roomOptics) window.__roomOptics.frame = frame;
@@ -504,20 +515,50 @@ function App() {
   }, []);
   const prepareReflections = useCallback(
     (scene, renderer) => {
-      if (!reflectionsEnabled) return () => {};
+      if (!reflectionsEnabled || subjectMode !== "room") return () => {};
       return captureRoomReflections({
         scene,
         renderer,
         giUniforms: scene.userData.roomGiUniforms,
         roomBox: owner.ctx.roomBox,
         probe: new THREE.Vector3(2.35, 1.3, 2),
-        roomOrigin: roomOrigin.value,
+        roomOrigin: scene.userData.roomOrigin,
         captureExteriorScale: LOOK.ext,
       });
     },
-    [owner, reflectionsEnabled, preset],
+    [owner, reflectionsEnabled, preset, subjectMode],
   );
   const handleInfo = useCallback((_channel, next) => setInfo(next), []);
+  const handleHdrProbe = useCallback((frame) => {
+    if (subjectMode !== "hdr-probe" || probedRequest.current === frame.request.requestId) return;
+    probedRequest.current = frame.request.requestId;
+    let reader;
+    try {
+      reader = createHdrReadback(frame.renderer);
+      const stages = {};
+      for (const [name, target] of Object.entries(frame.targets)) {
+        const x = Math.floor(target.width / 2), y = Math.floor(target.height / 2);
+        stages[name] = { rgba: reader.read(target, x, y), x, y, width: target.width, height: target.height, type: "RGBA HalfFloat", colorSpace: target.texture.colorSpace };
+      }
+      const composite = stages.composite;
+      const windowMm = frame.physical.naturalIllumination.filmWindow;
+      let u = (composite.x + 0.5) / composite.width, v = (composite.y + 0.5) / composite.height;
+      if (mode === "raw") { u = 1 - u; v = 1 - v; }
+      const filmX = windowMm.centerXMm + (u - 0.5) * windowMm.widthMm;
+      const filmY = windowMm.centerYMm - (v - 0.5) * windowMm.heightMm;
+      const natural = frame.physical.naturalIllumination;
+      const naturalGain = natural.enabled && natural.geometry ? calculateGroundGlassNaturalIlluminationGain(natural.geometry, filmX, filmY) : 1;
+      const coverageGain = calculateGroundGlassCoverageRenderGain(frame.physical.coverage, filmX, filmY);
+      const gain = frame.physical.relativeIlluminanceGain * naturalGain * coverageGain;
+      const nearAlpha = Math.min(1, Math.max(0, stages.near.rgba[3]));
+      const expectedComposite = stages.far.rgba.slice(0, 3).map((value, i) => (value * (1 - nearAlpha) + stages.near.rgba[i] * nearAlpha) * gain);
+      window.__roomHdrProbe = { status: "sampled", request: frame.request, generation: frame.generation, frameId: frame.frameId, input: HDR_FIELDS[hdrField], depthMetres: hdrDepth, physical: frame.physical, displayExposure: frame.displayExposure, renderer: { type: frame.renderer.constructor.name, outputColorSpace: frame.renderer.outputColorSpace, toneMapping: frame.renderer.toneMapping, toneMappingExposure: frame.renderer.toneMappingExposure }, stages, expectedComposite, filmPointMm: [filmX, filmY], naturalGain, coverageGain, readback: "GPU fixed-point RGBA8 transport, 1/4096 linear units" };
+    } catch (error) {
+      window.__roomHdrProbe = { status: "failed", request: frame.request, generation: frame.generation, frameId: frame.frameId, error: String(error?.message || error) };
+    } finally {
+      reader?.dispose();
+    }
+  }, [subjectMode, hdrField, hdrDepth, mode]);
   const handleObserverStatus = useCallback((next) => setObserverStatus(next), []);
   const set = (key, value) => setCamera((c) => ({ ...c, [key]: value }));
   const range = (label, key, min, max, step) => (
@@ -552,9 +593,13 @@ function App() {
       previewMode: mode,
       rawDebug,
       presetKey,
-      subjectIdentity: `room-at-dawn:${presetKey}`,
+      subjectIdentity: subjectMode === "fixture" ? "room-optical-fixture" : subjectMode === "hdr-probe" ? `hdr-constant:${HDR_FIELDS[hdrField].join(",")}:${hdrDepth}` : `room-at-dawn:${presetKey}`,
+      subjectMode,
+      hdrField,
+      hdrDepth,
       preset,
       hdr,
+      renderQuality,
       displayExposure,
       reflectionsEnabled,
       observerRequest,
@@ -573,6 +618,10 @@ function App() {
     presetKey,
     preset,
     hdr,
+    renderQuality,
+    subjectMode,
+    hdrField,
+    hdrDepth,
     displayExposure,
     reflectionsEnabled,
     observerRequest,
@@ -591,6 +640,9 @@ function App() {
             ? `Ready: GI ${owner.report.matched}/${owner.report.expected}; WebGL RTT`
             : `Loading: ${progress}`)}
       </p>
+      {subjectMode === "hdr-probe" && (!hdr || rawDebug) && (
+        <p role="alert">HDR radiance readback requires the HalfFloat color path and processed RTT; the byte and Raw RTT diagnostic paths are unsupported.</p>
+      )}
       <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
         <section>
           <h2>Room observer</h2>
@@ -630,6 +682,7 @@ function App() {
                   developmentHdrColor={hdr}
                   developmentDisplayExposure={displayExposure}
                   developmentPrepareScene={prepareReflections}
+                  developmentProbeFrame={subjectMode === "hdr-probe" ? handleHdrProbe : undefined}
                   opticsState={optics}
                   focalLengthMm={camera.focalLengthMm}
                   scene={sceneDefinition}
@@ -638,7 +691,7 @@ function App() {
                   aperture={camera.aperture}
                   previewMode={mode}
                   rawDebug={rawDebug}
-                  renderQuality="low"
+                  renderQuality={renderQuality}
                   developmentSceneProfileOverride={profile}
                   onRuntimeInfoChange={handleInfo}
                   rendererGeneration={generation}
@@ -653,6 +706,33 @@ function App() {
         </section>
       </div>
       <div>
+        <label>
+          Subject{" "}
+          <select aria-label="Subject" value={subjectMode} onChange={(e) => {
+            setSubjectMode(e.target.value);
+            setGenerationEpoch((n) => n + 1);
+          }}>
+            <option value="room">Original room</option>
+            <option value="fixture">Optical diagnostic fixture</option>
+            <option value="hdr-probe">HDR radiance diagnostic</option>
+          </select>
+        </label>
+        {subjectMode === "hdr-probe" && <>
+          <label>HDR input <select aria-label="HDR input" value={hdrField} onChange={(e) => { setHdrField(e.target.value); setGenerationEpoch((n) => n + 1); }}>
+            {Object.keys(HDR_FIELDS).map((key) => <option key={key} value={key}>{key}</option>)}
+          </select></label>
+          <label>HDR field depth <select aria-label="HDR field depth" value={hdrDepth} onChange={(e) => { setHdrDepth(Number(e.target.value)); setGenerationEpoch((n) => n + 1); }}>
+            <option value={2.5}>2.5 m focused</option><option value={0.8}>0.8 m near</option>
+          </select></label>
+        </>}
+        <label>
+          Render quality{" "}
+          <select aria-label="Render quality" value={renderQuality} onChange={(e) => setRenderQuality(e.target.value)}>
+            <option value="low">Low</option>
+            <option value="standard">Standard</option>
+            <option value="high">High</option>
+          </select>
+        </label>
         <label>
           <input
             aria-label="Reflections"
@@ -706,7 +786,6 @@ function App() {
             onChange={(e) => {
               const key = e.target.value;
               const selected = ROOM_PRESETS[key];
-              roomOrigin.value.fromArray(selected.origin);
               setGenerationEpoch((n) => n + 1);
               setPresetKey(key);
               setCamera((c) => ({

@@ -4,6 +4,10 @@ import * as THREE from "three";
  * objects remain borrowed from the source owner; callers must remove the graph
  * before disposing the variants. */
 export function createRoomView(source, origin, sourceGiUniforms, { bytePreExposure = null } = {}) {
+  // One owned value drives both this view's scene translation and its GI
+  // source-space reconstruction. Never borrow the preset's mutable array.
+  const roomOrigin = new THREE.Vector3(...origin);
+  const roomOriginUniform = { value: roomOrigin };
   const uniforms = Object.fromEntries(
     Object.entries(sourceGiUniforms).map(([name, uniform]) => [
       name,
@@ -28,7 +32,7 @@ export function createRoomView(source, origin, sourceGiUniforms, { bytePreExposu
   };
   try {
     for (const child of source.children) group.add(child.clone(true));
-    group.position.set(...origin.map((value) => -value));
+    group.position.copy(roomOrigin).negate();
     group.traverse((object) => {
       if (!object.material) return;
       const adapt = (material) => {
@@ -52,6 +56,13 @@ export function createRoomView(source, origin, sourceGiUniforms, { bytePreExposu
           compile.call(material, shader, renderer);
           if (material.defines?.USE_GI !== undefined) {
             Object.assign(shader.uniforms, uniforms);
+            const worldPosition = "vGiW = gw.xyz;";
+            if (!shader.vertexShader.includes(worldPosition))
+              throw new Error("Upstream GI shader world-position hook missing");
+            shader.uniforms.roomOrigin = roomOriginUniform;
+            shader.vertexShader =
+              "uniform vec3 roomOrigin;\n" +
+              shader.vertexShader.replace(worldPosition, "vGiW = gw.xyz + roomOrigin;");
             if (bytePreExposure !== null) {
               const token = "#include <opaque_fragment>";
               if (!shader.fragmentShader.includes(token))
@@ -64,14 +75,14 @@ export function createRoomView(source, origin, sourceGiUniforms, { bytePreExposu
           }
         };
         variant.customProgramCacheKey = () =>
-          `${material.customProgramCacheKey()}|room-view|${bytePreExposure === null ? "linear" : `byte-${bytePreExposure}`}`;
+          `${material.customProgramCacheKey()}|room-translation|room-view|${bytePreExposure === null ? "linear" : `byte-${bytePreExposure}`}`;
         return variant;
       };
       object.material = Array.isArray(object.material)
         ? object.material.map(adapt)
         : adapt(object.material);
     });
-    return { group, uniforms, materialCount: variants.size, dispose };
+    return { group, uniforms, roomOrigin, roomOriginUniform, materialCount: variants.size, dispose };
   } catch (error) {
     dispose();
     throw error;

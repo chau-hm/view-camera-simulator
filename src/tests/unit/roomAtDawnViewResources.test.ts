@@ -38,7 +38,7 @@ describe("Room-at-Dawn per-view resource ownership", () => {
     expect((sourceSky.material as THREE.ShaderMaterial).uniforms.map.value).toBe(texture);
     const shader = () => ({
       uniforms: {},
-      vertexShader: "",
+      vertexShader: "vGiW = gw.xyz;",
       fragmentShader: "#include <opaque_fragment>",
     });
     const a = shader(),
@@ -63,5 +63,54 @@ describe("Room-at-Dawn per-view resource ownership", () => {
     expect(disposeTexture).not.toHaveBeenCalled();
     expect(disposeGeometry).not.toHaveBeenCalled();
     rtt.dispose();
+  });
+
+  it("keeps overlapping Observer and RTT origins independent until their own disposal", () => {
+    const gi = { giScale: { value: 1 } };
+    const sharedSourceOrigin = { value: new THREE.Vector3(99, 99, 99) };
+    const material = new THREE.MeshStandardMaterial();
+    material.defines = { USE_GI: "" };
+    // Model a source hook that installs an origin itself: the view must replace
+    // it after invoking that hook, not assume that cloning GI wraps every input.
+    material.onBeforeCompile = (shader) => {
+      shader.uniforms.roomOrigin = sharedSourceOrigin;
+      shader.vertexShader += "vGiW = gw.xyz;";
+    };
+    const source = new THREE.Scene();
+    source.add(new THREE.Mesh(new THREE.BoxGeometry(), material));
+    const wideOrigin = [1.7, 0.85, 0.35];
+    const deskOrigin = [3.2, 0.84, 0.08];
+    const wideObserver = createRoomView(source, wideOrigin, gi);
+    const wideRtt = createRoomView(source, wideOrigin, gi);
+    const deskObserver = createRoomView(source, deskOrigin, gi);
+    const deskRtt = createRoomView(source, deskOrigin, gi);
+    const views = [wideObserver, wideRtt, deskObserver, deskRtt];
+    const shaders = views.map((view) => {
+      const shader = { uniforms: {}, vertexShader: "", fragmentShader: "" };
+      const mesh = view.group.children[0] as THREE.Mesh;
+      (mesh.material as THREE.Material).onBeforeCompile(shader as never, {} as never);
+      return shader;
+    });
+    expect(new Set(views.map((view) => view.roomOriginUniform)).size).toBe(4);
+    expect(new Set(views.map((view) => view.roomOrigin)).size).toBe(4);
+    views.forEach((view, i) => {
+      expect(shaders[i].uniforms).toHaveProperty("roomOrigin", view.roomOriginUniform);
+      expect(shaders[i].vertexShader).toContain("vGiW = gw.xyz + roomOrigin;");
+      expect(view.group.position.toArray()).toEqual(view.roomOrigin.toArray().map((x: number) => -x));
+    });
+    // Preset changes cannot mutate already mounted views, and retirement of A
+    // cannot invalidate either independently mounted B view.
+    wideOrigin[0] = -50;
+    deskOrigin[0] = -60;
+    wideObserver.dispose();
+    wideRtt.dispose();
+    expect(wideObserver.roomOrigin.toArray()).toEqual([1.7, 0.85, 0.35]);
+    expect(wideRtt.roomOrigin.toArray()).toEqual([1.7, 0.85, 0.35]);
+    expect(deskObserver.roomOrigin.toArray()).toEqual([3.2, 0.84, 0.08]);
+    expect(deskRtt.roomOrigin.toArray()).toEqual([3.2, 0.84, 0.08]);
+    expect(sharedSourceOrigin.value.toArray()).toEqual([99, 99, 99]);
+    deskObserver.dispose();
+    expect(deskRtt.roomOrigin.toArray()).toEqual([3.2, 0.84, 0.08]);
+    deskRtt.dispose();
   });
 });

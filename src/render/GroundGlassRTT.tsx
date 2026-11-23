@@ -125,6 +125,18 @@ import type { CameraMovementPresentationRegion } from "../scenes/cameraMovementS
 
 let latestGroundGlassSubjectGeneration = 0;
 
+/** Synchronous, development-only observation of this frame's actual linear targets.
+ * Targets are borrowed and must not escape the callback or be disposed by it. */
+export type GroundGlassDevelopmentProbeFrame = Readonly<{
+  renderer: WebGLRenderer;
+  generation: GroundGlassRendererGenerationIdentity;
+  request: GroundGlassAcceptedRequestIdentity;
+  frameId: string;
+  targets: Readonly<{ scene: THREE.WebGLRenderTarget; far: THREE.WebGLRenderTarget; near: THREE.WebGLRenderTarget; composite: THREE.WebGLRenderTarget }>;
+  physical: GroundGlassPhysicalRenderState;
+  displayExposure: number;
+}>;
+
 export type GroundGlassRTTProps = {
   opticsState: DerivedOpticsState;
   focalLengthMm: number;
@@ -173,6 +185,8 @@ export type GroundGlassRTTProps = {
   developmentDisplayExposure?: number;
   /** Renderer-owned fixture resources; disposer runs before the mounted subject is removed. */
   developmentPrepareScene?: (scene: THREE.Scene, renderer: WebGLRenderer) => () => void;
+  /** Borrowed render targets are observable only during this synchronous callback. */
+  developmentProbeFrame?: (frame: GroundGlassDevelopmentProbeFrame) => void;
 };
 
 type GroundGlassCleanupOwnerCallbacks = Readonly<{
@@ -223,6 +237,7 @@ function OffscreenRenderer({
   developmentHdrColor,
   developmentDisplayExposure,
   developmentPrepareScene,
+  developmentProbeFrame,
 }: GroundGlassRTTProps & GroundGlassCleanupOwnerCallbacks) {
   const hdrColor = import.meta.env.DEV && developmentHdrColor === true;
   // React gives each mounted renderer a stable identity without a module-level
@@ -2010,6 +2025,22 @@ function OffscreenRenderer({
         gl.render(postSceneComposite, orthoCam);
       });
 
+      if (import.meta.env.DEV && hdrColor && !rawDebug && frameGeneration && frameRequest && developmentProbeFrame) {
+        try {
+          developmentProbeFrame({
+            renderer,
+            generation: frameGeneration,
+            request: frameRequest,
+            frameId: `${frameGeneration.generationId}:frame:${frameSequenceRef.current + 1}`,
+            targets: { scene: sourceRenderTarget, far: gatherRT, near: nearGatherRT, composite: finalRT },
+            physical: physicalRenderState,
+            displayExposure: Number(copyMaterial.uniforms.displayExposure.value),
+          });
+        } catch (error) {
+          console.error("Ground Glass development probe failed:", error);
+        }
+      }
+
       const renderSanityStateKey = createGroundGlassRenderSanityStateKey({
         resourceGeneration: resourceGenerationRef.current,
         sceneId: resolvedSceneId,
@@ -2248,6 +2279,7 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({
   developmentHdrColor,
   developmentDisplayExposure,
   developmentPrepareScene,
+  developmentProbeFrame,
 }) => {
   const onAdapterStartedRef = useRef(onAdapterStarted);
   const onAdapterDisposedRef = useRef(onAdapterDisposed);
@@ -2331,6 +2363,7 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({
           developmentHdrColor={developmentHdrColor}
           developmentDisplayExposure={developmentDisplayExposure}
           developmentPrepareScene={developmentPrepareScene}
+          developmentProbeFrame={developmentProbeFrame}
         />
       </Canvas>
     </div>
