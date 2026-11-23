@@ -51,6 +51,16 @@ function asNumber(value: unknown): number | undefined {
   return typeof value === "number" && Number.isSafeInteger(value) ? value : undefined;
 }
 
+function repositoryMatches(actualValue: unknown, expectedValue: unknown): boolean {
+  const actual = asObject(actualValue);
+  const expected = asObject(expectedValue);
+  const actualId = asNumber(actual?.id);
+  const expectedId = asNumber(expected?.id);
+
+  if (actualId !== undefined && expectedId !== undefined) return actualId === expectedId;
+  return asString(actual?.full_name) !== undefined && actual?.full_name === expected?.full_name;
+}
+
 function result(decision: FeaturePushDecision, reason: string, pullRequestNumbers: number[] = [], workflowRunIds: number[] = []): RoutingResult {
   return { decision, reason, pullRequestNumbers, workflowRunIds };
 }
@@ -77,7 +87,10 @@ function runBelongsToPullRequest(run: unknown, pullRequest: JsonObject, branch: 
   if (!Array.isArray(associations)) return false;
 
   const expectedNumber = asNumber(pullRequest.number);
+  const expectedHead = asObject(pullRequest.head);
+  const expectedHeadRepository = asObject(expectedHead?.repo);
   const expectedBase = asObject(pullRequest.base);
+  const expectedBaseRepository = asObject(expectedBase?.repo);
   const expectedBaseRef = asString(expectedBase?.ref);
 
   return workflowRun?.event === "pull_request"
@@ -92,9 +105,9 @@ function runBelongsToPullRequest(run: unknown, pullRequest: JsonObject, branch: 
       return associatedPullRequest?.number === expectedNumber
         && head?.ref === branch
         && head?.sha === headSha
-        && headRepository?.full_name === BASE_REPOSITORY
+        && repositoryMatches(headRepository, expectedHeadRepository)
         && base?.ref === expectedBaseRef
-        && baseRepository?.full_name === BASE_REPOSITORY;
+        && repositoryMatches(baseRepository, expectedBaseRepository);
     });
 }
 

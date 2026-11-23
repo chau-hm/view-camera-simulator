@@ -5,6 +5,7 @@ import {
 } from "../../../scripts/feature-push-routing.ts";
 
 const repository = "chau-hm/view-camera-simulator";
+const repositoryId = 1283640696;
 const branch = "feature/example-change";
 const headSha = "a".repeat(40);
 
@@ -25,11 +26,11 @@ function pullRequest(number: number, overrides: Record<string, unknown> = {}) {
     head: {
       ref: branch,
       sha: headSha,
-      repo: { full_name: repository },
+      repo: { id: repositoryId, full_name: repository },
     },
     base: {
       ref: number === 7 ? "main" : "integration/test",
-      repo: { full_name: repository },
+      repo: { id: repositoryId, full_name: repository },
     },
     ...overrides,
   };
@@ -45,11 +46,11 @@ function workflowRun(number: number, pullRequestNumber: number) {
       head: {
         ref: branch,
         sha: headSha,
-        repo: { full_name: repository },
+        repo: { id: repositoryId, name: "view-camera-simulator" },
       },
       base: {
         ref: pullRequestNumber === 7 ? "main" : "integration/test",
-        repo: { full_name: repository },
+        repo: { id: repositoryId, name: "view-camera-simulator" },
       },
     }],
   };
@@ -150,6 +151,21 @@ describe("feature push validation routing", () => {
     await expect(classifyFeaturePush("push", pushEvent(), api, noWait)).resolves.toMatchObject({
       decision: "run-ci",
       reason: "exact-head-pr-ci-not-established",
+    });
+  });
+
+  it("matches compact Actions API repository associations by verified repository ID", async () => {
+    const run = workflowRun(70, 7);
+    const api = apiFixture({ listWorkflowRuns: vi.fn().mockResolvedValue([run]) });
+
+    await expect(classifyFeaturePush("push", pushEvent(), api, noWait)).resolves.toMatchObject({
+      decision: "covered-by-pr",
+    });
+
+    run.pull_requests[0].head.repo.id = repositoryId + 1;
+    const mismatchedRepository = apiFixture({ listWorkflowRuns: vi.fn().mockResolvedValue([run]) });
+    await expect(classifyFeaturePush("push", pushEvent(), mismatchedRepository, noWait)).resolves.toMatchObject({
+      decision: "run-ci",
     });
   });
 
