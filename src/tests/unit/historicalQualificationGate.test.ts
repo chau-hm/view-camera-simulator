@@ -48,4 +48,21 @@ describe("authoritative CI qualification gate", () => {
       reasons: ["redundant-feature-push-ci-should-have-been-suppressed"],
     });
   });
+
+  it("fails the authoritative gate when cancellation leaves qualification or routing incomplete", () => {
+    expect(evaluateHistoricalQualificationGate({
+      featureRoutingResult: "cancelled",
+      featureRoutingDecision: "",
+      featureGateResult: "skipped",
+      historicalResult: "cancelled",
+      historicalDecision: "",
+    })).toMatchObject({
+      passed: false,
+      reasons: expect.arrayContaining([
+        "feature-push-gate-skipped",
+        "historical-qualification-cancelled",
+        "historical-decision-missing",
+      ]),
+    });
+  });
 });

@@ -19,6 +19,7 @@ const isSharedQualificationPath = (path) => globalPaths.some((prefix) => isWithi
 const familyPathMatches = (path, family) => {
   const normalized = path.toLowerCase();
   if (family.artifactRoots.some((root) => normalized.startsWith(root.toLowerCase()))) return true;
+  if (family.replaySourcePaths?.some((sourcePath) => normalizePath(sourcePath) === path)) return true;
   if (HISTORICAL_EVIDENCE_MANIFEST.sourcePins.some((pin) =>
     pin.families.includes(family.id) && pin.verifyPaths.some((sourcePath) => normalizePath(sourcePath) === path))) return true;
   if (!/^(?:scripts|src)\//i.test(path)) return false;
@@ -103,6 +104,16 @@ export function classifyChangedPaths(changedPaths, options = {}) {
     const lower = path.toLowerCase();
     const token = lower.match(familyPattern);
     let matchedKnownFamily = false;
+
+    if (!token) {
+      const replayOwners = automaticallyRouted.filter(({ replaySourcePaths = [] }) =>
+        replaySourcePaths.some((sourcePath) => normalizePath(sourcePath) === path));
+      for (const family of replayOwners) {
+        matched.add(family.id);
+        reasons.push(`replay-source-dependency:${family.id}:${path}`);
+      }
+      matchedKnownFamily = replayOwners.length > 0;
+    }
 
     if (token) {
       const candidate = `M7${token[1].toUpperCase()}`;

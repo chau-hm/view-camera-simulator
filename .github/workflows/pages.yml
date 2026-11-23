@@ -23,7 +23,6 @@ jobs:
       - historical-qualification
     if: >-
       always() &&
-      !cancelled() &&
       !(needs.feature-push-routing.result == 'success' &&
         (needs.feature-push-routing.outputs.decision == 'covered-by-pr' ||
          needs.feature-push-routing.outputs.decision == 'no-commit'))

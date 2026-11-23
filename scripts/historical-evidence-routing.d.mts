@@ -5,6 +5,7 @@ export type HistoricalEvidenceFamily = Readonly<{
   owner?: string;
   alwaysInOrdinaryCi?: boolean;
   artifactRoots: readonly string[];
+  replaySourcePaths?: readonly string[];
   commands: readonly Readonly<{ name: string; args: readonly string[] }>[];
   requiredArtifacts: readonly string[];
 }>;

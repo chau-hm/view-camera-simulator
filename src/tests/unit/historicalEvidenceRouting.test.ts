@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { relative, resolve } from "node:path";
+import * as ts from "typescript";
 import { describe, expect, it } from "vitest";
 import {
   HISTORICAL_EVIDENCE_MANIFEST,
@@ -14,6 +17,43 @@ const allFamilies = HISTORICAL_EVIDENCE_MANIFEST.families
   .filter(({ alwaysInOrdinaryCi }) => alwaysInOrdinaryCi !== true)
   .map(({ id }) => id);
 const sha = (fill: string) => fill.repeat(40);
+
+const runtimeLocalImportClosure = (entryPath: string): string[] => {
+  const root = process.cwd();
+  const seen = new Set<string>();
+  const queue = [entryPath];
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (!current) continue;
+    if (seen.has(current)) continue;
+    seen.add(current);
+    const source = ts.createSourceFile(
+      current,
+      readFileSync(resolve(root, current), "utf8"),
+      ts.ScriptTarget.Latest,
+      true,
+    );
+    for (const statement of source.statements) {
+      if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
+      const clause = statement.importClause;
+      if (clause?.isTypeOnly) continue;
+      if (clause && !clause.name && clause.namedBindings && ts.isNamedImports(clause.namedBindings)
+          && clause.namedBindings.elements.every((specifier) => specifier.isTypeOnly)) continue;
+      const specifier = statement.moduleSpecifier.text;
+      if (!specifier.startsWith(".")) continue;
+      const resolved = ts.resolveModuleName(
+        specifier,
+        resolve(root, current),
+        { moduleResolution: ts.ModuleResolutionKind.Bundler },
+        ts.sys,
+      ).resolvedModule;
+      if (!resolved) continue;
+      const localPath = relative(root, resolved.resolvedFileName).replaceAll("\\", "/");
+      if (localPath.startsWith("scripts/") || localPath.startsWith("src/")) queue.push(localPath);
+    }
+  }
+  return [...seen].filter((path) => path.startsWith("src/")).sort();
+};
 
 describe("historical evidence change routing", () => {
   it("keeps ordinary application changes outside the frozen archive lane", () => {
@@ -51,6 +91,34 @@ describe("historical evidence change routing", () => {
       families: ["M7H", "M7I", "M7J", "M7K", "M7L", "M7M", "M7Q"],
       currentOwners: ["ordinary-ci:evidence:check:m7r"],
     });
+  });
+
+  it("routes shared runtime modules used by the M7E and M7F replay graphs", () => {
+    for (const family of HISTORICAL_EVIDENCE_MANIFEST.families.filter(({ id }) => id === "M7E" || id === "M7F")) {
+      for (const path of family.replaySourcePaths ?? []) {
+        const result = classifyChangedPaths([path]);
+        expect(result.decision, path).toBe("QUALIFIED");
+        expect(result.families, path).toContain(family.id);
+      }
+    }
+
+    for (const [familyId, replayEntry] of [
+      ["M7E", "scripts/replayM7eEvidence.ts"],
+      ["M7F", "scripts/replayM7fPresentationEvidence.ts"],
+    ] as const) {
+      const family = HISTORICAL_EVIDENCE_MANIFEST.families.find(({ id }) => id === familyId);
+      expect(family?.replaySourcePaths?.slice().sort()).toEqual(runtimeLocalImportClosure(replayEntry));
+    }
+
+    for (const path of [
+      "src/render/webgpu/groundGlassPresentationReference.ts",
+      "src/render/groundGlassM6bSpatialConformance.ts",
+      "src/render/groundGlassInspectionWindow.ts",
+    ]) {
+      const result = classifyChangedPaths([path]);
+      expect(result.families, path).toContain("M7F");
+      expect(result.families, path).toContain("M7G");
+    }
   });
 
   it("routes changed M7G, M7H, M7I, and M7J inputs to every retained report consumer", () => {

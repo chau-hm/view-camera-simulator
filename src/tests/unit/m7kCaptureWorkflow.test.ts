@@ -354,6 +354,7 @@ describe("M7K capture workflow provenance", () => {
     expect(deployStart).toBeGreaterThan(ciStart);
     const ciJob = workflow.slice(ciStart, deployStart);
     expect(ciJob).toContain("always() &&");
+    expect(ciJob).not.toContain("!cancelled()");
     expect(ciJob).toContain("- historical-qualification");
     expect(ciJob).toContain("HISTORICAL_RESULT");
     expect(ciJob).toContain("run: node scripts/historical-qualification-ci-gate.mjs");

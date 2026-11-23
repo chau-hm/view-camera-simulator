@@ -27,6 +27,17 @@
       "id": "M7E",
       "owner": "evidence:replay:m7e and the M7G child replay",
       "artifactRoots": ["docs/architecture/ground-glass-m7e-r187-gather-b1/"],
+      "replaySourcePaths": [
+        "src/render/backend/groundGlassSceneCompatibility.ts",
+        "src/render/webgpu/groundGlassApertureGatherQuality.ts",
+        "src/render/webgpu/groundGlassApertureGatherReference.ts",
+        "src/render/webgpu/groundGlassB1Reference.ts",
+        "src/render/webgpu/groundGlassM5qQualification.ts",
+        "src/render/webgpu/groundGlassM7eGatherB1Evidence.ts",
+        "src/render/webgpu/groundGlassM7eLosslessEvidenceJson.ts",
+        "src/render/webgpu/groundGlassM7eReportReplay.ts",
+        "src/render/webgpu/groundGlassRawWebGpuCompatibility.ts"
+      ],
       "commands": [
         { "name": "M7E offline replay", "args": ["run", "evidence:replay:m7e", "--", "--report-output={temp}/m7e-standalone.json"] }
       ],
@@ -38,6 +49,33 @@
       "id": "M7F",
       "owner": "M7G consolidated replay is the primary routine route; standalone replay remains available for direct qualification and route comparison.",
       "artifactRoots": ["docs/architecture/ground-glass-m7f-r187-presentation/", "docs/architecture/GROUND_GLASS_M7F_R187_PRESENTATION"],
+      "replaySourcePaths": [
+        "src/core/math/plane.ts",
+        "src/core/math/ray.ts",
+        "src/core/math/vec.ts",
+        "src/core/optics/calculateDepthOfField.ts",
+        "src/core/optics/calculateImageDistance.ts",
+        "src/core/optics/groundGlassNaturalIllumination.ts",
+        "src/core/optics/groundGlassParallelFilmGeometry.ts",
+        "src/core/optics/thinLensModel.ts",
+        "src/render/backend/groundGlassSceneCompatibility.ts",
+        "src/render/groundGlassCoverage.ts",
+        "src/render/groundGlassFilmPlaneProjection.ts",
+        "src/render/groundGlassFilmWindow.ts",
+        "src/render/groundGlassInspectionWindow.ts",
+        "src/render/groundGlassM6bSpatialConformance.ts",
+        "src/render/groundGlassM6cAlphaConformance.ts",
+        "src/render/groundGlassPhysicalOverlayConformance.ts",
+        "src/render/groundGlassPipeline.ts",
+        "src/render/groundGlassProjection.ts",
+        "src/render/groundGlassRttOrientation.ts",
+        "src/render/groundGlassTargetProjection.ts",
+        "src/render/renderQuality.ts",
+        "src/render/webgpu/groundGlassM7fPresentationEvidence.ts",
+        "src/render/webgpu/groundGlassPresentationReference.ts",
+        "src/render/webgpu/groundGlassRawWebGpuCompatibility.ts",
+        "src/utils/constants.ts"
+      ],
       "commands": [
         { "name": "M7F persisted presentation replay", "args": ["run", "evidence:replay:m7f", "--", "--report-output={temp}/m7f-standalone.json"] }
       ],
