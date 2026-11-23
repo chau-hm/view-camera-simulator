@@ -7,10 +7,14 @@
     "package-lock.json",
     "playwright.config.ts",
     "scripts/fetch-m7k-execution-source.mjs",
-    "scripts/historical-qualification-ci-gate.mjs",
     "scripts/historical-evidence-manifest.json",
+    "scripts/historical-evidence-routing.d.mts",
     "scripts/historical-evidence-routing.mjs",
-    "scripts/run-historical-qualification.mjs"
+    "scripts/historical-qualification-ci-gate.d.mts",
+    "scripts/historical-qualification-ci-gate.mjs",
+    "scripts/run-historical-qualification.mjs",
+    "src/tests/unit/historicalEvidenceRouting.test.ts",
+    "src/tests/unit/historicalQualificationGate.test.ts"
   ],
   "broadFallback": "all-supported-families",
   "unsupportedFamilies": {

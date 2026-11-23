@@ -82,8 +82,16 @@ describe("historical evidence change routing", () => {
     ]).families).toEqual(["M7P", "M7Q"]);
   });
 
-  it("routes changes to shared verification schema and qualification workflow broadly", () => {
-    for (const path of ["package-lock.json", ".github/workflows/historical-qualification.yml", "scripts/historical-evidence-manifest.json"]) {
+  it("routes changes to shared verification code, declarations, tests, schema, and workflows broadly", () => {
+    for (const path of [
+      "package-lock.json",
+      ".github/workflows/historical-qualification.yml",
+      "scripts/historical-evidence-manifest.json",
+      "scripts/historical-evidence-routing.d.mts",
+      "scripts/historical-qualification-ci-gate.d.mts",
+      "src/tests/unit/historicalEvidenceRouting.test.ts",
+      "src/tests/unit/historicalQualificationGate.test.ts",
+    ]) {
       expect(classifyChangedPaths([path])).toMatchObject({ decision: "QUALIFIED", families: allFamilies, broad: true });
     }
   });
