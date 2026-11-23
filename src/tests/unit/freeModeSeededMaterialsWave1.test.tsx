@@ -375,13 +375,50 @@ describe("Free Mode seeded material subject factories", () => {
         "57f9feb2d4e3a194d30bc35c526a7409b63994160dcea180e228aedfc5912e68",
       );
       expect(renderSubjectSignature(table)).toBe(
-        "f2a65b0dab19898cd2235a17b02c23f04f84982992b5ea909873d31de0291fdc",
+        "d8bcb9595b6b55b12652dd541aff1d68ce18735da5e3e5303d205b82e92c27f1",
+      );
+      expect(geometrySignature(table)).toBe(
+        "eefdb7c6eabf7d8a3371cdfc594558165d250f97aeff7862236fe1223bab9c80",
       );
       expect(architectureForegroundScene.sceneVariation).toEqual({ enabled: true, schemaVersion: 1 });
       expect(tableTiltScene.sceneVariation).toEqual({ enabled: true, schemaVersion: 1 });
     } finally {
       disposeArchitectureForegroundGroup(architecture);
       disposeTableTiltGroup(table);
+    }
+  });
+
+  it("keeps PR #357 finish sharing in Guided Mode and applies independent seeded Table Tilt roles", () => {
+    const canonical = createTableTiltGroup({ presentation: TABLE_TILT_PRESENTATION });
+    const seeded = createTableTiltGroup({
+      presentation: TABLE_TILT_PRESENTATION,
+      variationDescriptor: descriptorFor(tableTiltScene, 0),
+    });
+    const frameNames = [
+      "table-tilt-apron-near",
+      "table-tilt-side-rail-left",
+      "table-tilt-underframe-crossbar",
+      `table-tilt-support-${tableTiltGeometry.tableSupports[0]?.id}`,
+    ];
+
+    try {
+      const canonicalWood = materialFor(canonical, "table-tilt-tabletop");
+      expect(materialFor(canonical, "table-tilt-context-near-tray")).toBe(canonicalWood);
+      expect(materialFor(canonical, "table-tilt-context-far-block")).toBe(canonicalWood);
+      const canonicalFrame = materialFor(canonical, frameNames[0]!);
+      frameNames.forEach((name) => expect(materialFor(canonical, name)).toBe(canonicalFrame));
+      expect(materialFor(canonical, "table-tilt-context-middle-canister")).toBe(canonicalFrame);
+
+      const seededWood = materialFor(seeded, "table-tilt-tabletop");
+      const seededContextWood = materialFor(seeded, "table-tilt-context-near-tray");
+      expect(seededContextWood).not.toBe(seededWood);
+      expect(materialFor(seeded, "table-tilt-context-far-block")).toBe(seededContextWood);
+      const seededFrame = materialFor(seeded, frameNames[0]!);
+      frameNames.forEach((name) => expect(materialFor(seeded, name)).toBe(seededFrame));
+      expect(materialFor(seeded, "table-tilt-context-middle-canister")).not.toBe(seededFrame);
+    } finally {
+      disposeTableTiltGroup(canonical);
+      disposeTableTiltGroup(seeded);
     }
   });
 
@@ -617,7 +654,7 @@ describe("Free Mode seeded material subject factories", () => {
       scene: tableTiltScene,
       make: (seed: number) => createTableTiltGroup({ presentation: TABLE_TILT_PRESENTATION, variationDescriptor: descriptorFor(tableTiltScene, seed) }),
       dispose: disposeTableTiltGroup,
-      protectedNames: ["table-tilt-tabletop-guide-1", "table-tilt-near-cup-stripe-1", "table-tilt-near-cup-focus-card-band-1", "table-tilt-mid-notebook-line-1", "table-tilt-far-book-focus-chart-surface", "table-tilt-far-book-chart-1-1"],
+      protectedNames: ["table-tilt-tabletop-guide-1", "table-tilt-near-cup-focus-card-surface", "table-tilt-near-cup-focus-card-band-1", "table-tilt-mid-notebook-pages", "table-tilt-mid-notebook-line-pattern-surface", "table-tilt-mid-notebook-line-1", "table-tilt-far-book-focus-chart-surface", "table-tilt-far-book-chart-1-1", "table-tilt-far-book-fine-grid-1-1"],
     },
   ])("leaves $scene.id canonical geometry and focus-critical materials unchanged", ({ scene, make, dispose, protectedNames }) => {
     const canonical = scene.id === "architecture-foreground"

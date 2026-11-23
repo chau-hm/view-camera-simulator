@@ -319,15 +319,27 @@ const qualifyScene = async (page: Page, testInfo: TestInfo, sceneCase: SceneCase
   expect(new URL(page.url()).searchParams.has("seed")).toBe(false);
   const guidedFilename = `${sceneId}-observer-guided-canonical.png`;
   const guidedCapture = await captureCanvas(canonical.scene.locator("canvas").first(), directory, guidedFilename);
-  observerCaptures.push({ filename: guidedFilename, label: "Guided · canonical" });
+  observerCaptures.push({
+    filename: guidedFilename,
+    label: sceneId === "table-tilt"
+      ? "Integrated Guided canonical · matches PR #357 baseline signature"
+      : "Guided · canonical",
+  });
   visualRecords.push({ sceneId, mode: "guided-canonical", ...guidedCapture });
   capacityByStage.guidedCanonical = capacityShape(await waitForCapacity(page));
 
-  const seedCases = [
-    { seed: 0, slug: "seed-0" },
-    { seed: FIXED_SEED, slug: `seed-${FIXED_SEED}` },
-    { seed: MAX_SEED, slug: `seed-${MAX_SEED}` },
-  ] as const;
+  const seedCases = sceneId === "table-tilt"
+    ? [
+        { seed: 0, slug: "seed-0" },
+        { seed: 1, slug: "seed-1" },
+        { seed: FIXED_SEED, slug: `seed-${FIXED_SEED}` },
+        { seed: MAX_SEED, slug: `seed-${MAX_SEED}` },
+      ] as const
+    : [
+        { seed: 0, slug: "seed-0" },
+        { seed: FIXED_SEED, slug: `seed-${FIXED_SEED}` },
+        { seed: MAX_SEED, slug: `seed-${MAX_SEED}` },
+      ] as const;
 
   let fixedSeedRuntime: { scene: Locator; rtt: Locator } | undefined;
 
@@ -339,10 +351,23 @@ const qualifyScene = async (page: Page, testInfo: TestInfo, sceneCase: SceneCase
     expect(new URL(page.url()).searchParams.get("sv")).toBe("1");
     const observerFilename = `${sceneId}-observer-${slug}.png`;
     const observerCapture = await captureCanvas(runtime.scene.locator("canvas").first(), directory, observerFilename);
-    observerCaptures.push({ filename: observerFilename, label: `Free · seed ${seed}` });
+    const tableFamilyLabel = seed === 0
+      ? "Medium Teak-like"
+      : seed === 1
+        ? "Dark Walnut-like"
+        : "Light Oak-like";
+    observerCaptures.push({
+      filename: observerFilename,
+      label: sceneId === "table-tilt"
+        ? `Free · ${tableFamilyLabel} · seed ${seed}`
+        : `Free · seed ${seed}`,
+    });
     visualRecords.push({ sceneId, mode: "free", seed, ...observerCapture });
 
     const subjectGenerationBeforeControls = await subjectGeneration(runtime.rtt);
+    if (sceneId === "table-tilt") {
+      capacityByStage[`seed${seed}`] = capacityShape(await waitForCapacity(page));
+    }
     const focusMm = await setFocusToAnotherReachableValue(page);
     await page.getByRole("radiogroup", { name: "Aperture" }).getByRole("radio", { name: "f/11" }).check();
     await waitForCompletedFrame(runtime.rtt);
@@ -369,8 +394,6 @@ const qualifyScene = async (page: Page, testInfo: TestInfo, sceneCase: SceneCase
     expect(await subjectGeneration(runtime.rtt)).toBe(subjectGenerationBeforeControls);
     if (seed === FIXED_SEED) {
       fixedSeedRuntime = runtime;
-      capacityByStage.seed284719 = capacityShape(await waitForCapacity(page));
-
       const rawDebug = page.getByLabel("Raw RTT — bypass DOF");
       await expect(rawDebug).not.toBeChecked();
       await rawDebug.check();
@@ -393,7 +416,10 @@ const qualifyScene = async (page: Page, testInfo: TestInfo, sceneCase: SceneCase
   await expect(page.getByTestId("scene-variation-controls")).toHaveAttribute("data-active-seed", String(FIXED_SEED));
   const replayFilename = `${sceneId}-observer-same-seed-url-replay.png`;
   const replayCapture = await captureCanvas(replayRuntime.scene.locator("canvas").first(), directory, replayFilename);
-  observerCaptures.push({ filename: replayFilename, label: `URL replay · seed ${FIXED_SEED}` });
+  observerCaptures.push({
+    filename: replayFilename,
+    label: `Same-seed URL replay · seed ${FIXED_SEED}`,
+  });
   visualRecords.push({ sceneId, mode: "same-seed-url-replay", seed: FIXED_SEED, ...replayCapture });
   fixedSeedRuntime = replayRuntime;
 
@@ -918,7 +944,7 @@ test("Table Tilt calibrated Ground Glass qualification distinguishes neutral and
     settings: typeof calibratedSettings;
   }>();
   calibratedBySeed.set(seed, { raw: calibratedRaw, upright: calibratedUpright, settings: calibratedSettings });
-  for (const otherSeed of [0, MAX_SEED]) {
+  for (const otherSeed of [0, 1, MAX_SEED]) {
     await page.goto(appRoute(testInfo, route(otherSeed)));
     const runtime = await waitForSceneReady(page, "table-tilt");
     await assertSeedRoute(otherSeed);
@@ -951,7 +977,7 @@ test("Table Tilt calibrated Ground Glass qualification distinguishes neutral and
     "table-tilt-calibrated-neutral-vs-calibrated-contact-sheet.png",
     neutralComparison,
   );
-  const seedComparison = [0, seed, MAX_SEED].flatMap((value) => {
+  const seedComparison = [0, 1, seed, MAX_SEED].flatMap((value) => {
     const captures = calibratedBySeed.get(value);
     if (!captures) throw new Error(`Missing calibrated captures for seed ${value}`);
     return [captures.raw, captures.upright];
@@ -959,12 +985,18 @@ test("Table Tilt calibrated Ground Glass qualification distinguishes neutral and
   await writeContactSheet(
     page,
     directory,
-    "table-tilt-calibrated-three-seed-contact-sheet.png",
+    "table-tilt-calibrated-four-seed-contact-sheet.png",
     seedComparison,
   );
 
   const report = {
-    qualification: "Table Tilt calibrated Ground Glass review-fix round 1",
+    qualification: "Table Tilt v2 final integration Ground Glass qualification",
+    integrationBase: "97908ec09e630f95471ab37bbc587158738872ae",
+    canonicalCompatibility: {
+      currentMainAndIntegratedNoDescriptorSignature:
+        "d8bcb9595b6b55b12652dd541aff1d68ce18735da5e3e5303d205b82e92c27f1",
+      source: "origin/main PR #357 factory with no variation descriptor; integrated Guided path uses the same canonical construction",
+    },
     viewport: { width: 1440, height: 1000 },
     devicePixelRatio: await page.evaluate(() => window.devicePixelRatio),
     sceneId: "table-tilt",
@@ -987,7 +1019,7 @@ test("Table Tilt calibrated Ground Glass qualification distinguishes neutral and
     captures: {
       neutral: [neutralRaw, neutralUpright],
       calibratedSeed284719: [calibratedRaw, calibratedUpright],
-      calibratedThreeSeed: [0, seed, MAX_SEED].flatMap((value) => {
+      calibratedFourSeed: [0, 1, seed, MAX_SEED].flatMap((value) => {
         const capture = calibratedBySeed.get(value);
         return capture ? [capture.raw, capture.upright] : [];
       }),
@@ -1004,7 +1036,7 @@ test("Table Tilt calibrated Ground Glass qualification distinguishes neutral and
     },
     contactSheets: [
       "table-tilt-calibrated-neutral-vs-calibrated-contact-sheet.png",
-      "table-tilt-calibrated-three-seed-contact-sheet.png",
+      "table-tilt-calibrated-four-seed-contact-sheet.png",
     ],
     visualAssessment: {
       inspectionMethod: "Manual inspection of the unretouched 514×411 Chromium Ground Glass captures and contact sheets at native display size.",
