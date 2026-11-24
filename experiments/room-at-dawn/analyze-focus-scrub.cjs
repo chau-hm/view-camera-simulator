@@ -478,7 +478,7 @@ function analyzeCaptureDirectory(directory) {
         : 'low; the settled comparison set is incomplete or contains rejected pairs',
     limits: [
       'No cross-focus full-frame difference is used as an instability metric.',
-      'The coarse 1200/2000/3000 mm sweep does not resolve small focus intervals around a shader threshold.',
+      'The sampled focus intervals may not resolve a narrow discontinuity around a shader threshold.',
       'Raw/Processed comparison can localize only to before/after the Raw RTT boundary when same-state pairs diverge.',
       'rAF and RTT frame telemetry cannot prove the exact frame physically presented by the browser compositor.',
       'No image-based local edge sharpness is established without a validated and registered ROI.',
