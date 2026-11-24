@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 1,
+  "coreRegressionOwnerIds": [
+    "canonical-optics",
+    "ground-glass-coordinates",
+    "renderer-lifecycle",
+    "webgpu-lifecycle",
+    "scene-publication",
+    "controls-and-tasks",
+    "evidence-and-ci-policy"
+  ],
+  "owners": [
+    {
+      "id": "canonical-optics",
+      "label": "Canonical optics, image circle, and focus plane",
+      "paths": ["src/core/optics/**"],
+      "tests": [
+        "src/tests/unit/deriveOpticsState.test.ts",
+        "src/tests/unit/thinLensModel.test.ts",
+        "src/tests/unit/lensCoverage.test.ts",
+        "src/tests/unit/imageCircleGeometry.test.ts",
+        "src/tests/unit/physicalLensCoverageGeometry.test.ts",
+        "src/tests/unit/scheimpflugConstruction.test.ts",
+        "src/tests/unit/scheimpflugConstructionGeometry.test.ts",
+        "src/tests/unit/scheimpflugPhysicalFocusPropagation.test.ts",
+        "src/tests/unit/opticalDebugScheimpflug.test.tsx",
+        "src/tests/unit/groundGlassCoordinateContract.test.ts",
+        "src/tests/unit/groundGlassFilmPlaneProjection.test.ts",
+        "src/tests/unit/groundGlassFootprintCoordinates.test.ts",
+        "src/tests/unit/cameraMovementLatticeGeometry.test.ts",
+        "src/tests/unit/cameraMovementProjectionDiagnostics.test.ts",
+        "src/tests/unit/understandingCameraMovementsGeometry.test.ts"
+      ],
+      "e2eSpecs": [
+        "src/tests/e2e/camera-movement-ground-glass-comparison.spec.ts",
+        "src/tests/e2e/lesson-zero-image-circle-coverage.spec.ts",
+        "src/tests/e2e/physical-image-circle.spec.ts",
+        "src/tests/e2e/understanding-camera-movements.spec.ts"
+      ],
+      "requiresE2E": true,
+      "reason": "Fixed physical inputs cover canonical geometry; projection and public-browser owners cover downstream 2D/3D/Ground Glass effects."
+    },
+    {
+      "id": "ground-glass-coordinates",
+      "label": "Ground Glass coordinates and calibration",
+      "paths": ["src/render/**", "src/core/optics/calculateGroundGlassProjection.ts"],
+      "tests": [
+        "src/tests/unit/groundGlassCoordinateContract.test.ts",
+        "src/tests/unit/groundGlassFilmPlaneProjection.test.ts",
+        "src/tests/unit/groundGlassFootprintCoordinates.test.ts",
+        "src/tests/unit/groundGlassPhysicalGrid.test.ts",
+        "src/tests/unit/groundGlassPhysicalScale.test.ts",
+        "src/tests/unit/groundGlassRttOrientation.test.ts"
+      ],
+      "e2eSpecs": ["src/tests/e2e/groundglass-interaction.spec.ts"],
+      "requiresE2E": true,
+      "reason": "Renderer and film-plane changes can affect asymmetric physical-side and Raw/Upright output contracts."
+    },
+    {
+      "id": "renderer-lifecycle",
+      "label": "WebGL RTT, frame freshness, and renderer lifecycle",
+      "paths": [
+        "src/render/GroundGlassRenderHost.tsx",
+        "src/render/SceneRenderer.tsx",
+        "src/render/SceneRenderer.ts",
+        "src/render/testing/**",
+        "src/components/simulator/**"
+      ],
+      "tests": [
+        "src/tests/unit/GroundGlassRenderHost.test.tsx",
+        "src/tests/unit/SceneRenderer.test.tsx",
+        "src/tests/unit/observerRendererLifecycle.test.tsx",
+        "src/tests/unit/groundGlassFrameRequest.test.ts",
+        "src/tests/unit/groundGlassFrameExecution.test.ts",
+        "src/tests/unit/groundGlassRttResources.test.ts",
+        "src/tests/unit/groundGlassRenderer.test.tsx"
+      ],
+      "e2eSpecs": ["src/tests/e2e/scene-switching.spec.ts"],
+      "requiresE2E": true,
+      "reason": "Unit lifecycle ownership is distinct from SPA navigation, detach, and real frame-delivery behavior."
+    },
+    {
+      "id": "webgpu-lifecycle",
+      "label": "WebGPU adapter and runtime contracts",
+      "paths": ["src/render/webgpu/**"],
+      "tests": [
+        "src/tests/unit/groundGlassWebGpuRuntime.test.ts",
+        "src/tests/unit/groundGlassWebGpuOpticalStateAdapter.test.ts",
+        "src/tests/unit/groundGlassWebGpuTestSeam.test.ts",
+        "src/tests/unit/GroundGlassWebGPUAdapterDiagnostics.test.ts"
+      ],
+      "e2eSpecs": ["src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts"],
+      "requiresE2E": true,
+      "nativeGpuRequired": true,
+      "reason": "Deterministic adapter tests do not replace explicit browser/device lifecycle qualification."
+    },
+    {
+      "id": "scene-publication",
+      "label": "Scene registry, route availability, and publication",
+      "paths": ["src/config/**", "src/app/pages.tsx", "src/app/scene*.ts"],
+      "tests": [
+        "src/tests/unit/publicScenes.test.ts",
+        "src/tests/unit/sceneDefinitions.test.ts",
+        "src/tests/unit/sceneAssetRegistry.test.ts",
+        "src/tests/unit/simulatorRouteValidation.test.ts",
+        "src/tests/integration/scene-publication-gate.test.tsx",
+        "src/tests/integration/simulator-route-availability.test.tsx",
+        "src/tests/integration/sceneVariationRoute.test.tsx"
+      ],
+      "e2eSpecs": ["src/tests/e2e/scene-switching.spec.ts"],
+      "requiresE2E": true,
+      "reason": "Public registry and route integration are separate from scene implementation details."
+    },
+    {
+      "id": "scene-implementation-incomplete",
+      "label": "Scene implementation with incomplete dependency ownership",
+      "paths": ["src/scenes/**"],
+      "tests": [
+        "src/tests/unit/publicScenes.test.ts",
+        "src/tests/unit/sceneDefinitions.test.ts",
+        "src/tests/unit/sceneAssetRegistry.test.ts",
+        "src/tests/unit/simulatorRouteValidation.test.ts"
+      ],
+      "e2eSpecs": ["src/tests/e2e/scene-switching.spec.ts"],
+      "requiresE2E": true,
+      "incompleteReason": "The scene tree contains scene-specific geometry, materials, task wiring, and renderer inputs whose full dependency ownership is not mapped. These selected checks are useful but cannot establish complete affected coverage; use full local CI for a complete result.",
+      "reason": "Run publication and route owners, but do not treat them as complete proof of a scene implementation change."
+    },
+    {
+      "id": "controls-and-tasks",
+      "label": "Reachable controls and guided-task evaluation",
+      "paths": ["src/core/tasks/**", "src/components/controls/**", "src/app/cameraControlTeaching.ts"],
+      "tests": [
+        "src/tests/unit/taskEngine.test.ts",
+        "src/tests/unit/physicalTaskEvaluation.test.ts",
+        "src/tests/unit/focusControl.test.tsx",
+        "src/tests/unit/movementControls.test.tsx",
+        "src/tests/integration/cameraMovementPublicControls.test.tsx",
+        "src/tests/integration/focusFundamentalsSelectableFocus.test.tsx"
+      ],
+      "e2eSpecs": ["src/tests/e2e/camera-movement-public-controls.spec.ts"],
+      "requiresE2E": true,
+      "reason": "Task correctness and values reachable through public controls require unit and interaction evidence."
+    },
+    {
+      "id": "evidence-and-ci-policy",
+      "label": "Historical qualification, provenance, and current E2E policy",
+      "paths": [
+        ".github/workflows/historical-qualification.yml",
+        "scripts/run-historical-qualification.mjs",
+        "scripts/historical-qualification-ci-gate.mjs",
+        "scripts/run-m7r-evidence.mjs",
+        "scripts/run-m7v-qualification.mjs",
+        "scripts/fetch-m7k-execution-source.mjs",
+        "src/render/testing/**"
+      ],
+      "tests": [
+        "src/tests/unit/historicalQualificationGate.test.ts",
+        "src/tests/unit/m7nRendererLifecycleEvidence.test.ts",
+        "src/tests/unit/m7nRendererLifecycleTrace.test.ts",
+        "src/tests/unit/m7rBroadE2eRecoveryEvidence.test.ts",
+        "src/tests/unit/m7vE2eQualificationPolicy.test.ts",
+        "src/tests/unit/m7wQualificationEvidence.test.ts"
+      ],
+      "reason": "Current qualification decisions and provenance contracts are separate from frozen replay and application behavior."
+    },
+    {
+      "id": "ui-and-layout",
+      "label": "Responsive UI and learner-facing integration",
+      "paths": ["src/components/layout/**", "src/components/ui/**", "src/styles/**"],
+      "tests": [
+        "src/tests/integration/SimulatorWorkspace.test.tsx",
+        "src/tests/integration/simulator-header.test.tsx",
+        "src/tests/integration/site-nav.test.tsx",
+        "src/tests/integration/learnerReadouts.test.tsx"
+      ],
+      "e2eSpecs": ["src/tests/e2e/camera-controls-compact.spec.ts"],
+      "requiresE2E": true,
+      "reason": "Component and layout changes can affect responsive and keyboard-accessible public workflows."
+    },
+    {
+      "id": "test-source-changes",
+      "label": "Test, fixture, and shared setup changes",
+      "paths": ["src/tests/**"],
+      "tests": [],
+      "fullVitest": true,
+      "reason": "A test or fixture edit can affect discovery and shared assumptions; run the configured Vitest suite."
+    },
+    {
+      "id": "ci-and-test-infrastructure",
+      "label": "CI, test runner, package, and validation infrastructure",
+      "paths": [
+        ".github/workflows/**",
+        "scripts/**",
+        "package.json",
+        "package-lock.json",
+        "vitest.config.ts",
+        "playwright.config.ts",
+        "playwright.production.config.ts",
+        "playwright.rq3a.config.ts"
+      ],
+      "tests": [],
+      "fullLocalCi": true,
+      "reason": "Shared validation infrastructure changes require full local checks and the full Vitest suite."
+    }
+  ]
+}
