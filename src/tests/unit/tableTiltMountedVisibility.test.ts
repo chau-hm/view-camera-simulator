@@ -186,7 +186,10 @@ describe("the mounted Table Tilt studio", () => {
       const floor = unique("table-tilt-floor");
       const planes: THREE.Mesh[] = [];
       root.traverse(object => {
-        if (object instanceof THREE.Mesh && object.geometry instanceof THREE.PlaneGeometry) planes.push(object);
+        if (!(object instanceof THREE.Mesh) || !(object.geometry instanceof THREE.PlaneGeometry)) return;
+        // The wall print is a vertical plane. Detect only floor-facing planes.
+        const normal = new THREE.Vector3(0, 0, 1).transformDirection(object.matrixWorld);
+        if (Math.abs(normal.y) > 0.99999) planes.push(object);
       });
       expect(planes).toEqual([floor]);
       const floorBounds = boundsOf(floor);
@@ -203,7 +206,7 @@ describe("the mounted Table Tilt studio", () => {
       expect(side.min.z).toBeCloseTo(floorBounds.min.z, 6);
       for (const wall of [rear, side]) {
         expect(wall.min.y).toBeCloseTo(floorBounds.max.y, 6);
-        expect(wall.max.y - wall.min.y).toBeCloseTo(toWorld(3400), 6);
+        expect(wall.max.y - wall.min.y).toBeCloseTo(toWorld(4000), 6);
         expect(wall.getSize(new THREE.Vector3()).toArray().every(size => Number.isFinite(size) && size > 0)).toBe(true);
       }
       expect(rear.max.z - rear.min.z).toBeCloseTo(toWorld(180), 6);
@@ -224,8 +227,16 @@ describe("the mounted Table Tilt studio", () => {
       const ray = (origin: number[], direction: number[]) =>
         new THREE.Raycaster(new THREE.Vector3().fromArray(origin), new THREE.Vector3().fromArray(direction), 0, 2)
           .intersectObject(studio(root), true);
-      expect(ray([-3.25, 0.10, 6.275], [-1, 0, 0])).toHaveLength(0);
-      expect(ray([-4.4, 0.10, 6.275], [1, 0, 0])).toHaveLength(0);
+      // The centre is now divided by the mullion. Verify every open pane
+      // from both sides and separately prove that the frame is physical.
+      for (const y of [-0.36, 0.62]) for (const z of [5.83, 6.73]) {
+        expect(ray([-3.25, y, z], [-1, 0, 0])).toHaveLength(0);
+        expect(ray([-4.4, y, z], [1, 0, 0])).toHaveLength(0);
+      }
+      expect(ray([-3.25, 0.10, 6.275], [-1, 0, 0])[0]?.object.name)
+        .toBe("table-tilt-studio-window-mullion");
+      expect(ray([-3.25, 0.30, 5.83], [-1, 0, 0])[0]?.object.name)
+        .toBe("table-tilt-studio-window-transom");
       const [jamb] = ray([-3.25, 0.10, 5.38], [-1, 0, 0]);
       expect(jamb?.object.name).toBe("table-tilt-studio-window-frame");
       for (const [origin, direction, name, expectedNormal] of [
@@ -237,6 +248,36 @@ describe("the mounted Table Tilt studio", () => {
         const normal = hit.face!.normal.clone().transformDirection(hit.object.matrixWorld);
         expect(normal.distanceTo(new THREE.Vector3(...expectedNormal))).toBeLessThan(1e-7);
       }
+    });
+  });
+
+  it("mounts the sideboard on the floor with a supported camera and a fixed wall print", () => {
+    withMountedTableTilt(root => {
+      const part = (name: string) => {
+        const object = root.getObjectByName("table-tilt-studio-" + name);
+        expect(object, name).toBeDefined();
+        const bounds = boundsOf(object!);
+        expect(bounds.getSize(new THREE.Vector3()).toArray().every(size =>
+          Number.isFinite(size) && size > 0,
+        )).toBe(true);
+        return bounds;
+      };
+      const plinth = part("sideboard-plinth");
+      const carcass = part("sideboard-carcass");
+      const top = part("sideboard-top");
+      const camera = part("display-camera");
+      const frame = part("landscape-print");
+      const rear = part("rear-wall");
+      expect(plinth.min.y).toBeCloseTo(toWorld(geometry.floor.center.y), 6);
+      expect(plinth.max.y).toBeCloseTo(carcass.min.y, 6);
+      expect(carcass.max.y).toBeCloseTo(top.min.y, 6);
+      expect(camera.min.y).toBeCloseTo(top.max.y, 6);
+      expect(camera.min.x).toBeGreaterThan(top.min.x);
+      expect(camera.max.x).toBeLessThan(top.max.x);
+      expect(camera.min.z).toBeGreaterThan(top.min.z);
+      expect(camera.max.z).toBeLessThan(top.max.z);
+      expect(frame.max.z).toBeCloseTo(rear.min.z, 6);
+      expect(top.max.z).toBeLessThan(rear.min.z);
     });
   });
 

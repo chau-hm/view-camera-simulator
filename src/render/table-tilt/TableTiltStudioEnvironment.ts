@@ -2,10 +2,11 @@ import * as THREE from "three";
 import type { TableTiltPresentation } from "../../scenes/presentation/tableTilt";
 import { createProceduralSurfaceMaterial } from "../ProceduralSurfaceMaterials";
 import { toWorld } from "../rttUtils";
+import { addTableTiltStudioFurnishings } from "./TableTiltStudioFurnishings";
 
 type Floor = TableTiltPresentation["geometry"]["floor"];
 
-const wallHeightMm = 3400;
+const wallHeightMm = 4000;
 const wallThicknessMm = 180;
 const windowOpening = { zMm: 5350, yMm: 1010, widthMm: 1850, heightMm: 1740 };
 
@@ -37,10 +38,10 @@ function panelGeometry(
 export const createTableTiltStudioFloorMaterial = (floor: Floor) =>
   createProceduralSurfaceMaterial({
     pattern: "concrete",
-    color: "#c9c1b7",
+    color: "#c4bcb0",
     repeat: [floor.width / 2400, floor.depth / 2400],
     roughness: 0.84,
-    normalStrength: 0.18,
+    normalStrength: 0.12,
   });
 
 export function createTableTiltStudioEnvironment(floor: Floor): THREE.Group {
@@ -55,13 +56,21 @@ export function createTableTiltStudioEnvironment(floor: Floor): THREE.Group {
 
   const plaster = createProceduralSurfaceMaterial({
     pattern: "plaster",
-    color: "#e8dfd3",
-    repeat: [0.85, 0.85],
+    color: "#eee1d1",
+    repeat: [0.95, 0.95],
     roughness: 0.92,
-    normalStrength: 0.16,
+    normalStrength: 0.11,
   });
   const trim = new THREE.MeshStandardMaterial({ color: "#d0c5b6", roughness: 0.74 });
-  const windowPaint = new THREE.MeshStandardMaterial({ color: "#c3b5a3", roughness: 0.66 });
+  const windowPaint = new THREE.MeshStandardMaterial({ color: "#51483d", roughness: 0.68 });
+  const hardware = new THREE.MeshStandardMaterial({ color: "#423c36", roughness: 0.71 });
+  const timber = createProceduralSurfaceMaterial({
+    pattern: "wood",
+    color: "#ad8a67",
+    repeat: [1.6, 1.15],
+    roughness: 0.76,
+    normalStrength: 0.18,
+  });
 
   const rear = new THREE.Mesh(panelGeometry(floor.width, wallHeightMm, wallThicknessMm), plaster);
   rear.name = "table-tilt-studio-rear-wall";
@@ -114,11 +123,27 @@ export function createTableTiltStudioEnvironment(floor: Floor): THREE.Group {
     room.add(mesh);
   };
 
+  const windowCenterZ = floor.nearZ + windowOpening.zMm + windowOpening.widthMm / 2;
+  const openingBottomY = floorY + windowOpening.yMm;
+  const dividerX = sideFaceX - frameInsetMm - 23;
+  addTrim(
+    "table-tilt-studio-window-mullion",
+    [46, windowOpening.heightMm - jambMm * 2, 44],
+    [dividerX, openingBottomY + windowOpening.heightMm / 2, windowCenterZ],
+    windowPaint,
+  );
+  addTrim(
+    "table-tilt-studio-window-transom",
+    [45, 40, windowOpening.widthMm - jambMm * 2],
+    [dividerX, openingBottomY + 1090, windowCenterZ],
+    windowPaint,
+  );
+
   addTrim(
     "table-tilt-studio-window-sill",
     [230, 38, windowOpening.widthMm + 72],
     [sideFaceX - 44, floorY + windowOpening.yMm - 19, floor.nearZ + windowOpening.zMm + windowOpening.widthMm / 2],
-    windowPaint,
+    timber,
   );
 
   const baseboardThicknessMm = 18;
@@ -138,5 +163,6 @@ export function createTableTiltStudioEnvironment(floor: Floor): THREE.Group {
     trim,
   );
 
+  addTableTiltStudioFurnishings(room, floorY, rearFaceZ, timber, hardware);
   return room;
 }
