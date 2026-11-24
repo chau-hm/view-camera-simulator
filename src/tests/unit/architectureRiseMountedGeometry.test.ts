@@ -5,6 +5,11 @@ import {
   createArchitectureRiseGroup,
   disposeArchitectureRiseGroup,
 } from "../../render/ArchitectureRiseSubjectFactory";
+import {
+  ARCHITECTURE_RISE_ASSET_KEY,
+  createRegisteredSceneAsset,
+  disposeRegisteredSceneAsset,
+} from "../../render/assets/sceneAssetRegistry";
 import { toWorld } from "../../render/rttUtils";
 import geometry from "../../scenes/architectureRiseGeometry";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
@@ -30,6 +35,15 @@ const cameraFor = (overrides: Partial<CameraState> = {}): CameraState => ({
   activeTaskId: null,
   mode: "free",
 });
+
+const physicalCameraStates = () => [
+  { id: "reset-focus", state: cameraFor() },
+  { id: "minimum-focus", state: cameraFor({ focusDistanceMm: 3090 }) },
+  { id: "maximum-focus", state: cameraFor({ focusDistanceMm: 13000 }) },
+  { id: "rise-12", state: cameraFor({ frontRiseMm: 12 }) },
+  { id: "rise-35", state: cameraFor({ frontRiseMm: 35 }) },
+  { id: "mixed-movements", state: cameraFor({ frontRiseMm: 22, frontTiltDeg: 0.4, frontSwingDeg: -1.1 }) },
+];
 
 const canonicalFocusSamples = (): TargetSample[] => {
   const samples: TargetSample[] = [];
@@ -479,16 +493,11 @@ describe("Architecture Rise mounted geometry visibility", () => {
   });
 
   it("keeps all canonical focus samples clear from each derived physical lens center", () => {
-    const root = createArchitectureRiseGroup({ presentation: ARCHITECTURE_RISE_PRESENTATION });
+    const root = createRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, {
+      presentation: ARCHITECTURE_RISE_PRESENTATION,
+    });
     const samples = canonicalFocusSamples();
-    const states = [
-      { id: "reset-focus", state: cameraFor() },
-      { id: "minimum-focus", state: cameraFor({ focusDistanceMm: 3090 }) },
-      { id: "maximum-focus", state: cameraFor({ focusDistanceMm: 13000 }) },
-      { id: "rise-12", state: cameraFor({ frontRiseMm: 12 }) },
-      { id: "rise-35", state: cameraFor({ frontRiseMm: 35 }) },
-      { id: "mixed-movements", state: cameraFor({ frontRiseMm: 22, frontTiltDeg: 0.4, frontSwingDeg: -1.1 }) },
-    ];
+    const states = physicalCameraStates();
     try {
       root.updateMatrixWorld(true);
       expect(geometry.getArchitectureFocusChartCells()).toHaveLength(64);
@@ -551,7 +560,87 @@ describe("Architecture Rise mounted geometry visibility", () => {
       blockerGeometry.dispose();
       blockerMaterial.dispose();
     } finally {
-      disposeArchitectureRiseGroup(root);
+      disposeRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, root);
     }
   });
+  it("preserves roofline, facade, street sign and depth-reference sightlines in the mounted streetscape", () => {
+    const root = createRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, {
+      presentation: ARCHITECTURE_RISE_PRESENTATION,
+    });
+    try {
+      const environment = root.getObjectByName("architecture-rise-urban-environment");
+      if (!environment) throw new Error("Architecture Rise urban environment is not mounted");
+      root.updateMatrixWorld(true);
+      const urbanMeshes = new Set(mountedMeshes(environment));
+      expect(urbanMeshes.size).toBeGreaterThan(0);
+      const existingMeshes = mountedMeshes(root).filter(mesh => !urbanMeshes.has(mesh));
+      const front = geometry.facade.frontFacadeZ;
+      const roof = geometry.compositionTargets.buildingTop;
+      const main = geometry.compositionTargets.buildingMain;
+      const probes = [
+        ...[roof.min.x, 0, roof.max.x].flatMap(x =>
+          [geometry.facade.parapetTopY - 30, geometry.facade.parapetBottomY + 75]
+            .map(y => ({ id: "roofline", x, y, z: front + 40 }))),
+        ...[main.min.x * 0.72, 0, main.max.x * 0.72].flatMap(x =>
+          [main.min.y + 250, 600, main.max.y - 450]
+            .map(y => ({ id: "main-body", x, y, z: front + 180 }))),
+        ...ARCHITECTURE_RISE_PRESENTATION.referenceObjects.flatMap(ref =>
+          [-0.25, 0, 0.25].map(fraction => ({
+            id: ref.id, x: ref.x + fraction * ref.width,
+            y: geometry.ground.y + ref.height / 2, z: ref.z,
+          }))),
+        ...[-0.28, 0, 0.28].map(fraction => {
+          const sign = geometry.streetContext.streetSign;
+          return { id: "street-sign", x: sign.x, y: sign.panelCenterY + fraction * sign.faceHeight, z: sign.z };
+        }),
+      ];
+      const { position } = architectureRiseScene.cameraPlacement!;
+      const views = [
+        ...physicalCameraStates().map(({ id, state }) => ({
+          id, position: deriveOpticsState(state, architectureRiseScene).lensCenterWorld,
+        })),
+        { id: "observer-reset", position },
+      ];
+      const world = (p: { x: number; y: number; z: number }) =>
+        new THREE.Vector3(toWorld(p.x), toWorld(p.y), toWorld(p.z));
+      const all = mountedMeshes(root);
+      for (const view of views) {
+        const origin = world(view.position);
+        for (const probe of probes) {
+          const direction = world(probe).sub(origin);
+          const ray = new THREE.Raycaster(origin, direction.clone().normalize(), 0, direction.length() + 0.12);
+          const before = ray.intersectObjects(existingMeshes, false)[0];
+          const after = ray.intersectObjects(all, false)[0];
+          // A probe can meet a canonical surface in front of its nominal point,
+          // such as the facade in front of a far-side reference from the lens.
+          expect(before?.object, `${view.id} ${probe.id} baseline surface`).toBeDefined();
+          expect(after?.object.name, `${view.id} ${probe.id} first surface`).toBe(before?.object.name);
+        }
+      }
+
+      const state = physicalCameraStates()[0].state;
+      const sample = canonicalFocusSamples()[0];
+      const { origin, target } = findDecorativeOccluder(root, sample, state);
+      const blocker = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.22, 0.16), new THREE.MeshStandardMaterial());
+      blocker.name = "architecture-rise-urban-building-negative-control";
+      blocker.position.copy(origin).lerp(target, 0.52);
+      environment.add(blocker);
+      root.updateMatrixWorld(true);
+      try {
+        expect(() => assertFocusSamplesVisible(root, [sample], state)).toThrow(blocker.name);
+      } finally {
+        blocker.removeFromParent();
+        blocker.geometry.dispose();
+        blocker.material.dispose();
+      }
+      expect(assertFocusSamplesVisible(root, [sample], state).firstHitNames).toHaveLength(1);
+      console.info(JSON.stringify({
+        additionalSightlines: { probes: probes.length, views: views.map(view => view.id), totalRays: probes.length * views.length },
+        environmentNegativeControl: "detected, removed, and visibility recovered",
+      }));
+    } finally {
+      disposeRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, root);
+    }
+  });
+
 });
