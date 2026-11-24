@@ -42,7 +42,7 @@ At the recorded implementation base, `origin/main` contained 327 Unit and 26 Int
 
 | Contract | Keeper | Control | Result |
 |---|---|---|---|
-| Local runner result integrity | `localCiContracts.test.ts` | Inconsistent Vitest totals, selected/discovered file mismatch, missing Playwright flake/spec identity, failed/skipped/flaky results, changed source, interrupted/not-run statuses, malformed JSON, invalid options, and report-write failure | The refreshed full report records this file passing 22/22 test cases. A real focused runner execution also caught a failing test command and returned `FAIL` with exit code 1 during development; final focused contract and browser runs passed. An actual SIGINT and concurrent live source edit were not induced. |
+| Local runner result integrity | `localCiContracts.test.ts` | Inconsistent Vitest totals, selected/discovered file mismatch, missing Playwright flake/spec identity, failed/skipped/flaky results, changed source, interrupted/not-run statuses, malformed JSON, invalid options, and report-write failure | The baseline full report records this file passing 22/22 cases at the matched implementation source. PR #363 Round 1 adds browser-coverage and qualification reporting cases; the separate follow-up full report records 32/32 in this file. A real focused runner execution also caught a failing test command and returned `FAIL` with exit code 1 during development; final focused contract and browser runs passed. An actual SIGINT and concurrent live source edit were not induced. |
 | Dirty-source identity | `localCiContracts.test.ts` | Clean snapshot, tracked edit, rename, untracked content edit, and binary tracked edit in a temporary Git repository | Verified by the source-state unit contract. The full and candidate reports below are dirty-source runs with identical source fingerprints and `stableDuringRun: true`. |
 | Thin-lens physical reference | `thinLensModel.test.ts` | In a disposable clone at the implementation base, change the thin-lens denominator from `D - f` to `D + f` | Detected: 10 failed, 21 passed; test command exited 1. |
 | Ground Glass Raw orientation | `groundGlassRttOrientation.test.ts` | In the disposable clone, suppress the Raw X flip while retaining its Y flip | Detected: 4 failed, 2 passed; test command exited 1. |
@@ -64,5 +64,17 @@ The four controls ran in a disposable shared-object clone at `a0b2fa4b2b9acc323c
 No GitHub workflow or Playwright config is modified. `.github/workflows/pages.yml` still runs full `npm run test`, ordinary Chromium smoke, production-preview WebGL isolation, M7R evidence validation, and M7V policy/skip-governance validation. B1 exact-head routing and B2 automatic historical qualification/fail-closed gate are retained. A change to `package.json` or shared runner/workflow paths may trigger broad B2 qualification by design.
 
 The targeted ordinary Chromium smoke report `.agents/output/ci-local/2026-11-24T01-15-17-866Z-62184-614466e8/report.json` (SHA-256 `75d771b1813f4b2b4480a4b0c368bf6dc5bdf4012498edf81c7d66bd33cef9b5`) passed 2/2 cases; Playwright measured 14.012 seconds and the runner step took 14.348 seconds. The full 80-spec development E2E matrix, production-preview isolation, and native WebGPU qualification were not run for this B3 change. The local smoke does not substitute for the GitHub production-preview or GPU lanes.
+
+### PR #363 Round 1 reporting verification
+
+These follow-up results use the same PR HEAD `f07201af3f5691452cdb164e45b8d5ebfeca8c8b` with a dirty but stable worktree fingerprint `e3b471294c9a82cc1ff2efafde53d900fa126ce3a9c3d2588a5291c414962ad8`; they do not replace the historical 354/4,365 full-suite or 48/611 candidate measurement above.
+
+| Validation | Report | Result |
+|---|---|---|
+| Full `npm run ci:local` | `.agents/output/ci-local/2026-11-24T13-07-03-518Z-70485-ecea078b/report.json` | PASS; 354 files, 4,375/4,375 cases; CSS, lint, typecheck, and build passed; full Vitest step 45.738 s. Browser qualifications were correctly `NOT_RUN`. |
+| Focused ordinary Chromium smoke | `.agents/output/ci-local/2026-11-24T13-08-27-742Z-62139-5489ac5c/report.json` | PASS; 2/2 cases, ordinary Chromium `PASS`, exact `playwright.config.ts` / `chromium` identity; Playwright step 15.277 s. |
+| Production Preview | `.agents/output/ci-local/2026-11-24T13-08-53-311Z-62711-8cd25225/report.json` | PASS; 4/4 cases, Production Preview `PASS`, exact `playwright.production.config.ts` / `chromium-production-preview` identity; step 57.449 s. |
+
+The earlier smoke report retained its original overall and qualification fields; it is not rewritten. Its Playwright step passed 2/2, while the old summary reported `ordinaryChromium: INCOMPLETE` because the step omitted runner identity and the parser retained only a basename. The new runner evidence above demonstrates the corrected attribution from a fresh browser execution. The native WebGPU hardware lane was not run.
 
 The follow-up to this PR is a separate evidence review of whether any individual contracts can move to named targeted lanes. Do not reduce full GitHub Vitest in that follow-up until it has matched-source full/candidate measurements, per-contract negative controls, historical-evaluator preservation, stable Actions results, and an independent preservation review.

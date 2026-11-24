@@ -27,11 +27,14 @@ export interface TestOwner {
 }
 
 export function parseLocalCiArgs(argv: string[]): LocalCiOptions;
+export function nativeWebGpuAssertionForSpec(spec: string): { environmentKey: string; requiredValue: "1" } | null;
 export function matchesOwnerPath(filePath: string, pattern: string): boolean;
 export function resolveOwnerSelection(changedPaths: string[], owners: TestOwner[], pathExists: (path: string) => boolean): {
   ownerIds: string[];
   tests: string[];
   e2eSpecs: string[];
+  e2eRequirements: { file: string; ownerIds: string[] }[];
+  allDevelopmentE2EOwnerIds: string[];
   reasons: { path: string; owner: string; reason: string }[];
   unknownPaths: string[];
   staleTests: string[];
@@ -62,9 +65,11 @@ export function compareTestFileSelection(selectedFiles: string[], discoveredFile
   missing: string[];
   extra: string[];
 };
-export function parsePlaywrightJsonReport(report: unknown): {
+export function parsePlaywrightJsonReport(report: unknown, repositoryRoot?: string): {
   discoveredFiles: number;
   files: string[];
+  configFile: string;
+  projectNames: string[];
   discoveredCases: number;
   executedCases: number;
   passed: number;

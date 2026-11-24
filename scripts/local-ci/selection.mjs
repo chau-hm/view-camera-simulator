@@ -2,7 +2,36 @@ import path from "node:path";
 
 const knownModes = new Set(["full", "focused", "affected", "core"]);
 
+const nativeWebGpuAssertionBySpec = new Map([
+  ["src/tests/e2e/architecture-rise-webgpu-validation.spec.ts", "OBSERVER_NATIVE_WEBGPU_REQUIRED"],
+  ["src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts", "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED"],
+  ["src/tests/e2e/ground-glass-webgpu-aperture-gather.spec.ts", "OBSERVER_NATIVE_WEBGPU_REQUIRED"],
+  ["src/tests/e2e/ground-glass-webgpu-b1-optical-validation.spec.ts", "OBSERVER_NATIVE_WEBGPU_REQUIRED"],
+  ["src/tests/e2e/ground-glass-webgpu-coc-footprint.spec.ts", "OBSERVER_NATIVE_WEBGPU_REQUIRED"],
+  ["src/tests/e2e/ground-glass-webgpu-correspondence-large-coc.spec.ts", "OBSERVER_NATIVE_WEBGPU_REQUIRED"],
+  ["src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts", "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED"],
+  ["src/tests/e2e/ground-glass-webgpu-far-reconstruction-i.spec.ts", "OBSERVER_NATIVE_WEBGPU_REQUIRED"],
+  ["src/tests/e2e/ground-glass-webgpu-far-reconstruction.spec.ts", "OBSERVER_NATIVE_WEBGPU_REQUIRED"],
+  ["src/tests/e2e/ground-glass-webgpu-gather-quality.spec.ts", "OBSERVER_NATIVE_WEBGPU_REQUIRED"],
+  ["src/tests/e2e/ground-glass-webgpu-host.spec.ts", "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED"],
+  ["src/tests/e2e/ground-glass-webgpu-interior-coc-quality.spec.ts", "OBSERVER_NATIVE_WEBGPU_REQUIRED"],
+  ["src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts", "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED"],
+  ["src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts", "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED"],
+  ["src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts", "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED"],
+  ["src/tests/e2e/ground-glass-webgpu-m7g-lifecycle.spec.ts", "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED"],
+  ["src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts", "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED"],
+  ["src/tests/e2e/ground-glass-webgpu-physical-coc.spec.ts", "OBSERVER_NATIVE_WEBGPU_REQUIRED"],
+  ["src/tests/e2e/ground-glass-webgpu-raw-rtt.spec.ts", "OBSERVER_NATIVE_WEBGPU_REQUIRED"],
+  ["src/tests/e2e/ground-glass-webgpu-r187-app-pilot.spec.ts", "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED"],
+  ["src/tests/e2e/observer-webgpu-pilot.spec.ts", "OBSERVER_NATIVE_WEBGPU_REQUIRED"],
+]);
+
 const splitList = (value) => value.split(",").map((entry) => entry.trim()).filter(Boolean);
+
+export function nativeWebGpuAssertionForSpec(spec) {
+  const environmentKey = nativeWebGpuAssertionBySpec.get(spec);
+  return environmentKey ? { environmentKey, requiredValue: "1" } : null;
+}
 
 export function parseLocalCiArgs(argv) {
   const options = {
@@ -103,6 +132,8 @@ export function resolveOwnerSelection(changedPaths, owners, pathExists) {
   const ownerIds = new Set();
   const tests = new Set();
   const e2eSpecs = new Set();
+  const e2eOwnerIdsBySpec = new Map();
+  const allDevelopmentE2EOwnerIds = new Set();
   const reasons = [];
   const unknownPaths = [];
   const incompleteReasons = [];
@@ -127,7 +158,12 @@ export function resolveOwnerSelection(changedPaths, owners, pathExists) {
         reasons.push({ path: changedPath, owner: owner.id, reason: owner.incompleteReason });
       }
       for (const testPath of owner.tests ?? []) tests.add(testPath);
-      for (const specPath of owner.e2eSpecs ?? []) e2eSpecs.add(specPath);
+      for (const specPath of owner.e2eSpecs ?? []) {
+        e2eSpecs.add(specPath);
+        const specOwners = e2eOwnerIdsBySpec.get(specPath) ?? new Set();
+        specOwners.add(owner.id);
+        e2eOwnerIdsBySpec.set(specPath, specOwners);
+      }
       fullVitest ||= owner.fullVitest === true;
       fullLocalCi ||= owner.fullLocalCi === true;
       allDevelopmentE2E ||= owner.allDevelopmentE2E === true;
@@ -138,9 +174,13 @@ export function resolveOwnerSelection(changedPaths, owners, pathExists) {
     if (/^src\/tests\/e2e\/[^/]+\.spec\.ts$/.test(changedPath)) {
       e2eSpecs.add(changedPath);
       requiresE2E = true;
+      const specOwners = e2eOwnerIdsBySpec.get(changedPath) ?? new Set();
+      for (const owner of matches) specOwners.add(owner.id);
+      e2eOwnerIdsBySpec.set(changedPath, specOwners);
     } else if (changedPath.startsWith("src/tests/e2e/")) {
       allDevelopmentE2E = true;
       requiresE2E = true;
+      for (const owner of matches) allDevelopmentE2EOwnerIds.add(owner.id);
     }
   }
 
@@ -160,6 +200,8 @@ export function resolveOwnerSelection(changedPaths, owners, pathExists) {
     ownerIds: [...ownerIds].sort(),
     tests: [...tests].sort(),
     e2eSpecs: [...e2eSpecs].sort(),
+    e2eRequirements: [...e2eSpecs].sort().map((file) => ({ file, ownerIds: [...(e2eOwnerIdsBySpec.get(file) ?? [])].sort() })),
+    allDevelopmentE2EOwnerIds: [...allDevelopmentE2EOwnerIds].sort(),
     reasons,
     unknownPaths,
     staleTests,
@@ -244,27 +286,53 @@ export function compareTestFileSelection(selectedFiles, discoveredFiles, reposit
   return { matches: missing.length === 0 && extra.length === 0, missing, extra };
 }
 
-export function parsePlaywrightJsonReport(report) {
+export function parsePlaywrightJsonReport(report, repositoryRoot = process.cwd()) {
   const stats = report?.stats;
   if (!stats || !Number.isInteger(stats.expected) || !Number.isInteger(stats.skipped) || !Number.isInteger(stats.unexpected) || !Number.isInteger(stats.flaky)) {
     throw new Error("Playwright JSON report is missing reliable stats");
+  }
+  const configFile = report?.config?.configFile;
+  const rootDir = report?.config?.rootDir;
+  if (typeof configFile !== "string" || configFile.length === 0 || typeof rootDir !== "string" || rootDir.length === 0) {
+    throw new Error("Playwright JSON report is missing configuration identity");
   }
   const flaky = stats.flaky;
   const total = stats.expected + stats.skipped + stats.unexpected + flaky;
   if (total === 0) throw new Error("Playwright discovered no tests");
   const filePaths = new Set();
+  const projectNames = new Set();
   const visitSuites = (suites) => {
     if (!Array.isArray(suites)) return;
     for (const suite of suites) {
-      for (const spec of suite.specs ?? []) if (typeof spec.file === "string") filePaths.add(spec.file);
+      for (const spec of suite.specs ?? []) {
+        if (typeof spec.file === "string") {
+          const absolutePath = path.isAbsolute(spec.file) ? spec.file : path.resolve(rootDir, spec.file);
+          const relativePath = path.relative(repositoryRoot, absolutePath);
+          const repositoryPath = relativePath === ".." || relativePath.startsWith(`..${path.sep}`)
+            ? "OUTSIDE_REPOSITORY"
+            : relativePath.split(path.sep).join("/");
+          filePaths.add(repositoryPath);
+        }
+        for (const test of spec.tests ?? []) {
+          if (typeof test.projectName === "string" && test.projectName.length > 0) projectNames.add(test.projectName);
+        }
+      }
       visitSuites(suite.suites);
     }
   };
   visitSuites(report.suites);
   if (filePaths.size === 0) throw new Error("Playwright JSON report is missing discovered spec file paths");
+  if (projectNames.size === 0) throw new Error("Playwright JSON report is missing actual project names");
+  const absoluteConfig = path.isAbsolute(configFile) ? configFile : path.resolve(repositoryRoot, configFile);
+  const relativeConfig = path.relative(repositoryRoot, absoluteConfig);
+  const repositoryConfig = relativeConfig === ".." || relativeConfig.startsWith(`..${path.sep}`)
+    ? "OUTSIDE_REPOSITORY"
+    : relativeConfig.split(path.sep).join("/");
   return {
     discoveredFiles: filePaths.size,
     files: [...filePaths].sort(),
+    configFile: repositoryConfig,
+    projectNames: [...projectNames].sort(),
     discoveredCases: total,
     executedCases: total - stats.skipped,
     passed: stats.expected + flaky,

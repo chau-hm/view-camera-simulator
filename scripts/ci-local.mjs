@@ -8,6 +8,7 @@ import { finished } from "node:stream/promises";
 import { fileURLToPath } from "node:url";
 import { isDevelopmentE2ESpec, isProductionPreviewSpec } from "./e2e-spec-policy.mjs";
 import {
+  aggregateLocalCiEvidence,
   applyRunnerEvidenceStatus,
   determineOverallStatus,
   evaluateEnvironmentRequirements,
@@ -17,6 +18,7 @@ import {
 import {
   parseLocalCiArgs,
   compareTestFileSelection,
+  nativeWebGpuAssertionForSpec,
   parsePlaywrightJsonReport,
   parseVitestJsonReport,
   resolveOwnerSelection,
@@ -81,6 +83,16 @@ function initialReport() {
       owners: [],
       selectionReasons: [],
       fallback: null,
+      e2eCoverage: {
+        required: [],
+        requested: [],
+        includeOwnerE2E: false,
+        scheduled: [],
+        executed: [],
+        verified: [],
+        missingRequired: [],
+        status: "NOT_REQUIRED",
+      },
     },
     sourceState: { initial: null, final: null, stableDuringRun: "NOT_MEASURED" },
     environment: {
@@ -214,28 +226,45 @@ function makeE2eStep(spec, index, settings) {
   const outputRelative = path.posix.join(reportRelativeDirectory, `playwright-${String(index + 1).padStart(2, "0")}.json`);
   const artifactRelativeDirectory = path.posix.join(reportRelativeDirectory, `playwright-artifacts-${String(index + 1).padStart(2, "0")}`);
   const args = ["run", "test:e2e", "--", "--workers=1", "--reporter=list,json", `--output=${artifactRelativeDirectory}`];
-  if (settings.productionPreview) args.push("--config=playwright.production.config.ts", "--project=chromium-production-preview");
+  const expectedConfiguration = settings.productionPreview ? "playwright.production.config.ts" : "playwright.config.ts";
+  const expectedProjectNames = settings.productionPreview
+    ? ["chromium-production-preview"]
+    : settings.nativeWebGpu
+      ? ["chrome-native-webgpu"]
+      : ["chromium", "chromium-renderer-serial"];
+  if (settings.productionPreview) args.push(`--config=${expectedConfiguration}`, "--project=chromium-production-preview");
+  else args.push(`--config=${expectedConfiguration}`);
   if (settings.nativeWebGpu) args.push("--project=chrome-native-webgpu");
   args.push(spec);
+  const nativeBackendAssertion = settings.nativeWebGpu ? nativeWebGpuAssertionForSpec(spec) : null;
+  const qualification = settings.nativeWebGpu
+    ? "nativeWebGpu"
+    : settings.productionPreview
+      ? "productionPreview"
+      : "ordinaryChromium";
+  const environment = {
+    PLAYWRIGHT_JSON_OUTPUT_FILE: path.join(packageRoot, ...outputRelative.split("/")),
+    ...(settings.nativeWebGpu ? {
+      ...(nativeBackendAssertion ? { [nativeBackendAssertion.environmentKey]: nativeBackendAssertion.requiredValue } : {}),
+      ...(spec.endsWith("ground-glass-webgpu-failure-host.spec.ts") ? { GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION: "1" } : {}),
+    } : {}),
+  };
   return {
     id: `playwright-${String(index + 1).padStart(2, "0")}`,
     label: `Playwright ${settings.nativeWebGpu ? "native WebGPU" : settings.productionPreview ? "production preview" : "Chromium"}: ${path.basename(spec)}`,
     ...npmCommand(args),
     mode: settings.nativeWebGpu ? "native-webgpu" : settings.productionPreview ? "production-preview" : "ordinary-chromium",
+    qualification,
+    expectedConfiguration,
+    expectedProjectNames,
+    nativeBackendAssertion,
     testFilesSelected: [spec],
     runner: "playwright",
     reportFile: path.join(packageRoot, ...outputRelative.split("/")),
     reportRelativeFile: outputRelative,
     artifactDirectory: path.join(packageRoot, ...artifactRelativeDirectory.split("/")),
     artifactRelativeDirectory,
-    environment: {
-      PLAYWRIGHT_JSON_OUTPUT_FILE: path.join(packageRoot, ...outputRelative.split("/")),
-      ...(settings.nativeWebGpu ? {
-        ...(spec.includes("architecture-rise-webgpu") ? { OBSERVER_NATIVE_WEBGPU_REQUIRED: "1" } : {}),
-        ...(spec.includes("ground-glass-webgpu") ? { GROUND_GLASS_NATIVE_WEBGPU_REQUIRED: "1" } : {}),
-        ...(spec.endsWith("ground-glass-webgpu-failure-host.spec.ts") ? { GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION: "1" } : {}),
-      } : {}),
-    },
+    environment,
   };
 }
 
@@ -283,6 +312,22 @@ async function runStep(step) {
         command: step.command,
         args: step.args,
         mode: step.mode,
+        runner: step.runner ?? null,
+        qualification: step.qualification ?? null,
+        expectedConfiguration: step.expectedConfiguration ?? null,
+        actualConfiguration: null,
+        expectedProjectNames: step.expectedProjectNames ?? [],
+        actualProjects: [],
+        nativeBackendAssertion: step.nativeBackendAssertion
+          ? {
+              environmentKey: step.nativeBackendAssertion.environmentKey,
+              requiredValue: step.nativeBackendAssertion.requiredValue,
+              providedValue: step.environment?.[step.nativeBackendAssertion.environmentKey] ?? null,
+            }
+          : null,
+        runnerEvidenceValid: false,
+        selectionEvidence: null,
+        qualificationEvidence: null,
         startedAt,
         completedAt,
         durationMs: Date.now() - start,
@@ -306,23 +351,53 @@ async function runStep(step) {
         try {
           const raw = await readFile(step.reportFile, "utf8");
           const parsed = JSON.parse(raw);
-          stepResult.counts = step.runner === "vitest" ? parseVitestJsonReport(parsed) : parsePlaywrightJsonReport(parsed);
+          stepResult.counts = step.runner === "vitest"
+            ? parseVitestJsonReport(parsed)
+            : parsePlaywrightJsonReport(parsed, packageRoot);
           stepResult.status = applyRunnerEvidenceStatus(stepResult.status, step.runner, stepResult.counts);
           if (step.runner === "vitest" || step.runner === "playwright") {
             if (!(step.runner === "vitest" && step.testFilesSelected[0] === "Vitest configured discovery")) {
-              const selectionEvidence = compareTestFileSelection(
+              stepResult.selectionEvidence = compareTestFileSelection(
                 step.testFilesSelected,
                 stepResult.counts.files,
                 packageRoot,
-                { matchBasenames: step.runner === "playwright" },
               );
-              if (!selectionEvidence.matches) {
+              if (!stepResult.selectionEvidence.matches) {
                 stepResult.status = stepResult.status === "FAIL" ? "FAIL" : "INCOMPLETE";
-                stepResult.runnerReportError = `${step.runner} discovered files do not match the selected file set (missing: ${selectionEvidence.missing.join(", ") || "none"}; extra: ${selectionEvidence.extra.join(", ") || "none"}).`;
+                stepResult.runnerReportError = `${step.runner} discovered files do not match the selected file set (missing: ${stepResult.selectionEvidence.missing.join(", ") || "none"}; extra: ${stepResult.selectionEvidence.extra.join(", ") || "none"}).`;
                 setIssue(report.limitations, `${step.runner} discovery differed from the selected test files for ${step.id}.`);
               }
             }
             if (step.runner === "vitest") stepResult.counts.files = stepResult.counts.files.map(repositoryRelativeReportPath);
+          }
+          if (step.runner === "playwright") {
+            stepResult.actualConfiguration = stepResult.counts.configFile;
+            stepResult.actualProjects = stepResult.counts.projectNames;
+            const evidenceIssues = [];
+            const selectedFilesMatch = stepResult.selectionEvidence?.matches === true;
+            const configurationMatches = stepResult.actualConfiguration === step.expectedConfiguration;
+            const projectsMatch = stepResult.actualProjects.length > 0 && stepResult.actualProjects.every((name) => step.expectedProjectNames.includes(name));
+            const nativeAssertionMatches = step.mode !== "native-webgpu" || Boolean(
+              step.nativeBackendAssertion &&
+              stepResult.nativeBackendAssertion?.requiredValue === "1" &&
+              stepResult.nativeBackendAssertion?.providedValue === "1",
+            );
+            if (!selectedFilesMatch) evidenceIssues.push("discovered Playwright spec identity did not match the selected path");
+            if (!configurationMatches) evidenceIssues.push(`Playwright configuration did not match ${step.expectedConfiguration}`);
+            if (!projectsMatch) evidenceIssues.push(`actual Playwright projects did not match the selected qualification mode (${step.expectedProjectNames.join(", ")})`);
+            if (!nativeAssertionMatches) evidenceIssues.push("native backend assertion control was not supplied for the selected spec");
+            stepResult.qualificationEvidence = {
+              valid: evidenceIssues.length === 0,
+              issues: evidenceIssues,
+            };
+            stepResult.runnerEvidenceValid = evidenceIssues.length === 0;
+            if (evidenceIssues.length > 0) {
+              stepResult.status = stepResult.status === "FAIL" ? "FAIL" : "INCOMPLETE";
+              stepResult.runnerReportError = evidenceIssues.join("; ");
+              setIssue(report.limitations, `Playwright qualification evidence is incomplete for ${step.id}: ${evidenceIssues.join("; ")}.`);
+            }
+          } else {
+            stepResult.runnerEvidenceValid = true;
           }
           report.artifacts.push({ path: step.reportRelativeFile, sha256: sha256(raw), kind: `${step.runner}-json` });
           stepResult.artifacts.push(step.reportRelativeFile);
@@ -335,6 +410,13 @@ async function runStep(step) {
         } catch (error) {
           stepResult.status = stepResult.status === "FAIL" ? "FAIL" : "INCOMPLETE";
           stepResult.runnerReportError = redact(error.message);
+          stepResult.runnerEvidenceValid = false;
+          if (step.runner === "playwright") {
+            stepResult.qualificationEvidence = {
+              valid: false,
+              issues: ["Playwright runner evidence was missing or invalid."],
+            };
+          }
           setIssue(report.limitations, `${step.runner} runner counts are unavailable for ${step.id}; run is incomplete.`);
         }
       }
@@ -389,7 +471,6 @@ async function browserPreflight(root, settings) {
       result.systemChromeAvailable = Boolean(systemChrome && existsSync(systemChrome));
       report.environment.browser = "Google Chrome channel; headed native-WebGPU project";
       report.environment.rendererQualification = "native-webgpu requested; adapter/backend must be asserted by the selected test";
-      report.qualifications.nativeWebGpu = "INCOMPLETE";
       return result;
     }
     const browserPath = chromium.executablePath();
@@ -397,8 +478,6 @@ async function browserPreflight(root, settings) {
     result.browserAvailable = true;
     report.environment.browser = settings.productionPreview ? "Playwright Chromium production-preview project" : "Playwright Chromium development project(s)";
     report.environment.rendererQualification = settings.productionPreview ? "production-preview WebGL isolation" : "ordinary Chromium/WebGL";
-    if (settings.productionPreview) report.qualifications.productionPreview = "INCOMPLETE";
-    else report.qualifications.ordinaryChromium = "INCOMPLETE";
   } catch (error) {
     result.browserError = redact(error.message);
   }
@@ -451,6 +530,31 @@ function getDevelopmentE2ESpecs(root) {
     .filter((entry) => entry.isFile() && isDevelopmentE2ESpec(entry.name))
     .map((entry) => `src/tests/e2e/${entry.name}`)
     .sort());
+}
+
+function buildRequiredE2EContracts(selection, owners, allDevelopmentE2ESpecs = []) {
+  if (!selection) return [];
+  const selectedOwners = owners.filter((owner) => selection.ownerIds.includes(owner.id));
+  const requirements = new Map((selection.e2eRequirements ?? []).map((requirement) => [
+    requirement.file,
+    new Set(requirement.ownerIds),
+  ]));
+  for (const file of allDevelopmentE2ESpecs) {
+    const currentOwners = requirements.get(file) ?? new Set();
+    const responsibleOwners = selection.allDevelopmentE2EOwnerIds?.length > 0
+      ? selection.allDevelopmentE2EOwnerIds
+      : selection.ownerIds;
+    for (const ownerId of responsibleOwners) currentOwners.add(ownerId);
+    requirements.set(file, currentOwners);
+  }
+  return [...requirements.entries()].sort(([left], [right]) => left.localeCompare(right)).map(([file, ownerIds]) => {
+    const matchingOwners = selectedOwners.filter((owner) => ownerIds.has(owner.id));
+    const ownersForFile = (matchingOwners.length > 0 ? matchingOwners : selectedOwners).map((owner) => ({
+      id: owner.id,
+      label: owner.label ?? owner.id,
+    }));
+    return { file, owners: ownersForFile };
+  });
 }
 
 function printUsage() {
@@ -523,7 +627,10 @@ async function main() {
     report.sourceState.initial = initialSnapshot;
     const manifest = loadOwnerManifest();
     let selectedTests = [];
-    let selectedE2ESpecs = options.e2eSpecs.map(normalizeRepositoryPath);
+    const requestedE2ESpecs = options.e2eSpecs.map(normalizeRepositoryPath);
+    let selectedE2ESpecs = [...requestedE2ESpecs];
+    let requiredE2EContracts = [];
+    let affectedE2ERequired = false;
     let selection = null;
     let fullVitest = options.mode === "full";
     let fullLocalCi = options.mode === "full";
@@ -542,7 +649,13 @@ async function main() {
         report.execution.changedFiles = changed;
         selection = resolveOwnerSelection(changed, manifest.owners, fileExists);
         selectedTests = selection.tests;
-        selectedE2ESpecs = [...new Set([...selectedE2ESpecs, ...selection.e2eSpecs])];
+        affectedE2ERequired = selection.requiresE2E;
+        const allDevelopmentE2ESpecs = selection.allDevelopmentE2E ? await getDevelopmentE2ESpecs(root) : [];
+        requiredE2EContracts = buildRequiredE2EContracts(selection, manifest.owners, allDevelopmentE2ESpecs);
+        selectedE2ESpecs = [...new Set([
+          ...selectedE2ESpecs,
+          ...requiredE2EContracts.map((contract) => contract.file),
+        ])];
         fullVitest ||= selection.fullVitest;
         fullLocalCi ||= selection.fullLocalCi;
         if (selection.incomplete) {
@@ -551,11 +664,6 @@ async function main() {
             setIssue(report.limitations, `Affected coverage is incomplete for ${item.path} (${item.owner}): ${item.reason}`);
           }
         }
-        if (selection.requiresE2E && !options.includeE2E && options.e2eSpecs.length === 0) {
-          incomplete = true;
-          setIssue(report.limitations, "Affected ownership includes a browser contract; rerun with --with-e2e or the explicit qualification command.");
-        }
-        if (selection.allDevelopmentE2E && options.includeE2E) selectedE2ESpecs = await getDevelopmentE2ESpecs(root);
         if (selection.nativeGpuRequired && !options.nativeWebGpu) {
           incomplete = true;
           setIssue(report.limitations, "Affected WebGPU code requires explicit native-WebGPU qualification; ordinary Chromium is not a substitute.");
@@ -632,11 +740,7 @@ async function main() {
     if (options.includeE2E && options.mode === "full" && selectedE2ESpecs.length === 0) {
       selectedE2ESpecs = await getDevelopmentE2ESpecs(root);
     }
-    if (options.includeE2E && options.mode === "affected" && selection?.allDevelopmentE2E) {
-      selectedE2ESpecs = await getDevelopmentE2ESpecs(root);
-    }
-
-    const e2ESpecsToRun = options.includeE2E ? selectedE2ESpecs : options.e2eSpecs.map(normalizeRepositoryPath);
+    const e2ESpecsToRun = options.includeE2E ? selectedE2ESpecs : requestedE2ESpecs;
     const e2eValidation = validateE2eSpecs(e2ESpecsToRun, options.productionPreview, options.nativeWebGpu);
     if (!e2eValidation.valid) {
       report.errors.push(`Invalid Playwright target(s) or qualification mode: ${e2eValidation.invalid.join(", ")}`);
@@ -659,9 +763,19 @@ async function main() {
     report.execution.recommendedE2EFiles ??= options.mode === "affected" ? selectedE2ESpecs : [];
     report.execution.e2eRunRequested = e2ESpecsToRun.length > 0;
     report.execution.e2eRunFiles = e2ESpecsToRun;
+    report.execution.e2eCoverage = {
+      required: requiredE2EContracts,
+      requested: requestedE2ESpecs,
+      includeOwnerE2E: options.includeE2E,
+      scheduled: e2ESpecsToRun,
+      executed: [],
+      verified: [],
+      missingRequired: [],
+      status: affectedE2ERequired ? "INCOMPLETE" : "NOT_REQUIRED",
+    };
 
     const specializedBrowser = options.productionPreview || options.nativeWebGpu;
-    if (specializedBrowser && selectedE2ESpecs.length !== 1) {
+    if (specializedBrowser && e2ESpecsToRun.length !== 1) {
       report.errors.push("Specialized browser qualification accepts exactly one explicit Playwright spec.");
       report.status = "NOT_RUN";
       incomplete = true;
@@ -669,10 +783,6 @@ async function main() {
 
     if (options.mode === "affected") {
       report.execution.repositoryCoverage = fullLocalCi ? "full-local-ci" : fullVitest ? "full-vitest" : "selected-owner-tests";
-      if (selection?.requiresE2E && !options.includeE2E && options.e2eSpecs.length === 0 && !options.productionPreview && !options.nativeWebGpu) {
-        incomplete = true;
-        setIssue(report.limitations, "Affected contract ownership includes browser validation that was not requested.");
-      }
     }
     if (options.mode === "core") report.execution.repositoryCoverage = "candidate-vitest-only; browser, native GPU, visual and historical qualification remain separate";
 
@@ -733,16 +843,38 @@ async function main() {
       }
     }
 
-    if (options.productionPreview && report.steps.some((step) => step.status === "PASS")) report.qualifications.productionPreview = "PASS";
-    else if (options.nativeWebGpu && report.steps.some((step) => step.status === "PASS")) report.qualifications.nativeWebGpu = "PASS";
-    else if (report.steps.some((step) => step.runner === "playwright" && step.mode === "ordinary-chromium" && step.status === "PASS")) report.qualifications.ordinaryChromium = "PASS";
-
     report.sourceState.final = await snapshotSourceState(root);
     const endingCommit = currentCommit(root);
     report.sourceState.stableDuringRun = report.sourceState.initial.fingerprint === report.sourceState.final.fingerprint && report.repository.commitSha === endingCommit;
     if (report.sourceState.stableDuringRun === false) {
       incomplete = true;
       setIssue(report.limitations, "Git commit or source fingerprint changed during validation; the result cannot be attributed to the initial source state.");
+    }
+
+    const qualificationRequests = {
+      ordinaryChromium: {
+        requested: !specializedBrowser && e2ESpecsToRun.length > 0,
+        files: !specializedBrowser ? e2ESpecsToRun : [],
+      },
+      productionPreview: { requested: options.productionPreview, files: options.productionPreview ? e2ESpecsToRun : [] },
+      nativeWebGpu: { requested: options.nativeWebGpu, files: options.nativeWebGpu ? e2ESpecsToRun : [] },
+    };
+    const aggregatedEvidence = aggregateLocalCiEvidence({
+      sourceStable: report.sourceState.stableDuringRun,
+      steps: report.steps,
+      requiredE2EContracts,
+      requestedE2EFiles: requestedE2ESpecs,
+      includeOwnerE2E: options.includeE2E,
+      scheduledE2EFiles: e2ESpecsToRun,
+      affectedE2ERequired,
+      qualificationRequests,
+    });
+    report.qualifications = aggregatedEvidence.qualifications;
+    report.execution.e2eCoverage = aggregatedEvidence.e2eCoverage;
+    for (const limitation of aggregatedEvidence.limitations) setIssue(report.limitations, limitation);
+    if (report.execution.e2eCoverage.status === "INCOMPLETE" || Object.entries(qualificationRequests).some(([name, request]) =>
+      request.requested && report.qualifications[name] === "INCOMPLETE")) {
+      incomplete = true;
     }
 
     for (const step of report.steps) {
@@ -756,7 +888,10 @@ async function main() {
       incomplete = true;
       setIssue(report.limitations, `Execution was interrupted by ${receivedSignal}.`);
     }
-    if (report.status !== "NOT_RUN" || report.steps.length > 0) {
+    const evidenceRequiresIncomplete = report.execution.e2eCoverage.status === "INCOMPLETE" || Object.entries(qualificationRequests).some(([name, request]) =>
+      request.requested && report.qualifications[name] === "INCOMPLETE",
+    );
+    if (report.status !== "NOT_RUN" || report.steps.length > 0 || evidenceRequiresIncomplete) {
       report.status = determineOverallStatus({
         sourceStable: report.sourceState.stableDuringRun,
         failedStep,

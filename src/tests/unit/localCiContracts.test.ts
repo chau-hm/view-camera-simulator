@@ -1,11 +1,12 @@
-import { execFileSync } from "node:child_process";
-import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { execFileSync, spawnSync } from "node:child_process";
+import { access, chmod, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   matchesOwnerPath,
   compareTestFileSelection,
+  nativeWebGpuAssertionForSpec,
   parseLocalCiArgs,
   parsePlaywrightJsonReport,
   parseVitestJsonReport,
@@ -13,6 +14,7 @@ import {
   validateSelectedTestPaths,
 } from "../../../scripts/local-ci/selection.mjs";
 import {
+  aggregateLocalCiEvidence,
   applyRunnerEvidenceStatus,
   determineOverallStatus,
   evaluateEnvironmentRequirements,
@@ -26,6 +28,210 @@ async function makeTemporaryDirectory() {
   const directory = await mkdtemp(path.join(os.tmpdir(), "vcs-local-ci-contracts-"));
   temporaryDirectories.push(directory);
   return directory;
+}
+
+async function writeFixtureFile(root: string, relativePath: string, contents: string, executable = false) {
+  const target = path.join(root, relativePath);
+  await mkdir(path.dirname(target), { recursive: true });
+  await writeFile(target, contents);
+  if (executable) await chmod(target, 0o755);
+}
+
+async function makeLocalCiRunnerFixture() {
+  const root = await makeTemporaryDirectory();
+  const repositoryRoot = process.cwd();
+  const sourceFiles = [
+    "scripts/ci-local.mjs",
+    "scripts/e2e-spec-policy.mjs",
+    "scripts/local-ci/owners.json",
+    "scripts/local-ci/reporting.mjs",
+    "scripts/local-ci/selection.mjs",
+    "scripts/local-ci/source-state.mjs",
+    "playwright.config.ts",
+    "playwright.production.config.ts",
+  ];
+  for (const relativePath of sourceFiles) {
+    const target = path.join(root, relativePath);
+    await mkdir(path.dirname(target), { recursive: true });
+    await copyFile(path.join(repositoryRoot, relativePath), target);
+  }
+
+  const manifest: { owners: { id: string; tests?: string[]; e2eSpecs?: string[] }[] } =
+    JSON.parse(await readFile(path.join(root, "scripts/local-ci/owners.json"), "utf8"));
+  const opticsOwner = manifest.owners.find((owner) => owner.id === "canonical-optics");
+  if (!opticsOwner) throw new Error("Local CI fixture has no canonical-optics owner");
+  for (const testFile of opticsOwner.tests ?? []) await writeFixtureFile(root, testFile, "export {}\n");
+  for (const specFile of [
+    ...(opticsOwner.e2eSpecs ?? []),
+    "src/tests/e2e/smoke.spec.ts",
+    "src/tests/e2e/architecture-rise-webgpu-production.spec.ts",
+    "src/tests/unit/focused.test.ts",
+  ]) {
+    await writeFixtureFile(root, specFile, "// controlled Local CI execution fixture\n");
+  }
+
+  await writeFixtureFile(root, ".gitignore", "node_modules/\n.agents/output/ci-local/\n");
+  await writeFixtureFile(root, "package.json", JSON.stringify({
+    name: "local-ci-execution-fixture",
+    private: true,
+    type: "module",
+    scripts: {
+      test: "node ./fake-vitest.mjs",
+      "test:e2e": "node ./fake-playwright.mjs",
+    },
+  }, null, 2));
+  await writeFixtureFile(root, "fake-vitest.mjs", `
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
+const output = process.argv.find((argument) => argument.startsWith("--outputFile="))?.slice("--outputFile=".length);
+const files = process.argv.slice(2).filter((argument) => /\\.test\\.tsx?$/.test(argument));
+if (!output || files.length === 0) process.exit(2);
+const testResults = files.map((file) => ({ name: path.resolve(process.cwd(), file) }));
+const count = testResults.length;
+const destination = path.resolve(process.cwd(), output);
+await mkdir(path.dirname(destination), { recursive: true });
+await writeFile(destination, JSON.stringify({
+  numTotalTestSuites: count,
+  numPassedTestSuites: count,
+  numFailedTestSuites: 0,
+  numPendingTestSuites: 0,
+  numTotalTests: count,
+  numPassedTests: count,
+  numFailedTests: 0,
+  numPendingTests: 0,
+  numTodoTests: 0,
+  success: true,
+  testResults,
+}));
+`);
+  await writeFixtureFile(root, "fake-playwright.mjs", `
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
+const args = process.argv.slice(2);
+const selected = [...args].reverse().find((argument) => argument.startsWith("src/tests/e2e/") && argument.endsWith(".spec.ts"));
+const output = process.env.PLAYWRIGHT_JSON_OUTPUT_FILE;
+if (!selected || !output) process.exit(2);
+const failedTarget = process.env.FAKE_PLAYWRIGHT_FAIL_SPEC;
+const result = failedTarget && (failedTarget === selected || failedTarget === path.basename(selected))
+  ? "fail"
+  : process.env.FAKE_PLAYWRIGHT_STATUS ?? "pass";
+const configArgument = args.find((argument) => argument.startsWith("--config="))?.slice("--config=".length) ?? "playwright.config.ts";
+const projectArgument = args.find((argument) => argument.startsWith("--project="))?.slice("--project=".length) ?? "chromium";
+const projectName = process.env.FAKE_PLAYWRIGHT_REPORT_PROJECT ?? projectArgument;
+const configFile = process.env.FAKE_PLAYWRIGHT_REPORT_CONFIG ?? configArgument;
+const reportedSpec = process.env.FAKE_PLAYWRIGHT_REPORT_SPEC ?? selected;
+const outcome = result === "fail" ? "unexpected" : result === "skip" ? "skipped" : "expected";
+const destination = path.resolve(output);
+await mkdir(path.dirname(destination), { recursive: true });
+if (process.env.FAKE_PLAYWRIGHT_OMIT_REPORT !== "1") {
+  await writeFile(destination, JSON.stringify({
+    config: {
+      configFile: path.resolve(process.cwd(), configFile),
+      rootDir: path.resolve(process.cwd(), "src/tests/e2e"),
+      projects: [{ name: projectName }],
+    },
+    suites: [{
+      file: path.basename(reportedSpec),
+      specs: [{
+        file: path.basename(reportedSpec),
+        tests: [{ projectName, results: [{ status: outcome }] }],
+      }],
+    }],
+    stats: {
+      expected: result === "pass" ? 1 : 0,
+      skipped: result === "skip" ? 1 : 0,
+      unexpected: result === "fail" ? 1 : 0,
+      flaky: result === "flaky" ? 1 : 0,
+      duration: 5,
+    },
+  }));
+}
+if (result === "fail") process.exitCode = 1;
+`);
+
+  await writeFixtureFile(root, "node_modules/.bin/vitest", "#!/bin/sh\nexit 0\n", true);
+  await writeFixtureFile(root, "node_modules/vitest/package.json", JSON.stringify({ name: "vitest", version: "3.2.7" }));
+  await writeFixtureFile(root, "node_modules/@playwright/test/package.json", JSON.stringify({
+    name: "@playwright/test",
+    version: "1.61.1",
+    type: "module",
+    exports: "./index.js",
+  }));
+  await writeFixtureFile(root, "node_modules/@playwright/test/index.js", `
+import { fileURLToPath } from "node:url";
+export const chromium = { executablePath: () => fileURLToPath(new URL("./fake-chromium", import.meta.url)) };
+`);
+  await writeFixtureFile(root, "node_modules/@playwright/test/fake-chromium", "#!/bin/sh\nexit 0\n", true);
+
+  const git = (args: string[]) => execFileSync("git", args, { cwd: root, stdio: "ignore" });
+  git(["init", "--quiet"]);
+  git(["config", "user.email", "local-ci@example.invalid"]);
+  git(["config", "user.name", "Local CI execution test"]);
+  git(["add", "-A"]);
+  git(["commit", "--quiet", "-m", "fixture base"]);
+  const base = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+  await writeFixtureFile(root, "src/core/optics/newModel.ts", "export const changed = true;\n");
+  git(["add", "src/core/optics/newModel.ts"]);
+  git(["commit", "--quiet", "-m", "change optics"]);
+  return { root, base };
+}
+
+async function executeLocalCi(fixture: { root: string; base: string }, args: string[], environment: Record<string, string> = {}) {
+  const result = spawnSync(process.execPath, [path.join(fixture.root, "scripts/ci-local.mjs"), ...args], {
+    cwd: fixture.root,
+    env: { ...process.env, ...environment },
+    encoding: "utf8",
+    timeout: 30_000,
+  });
+  if (result.error) throw result.error;
+  const reportMatch = `${result.stdout ?? ""}\n${result.stderr ?? ""}`.match(/report (\.agents\/output\/ci-local\/[^\\s]+\/report\.json)/);
+  if (!reportMatch) throw new Error(`Runner did not print its report path. stdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
+  const report = JSON.parse(await readFile(path.join(fixture.root, reportMatch[1]), "utf8"));
+  return { exitCode: result.status, stdout: result.stdout ?? "", stderr: result.stderr ?? "", report };
+}
+
+function makePlaywrightStep(options: {
+  file: string;
+  qualification?: "ordinaryChromium" | "productionPreview" | "nativeWebGpu";
+  status?: "PASS" | "FAIL" | "INCOMPLETE";
+  evidenceValid?: boolean;
+  config?: string;
+  project?: string;
+  passed?: number;
+  failed?: number;
+  skipped?: number;
+  flaky?: number;
+}) {
+  const qualification = options.qualification ?? "ordinaryChromium";
+  const contracts = {
+    ordinaryChromium: { mode: "ordinary-chromium", config: "playwright.config.ts", project: "chromium" },
+    productionPreview: { mode: "production-preview", config: "playwright.production.config.ts", project: "chromium-production-preview" },
+    nativeWebGpu: { mode: "native-webgpu", config: "playwright.config.ts", project: "chrome-native-webgpu" },
+  } as const;
+  const contract = contracts[qualification];
+  const evidenceValid = options.evidenceValid ?? true;
+  return {
+    runner: "playwright",
+    qualification,
+    mode: contract.mode,
+    status: options.status ?? "PASS",
+    runnerEvidenceValid: evidenceValid,
+    qualificationEvidence: { valid: evidenceValid },
+    testFilesSelected: [options.file],
+    expectedConfiguration: contract.config,
+    actualConfiguration: options.config ?? contract.config,
+    actualProjects: [options.project ?? contract.project],
+    nativeBackendAssertion: qualification === "nativeWebGpu"
+      ? { requiredValue: "1", providedValue: "1" }
+      : null,
+    counts: {
+      files: [options.file],
+      passed: options.passed ?? (options.status === "FAIL" ? 0 : 1),
+      failed: options.failed ?? (options.status === "FAIL" ? 1 : 0),
+      skipped: options.skipped ?? 0,
+      flaky: options.flaky ?? 0,
+    },
+  };
 }
 
 afterEach(async () => {
@@ -186,7 +392,18 @@ describe("Local CI runner evidence contracts", () => {
   });
 
   it("reads Playwright totals from its reporter summary", () => {
-    expect(parsePlaywrightJsonReport({ suites: [{ specs: [{ file: "a.spec.ts" }, { file: "b.spec.ts" }] }], stats: { expected: 8, skipped: 2, unexpected: 1, flaky: 1, duration: 4000 } })).toEqual({
+    const repositoryRoot = process.cwd();
+    expect(parsePlaywrightJsonReport({
+      config: {
+        configFile: path.join(repositoryRoot, "playwright.config.ts"),
+        rootDir: path.join(repositoryRoot, "src/tests/e2e"),
+      },
+      suites: [{ specs: [
+        { file: "a.spec.ts", tests: [{ projectName: "chromium" }] },
+        { file: "b.spec.ts", tests: [{ projectName: "chromium-renderer-serial" }] },
+      ] }],
+      stats: { expected: 8, skipped: 2, unexpected: 1, flaky: 1, duration: 4000 },
+    })).toEqual({
       discoveredFiles: 2,
       discoveredCases: 12,
       executedCases: 10,
@@ -195,7 +412,9 @@ describe("Local CI runner evidence contracts", () => {
       skipped: 2,
       flaky: 1,
       durationMs: 4000,
-      files: ["a.spec.ts", "b.spec.ts"],
+      files: ["src/tests/e2e/a.spec.ts", "src/tests/e2e/b.spec.ts"],
+      configFile: "playwright.config.ts",
+      projectNames: ["chromium", "chromium-renderer-serial"],
     });
   });
 
@@ -241,7 +460,181 @@ describe("Local CI runner evidence contracts", () => {
 
   it("requires a Playwright flaky count and discovered spec paths for a complete report", () => {
     expect(() => parsePlaywrightJsonReport({ suites: [], stats: { expected: 1, skipped: 0, unexpected: 0 } })).toThrow("missing reliable stats");
-    expect(() => parsePlaywrightJsonReport({ suites: [], stats: { expected: 1, skipped: 0, unexpected: 0, flaky: 0 } })).toThrow("missing discovered spec file paths");
+    expect(() => parsePlaywrightJsonReport({
+      config: { configFile: "playwright.config.ts", rootDir: "src/tests/e2e" },
+      suites: [],
+      stats: { expected: 1, skipped: 0, unexpected: 0, flaky: 0 },
+    })).toThrow("missing discovered spec file paths");
+  });
+
+  it("uses the native-backend assertion declared by each supported WebGPU spec", () => {
+    expect(nativeWebGpuAssertionForSpec("src/tests/e2e/architecture-rise-webgpu-validation.spec.ts"))
+      .toEqual({ environmentKey: "OBSERVER_NATIVE_WEBGPU_REQUIRED", requiredValue: "1" });
+    expect(nativeWebGpuAssertionForSpec("src/tests/e2e/ground-glass-webgpu-correspondence-large-coc.spec.ts"))
+      .toEqual({ environmentKey: "OBSERVER_NATIVE_WEBGPU_REQUIRED", requiredValue: "1" });
+    expect(nativeWebGpuAssertionForSpec("src/tests/e2e/ground-glass-webgpu-host.spec.ts"))
+      .toEqual({ environmentKey: "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED", requiredValue: "1" });
+    expect(nativeWebGpuAssertionForSpec("src/tests/e2e/unmapped-webgpu-sample.spec.ts")).toBeNull();
+  });
+
+  it("requires every affected owner's browser contract even when an unrelated explicit spec passes", () => {
+    const requiredFiles = [
+      "src/tests/e2e/camera-movement-ground-glass-comparison.spec.ts",
+      "src/tests/e2e/lesson-zero-image-circle-coverage.spec.ts",
+      "src/tests/e2e/physical-image-circle.spec.ts",
+      "src/tests/e2e/understanding-camera-movements.spec.ts",
+    ];
+    const smoke = "src/tests/e2e/smoke.spec.ts";
+    const evidence = aggregateLocalCiEvidence({
+      sourceStable: true,
+      steps: [makePlaywrightStep({ file: smoke })],
+      requiredE2EContracts: requiredFiles.map((file) => ({ file, owners: [{ id: "canonical-optics" }] })),
+      requestedE2EFiles: [smoke],
+      scheduledE2EFiles: [smoke],
+      affectedE2ERequired: true,
+      qualificationRequests: { ordinaryChromium: { requested: true, files: [smoke] } },
+    });
+
+    expect(evidence.qualifications.ordinaryChromium).toBe("PASS");
+    expect(evidence.e2eCoverage).toMatchObject({
+      requested: [smoke],
+      scheduled: [smoke],
+      executed: [smoke],
+      verified: [smoke],
+      status: "INCOMPLETE",
+    });
+    expect(evidence.e2eCoverage.missingRequired).toEqual(requiredFiles.map((file) => ({
+      file,
+      owners: ["canonical-optics"],
+    })));
+  });
+
+  it("credits affected browser coverage only for all successfully verified required specs", () => {
+    const requiredFiles = [
+      "src/tests/e2e/camera-movement-ground-glass-comparison.spec.ts",
+      "src/tests/e2e/lesson-zero-image-circle-coverage.spec.ts",
+      "src/tests/e2e/physical-image-circle.spec.ts",
+      "src/tests/e2e/understanding-camera-movements.spec.ts",
+    ];
+    const smoke = "src/tests/e2e/smoke.spec.ts";
+    const contracts = requiredFiles.map((file) => ({ file, owners: [{ id: "canonical-optics" }] }));
+    const allVerified = aggregateLocalCiEvidence({
+      sourceStable: true,
+      steps: [smoke, ...requiredFiles].map((file) => makePlaywrightStep({ file })),
+      requiredE2EContracts: contracts,
+      requestedE2EFiles: [smoke],
+      scheduledE2EFiles: [smoke, ...requiredFiles],
+      includeOwnerE2E: true,
+      affectedE2ERequired: true,
+      qualificationRequests: { ordinaryChromium: { requested: true, files: [smoke, ...requiredFiles] } },
+    });
+    expect(allVerified.e2eCoverage.status).toBe("PASS");
+    expect(allVerified.e2eCoverage.missingRequired).toEqual([]);
+    expect(allVerified.qualifications.ordinaryChromium).toBe("PASS");
+
+    const skippedSubset = aggregateLocalCiEvidence({
+      sourceStable: true,
+      steps: [
+        makePlaywrightStep({ file: requiredFiles[0], status: "INCOMPLETE", skipped: 1, passed: 0 }),
+        makePlaywrightStep({ file: requiredFiles[1] }),
+      ],
+      requiredE2EContracts: contracts,
+      scheduledE2EFiles: requiredFiles,
+      affectedE2ERequired: true,
+      qualificationRequests: { ordinaryChromium: { requested: true, files: requiredFiles } },
+    });
+    expect(skippedSubset.e2eCoverage.executed).toEqual(requiredFiles.slice(0, 2));
+    expect(skippedSubset.e2eCoverage.verified).toEqual(requiredFiles.slice(1, 2));
+    expect(skippedSubset.e2eCoverage.missingRequired.map((contract) => contract.file)).toEqual([requiredFiles[0], ...requiredFiles.slice(2)]);
+    expect(skippedSubset.e2eCoverage.status).toBe("INCOMPLETE");
+    expect(skippedSubset.qualifications.ordinaryChromium).toBe("INCOMPLETE");
+
+    const scheduledOnly = aggregateLocalCiEvidence({
+      sourceStable: true,
+      steps: [],
+      requiredE2EContracts: contracts,
+      scheduledE2EFiles: requiredFiles,
+      affectedE2ERequired: true,
+    });
+    expect(scheduledOnly.e2eCoverage.executed).toEqual([]);
+    expect(scheduledOnly.e2eCoverage.missingRequired).toEqual(requiredFiles.map((file) => ({
+      file,
+      owners: ["canonical-optics"],
+    })));
+    expect(scheduledOnly.e2eCoverage.status).toBe("INCOMPLETE");
+  });
+
+  it("derives specialized qualification only from matching verified browser evidence", () => {
+    const smoke = "src/tests/e2e/smoke.spec.ts";
+    const preview = "src/tests/e2e/architecture-rise-webgpu-production.spec.ts";
+    const native = "src/tests/e2e/architecture-rise-webgpu-validation.spec.ts";
+    const requests = {
+      ordinaryChromium: { requested: true, files: [smoke] },
+      productionPreview: { requested: true, files: [preview] },
+      nativeWebGpu: { requested: true, files: [native] },
+    };
+    const vitestPass = { runner: "vitest", status: "PASS" };
+    const missingBrowser = aggregateLocalCiEvidence({ sourceStable: true, steps: [vitestPass], qualificationRequests: requests });
+    expect(missingBrowser.qualifications).toMatchObject({
+      ordinaryChromium: "INCOMPLETE",
+      productionPreview: "INCOMPLETE",
+      nativeWebGpu: "INCOMPLETE",
+    });
+
+    const evidence = aggregateLocalCiEvidence({
+      sourceStable: true,
+      steps: [vitestPass, makePlaywrightStep({ file: smoke }), makePlaywrightStep({ file: preview, qualification: "productionPreview" })],
+      qualificationRequests: requests,
+    });
+    expect(evidence.qualifications).toMatchObject({
+      ordinaryChromium: "PASS",
+      productionPreview: "PASS",
+      nativeWebGpu: "INCOMPLETE",
+    });
+
+    const productionFailure = aggregateLocalCiEvidence({
+      sourceStable: true,
+      steps: [vitestPass, makePlaywrightStep({ file: preview, qualification: "productionPreview", status: "FAIL" })],
+      qualificationRequests: requests,
+    });
+    expect(productionFailure.qualifications.productionPreview).toBe("FAIL");
+    expect(productionFailure.qualifications.nativeWebGpu).toBe("INCOMPLETE");
+
+    const nativeFailure = aggregateLocalCiEvidence({
+      sourceStable: true,
+      steps: [vitestPass, makePlaywrightStep({ file: native, qualification: "nativeWebGpu", status: "FAIL" })],
+      qualificationRequests: requests,
+    });
+    expect(nativeFailure.qualifications.nativeWebGpu).toBe("FAIL");
+
+    const nativeUnavailable = aggregateLocalCiEvidence({
+      sourceStable: true,
+      steps: [vitestPass, makePlaywrightStep({ file: native, qualification: "nativeWebGpu", status: "INCOMPLETE", skipped: 1, passed: 0 })],
+      qualificationRequests: requests,
+    });
+    expect(nativeUnavailable.qualifications.nativeWebGpu).toBe("INCOMPLETE");
+    expect(nativeUnavailable.qualifications.productionPreview).toBe("INCOMPLETE");
+
+    const wrongProject = aggregateLocalCiEvidence({
+      sourceStable: true,
+      steps: [makePlaywrightStep({ file: preview, qualification: "productionPreview", project: "chromium" })],
+      qualificationRequests: requests,
+    });
+    expect(wrongProject.qualifications.productionPreview).toBe("INCOMPLETE");
+
+    const failedWrongProject = aggregateLocalCiEvidence({
+      sourceStable: true,
+      steps: [makePlaywrightStep({ file: preview, qualification: "productionPreview", project: "chromium", status: "FAIL" })],
+      qualificationRequests: requests,
+    });
+    expect(failedWrongProject.qualifications.productionPreview).toBe("INCOMPLETE");
+
+    const wrongConfig = aggregateLocalCiEvidence({
+      sourceStable: true,
+      steps: [makePlaywrightStep({ file: preview, qualification: "productionPreview", config: "playwright.config.ts" })],
+      qualificationRequests: requests,
+    });
+    expect(wrongConfig.qualifications.productionPreview).toBe("INCOMPLETE");
   });
 
   it("fails preflight on unsupported Node, missing dependencies, or unavailable browser qualification", () => {
@@ -306,6 +699,192 @@ describe("Local CI runner evidence contracts", () => {
     await expect(writeJsonAtomically(path.join(blocker, "report.json"), {})).rejects.toThrow();
   });
 
+});
+
+describe("Local CI emitted report integration", () => {
+  it("reports affected browser contracts as incomplete when only an unrelated explicit smoke spec passes", async () => {
+    const fixture = await makeLocalCiRunnerFixture();
+    const smoke = "src/tests/e2e/smoke.spec.ts";
+    const result = await executeLocalCi(fixture, [
+      "--mode=affected",
+      "--base",
+      fixture.base,
+      "--e2e-spec",
+      smoke,
+    ]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.report.status).toBe("INCOMPLETE");
+    expect(result.report.execution.completeForRequestedScope).toBe(false);
+    expect(result.report.steps.map((step: { runner: string; status: string }) => [step.runner, step.status])).toEqual([
+      ["vitest", "PASS"],
+      ["playwright", "PASS"],
+    ]);
+    expect(result.report.qualifications.ordinaryChromium).toBe("PASS");
+    expect(result.report.execution.e2eCoverage).toMatchObject({
+      requested: [smoke],
+      scheduled: [smoke],
+      executed: [smoke],
+      verified: [smoke],
+      status: "INCOMPLETE",
+    });
+    expect(result.report.execution.e2eCoverage.required).toHaveLength(4);
+    expect(result.report.execution.e2eCoverage.missingRequired).toEqual(
+      result.report.execution.e2eCoverage.required,
+    );
+    expect(result.report.execution.e2eCoverage.missingRequired.every((contract: { owners: string[] }) =>
+      contract.owners.includes("canonical-optics"),
+    )).toBe(true);
+    const playwrightStep = result.report.steps[1];
+    expect(playwrightStep).toMatchObject({
+      runner: "playwright",
+      mode: "ordinary-chromium",
+      qualification: "ordinaryChromium",
+      expectedConfiguration: "playwright.config.ts",
+      actualConfiguration: "playwright.config.ts",
+      actualProjects: ["chromium"],
+      runnerEvidenceValid: true,
+      selectionEvidence: { matches: true },
+    });
+    expect(playwrightStep.counts.files).toEqual([smoke]);
+  });
+
+  it("recognizes a successful focused ordinary Chromium run from the emitted Playwright report", async () => {
+    const fixture = await makeLocalCiRunnerFixture();
+    const smoke = "src/tests/e2e/smoke.spec.ts";
+    const result = await executeLocalCi(fixture, [
+      "--mode=focused",
+      "--e2e-spec",
+      smoke,
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.report.status).toBe("PASS");
+    expect(result.report.execution.completeForRequestedScope).toBe(true);
+    expect(result.report.qualifications.ordinaryChromium).toBe("PASS");
+    expect(result.report.execution.e2eCoverage).toMatchObject({
+      required: [],
+      requested: [smoke],
+      scheduled: [smoke],
+      executed: [smoke],
+      verified: [smoke],
+      status: "NOT_REQUIRED",
+    });
+    expect(result.report.steps[0]).toMatchObject({
+      runner: "playwright",
+      mode: "ordinary-chromium",
+      qualification: "ordinaryChromium",
+      status: "PASS",
+      runnerEvidenceValid: true,
+      counts: { files: [smoke], passed: 1, failed: 0, skipped: 0, flaky: 0 },
+    });
+  });
+
+  it("rejects a focused Playwright report whose discovered spec differs from the selected target", async () => {
+    const fixture = await makeLocalCiRunnerFixture();
+    const smoke = "src/tests/e2e/smoke.spec.ts";
+    const result = await executeLocalCi(fixture, [
+      "--mode=focused",
+      "--e2e-spec",
+      smoke,
+    ], { FAKE_PLAYWRIGHT_REPORT_SPEC: "src/tests/e2e/other.spec.ts" });
+
+    expect(result.exitCode).toBe(2);
+    expect(result.report.status).toBe("INCOMPLETE");
+    expect(result.report.execution.completeForRequestedScope).toBe(false);
+    expect(result.report.qualifications.ordinaryChromium).toBe("INCOMPLETE");
+    expect(result.report.steps[0]).toMatchObject({
+      runner: "playwright",
+      status: "INCOMPLETE",
+      runnerEvidenceValid: false,
+      selectionEvidence: { matches: false, missing: [smoke], extra: ["src/tests/e2e/other.spec.ts"] },
+    });
+  });
+
+  it("keeps scheduled but unexecuted affected E2E contracts uncovered after a real step failure", async () => {
+    const fixture = await makeLocalCiRunnerFixture();
+    const failedRequired = "src/tests/e2e/camera-movement-ground-glass-comparison.spec.ts";
+    const result = await executeLocalCi(fixture, [
+      "--mode=affected",
+      "--base",
+      fixture.base,
+      "--with-e2e",
+    ], { FAKE_PLAYWRIGHT_FAIL_SPEC: failedRequired });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.report.status).toBe("FAIL");
+    expect(result.report.execution.completeForRequestedScope).toBe(false);
+    expect(result.report.execution.e2eCoverage.scheduled).toContain(failedRequired);
+    expect(result.report.execution.e2eCoverage.scheduled).toContain("src/tests/e2e/physical-image-circle.spec.ts");
+    expect(result.report.execution.e2eCoverage.executed).toContain(failedRequired);
+    expect(result.report.execution.e2eCoverage.verified).not.toContain(failedRequired);
+    expect(result.report.execution.e2eCoverage.missingRequired.map((contract: { file: string }) => contract.file)).toEqual([
+      "src/tests/e2e/camera-movement-ground-glass-comparison.spec.ts",
+      "src/tests/e2e/lesson-zero-image-circle-coverage.spec.ts",
+      "src/tests/e2e/physical-image-circle.spec.ts",
+      "src/tests/e2e/understanding-camera-movements.spec.ts",
+    ]);
+    expect(result.report.steps.filter((step: { runner: string }) => step.runner === "playwright")).toHaveLength(1);
+    expect(result.report.qualifications.ordinaryChromium).toBe("FAIL");
+  });
+
+  it("does not let a successful Vitest step mask a failed Production Preview browser step", async () => {
+    const fixture = await makeLocalCiRunnerFixture();
+    const preview = "src/tests/e2e/architecture-rise-webgpu-production.spec.ts";
+    const result = await executeLocalCi(fixture, [
+      "--mode=affected",
+      "--base",
+      fixture.base,
+      "--e2e-spec",
+      preview,
+      "--production-preview",
+    ], { FAKE_PLAYWRIGHT_FAIL_SPEC: preview });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.report.status).toBe("FAIL");
+    expect(result.report.execution.completeForRequestedScope).toBe(false);
+    expect(result.report.steps[0]).toMatchObject({ runner: "vitest", status: "PASS" });
+    expect(result.report.steps[1]).toMatchObject({
+      runner: "playwright",
+      qualification: "productionPreview",
+      mode: "production-preview",
+      expectedConfiguration: "playwright.production.config.ts",
+      actualConfiguration: "playwright.production.config.ts",
+      expectedProjectNames: ["chromium-production-preview"],
+      actualProjects: ["chromium-production-preview"],
+      status: "FAIL",
+      runnerEvidenceValid: true,
+      qualificationEvidence: { valid: true },
+    });
+    expect(result.report.qualifications.productionPreview).toBe("FAIL");
+    expect(result.report.qualifications.ordinaryChromium).toBe("NOT_RUN");
+    expect(result.report.qualifications.nativeWebGpu).toBe("NOT_RUN");
+  });
+
+  it("leaves a requested specialized qualification incomplete when Playwright evidence is missing", async () => {
+    const fixture = await makeLocalCiRunnerFixture();
+    const preview = "src/tests/e2e/architecture-rise-webgpu-production.spec.ts";
+    const result = await executeLocalCi(fixture, [
+      "--mode=affected",
+      "--base",
+      fixture.base,
+      "--e2e-spec",
+      preview,
+      "--production-preview",
+    ], { FAKE_PLAYWRIGHT_OMIT_REPORT: "1" });
+
+    expect(result.exitCode).toBe(2);
+    expect(result.report.status).toBe("INCOMPLETE");
+    expect(result.report.steps[0]).toMatchObject({ runner: "vitest", status: "PASS" });
+    expect(result.report.steps[1]).toMatchObject({
+      runner: "playwright",
+      status: "INCOMPLETE",
+      runnerEvidenceValid: false,
+      qualificationEvidence: { valid: false },
+    });
+    expect(result.report.qualifications.productionPreview).toBe("INCOMPLETE");
+    expect(result.report.execution.completeForRequestedScope).toBe(false);
+  });
 });
 
 describe("Local CI source state", () => {
