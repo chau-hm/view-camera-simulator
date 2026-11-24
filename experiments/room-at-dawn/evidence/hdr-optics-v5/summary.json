@@ -1,0 +1,53 @@
+{
+  "sourceCommit": "d6439bd5aeaa3f8bcc232e98a070ccc3807edb6c",
+  "reviewedHead": "6988d65a8be7db353fabb710af2d5ce5aa82d922",
+  "browser": "Chromium 149.0.7827.55",
+  "backend": "WebGL 2 ANGLE SwiftShader, verified by WEBGL_debug_renderer_info in hdr/manifest.json",
+  "captureProvenance": "hdr, aperture, optical, quality and room-wide were captured with sourceCommit checked out and clean; room-wide was run after the other captures and before evidence files were copied. initial-saturated records an earlier dirty-source rejected measurement run.",
+  "categories": {
+    "linearHDR": "hdr/",
+    "apertureRadiometry": "aperture/",
+    "opticalFixture": "optical/",
+    "photographicQuality": "quality/",
+    "originalRoomWide": "room-wide/",
+    "rejectedSaturatedTrial": "initial-saturated/",
+    "displayExposureSweep": "display-exposure/"
+  },
+  "gates": {
+    "A_syntheticHDR": "PASS on SwiftShader",
+    "B_fixtureVisibility": "PASS for fixture centers",
+    "C_focusDOF": "PARTIAL",
+    "D_tiltSwing": "PARTIAL",
+    "E_aperture": "PARTIAL",
+    "F_coordinateIsolation": "PASS in overlap tests",
+    "G_photographicInspection": "PARTIAL"
+  },
+  "fixedExposureF22ToF56": {
+    "measuredLinearCompositeGreen": 0.0647807734204793,
+    "canonicalGain": 0.06479338842975205
+  },
+  "nearGatherResolutionFinding": {
+    "maxProposalRadiusInternalPx": 60,
+    "sampleCount": 32,
+    "firstNoncentralProposalInternalPx": 7.5,
+    "combinedNearPredictedMajorRadiusInternalPx": 5.59395,
+    "edgeFeatherPx": 1,
+    "status": "plausible sampling limitation; not proven sole cause"
+  },
+  "limitations": [
+    "RGB8 edge widths are not calibrated CoC estimates",
+    "fixture results are not original-room optical subject validation",
+    "hardware GPU and native WebGPU were not tested",
+    "room material HDR parity and custom glass remain open",
+    "full E2E and GPU-memory verification were not performed"
+  ],
+  "displayExposureProvenance": "Application/renderer sources at sourceCommit; manifest dirty because the report, evidence and supplementary helper were present.",
+  "validation": {
+    "unitTests": "4312 passed",
+    "typecheck": "passed",
+    "lint": "passed",
+    "css": "passed",
+    "productionBuild": "passed; experiment output absent",
+    "publicDofTransitionE2e": "passed, Chromium, 1.8 minutes"
+  }
+}

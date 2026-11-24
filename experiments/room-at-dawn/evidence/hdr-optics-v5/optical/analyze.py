@@ -1,0 +1,8 @@
+import json,sys,pathlib,math
+p=pathlib.Path(sys.argv[1]); names=['focus-near','focus-middle','focus-far','aperture-f11','aperture-f22','tilt-positive','tilt-negative','swing-positive','swing-negative','combined'];out={}
+for name in names:
+ d=json.loads((p/(name+'.json')).read_text()); info=d['state']['observation']['info']; features=[]
+ for f,m in zip(d['features'],d['measurements']):
+  features.append({'id':f['id'],'valid':f['valid'],'firstHit':f['firstHit'],'worldMm':f['worldMm'],'projection':f['projected'],'focusPlaneDistanceMm':f['signedFocusDistanceMm'],'footprint':f['footprint'],'predictedMajorRadiusDisplayPx':f['majorRadiusDisplayPx'],'predictedMajorRadiusInternalPx':f['majorRadiusInternalPx'],'edge10to90DisplayPx':m['measurement'].get('width10to90Px'),'measurementValid':m['measurement']['valid'],'rejection':m['measurement'].get('rejection')})
+ out[name]={'camera':d['test'],'displayExposure':d['expected']['displayExposure'],'frame':d['frame'],'internalWidthPx':info['internalWidthPx'],'sampleCount':info['sampleCount'],'maximumCoCRadiusPx':info['maximumCoCRadiusPx'],'firstNearProposalInternalPx':info['maximumCoCRadiusPx']*math.sqrt(.5/info['sampleCount']),'features':features}
+print(json.dumps({'cases':out,'limitations':['Display-referred edge spread is not a calibrated CoC estimate; radii and edge widths have different kernels and sampling.', 'Small near footprints may fall inside the first noncentral near-gather proposal; this is a plausible sampling limitation, not a proof of every mismatch.', 'Fixture geometry is separate from the room; results do not prove room material fidelity.']},indent=2))
