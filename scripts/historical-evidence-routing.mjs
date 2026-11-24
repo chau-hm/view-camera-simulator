@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 
 const manifestPath = resolve(process.cwd(), "scripts/historical-evidence-manifest.json");
@@ -12,6 +13,35 @@ const idToFamily = new Map(supported.map((family) => [family.id, family]));
 const globalPaths = HISTORICAL_EVIDENCE_MANIFEST.sharedQualificationPaths;
 const familyPattern = /m7([a-z])/i;
 const shaPattern = /^[0-9a-f]{40}$/i;
+// These specific audited tests and their direct local helpers do not consume
+// retained historical evidence. Their byte identities are part of the audit:
+// a change, deletion, or unreadable file must return to fail-closed routing.
+const nonHistoricalCaptureAudits = new Map([
+  ["src/tests/unit/roomAtDawnCaptureSync.test.ts", [
+    ["src/tests/unit/roomAtDawnCaptureSync.test.ts", "ee7563ca79ca477988bcde5a7d515526b45506ba209bebe890150ae156a1b037"],
+    ["experiments/room-at-dawn/capture-sync.cjs", "d8ec1b767a648759cc0242c2b78ddb1a255befcd3ccf737cac8c464ccad10874"],
+  ]],
+  ["src/tests/unit/roomAtDawnReflectionCapture.test.ts", [
+    ["src/tests/unit/roomAtDawnReflectionCapture.test.ts", "b7993e6674135708663cc6f507c89d7104e31fb681ef0ca326f83dff95ee42ae"],
+    ["experiments/room-at-dawn/reflection-capture.js", "75b358799453fd9b5b8cde386b03cbbbfbfaa74a819f1d0325d1fcb27d678ebf"],
+  ]],
+]);
+// The imported helper is itself an input to the audit: a PR that changes
+// only that helper must not bypass the same checkout-byte verification.
+const nonHistoricalCaptureOwners = new Map(
+  [...nonHistoricalCaptureAudits].flatMap(([owner, files]) => files.map(([file]) => [file, owner])),
+);
+
+function isAuditedNonHistoricalCaptureTest(path) {
+  const auditedFiles = nonHistoricalCaptureAudits.get(path);
+  if (!auditedFiles) return false;
+  try {
+    return auditedFiles.every(([file, expected]) =>
+      createHash("sha256").update(readFileSync(resolve(process.cwd(), file))).digest("hex") === expected);
+  } catch {
+    return false;
+  }
+}
 
 const normalizePath = (value) => value.replaceAll("\\", "/").replace(/^\.\//, "");
 const isWithin = (path, prefix) => prefix.endsWith("/") ? path.startsWith(prefix) : path === prefix;
@@ -202,6 +232,8 @@ export function classifyCompleteChangedPaths(changedPaths) {
 }
 
 function isEvidenceLikeUnknownPath(path) {
+  const auditedOwner = nonHistoricalCaptureOwners.get(path);
+  if (auditedOwner) return !isAuditedNonHistoricalCaptureTest(auditedOwner);
   if (/^docs\/architecture\//i.test(path) && /(?:evidence|capture|qualification|provenance|report|m7)/i.test(path)) return true;
   if (/^scripts\//i.test(path) && /(?:evidence|capture|qualification|provenance|replay|normaliz|evaluate|historical)/i.test(path)) return true;
   if (/^src\//i.test(path) && /(?:evidence|capture|qualification|provenance|m7)/i.test(path)) return true;
