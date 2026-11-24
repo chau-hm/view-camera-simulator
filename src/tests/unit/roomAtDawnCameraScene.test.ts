@@ -4,7 +4,7 @@ import { deriveOpticsState } from '../../core/optics/deriveOpticsState';
 import { computePhysicalBlurFootprint } from '../../core/optics/computePhysicalBlurFootprint';
 import { DEFAULT_CAMERA_STATE } from '../../utils/constants';
 
-const point = { x: 0, y: -551.2845407218416, z: 2011.3913234413497 };
+const point = { x: 0, y: -551.284540721842, z: 2011.39132344135 };
 function footprint(tilt: number, scene = roomCameraScene) {
   const state = deriveOpticsState({ ...DEFAULT_CAMERA_STATE, mode: 'free', activeTaskId: null,
     focalLengthMm: 90, focusDistanceMm: 3120, aperture: 5.6, frontTiltDeg: tilt,
