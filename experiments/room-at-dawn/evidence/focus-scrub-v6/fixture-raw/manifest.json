@@ -1,0 +1,666 @@
+{
+  "source": {
+    "commit": "ea4389756e2b59e9e43118504e6599ae8366c4c9",
+    "dirtySource": false
+  },
+  "url": "http://127.0.0.1:5214/view-camera-simulator/experiments/room-at-dawn/optics.html?rttDiagnostics=1",
+  "browser": "149.0.7827.55",
+  "gpu": {
+    "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)"
+  },
+  "values": [
+    1000,
+    1080,
+    1090,
+    1100,
+    1110,
+    1120,
+    1200,
+    1400
+  ],
+  "records": [
+    {
+      "focus": 1000,
+      "frame": {
+        "status": "ready",
+        "frameId": "room-generation-4:frame:2",
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4"
+      },
+      "measurements": [
+        {
+          "id": "near-edge",
+          "roi": {
+            "x": 345,
+            "y": 111,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 359,
+            "y": 117
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 358.475,
+            "width10to90Px": 0.8666666666666671,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        },
+        {
+          "id": "middle-edge",
+          "roi": {
+            "x": 226,
+            "y": 231,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 240,
+            "y": 237
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 239.54464285714286,
+            "width10to90Px": 0.9910714285714253,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        },
+        {
+          "id": "far-edge",
+          "roi": {
+            "x": 123,
+            "y": 111,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 137,
+            "y": 117
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 136.70652173913044,
+            "width10to90Px": 1.5165903890160184,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        }
+      ]
+    },
+    {
+      "focus": 1080,
+      "frame": {
+        "status": "ready",
+        "frameId": "room-generation-4:frame:8",
+        "requestId": "room-request-8",
+        "generationId": "room-generation-4"
+      },
+      "measurements": [
+        {
+          "id": "near-edge",
+          "roi": {
+            "x": 344,
+            "y": 111,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 358,
+            "y": 117
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 357.6132075471698,
+            "width10to90Px": 1.3356918238993707,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        },
+        {
+          "id": "middle-edge",
+          "roi": {
+            "x": 226,
+            "y": 230,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 240,
+            "y": 236
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 239.54464285714286,
+            "width10to90Px": 0.9910714285714253,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        },
+        {
+          "id": "far-edge",
+          "roi": {
+            "x": 124,
+            "y": 112,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 138,
+            "y": 118
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 137.49137931034483,
+            "width10to90Px": 0.8965517241379324,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        }
+      ]
+    },
+    {
+      "focus": 1090,
+      "frame": {
+        "status": "ready",
+        "frameId": "room-generation-4:frame:13",
+        "requestId": "room-request-9",
+        "generationId": "room-generation-4"
+      },
+      "measurements": [
+        {
+          "id": "near-edge",
+          "roi": {
+            "x": 344,
+            "y": 111,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 358,
+            "y": 117
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 357.5086206896552,
+            "width10to90Px": 0.8965517241379288,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        },
+        {
+          "id": "middle-edge",
+          "roi": {
+            "x": 226,
+            "y": 230,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 240,
+            "y": 236
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 239.54464285714286,
+            "width10to90Px": 0.9910714285714253,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        },
+        {
+          "id": "far-edge",
+          "roi": {
+            "x": 124,
+            "y": 112,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 138,
+            "y": 118
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 137.58333333333334,
+            "width10to90Px": 1.2481481481481467,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        }
+      ]
+    },
+    {
+      "focus": 1100,
+      "frame": {
+        "status": "ready",
+        "frameId": "room-generation-4:frame:18",
+        "requestId": "room-request-10",
+        "generationId": "room-generation-4"
+      },
+      "measurements": [
+        {
+          "id": "near-edge",
+          "roi": {
+            "x": 344,
+            "y": 111,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 358,
+            "y": 117
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 357.4491525423729,
+            "width10to90Px": 0.8813559322033893,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        },
+        {
+          "id": "middle-edge",
+          "roi": {
+            "x": 226,
+            "y": 230,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 240,
+            "y": 236
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 239.54464285714286,
+            "width10to90Px": 0.9910714285714253,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        },
+        {
+          "id": "far-edge",
+          "roi": {
+            "x": 124,
+            "y": 112,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 138,
+            "y": 118
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 137.65,
+            "width10to90Px": 1.4366666666666656,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        }
+      ]
+    },
+    {
+      "focus": 1110,
+      "frame": {
+        "status": "ready",
+        "frameId": "room-generation-4:frame:23",
+        "requestId": "room-request-11",
+        "generationId": "room-generation-4"
+      },
+      "measurements": [
+        {
+          "id": "near-edge",
+          "roi": {
+            "x": 344,
+            "y": 111,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 358,
+            "y": 117
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 357.40909090909093,
+            "width10to90Px": 1.2318181818181806,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        },
+        {
+          "id": "middle-edge",
+          "roi": {
+            "x": 226,
+            "y": 230,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 240,
+            "y": 236
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 239.54464285714286,
+            "width10to90Px": 0.9910714285714253,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        },
+        {
+          "id": "far-edge",
+          "roi": {
+            "x": 124,
+            "y": 112,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 138,
+            "y": 118
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 137.70652173913044,
+            "width10to90Px": 1.5165903890160184,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        }
+      ]
+    },
+    {
+      "focus": 1120,
+      "frame": {
+        "status": "ready",
+        "frameId": "room-generation-4:frame:28",
+        "requestId": "room-request-12",
+        "generationId": "room-generation-4"
+      },
+      "measurements": [
+        {
+          "id": "near-edge",
+          "roi": {
+            "x": 344,
+            "y": 111,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 358,
+            "y": 117
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 357.3627450980392,
+            "width10to90Px": 1.40826330532213,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        },
+        {
+          "id": "middle-edge",
+          "roi": {
+            "x": 226,
+            "y": 230,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 240,
+            "y": 236
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 239.54464285714286,
+            "width10to90Px": 0.9910714285714253,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        },
+        {
+          "id": "far-edge",
+          "roi": {
+            "x": 124,
+            "y": 112,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 138,
+            "y": 118
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 137.77380952380952,
+            "width10to90Px": 1.5626293995859193,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        }
+      ]
+    },
+    {
+      "focus": 1200,
+      "frame": {
+        "status": "ready",
+        "frameId": "room-generation-4:frame:33",
+        "requestId": "room-request-13",
+        "generationId": "room-generation-4"
+      },
+      "measurements": [
+        {
+          "id": "near-edge",
+          "roi": {
+            "x": 343,
+            "y": 112,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 357,
+            "y": 118
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 356.54464285714283,
+            "width10to90Px": 0.9910714285714253,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        },
+        {
+          "id": "middle-edge",
+          "roi": {
+            "x": 226,
+            "y": 230,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 240,
+            "y": 236
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 239.54464285714286,
+            "width10to90Px": 0.9910714285714253,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        },
+        {
+          "id": "far-edge",
+          "roi": {
+            "x": 125,
+            "y": 112,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 139,
+            "y": 118
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 138.44915254237287,
+            "width10to90Px": 0.8813559322033893,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        }
+      ]
+    },
+    {
+      "focus": 1400,
+      "frame": {
+        "status": "ready",
+        "frameId": "room-generation-4:frame:38",
+        "requestId": "room-request-14",
+        "generationId": "room-generation-4"
+      },
+      "measurements": [
+        {
+          "id": "near-edge",
+          "roi": {
+            "x": 342,
+            "y": 112,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 356,
+            "y": 118
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 355.35,
+            "width10to90Px": 1.4366666666666656,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        },
+        {
+          "id": "middle-edge",
+          "roi": {
+            "x": 226,
+            "y": 229,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 240,
+            "y": 235
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 239.54464285714286,
+            "width10to90Px": 0.9910714285714253,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        },
+        {
+          "id": "far-edge",
+          "roi": {
+            "x": 126,
+            "y": 113,
+            "width": 28,
+            "height": 12
+          },
+          "projectedCenter": {
+            "x": 140,
+            "y": 119
+          },
+          "measurement": {
+            "valid": true,
+            "edgeX": 139.57272727272726,
+            "width10to90Px": 1.1777777777777771,
+            "contrastLuma8": 64.99999999999997,
+            "clippedFraction": 0,
+            "leftLuma8": 178,
+            "rightLuma8": 113.00000000000003,
+            "space": "display-referred RGB8; normalize display exposure separately"
+          }
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "limitation": "Raw RTT bypasses physical illumination and DOF; edge measurements are normalized to local display plateaus, not comparable radiometry."
+}

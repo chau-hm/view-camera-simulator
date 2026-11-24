@@ -1,0 +1,292 @@
+{
+  "commit": "5a35420a410ad81ff29ad2199924ba70d3e2ef68",
+  "dirtySource": true,
+  "url": "http://127.0.0.1:5214/view-camera-simulator/experiments/room-at-dawn/optics.html?rttDiagnostics=1",
+  "browser": "149.0.7827.55",
+  "gpu": {
+    "width": 480,
+    "height": 360,
+    "cssWidth": 480,
+    "cssHeight": 360,
+    "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+  },
+  "variant": "neutral",
+  "values": [
+    1200,
+    2000,
+    3000
+  ],
+  "modes": [
+    "processed",
+    "raw"
+  ],
+  "aperture": 5.6,
+  "displayExposure": 18.1,
+  "hdr": true,
+  "reflections": true,
+  "initial": {
+    "status": "ready",
+    "frameId": "room-generation-4:frame:6",
+    "requestId": "room-request-5",
+    "generationId": "room-generation-4"
+  },
+  "records": [
+    {
+      "name": "processed-forward-00-1200",
+      "mode": "processed",
+      "direction": "forward",
+      "focus": 1200,
+      "request": "room-request-6",
+      "generation": "room-generation-4",
+      "frame": "room-generation-4:frame:20",
+      "png": "processed-forward-00-1200.png"
+    },
+    {
+      "name": "processed-forward-01-2000",
+      "mode": "processed",
+      "direction": "forward",
+      "focus": 2000,
+      "request": "room-request-7",
+      "generation": "room-generation-4",
+      "frame": "room-generation-4:frame:30",
+      "png": "processed-forward-01-2000.png"
+    },
+    {
+      "name": "processed-repeat-2000",
+      "mode": "processed",
+      "direction": "repeat",
+      "focus": 2000,
+      "request": "room-request-7",
+      "generation": "room-generation-4",
+      "frame": "room-generation-4:frame:38",
+      "comparison": {
+        "meanAbsoluteRgb8": 0,
+        "p99MeanChannelDifference": 0,
+        "fractionAbove3": 0,
+        "repeatabilityPass": true,
+        "maximumMeanChannelDifference": 0,
+        "changedPixelFraction": 0,
+        "width": 480,
+        "height": 361,
+        "meaning": "same-state repeat only, display-referred; not CoC or focus-breathing correctness"
+      },
+      "png": "processed-repeat-2000.png"
+    },
+    {
+      "name": "processed-forward-02-3000",
+      "mode": "processed",
+      "direction": "forward",
+      "focus": 3000,
+      "request": "room-request-8",
+      "generation": "room-generation-4",
+      "frame": "room-generation-4:frame:48",
+      "png": "processed-forward-02-3000.png"
+    },
+    {
+      "name": "processed-reverse-00-3000",
+      "mode": "processed",
+      "direction": "reverse",
+      "focus": 3000,
+      "request": "room-request-8",
+      "generation": "room-generation-4",
+      "frame": "room-generation-4:frame:56",
+      "png": "processed-reverse-00-3000.png"
+    },
+    {
+      "name": "processed-reverse-01-2000",
+      "mode": "processed",
+      "direction": "reverse",
+      "focus": 2000,
+      "request": "room-request-9",
+      "generation": "room-generation-4",
+      "frame": "room-generation-4:frame:65",
+      "png": "processed-reverse-01-2000.png"
+    },
+    {
+      "name": "processed-reverse-02-1200",
+      "mode": "processed",
+      "direction": "reverse",
+      "focus": 1200,
+      "request": "room-request-10",
+      "generation": "room-generation-4",
+      "frame": "room-generation-4:frame:74",
+      "png": "processed-reverse-02-1200.png"
+    },
+    {
+      "name": "raw-forward-00-1200",
+      "mode": "raw",
+      "direction": "forward",
+      "focus": 1200,
+      "request": "room-request-11",
+      "generation": "room-generation-4",
+      "frame": "room-generation-4:frame:87",
+      "png": "raw-forward-00-1200.png"
+    },
+    {
+      "name": "raw-forward-01-2000",
+      "mode": "raw",
+      "direction": "forward",
+      "focus": 2000,
+      "request": "room-request-12",
+      "generation": "room-generation-4",
+      "frame": "room-generation-4:frame:97",
+      "png": "raw-forward-01-2000.png"
+    },
+    {
+      "name": "raw-repeat-2000",
+      "mode": "raw",
+      "direction": "repeat",
+      "focus": 2000,
+      "request": "room-request-12",
+      "generation": "room-generation-4",
+      "frame": "room-generation-4:frame:107",
+      "comparison": {
+        "meanAbsoluteRgb8": 0,
+        "p99MeanChannelDifference": 0,
+        "fractionAbove3": 0,
+        "repeatabilityPass": true,
+        "maximumMeanChannelDifference": 0,
+        "changedPixelFraction": 0,
+        "width": 480,
+        "height": 361,
+        "meaning": "same-state repeat only, display-referred; not CoC or focus-breathing correctness"
+      },
+      "png": "raw-repeat-2000.png"
+    },
+    {
+      "name": "raw-forward-02-3000",
+      "mode": "raw",
+      "direction": "forward",
+      "focus": 3000,
+      "request": "room-request-13",
+      "generation": "room-generation-4",
+      "frame": "room-generation-4:frame:117",
+      "png": "raw-forward-02-3000.png"
+    },
+    {
+      "name": "raw-reverse-00-3000",
+      "mode": "raw",
+      "direction": "reverse",
+      "focus": 3000,
+      "request": "room-request-13",
+      "generation": "room-generation-4",
+      "frame": "room-generation-4:frame:126",
+      "png": "raw-reverse-00-3000.png"
+    },
+    {
+      "name": "raw-reverse-01-2000",
+      "mode": "raw",
+      "direction": "reverse",
+      "focus": 2000,
+      "request": "room-request-14",
+      "generation": "room-generation-4",
+      "frame": "room-generation-4:frame:137",
+      "png": "raw-reverse-01-2000.png"
+    },
+    {
+      "name": "raw-reverse-02-1200",
+      "mode": "raw",
+      "direction": "reverse",
+      "focus": 1200,
+      "request": "room-request-15",
+      "generation": "room-generation-4",
+      "frame": "room-generation-4:frame:146",
+      "png": "raw-reverse-02-1200.png"
+    }
+  ],
+  "comparisons": [
+    {
+      "mode": "processed",
+      "focus": 1200,
+      "forward": "processed-forward-00-1200",
+      "reverse": "processed-reverse-02-1200",
+      "meanAbsoluteRgb8": 0,
+      "p99MeanChannelDifference": 0,
+      "fractionAbove3": 0,
+      "repeatabilityPass": true,
+      "maximumMeanChannelDifference": 0,
+      "changedPixelFraction": 0,
+      "width": 480,
+      "height": 361,
+      "meaning": "same-state repeat only, display-referred; not CoC or focus-breathing correctness"
+    },
+    {
+      "mode": "processed",
+      "focus": 2000,
+      "forward": "processed-forward-01-2000",
+      "reverse": "processed-reverse-01-2000",
+      "meanAbsoluteRgb8": 0,
+      "p99MeanChannelDifference": 0,
+      "fractionAbove3": 0,
+      "repeatabilityPass": true,
+      "maximumMeanChannelDifference": 0,
+      "changedPixelFraction": 0,
+      "width": 480,
+      "height": 361,
+      "meaning": "same-state repeat only, display-referred; not CoC or focus-breathing correctness"
+    },
+    {
+      "mode": "processed",
+      "focus": 3000,
+      "forward": "processed-forward-02-3000",
+      "reverse": "processed-reverse-00-3000",
+      "meanAbsoluteRgb8": 0,
+      "p99MeanChannelDifference": 0,
+      "fractionAbove3": 0,
+      "repeatabilityPass": true,
+      "maximumMeanChannelDifference": 0,
+      "changedPixelFraction": 0,
+      "width": 480,
+      "height": 361,
+      "meaning": "same-state repeat only, display-referred; not CoC or focus-breathing correctness"
+    },
+    {
+      "mode": "raw",
+      "focus": 1200,
+      "forward": "raw-forward-00-1200",
+      "reverse": "raw-reverse-02-1200",
+      "meanAbsoluteRgb8": 0,
+      "p99MeanChannelDifference": 0,
+      "fractionAbove3": 0,
+      "repeatabilityPass": true,
+      "maximumMeanChannelDifference": 0,
+      "changedPixelFraction": 0,
+      "width": 480,
+      "height": 361,
+      "meaning": "same-state repeat only, display-referred; not CoC or focus-breathing correctness"
+    },
+    {
+      "mode": "raw",
+      "focus": 2000,
+      "forward": "raw-forward-01-2000",
+      "reverse": "raw-reverse-01-2000",
+      "meanAbsoluteRgb8": 0,
+      "p99MeanChannelDifference": 0,
+      "fractionAbove3": 0,
+      "repeatabilityPass": true,
+      "maximumMeanChannelDifference": 0,
+      "changedPixelFraction": 0,
+      "width": 480,
+      "height": 361,
+      "meaning": "same-state repeat only, display-referred; not CoC or focus-breathing correctness"
+    },
+    {
+      "mode": "raw",
+      "focus": 3000,
+      "forward": "raw-forward-02-3000",
+      "reverse": "raw-reverse-00-3000",
+      "meanAbsoluteRgb8": 0,
+      "p99MeanChannelDifference": 0,
+      "fractionAbove3": 0,
+      "repeatabilityPass": true,
+      "maximumMeanChannelDifference": 0,
+      "changedPixelFraction": 0,
+      "width": 480,
+      "height": 361,
+      "meaning": "same-state repeat only, display-referred; not CoC or focus-breathing correctness"
+    }
+  ],
+  "errors": [],
+  "interpretation": "Same-state repeat/forward-reverse mean RGB8 difference <=1 and P99 per-pixel mean-channel difference <=3 is a conservative display-repeatability criterion; it does not establish blur accuracy, visibility or focus-breathing correctness. Cross-focus pixel differences are not interpreted as instability. rAF completion telemetry is not direct compositor-presented-frame evidence."
+}
