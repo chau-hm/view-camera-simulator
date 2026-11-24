@@ -15,6 +15,7 @@ import { createHdrConstantFieldProfile } from "./hdr-fixture.js";
 import { createHdrReadback } from "./hdr-readback.js";
 import { createFocusTrace } from "./focus-trace.js";
 import { createFocusStageReadback } from "./focus-stage-readback.js";
+import { inspectRoomSurfaceProbes, measureRoomSurfacePatchRgba } from "./room-surface-inspection.js";
 import { calculateGroundGlassNaturalIlluminationGain } from "../../src/core/optics/groundGlassNaturalIllumination.ts";
 import { calculateGroundGlassCoverageRenderGain } from "../../src/render/groundGlassCoverage.ts";
 import bakeUrl from "./vendor/bake/gi.bin?url";
@@ -43,6 +44,34 @@ const sceneDefinition = {
   focusTargets: [],
   compositionTargets: [],
   cameraRigTranslationCapability: { enabled: true, axis: "x", state: "mirrorShiftLessonState" },
+};
+const ROOM_RANGE_ROW_STYLE = {
+  display: "grid",
+  gridTemplateColumns: "minmax(8rem, 1fr) 8ch minmax(8rem, 1.2fr)",
+  alignItems: "center",
+  columnGap: 8,
+  width: "min(100%, 640px)",
+  minWidth: 0,
+  marginBlock: 4,
+};
+const ROOM_RANGE_LABEL_STYLE = {
+  minWidth: 0,
+  lineHeight: 1.25,
+};
+const ROOM_RANGE_OUTPUT_STYLE = {
+  display: "block",
+  width: "8ch",
+  minWidth: "8ch",
+  boxSizing: "border-box",
+  overflow: "hidden",
+  textAlign: "right",
+  whiteSpace: "nowrap",
+  fontVariantNumeric: "tabular-nums",
+};
+const ROOM_RANGE_INPUT_STYLE = {
+  width: "100%",
+  minWidth: 0,
+  margin: 0,
 };
 
 function disposeRoom(root) {
@@ -462,6 +491,11 @@ function App() {
               });
               const restore = () => {
                 scene.remove(group);
+                if (window.__roomSurfaceViewGroup === group) {
+                  delete window.__roomSurfaceViewGroup;
+                  delete window.__roomSurfaceInspect;
+                  delete window.__roomSurfaceMeasureRgba;
+                }
                 scene.environment = previousEnvironment;
                 scene.userData.roomGiUniforms = previousGiUniforms;
                 scene.userData.roomOrigin = previousRoomOrigin;
@@ -472,6 +506,17 @@ function App() {
               };
               try {
                 scene.add(group);
+                window.__roomSurfaceViewGroup = group;
+                window.__roomSurfaceInspect = (probes, frameIdentity, previewMode = "upright") => {
+                  const current = window.__roomOptics;
+                  if (!current || current.subjectMode !== "room" || current.previewMode !== previewMode ||
+                      current.request?.requestId !== frameIdentity?.requestId ||
+                      current.generation?.generationId !== frameIdentity?.generationId)
+                    throw new Error("Room surface probe requires the current request and renderer generation");
+                  return inspectRoomSurfaceProbes({ viewGroup: group, raycastScene: scene, optics: current.optics,
+                    camera: current.camera, preset, probes, frameIdentity, previewMode });
+                };
+                window.__roomSurfaceMeasureRgba = measureRoomSurfacePatchRgba;
               } catch (error) {
                 restore();
                 throw error;
@@ -644,25 +689,40 @@ function App() {
   }, []);
   const handleObserverStatus = useCallback((next) => setObserverStatus(next), []);
   const set = (key, value) => setCamera((c) => ({ ...c, [key]: value }));
-  const range = (label, key, min, max, step) => (
-    <label style={{ display: "block" }}>
-      {label}: {camera[key]}{" "}
+  const rangeControl = (id, label, value, min, max, step, onChange) => (
+    <div style={ROOM_RANGE_ROW_STYLE}>
+      <label htmlFor={`room-at-dawn-${id}`} style={ROOM_RANGE_LABEL_STYLE}>
+        {label}:
+      </label>
+      <output
+        htmlFor={`room-at-dawn-${id}`}
+        aria-hidden="true"
+        style={ROOM_RANGE_OUTPUT_STYLE}
+      >
+        {value}
+      </output>
       <input
+        id={`room-at-dawn-${id}`}
         aria-label={label}
         type="range"
         min={min}
         max={max}
         step={step}
-        value={camera[key]}
-        onChange={(e) => {
-          if (key === "focusDistanceMm") manualTrace.current?.record("focus-input", {
-            focusDistanceMm: Number(e.target.value), trusted: e.nativeEvent.isTrusted,
-          });
-          set(key, Number(e.target.value));
-        }}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value), e)}
+        style={ROOM_RANGE_INPUT_STYLE}
       />
-    </label>
+    </div>
   );
+  const range = (label, key, min, max, step) =>
+    rangeControl(key, label, camera[key], min, max, step, (value, event) => {
+      if (key === "focusDistanceMm")
+        manualTrace.current?.record("focus-input", {
+          focusDistanceMm: value,
+          trusted: event.nativeEvent.isTrusted,
+        });
+      set(key, value);
+    });
   useEffect(() => {
     if (manualTrace.current && tracedRequest.current !== request.requestId) {
       tracedRequest.current = request.requestId;
@@ -906,20 +966,15 @@ function App() {
             ))}
           </select>
         </label>
-        <label>
-          Camera lateral position (mm): {camera.mirrorShiftLessonState.rigLateralMm}{" "}
-          <input
-            aria-label="Camera lateral position (mm)"
-            type="range"
-            min="-1000"
-            max="1000"
-            step="50"
-            value={camera.mirrorShiftLessonState.rigLateralMm}
-            onChange={(e) =>
-              set("mirrorShiftLessonState", { rigLateralMm: Number(e.target.value) })
-            }
-          />
-        </label>
+        {rangeControl(
+          "cameraLateralMm",
+          "Camera lateral position (mm)",
+          camera.mirrorShiftLessonState.rigLateralMm,
+          -1000,
+          1000,
+          50,
+          (value) => set("mirrorShiftLessonState", { rigLateralMm: value }),
+        )}
         {range("Rise (mm)", "frontRiseMm", 0, 40, CAMERA_CONTROL_STEPS.riseMm)}
         {range("Shift (mm)", "frontShiftMm", -60, 60, CAMERA_CONTROL_STEPS.shiftMm)}
         {range("Tilt (degrees)", "frontTiltDeg", -10, 10, CAMERA_CONTROL_STEPS.tiltDeg)}
