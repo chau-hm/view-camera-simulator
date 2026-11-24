@@ -1,0 +1,97 @@
+{
+  "bed": {
+    "focalLengthMm": 90,
+    "subjectPlane": {
+      "point": {
+        "x": 0,
+        "y": -530,
+        "z": 0
+      },
+      "normal": {
+        "x": 0,
+        "y": -1,
+        "z": 0
+      },
+      "distance": 530
+    },
+    "horizontalNormalMagnitude": 1,
+    "requiredLensHorizontalNormalMagnitude": 0.16981132075471697,
+    "continuous": {
+      "frontTiltDeg": 9.776849031742003,
+      "frontSwingDeg": 0,
+      "focusDistanceMm": 3121.1111111111113,
+      "lensNormal": {
+        "x": 0,
+        "y": -0.16981132075471697,
+        "z": 0.9854765929962713
+      }
+    },
+    "public": {
+      "frontTiltDeg": 9.8,
+      "frontSwingDeg": 0,
+      "focusDistanceMm": 3120,
+      "lensNormal": {
+        "x": 0,
+        "y": -0.1702094991660326,
+        "z": 0.9854078984834902
+      }
+    },
+    "publicStep": {
+      "frontTiltDeg": 0.1,
+      "frontSwingDeg": 0.1,
+      "focusDistanceMm": 10
+    }
+  },
+  "door": {
+    "subjectPlane": {
+      "point": {
+        "x": 588,
+        "y": -200,
+        "z": 2000
+      },
+      "normal": {
+        "x": 1,
+        "y": 0,
+        "z": 0
+      },
+      "distance": 588,
+      "topViewTrace": {
+        "xPerZ": 0,
+        "xInterceptMm": 588
+      }
+    },
+    "hingeLine": {
+      "point": {
+        "x": 588,
+        "y": 0,
+        "z": -91.07314143793627
+      },
+      "direction": {
+        "x": 0,
+        "y": 1,
+        "z": 0
+      }
+    },
+    "frontSwingDeg": 8.804370904141393,
+    "opticalAxis": {
+      "origin": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "direction": {
+        "x": 0.1530612244897959,
+        "y": 0,
+        "z": 0.9882167077912032
+      }
+    },
+    "opticalAxisIntersection": {
+      "x": 588,
+      "y": 0,
+      "z": 3796.333304650687
+    },
+    "focusDistanceMm": 3841.600000000001,
+    "filmDistanceMm": 91.07314143793627,
+    "collinearityErrorMm": 0
+  }
+}
