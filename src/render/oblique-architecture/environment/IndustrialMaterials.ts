@@ -46,12 +46,12 @@ export function createIndustrialMaterials(existing: MasonryMaterials) {
     const edgeY = Math.abs(v * 8 - row - .5);
     const joint = Math.max(edgeX, edgeY) > .47 || edgeX + edgeY > .91;
     const grade = (row * 19 + col * 13 + row * col * 7) % 27;
-    const gray = Math.round(joint ? 89 + noise * 7 : 112 + grade + noise * 8);
+    const gray = Math.round(joint ? 95 + noise * 7 : 119 + grade + noise * 8);
     return [gray + 8, gray + 4, gray - 2];
   });
-  const warmer = matte("muted-fired-brick", "#a79282");
+  const warmer = matte("muted-fired-brick", "#c3b29f");
   warmer.map = existing.brick.map;
-  const cooler = matte("smoke-brown-brick", "#8e8880");
+  const cooler = matte("smoke-brown-brick", "#a8aba5");
   cooler.map = existing.brick.map;
   const slate = matte("profiled-slate", "#ffffff");
   slate.map = tiledSurface("industrial-standing-seam", 128, 128, [1.24, 1.4], (u, v, noise) => {
@@ -66,7 +66,7 @@ export function createIndustrialMaterials(existing: MasonryMaterials) {
     trim: matte("weathered-sandstone", "#a49a88"),
     cap: matte("zinc-caps", "#636768"),
     steel: matte("dark-ironwork", "#444945", .63),
-    factoryGlass: matte("factory-sash-glass", "#5d6c69", .42),
+    factoryGlass: matte("factory-sash-glass", "#697471", .42),
     roofLight: matte("north-light-glass", "#8b9997", .45),
     timber: matte("painted-loading-doors", "#565c4f"),
     wood: matte("crate-timber", "#8f7558"),

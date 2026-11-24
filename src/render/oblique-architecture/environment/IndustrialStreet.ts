@@ -30,7 +30,7 @@ export function addIndustrialStreet(root: THREE.Group, m: IndustrialMaterials, g
       [(left + right) / 2, ground.y - 5, (near + far) / 2], [right - left, 10, far - near]);
   };
   // Four abutting plots share the original ground's height and UV origin.
-  groundSection("foreground", districtWest, districtEast, 5700, ground.nearZ);
+  groundSection("foreground", districtWest, districtEast, 4350, ground.nearZ);
   groundSection("west", districtWest, x0, ground.nearZ, ground.farZ);
   groundSection("east", x1, districtEast, ground.nearZ, ground.farZ);
   groundSection("rear", districtWest, districtEast, ground.farZ, 19820);
@@ -149,12 +149,12 @@ export function addIndustrialFurniture(root: THREE.Group, m: IndustrialMaterials
   }
 
   const chimney = localGroup(root, "works-chimney");
-  const stack = new THREE.CylinderGeometry(.117, .238, 3.16, 14);
+  const stack = new THREE.CylinderGeometry(.117, .238, 3.37, 14);
   // The texture's dimensions are metres; remap the cylinder course heights and circumference.
   const uv = stack.getAttribute("uv");
-  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 1.14, uv.getY(i) * 3.16);
-  fixture(chimney, "taper", stack, m.cooler, [-6010, y + 1580, 11110]);
+  for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * 1.14, uv.getY(i) * 3.37);
+  fixture(chimney, "taper", stack, m.cooler, [-5050, y + 1685, 18210]);
   const rim = new THREE.CylinderGeometry(.155, .149, .099, 14);
-  for (const height of [1760, 3130, 3250])
-    fixture(chimney, "cornice", rim, m.trim, [-6010, y + height, 11110]);
+  for (const height of [1760, 3305, 3430])
+    fixture(chimney, "cornice", rim, m.trim, [-5050, y + height, 18210]);
 }

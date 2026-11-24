@@ -186,6 +186,28 @@ function addRoof(group: THREE.Group, b: Building, m: IndustrialMaterials, y0: nu
   }
 }
 
+function addLoadingShelter(group: THREE.Group, b: Building, m: IndustrialMaterials, y0: number) {
+  const x = b.x;
+  const wall = b.z - b.depth / 2;
+  const edge = wall - 508;
+  const top = y0 + b.eaves * 0.94;
+  const low = top - 142;
+  const half = b.width * .235;
+  panel(group, "loading-shelter-roof", m.slate, [
+    [x - half, top, wall - 5], [x + half, top, wall - 5],
+    [x + half, low, edge], [x - half, low, edge],
+  ]);
+  const batch = createBuildingGeometry(group);
+  batch.box(group.name + "-loading-fascia", m.cap, [x, low - 13, edge], [2 * half, 33, 31]);
+  for (const side of [-1, 1]) {
+    const bx = x + side * (half - 48);
+    batch.box(group.name + "-shelter-posts", m.steel,
+      [bx, (low + y0 + 28) / 2, edge + 25], [33, low - y0 - 28, 33]);
+    batch.box(group.name + "-loading-post-feet", m.trim, [bx, y0 + 22, edge + 25], [88, 44, 85]);
+  }
+  batch.finish();
+}
+
 export function addIndustrialBuildings(root: THREE.Group, materials: IndustrialMaterials, groundY: number) {
   for (const b of industrialBuildings) {
     const group = new THREE.Group();
@@ -202,5 +224,6 @@ export function addIndustrialBuildings(root: THREE.Group, materials: IndustrialM
     }
     addRoof(group, b, materials, groundY, batch);
     batch.finish();
+    if (b.id === "gasworks" || b.id === "west-depot") addLoadingShelter(group, b, materials, groundY);
   }
 }
