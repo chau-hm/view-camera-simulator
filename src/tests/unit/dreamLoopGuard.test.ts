@@ -113,6 +113,7 @@ describe("Dream Loop pilot guard", () => {
       expect(manifest.implementationPath).toContain("SubjectFactory.tsx");
       expect(manifest.writeScope.allowedPaths).toEqual([
         manifest.implementationPath,
+        ...(pilotId === "architecture-rise" ? ["src/render/architecture-rise/environment/**"] : []),
         ".dream-loop/**",
       ]);
       expect(manifest.capture.outputPath.startsWith(".dream-loop/" + pilotId + "/")).toBe(true);

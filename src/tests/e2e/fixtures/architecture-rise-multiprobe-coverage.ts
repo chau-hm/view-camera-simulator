@@ -914,7 +914,21 @@ const runStudy = (options: {
 } = {}): CoverageProof | DiagnosticProof => {
   const scene = new THREE.Scene();
   const subject = createArchitectureRiseGroup({ presentation: ARCHITECTURE_RISE_PRESENTATION });
+  const district = subject.getObjectByName("architecture-rise-urban-environment");
   try {
+  // This experiment reproduces the fixed v2 reflection world, including its
+  // three original street seams. Live streetscape rays are tested separately.
+  district?.removeFromParent();
+  const seam = subject.getObjectByName("architecture-rise-pavement-cross-seam-2");
+  if (!(seam instanceof THREE.Mesh) || !seam.parent) {
+    throw new Error("The Architecture Rise v2 street seam template is missing");
+  }
+  [4700, 6000, 6900].forEach((zMm, index) => {
+    const legacySeam = seam.clone();
+    legacySeam.name = `architecture-rise-pavement-cross-seam-${index + 3}`;
+    legacySeam.position.z = toWorld(zMm);
+    seam.parent!.add(legacySeam);
+  });
   scene.add(subject);
   subject.updateMatrixWorld(true);
   const allMeshes = collectMeshes(subject);
@@ -1461,6 +1475,7 @@ const runStudy = (options: {
 
   return proof;
   } finally {
+    if (district) subject.add(district);
     disposeArchitectureRiseGroup(subject);
   }
 };
