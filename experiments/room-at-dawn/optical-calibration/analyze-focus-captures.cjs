@@ -18,7 +18,7 @@ function requireFrameIdentity(record, label) {
       throw new Error(`${label} ${record.focus}: screenshot/stage frame identity is not synchronized`);
     }
   } else if (record.result?.status !== "ready" || record.result?.frameId !== record.state?.frame?.frameId) {
-    throw new Error(`${label} ${record.focus}: raw screenshot result/frame identity is not synchronized`);
+    throw new Error(`${label} ${record.focus}: raw readiness result and state frame disagree`);
   }
 }
 

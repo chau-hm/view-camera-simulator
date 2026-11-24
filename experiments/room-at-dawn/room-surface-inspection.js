@@ -299,7 +299,15 @@ export function inspectRoomSurfaceProbes({
       ? asVec3(pointMm).distanceTo(asVec3(requestedWorldMm))
       : null;
     const surfaceNormal = firstHit.face?.normal?.clone();
-    if (surfaceNormal) surfaceNormal.applyMatrix3(new THREE.Matrix3().getNormalMatrix(mesh.matrixWorld)).normalize();
+    if (surfaceNormal) {
+      const worldMatrix = mesh.matrixWorld.clone();
+      if (mesh.isInstancedMesh && firstHit.instanceId !== undefined) {
+        const instanceMatrix = new THREE.Matrix4();
+        mesh.getMatrixAt(firstHit.instanceId, instanceMatrix);
+        worldMatrix.multiply(instanceMatrix);
+      }
+      surfaceNormal.applyMatrix3(new THREE.Matrix3().getNormalMatrix(worldMatrix)).normalize();
+    }
     const giAttributes = Object.fromEntries(["gi", "gd", "giB"].map((name) => {
       const attribute = mesh.geometry?.getAttribute?.(name);
       return [name, attribute ? { count: attribute.count, itemSize: attribute.itemSize } : null];

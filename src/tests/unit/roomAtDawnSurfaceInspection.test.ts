@@ -37,6 +37,25 @@ function createView({ withGi = true, transparent = false } = {}) {
 }
 
 describe("Room-at-Dawn original surface inspection", () => {
+  it("transforms the normal through a rotated hit instance", () => {
+    const { view, surface, geometry, material } = createView();
+    view.remove(surface);
+    const instances = new THREE.InstancedMesh(geometry, material, 1);
+    instances.name = "rotated-instance";
+    const matrix = new THREE.Matrix4().makeRotationY(Math.PI / 4);
+    matrix.setPosition(preset.origin[0], preset.origin[1], preset.origin[2] + 2);
+    instances.setMatrixAt(0, matrix);
+    view.add(instances);
+    view.updateMatrixWorld(true);
+    const [hit] = inspectRoomSurfaceProbes({
+      viewGroup: view, optics, camera, preset,
+      probes: [{ id: "instance", filmUv: { u: 0.5, v: 0.5 } }],
+    });
+    expect(hit.mesh.instanceId).toBe(0);
+    expect(hit.surfaceNormalWorld[0]).toBeCloseTo(Math.SQRT1_2, 6);
+    expect(hit.surfaceNormalWorld[2]).toBeCloseTo(Math.SQRT1_2, 6);
+  });
+
   it("raycasts a canonical film probe to a real GI-matched PBR surface and returns source coordinates", () => {
     const { view, geometry, material, texture } = createView();
     const [measurement] = inspectRoomSurfaceProbes({

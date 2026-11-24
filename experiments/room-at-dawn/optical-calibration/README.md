@@ -33,16 +33,17 @@ Each report preserves the capture frame IDs and camera settings.
 - Edge width is the median of per-row, display-referred RGB8 luma 10–90%
   profiles. A deterministic 2,000-resample bootstrap reports a conditional 95%
   interval over rows.
-- An eight-offset horizontal subpixel resampling sweep estimates image-space
-  pixel-phase sensitivity. The reporting floor is 0.25 CSS px; it is an image
-  measurement floor, not an optical tolerance.
+- An eight-offset horizontal resampling sweep describes sensitivity of the
+  captured RGB8 crop. It is not a bound on native renderer pixel-phase effects.
+  The reporting floor is 0.25 CSS px, not an optical tolerance.
 - A comparison is inconclusive when the bootstrap interval and phase envelope
   do not separate. These metrics do not claim a physical CoC-to-PSF transfer.
 - The v6 processed screenshot is the 960×720 same-frame canvas image and the
   Raw screenshot is 480×361. Both are normalized to the recorded 480×360 CSS
   grid for the edge comparison. This is not a native-resolution Raw/Processed
-  image comparison. The new data must not be described as proving native
-  Raw/Processed parity.
+  image comparison. The Raw PNG is captured separately from its readiness
+  snapshot: matching request/generation does not prove its exact frame identity.
+  The new data must not be described as proving native Raw/Processed parity.
 - The CPU aperture-gather reference is not used as a WebGL oracle. The WebGL
   fragment shader and CPU/WebGPU reference differ in footprint-edge smoothing
   and source sampling; exact CPU/GPU forward parity is unproven.
@@ -67,7 +68,7 @@ px, and Processed width from 1.526 to 0.936 CSS px. This is evidence that the
 input raster itself changes across those Focus states; it does not identify a
 Gather defect. The 8-offset phase envelope is 0.53–0.81 CSS px across the
 near-edge cases. All near-edge Raw/Processed width differences are therefore
-inconclusive within the declared phase bound. Several larger fixture regions
+inconclusive relative to the descriptive resampling envelope. Several larger fixture regions
 show resolved additional Processed spread, but these do not calibrate the
 near-field CoC transfer.
 
