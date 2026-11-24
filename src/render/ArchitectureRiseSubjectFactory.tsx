@@ -14,6 +14,7 @@ import {
   createArchitectureRiseCorniceBracketGeometry,
 } from "./architecture-rise/ArchitectureRiseCornice";
 import { addArchitectureRiseEntrance } from "./architecture-rise/ArchitectureRiseEntrance";
+import { createArchitectureRiseUrbanEnvironment } from "./architecture-rise/environment/ArchitectureRiseUrbanEnvironment";
 import {
   addArchitectureRiseCornerQuoins,
   addArchitectureRiseStoneBaseJoints,
@@ -505,7 +506,7 @@ const addStreetContext = (
     material: resources.trim,
     parent: street,
   });
-  [2300, 3500, 4700, 6000, 6900].forEach((z, index) =>
+  [2300, 3500].forEach((z, index) =>
     addBox({
       name: `architecture-rise-pavement-cross-seam-${index + 1}`,
       size: [geometry.streetContext.sidewalkWidth, 10, 18],
@@ -931,6 +932,7 @@ export function createArchitectureRiseGroup(
   ground.position.set(0, toWorld(geometry.ground.y), toWorld(geometry.ground.centerZ));
   root.add(ground);
   addReferenceObjects(root, resources, geometry, presentation.referenceObjects);
+  root.add(createArchitectureRiseUrbanEnvironment(geometry.ground.y, resources.groundMaterial.color));
 
   return root;
 }
