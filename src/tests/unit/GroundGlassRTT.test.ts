@@ -9,6 +9,7 @@ import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 import {
   GroundGlassRTT as UnconnectedGroundGlassRTT,
   type GroundGlassRTTProps,
+  type GroundGlassDevelopmentProbeFrame,
 } from "../../render/GroundGlassRTT";
 import type { GroundGlassSceneProfile } from "../../render/groundGlassSceneProfiles";
 import { synchronizeGroundGlassDofClipRange } from "../../render/groundGlassShaderBindings";
@@ -2275,6 +2276,29 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(currentInfo?.latticeGeometryId).toBeUndefined();
     expect(currentInfo?.latticeSubjectGeneration).toBeUndefined();
 
+    view.unmount();
+  });
+
+  it("ties development stage observations to the completed frame and keeps CoC separate from color targets", () => {
+    const camera = { ...DEFAULT_CAMERA_STATE, ...architectureRiseScene.cameraPreset, activeSceneId: architectureRiseScene.id };
+    const generation = { generationId: "stage-generation", channelId: "default" } as const;
+    const request = { requestId: "stage-request", channelId: "default", sceneId: architectureRiseScene.id } as const;
+    const results: GroundGlassFrameResult[] = [];
+    const frames: GroundGlassDevelopmentProbeFrame[] = [];
+    const view = render(React.createElement(UnconnectedGroundGlassRTT, {
+      opticsState: deriveOpticsState(camera, architectureRiseScene), focalLengthMm: camera.focalLengthMm,
+      scene: architectureRiseScene, widthPx: 500, heightPx: 400, renderQuality: "standard", previewMode: "upright",
+      rendererGeneration: generation, acceptedRequestIdentity: request, onFrameResult: (result) => results.push(result),
+      developmentHdrColor: true, developmentProbeFrame: (frame) => frames.push(frame),
+    }));
+    act(() => fiberTestState.frameCallback?.({}, 1 / 60));
+    expect(frames).toHaveLength(1);
+    expect(Object.keys(frames[0].targets).sort()).toEqual(["composite", "far", "near", "scene"]);
+    expect(frames[0].cocTarget).toBeInstanceOf(THREE.WebGLRenderTarget);
+    expect(frames[0].camera.projectionMatrix).toHaveLength(16);
+    expect(frames[0].generation).toEqual(generation);
+    expect(frames[0].request).toEqual(request);
+    expect(results.at(-1)).toMatchObject({ status: "completed", frameId: frames[0].frameId, generation, request });
     view.unmount();
   });
 

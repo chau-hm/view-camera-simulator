@@ -13,6 +13,8 @@ import { createOpticalFixtureProfile } from "./optical-fixture.js";
 import { inspectOpticalFixture, measureVerticalEdgeRgba } from "./optical-measurement.js";
 import { createHdrConstantFieldProfile } from "./hdr-fixture.js";
 import { createHdrReadback } from "./hdr-readback.js";
+import { createFocusTrace } from "./focus-trace.js";
+import { createFocusStageReadback } from "./focus-stage-readback.js";
 import { calculateGroundGlassNaturalIlluminationGain } from "../../src/core/optics/groundGlassNaturalIllumination.ts";
 import { calculateGroundGlassCoverageRenderGain } from "../../src/render/groundGlassCoverage.ts";
 import bakeUrl from "./vendor/bake/gi.bin?url";
@@ -33,6 +35,7 @@ let requestSequence = 0;
 let observerRequestSequence = 0;
 let observerGenerationSequence = 0;
 const HDR_FIELDS = { "0.1": [0.1, 0.1, 0.1], "0.5": [0.5, 0.5, 0.5], "1": [1, 1, 1], "2": [2, 2, 2], "4": [4, 4, 4], "8": [8, 8, 8], mixed: [0.1, 2, 8] };
+const focusStageEnabled = new URLSearchParams(window.location.search).get("focusStage") === "1";
 const roomBounds = { min: { x: -2400, y: -1400, z: -15000 }, max: { x: 3000, y: 3000, z: 10000 } };
 const sceneDefinition = {
   ...architectureRiseScene,
@@ -321,6 +324,10 @@ function App() {
   const [hdrField, setHdrField] = useState("mixed");
   const [hdrDepth, setHdrDepth] = useState(2.5);
   const probedRequest = useRef(null);
+  const lastFocusStageRequest = useRef(null);
+  const manualTrace = useRef(null);
+  const tracedRequest = useRef(null);
+  const [tracingFocus, setTracingFocus] = useState(false);
   const [reflectionsEnabled, setReflectionsEnabled] = useState(true);
   const [observerEnabled, setObserverEnabled] = useState(true);
   const [groundEnabled, setGroundEnabled] = useState(true);
@@ -412,6 +419,10 @@ function App() {
         return createOpticalFixtureProfile({
           onMount(group) {
             window.__roomFixtureGroup = group;
+            group.updateWorldMatrix(true, true);
+            window.__roomFixtureStagePoints = group.children.map((mesh) => ({
+              id: mesh.name, worldM: mesh.getWorldPosition(new THREE.Vector3()).toArray(),
+            }));
             window.__roomFixtureInspect = (dimensions) =>
               inspectOpticalFixture(group, window.__roomOptics.optics, window.__roomOptics.camera, dimensions);
             window.__roomMeasureVerticalEdge = measureVerticalEdgeRgba;
@@ -421,6 +432,7 @@ function App() {
               delete window.__roomFixtureGroup;
               delete window.__roomFixtureInspect;
               delete window.__roomMeasureVerticalEdge;
+              delete window.__roomFixtureStagePoints;
             }
           },
         });
@@ -492,6 +504,22 @@ function App() {
     [camera, mode, rawDebug, presetKey, generationEpoch, hdr, displayExposure, reflectionsEnabled, renderQuality, subjectMode, hdrField, hdrDepth],
   );
   const handleFrame = useCallback((frame) => {
+    manualTrace.current?.record("frame-completed", { frame });
+    const samples = window.__focusStageSamples;
+    const sample = samples?.[samples.length - 1];
+    if (sample?.frameId === frame.frameId && sample.request?.requestId === frame.request?.requestId &&
+        sample.generation?.generationId === frame.generation?.generationId) {
+      sample.completion = frame;
+      if (frame.status === "completed" && window.__focusStageControl?.captureCanvas) {
+        try {
+          const canvas = document.querySelector('[data-rtt-resource-channel="default"] canvas');
+          if (!canvas) throw new Error("Ground Glass canvas is unavailable");
+          sample.canvasDataUrl = canvas.toDataURL("image/png");
+        } catch (error) {
+          sample.canvasCaptureError = String(error?.message || error);
+        }
+      }
+    }
     if (window.__roomOptics) window.__roomOptics.frame = frame;
   }, []);
   const handleDisposed = useCallback((retiredGeneration, outcome, reason) => {
@@ -503,6 +531,14 @@ function App() {
     });
   }, []);
   const handleObservation = useCallback((observation) => {
+    if (observation.scope === "request") {
+      const info = observation.info;
+      manualTrace.current?.record("runtime-observation", {
+        request: observation.requestIdentity, generation: observation.generation,
+        projectionMatrix: info?.projectionMatrix, cameraConfigurationOk: info?.cameraConfigurationOk,
+        uniformPreparationError: info?.uniformPreparationError, frameExecutionError: info?.frameExecutionError,
+      });
+    }
     const current = window.__roomOptics;
     if (!current) return;
     current.observation = observation;
@@ -559,6 +595,53 @@ function App() {
       reader?.dispose();
     }
   }, [subjectMode, hdrField, hdrDepth, mode]);
+  const handleFocusStage = useCallback((frame) => {
+    const config = window.__focusStageControl;
+    if (!focusStageEnabled || !config?.enabled || lastFocusStageRequest.current === frame.request.requestId) return;
+    lastFocusStageRequest.current = frame.request.requestId;
+    let reader;
+    const base = { request: frame.request, generation: frame.generation, frameId: frame.frameId,
+      resourceGeneration: frame.resourceGeneration, timestampMs: performance.now(), camera: frame.camera,
+      physical: frame.physical, cocStorageFormat: frame.cocStorageFormat, cocStorageMaxMm: frame.cocStorageMaxMm,
+      footprintStorageMaxMm: frame.footprintStorageMaxMm, depthSource: frame.depthSource,
+      renderQuality: frame.renderQuality, targetStorage: frame.targetStorage };
+    try {
+      if (!Array.isArray(config.points) || config.points.length === 0 || config.points.length > 8)
+        throw new Error("Focus stage probe requires one to eight explicit world-space points");
+      if (!frame.depthTexture || frame.depthSource !== "scene-depth-texture")
+        throw new Error("Focus stage probe requires the actual scene depth texture");
+      reader = createFocusStageReadback(frame.renderer);
+      const view = new THREE.Matrix4().fromArray(frame.camera.matrixWorldInverse);
+      const projection = new THREE.Matrix4().fromArray(frame.camera.projectionMatrix);
+      const points = config.points.map((point) => {
+        let u, v, ndcZ = null;
+        if (Array.isArray(point.uv) && point.uv.length === 2 && point.uv.every(Number.isFinite)) {
+          [u, v] = point.uv;
+        } else if (Array.isArray(point.worldM) && point.worldM.length === 3 && point.worldM.every(Number.isFinite)) {
+          const ndc = new THREE.Vector3(...point.worldM).applyMatrix4(view).applyMatrix4(projection);
+          u = (ndc.x + 1) / 2; v = (ndc.y + 1) / 2; ndcZ = ndc.z;
+        } else throw new Error(`Focus stage point ${point.id || "unknown"} requires finite world metres or UV`);
+        if (![u, v].every(Number.isFinite) || u < 0 || u >= 1 || v < 0 || v >= 1 || (ndcZ !== null && (!Number.isFinite(ndcZ) || ndcZ < -1 || ndcZ > 1)))
+          return { id: point.id, worldM: point.worldM, valid: false, rejection: "outside current camera frustum" };
+        const coordinate = (target) => [Math.min(target.width - 1, Math.floor(u * target.width)), Math.min(target.height - 1, Math.floor(v * target.height))];
+        const sampleColor = (target) => reader.readColor(target, ...coordinate(target));
+        const [dx, dy] = coordinate(frame.targets.scene);
+        return { id: point.id, worldM: point.worldM ?? null, valid: true, sourceUv: [u, v], ndcZ,
+          scene: sampleColor(frame.targets.scene), depth: reader.readDepth(frame.depthTexture, dx, dy),
+          coc: sampleColor(frame.cocTarget), far: sampleColor(frame.targets.far),
+          near: sampleColor(frame.targets.near), composite: sampleColor(frame.targets.composite) };
+      });
+      window.__focusStageSamples ||= [];
+      window.__focusStageSamples.push({ ...base, status: "sampled", points });
+      if (window.__focusStageSamples.length > 256) { window.__focusStageSamples.shift(); window.__focusStageDropped = (window.__focusStageDropped || 0) + 1; }
+    } catch (error) {
+      window.__focusStageSamples ||= [];
+      window.__focusStageSamples.push({ ...base, status: "failed", error: String(error?.message || error) });
+      if (window.__focusStageSamples.length > 256) { window.__focusStageSamples.shift(); window.__focusStageDropped = (window.__focusStageDropped || 0) + 1; }
+    } finally {
+      reader?.dispose();
+    }
+  }, []);
   const handleObserverStatus = useCallback((next) => setObserverStatus(next), []);
   const set = (key, value) => setCamera((c) => ({ ...c, [key]: value }));
   const range = (label, key, min, max, step) => (
@@ -571,11 +654,26 @@ function App() {
         max={max}
         step={step}
         value={camera[key]}
-        onChange={(e) => set(key, Number(e.target.value))}
+        onChange={(e) => {
+          if (key === "focusDistanceMm") manualTrace.current?.record("focus-input", {
+            focusDistanceMm: Number(e.target.value), trusted: e.nativeEvent.isTrusted,
+          });
+          set(key, Number(e.target.value));
+        }}
       />
     </label>
   );
   useEffect(() => {
+    if (manualTrace.current && tracedRequest.current !== request.requestId) {
+      tracedRequest.current = request.requestId;
+      manualTrace.current.record("state-committed", {
+        request, generation, camera, lensCenterWorld: optics.lensCenterWorld,
+        filmPlane: optics.filmPlane, filmPlaneCornersWorld: optics.filmPlaneCornersWorld,
+        focusPlane: optics.focusPlane, imageDistanceMm: resolveGroundGlassImageDistanceMm(optics),
+        presetKey, subjectMode, renderQuality, rawDebug, previewMode: mode, hdr,
+        displayExposure, reflectionsEnabled,
+      });
+    }
     window.__roomOptics = {
       ...window.__roomOptics,
       renderError:
@@ -682,7 +780,7 @@ function App() {
                   developmentHdrColor={hdr}
                   developmentDisplayExposure={displayExposure}
                   developmentPrepareScene={prepareReflections}
-                  developmentProbeFrame={subjectMode === "hdr-probe" ? handleHdrProbe : undefined}
+                  developmentProbeFrame={subjectMode === "hdr-probe" ? handleHdrProbe : focusStageEnabled ? handleFocusStage : undefined}
                   opticsState={optics}
                   focalLengthMm={camera.focalLengthMm}
                   scene={sceneDefinition}
@@ -827,6 +925,22 @@ function App() {
         {range("Tilt (degrees)", "frontTiltDeg", -10, 10, CAMERA_CONTROL_STEPS.tiltDeg)}
         {range("Swing (degrees)", "frontSwingDeg", -10, 10, CAMERA_CONTROL_STEPS.swingDeg)}
         {range("Focus (mm)", "focusDistanceMm", 100, 8000, CAMERA_CONTROL_STEPS.focusDistanceMm)}
+        <button type="button" onClick={() => {
+          if (!tracingFocus) {
+            manualTrace.current = createFocusTrace();
+            tracedRequest.current = null;
+            manualTrace.current.record("initial-state", { request, generation, camera, presetKey, subjectMode, renderQuality, rawDebug, hdr, displayExposure, reflectionsEnabled });
+            setTracingFocus(true);
+          } else {
+            const data = manualTrace.current?.stop();
+            manualTrace.current = null;
+            setTracingFocus(false);
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a"); link.href = url; link.download = "room-focus-trace.json"; link.click(); setTimeout(() => URL.revokeObjectURL(url), 0);
+          }
+        }}>{tracingFocus ? "Stop and download Focus trace" : "Record Focus trace"}</button>
+        {tracingFocus && <span> Recording frame completion telemetry; this does not prove display presentation.</span>}
         <label>
           Aperture{" "}
           <select

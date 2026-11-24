@@ -125,14 +125,46 @@ import type { CameraMovementPresentationRegion } from "../scenes/cameraMovementS
 
 let latestGroundGlassSubjectGeneration = 0;
 
-/** Synchronous, development-only observation of this frame's actual linear targets.
- * Targets are borrowed and must not escape the callback or be disposed by it. */
+/** Synchronous, development-only observation of this frame's actual targets.
+ * Target and texture references are borrowed: sample them only during the
+ * callback and never retain or dispose them. Copy any values needed later. */
 export type GroundGlassDevelopmentProbeFrame = Readonly<{
   renderer: WebGLRenderer;
   generation: GroundGlassRendererGenerationIdentity;
   request: GroundGlassAcceptedRequestIdentity;
   frameId: string;
-  targets: Readonly<{ scene: THREE.WebGLRenderTarget; far: THREE.WebGLRenderTarget; near: THREE.WebGLRenderTarget; composite: THREE.WebGLRenderTarget }>;
+  resourceGeneration: number;
+  targets: Readonly<{
+    scene: THREE.WebGLRenderTarget;
+    far: THREE.WebGLRenderTarget;
+    near: THREE.WebGLRenderTarget;
+    composite: THREE.WebGLRenderTarget;
+  }>;
+  /** Borrowed signed classification target; kept outside `targets` so existing linear-color probes cannot misread it. */
+  cocTarget: THREE.WebGLRenderTarget;
+  /** Actual scene depth attachment; null means this frame used a fallback depth source. */
+  depthTexture: THREE.DepthTexture | null;
+  depthSource: "scene-depth-texture" | "fallback-texture";
+  cocStorageFormat: GroundGlassCocStorageFormat;
+  cocStorageMaxMm: number;
+  footprintStorageMaxMm: number;
+  targetStorage: Readonly<Record<"scene" | "coc" | "far" | "near" | "composite", Readonly<{
+    width: number;
+    height: number;
+    format: number;
+    type: number;
+    colorSpace: string;
+    samples: number;
+  }>>>;
+  camera: Readonly<{
+    near: number;
+    far: number;
+    projectionMatrix: readonly number[];
+    projectionMatrixInverse: readonly number[];
+    matrixWorld: readonly number[];
+    matrixWorldInverse: readonly number[];
+  }>;
+  renderQuality: string;
   physical: GroundGlassPhysicalRenderState;
   displayExposure: number;
 }>;
@@ -1757,8 +1789,13 @@ function OffscreenRenderer({
           compositeOutputTarget: finalDiagnosticRT,
         },
       } = post.targets;
-      // prefer the renderTarget.depthTexture when available, otherwise use a 1.0 depth fallback
-      const depthTex = (renderTarget.current as unknown as { depthTexture?: THREE.Texture }).depthTexture ?? fallbackDepthRef.current ?? null;
+      // The optional probe receives the actual attachment separately from the
+      // fallback so a depth read cannot be mistaken for scene geometry depth.
+      const actualDepthTexture = (renderTarget.current as unknown as {
+        depthTexture?: THREE.DepthTexture;
+      }).depthTexture ?? null;
+      // Prefer the renderTarget.depthTexture when available, otherwise use a 1.0 depth fallback.
+      const depthTex = actualDepthTexture ?? fallbackDepthRef.current ?? null;
       // A missing depth texture is surfaced through diagnostics. Keep the DOF
       // path active with the explicit far-depth texture instead of silently
       // changing the user's preview to Raw RTT.
@@ -2027,12 +2064,48 @@ function OffscreenRenderer({
 
       if (import.meta.env.DEV && hdrColor && !rawDebug && frameGeneration && frameRequest && developmentProbeFrame) {
         try {
+          const describeTargetStorage = (target: THREE.WebGLRenderTarget) => ({
+            width: target.width,
+            height: target.height,
+            format: target.texture.format,
+            type: target.texture.type,
+            colorSpace: target.texture.colorSpace,
+            samples: target.samples,
+          });
           developmentProbeFrame({
             renderer,
             generation: frameGeneration,
             request: frameRequest,
             frameId: `${frameGeneration.generationId}:frame:${frameSequenceRef.current + 1}`,
-            targets: { scene: sourceRenderTarget, far: gatherRT, near: nearGatherRT, composite: finalRT },
+            resourceGeneration: resourceGenerationRef.current,
+            targets: {
+              scene: sourceRenderTarget,
+              far: gatherRT,
+              near: nearGatherRT,
+              composite: finalRT,
+            },
+            cocTarget: cocRT,
+            depthTexture: actualDepthTexture,
+            depthSource: isFallbackDepth ? "fallback-texture" : "scene-depth-texture",
+            cocStorageFormat: post.cocStorageFormat,
+            cocStorageMaxMm,
+            footprintStorageMaxMm,
+            targetStorage: {
+              scene: describeTargetStorage(sourceRenderTarget),
+              coc: describeTargetStorage(cocRT),
+              far: describeTargetStorage(gatherRT),
+              near: describeTargetStorage(nearGatherRT),
+              composite: describeTargetStorage(finalRT),
+            },
+            camera: {
+              near: cam.near,
+              far: cam.far,
+              projectionMatrix: Array.from(cam.projectionMatrix.elements),
+              projectionMatrixInverse: Array.from(cam.projectionMatrixInverse.elements),
+              matrixWorld: Array.from(cam.matrixWorld.elements),
+              matrixWorldInverse: Array.from(cam.matrixWorldInverse.elements),
+            },
+            renderQuality: String(renderQuality ?? "standard"),
             physical: physicalRenderState,
             displayExposure: Number(copyMaterial.uniforms.displayExposure.value),
           });
