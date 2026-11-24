@@ -16,15 +16,16 @@ import { collectSceneGraphCapacity } from "../../render/sceneCapacityProfiling";
 
 type ArchitectureRiseResources = Readonly<Record<string, unknown>>;
 
-const EXPECTED_ARCHITECTURE_RISE_CAPACITY = {
-  meshCount: 474,
-  renderableMeshCount: 474,
+// The pre-streetscape subject with only the three unsupported street seams removed.
+const EXPECTED_PRESERVED_CAPACITY = {
+  meshCount: 471,
+  renderableMeshCount: 471,
   uniqueGeometryCount: 63,
   uniqueMaterialCount: 17,
   uniqueTextureCount: 18,
-  triangleCount: 6734,
-  effectiveTriangleCount: 6734,
-  renderableEffectiveTriangleCount: 6734,
+  triangleCount: 6698,
+  effectiveTriangleCount: 6698,
+  renderableEffectiveTriangleCount: 6698,
 } as const;
 
 const sha256 = (bytes: ArrayBufferView): string =>
@@ -93,15 +94,31 @@ const groupGeometrySignature = (group: THREE.Group): string => {
   return createHash("sha256").update(JSON.stringify(meshes)).digest("hex");
 };
 
+const preservedSubjectEvidence = (group: THREE.Group) => {
+  const environment = group.getObjectByName("architecture-rise-urban-environment");
+  if (!environment) throw new Error("The registered subject is missing its urban environment");
+  environment.removeFromParent();
+  try {
+    return {
+      signature: groupGeometrySignature(group),
+      capacity: collectSceneGraphCapacity(group),
+    };
+  } finally {
+    group.add(environment);
+  }
+};
+
+const EXPECTED_PRESERVED_SIGNATURE = "eeea2c231c42c6184d25f9a540c97f8c198427adc5bb5afe1f3e4ef4fa67f121";
+
 describe("Architecture Rise material variation baseline", () => {
   it("records the current canonical material and mounted geometry signatures", () => {
     const group = createArchitectureRiseGroup({ presentation: ARCHITECTURE_RISE_PRESENTATION });
     const resources = group.userData.resources as ArchitectureRiseResources;
     try {
-      expect(groupGeometrySignature(group)).toBe(
-        "280080d8806991845b56aaf2f2ea2ad5aba6b0407213bbcc29fdbf168e9f4da4",
-      );
-      expect(collectSceneGraphCapacity(group)).toMatchObject(EXPECTED_ARCHITECTURE_RISE_CAPACITY);
+      expect(preservedSubjectEvidence(group)).toMatchObject({
+        signature: EXPECTED_PRESERVED_SIGNATURE,
+        capacity: EXPECTED_PRESERVED_CAPACITY,
+      });
       expect(createHash("sha256").update(JSON.stringify(resourceMaterialSnapshot(resources))).digest("hex"))
         .toBe("eb7c64c6ce11ba1330fd533b6a16d6b68ad251e8b039fe0b91865ecf31ce71bc");
       const facade = resources.facade as THREE.MeshStandardMaterial;
@@ -182,12 +199,21 @@ describe("Architecture Rise material variation baseline", () => {
     const firstResources = first.userData.resources as ArchitectureRiseResources;
     const secondResources = second.userData.resources as ArchitectureRiseResources;
     try {
-      expect(groupGeometrySignature(first)).toBe(
-        "280080d8806991845b56aaf2f2ea2ad5aba6b0407213bbcc29fdbf168e9f4da4",
-      );
+      const firstPreserved = preservedSubjectEvidence(first);
+      expect(firstPreserved).toMatchObject({
+        signature: EXPECTED_PRESERVED_SIGNATURE,
+        capacity: EXPECTED_PRESERVED_CAPACITY,
+      });
+      expect(preservedSubjectEvidence(second)).toEqual(firstPreserved);
       expect(groupGeometrySignature(second)).toBe(groupGeometrySignature(first));
-      expect(collectSceneGraphCapacity(first)).toMatchObject(EXPECTED_ARCHITECTURE_RISE_CAPACITY);
-      expect(collectSceneGraphCapacity(second)).toMatchObject(EXPECTED_ARCHITECTURE_RISE_CAPACITY);
+      const district = first.getObjectByName("architecture-rise-urban-environment")!;
+      const replayDistrict = second.getObjectByName(district.name)!;
+      const road = district.getObjectByName("architecture-rise-urban-sett-pavement") as THREE.Mesh;
+      const replayRoad = replayDistrict.getObjectByName(road.name) as THREE.Mesh;
+      expect(collectSceneGraphCapacity(replayDistrict)).toEqual(collectSceneGraphCapacity(district));
+      expect(replayRoad.material).not.toBe(road.material);
+      expect(materialSignature(replayRoad.material as THREE.Material))
+        .toEqual(materialSignature(road.material as THREE.Material));
       expect(resourceMaterialSnapshot(secondResources)).toEqual(resourceMaterialSnapshot(firstResources));
       expect(firstResources.facade).not.toBe(secondResources.facade);
       expect((firstResources.facade as THREE.MeshStandardMaterial).map)
