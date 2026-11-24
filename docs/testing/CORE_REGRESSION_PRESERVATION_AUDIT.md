@@ -77,6 +77,12 @@ All nine retained source-history fetch steps succeeded; their individually repor
 
 The GitHub run measured the full suite and required gates, not the Core candidate. Candidate-on-GitHub runtime and billed runner minutes/cost remain `NOT_MEASURED`; job elapsed time is not billing evidence. This runner measurement is not directly comparable to the local macOS timings above.
 
+### Final PR-head rerun
+
+After the measurement record was committed, final B4 head `023d90e5008a6aa3c66e47f886083398c9e16ef2` (base `af680d7f9409bab13c6654abaaa2dad5aeac8079`) ran as GitHub workflow #2217, event `pull_request`, Ubuntu `ubuntu-26.04`, Node 24. The successful second attempt interval was 17m36s; the `ci` job took 17m29s. Trigger-to-final completion was 25m10s across the first attempt and retry. All nine retained source-history fetches passed (7 s summed at whole-second precision), `npm run test` passed 354 files / 4,384 tests (Vitest 306.02 s; 306 s step wall time), ordinary Chromium passed 2/2 (135 s), Production Preview passed 4/4 (454 s), M7R integrity passed with its historical `not-qualified` conclusion, M7V policy passed, and deployment was skipped. The historical decision remained `NOT_APPLICABLE` for the documentation-only change.
+
+The first attempt of #2217 failed one declaration in `groundGlassM7mSceneReadiness.test.ts` (353 files passed; 4,383 tests passed) when its synthetic shallow-checkout test hit `ENOENT` while `lstat`-copying a transient `.m7k-qualification-*` directory under the checkout. This is consistent with a race between the repository snapshot and a temporary qualification directory; it is an inference from the trace, not a reproduced root-cause diagnosis. Retrying only the failed `ci` job passed the entire suite and all later browser/M7 gates. Keep the first failure visible: the retry demonstrates that the failure did not reproduce, but it does not prove the test is race-free. No test, CI, or production file was modified to address it.
+
 The local full-versus-candidate Vitest steps differ by 73.015 s in Run 1 and 107.809 s in Run 2. Those are measured differences for this macOS environment only. They are not GitHub candidate estimates, billed-time estimates, full-workflow savings, or a basis to apply the same delta to CI. The full `ci:local` command includes CSS, lint, typecheck, build, and Vitest; the candidate command does not repeat those other steps, so command totals are not an end-to-end comparison.
 
 ## Candidate and exclusion reconciliation
@@ -130,7 +136,7 @@ The archive lane validates frozen artifacts, evaluator output, retained source i
 - 271 inventory rows are `INVENTORY_ONLY`; their declaration names and case counts are captured, but full assertion-body and sibling-equivalence review is not complete. All remain Category D and mandatory.
 - Static imports/re-exports and literal mocks are recorded, but this is not a complete runtime dependency graph.
 - No full development E2E matrix, native WebGPU experiment, visual/raster qualification, or full historical archive replay was run as part of the local baseline.
-- The exact-head full GitHub job and step timings are measured in run #2215. Candidate-on-GitHub timing and billed runner minutes/cost remain `NOT_MEASURED`; no matched cost comparison was available.
+- Exact-head full GitHub job and step timings are measured in run #2215 and final-head run #2217 attempt 2. The first #2217 attempt had one M7M temporary-directory `ENOENT` and the failed `ci` job was retried successfully. Candidate-on-GitHub timing and billed runner minutes/cost remain `NOT_MEASURED`; no matched cost comparison was available.
 - The local report files are ignored worktree artifacts; the committed JSON inventory and this measurement record preserve their key results, hashes, source identity, and commands. The candidate-vs-omitted mutation used an isolated clone at the same `af680d7f` base.
 
-The next step is to keep full mandatory GitHub Vitest while closing the specific ownership/mutation gaps listed in the decision record. Run #2215 establishes a full-suite timing baseline, but does not establish Core-candidate savings.
+The next step is to keep full mandatory GitHub Vitest while closing the specific ownership/mutation gaps listed in the decision record. Runs #2215 and #2217 establish full-suite timing baselines, but do not establish Core-candidate savings.
