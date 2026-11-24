@@ -74,12 +74,15 @@ describe("historical evidence change routing", () => {
     const audited = [
       "src/tests/unit/roomAtDawnCaptureSync.test.ts",
       "src/tests/unit/roomAtDawnReflectionCapture.test.ts",
+      "src/tests/unit/roomAtDawnComparisonCapture.test.ts",
     ];
     const fixtures = [
       [audited[0], "test-sync", "ee7563ca79ca477988bcde5a7d515526b45506ba209bebe890150ae156a1b037"],
       ["experiments/room-at-dawn/capture-sync.cjs", "helper-sync", "d8ec1b767a648759cc0242c2b78ddb1a255befcd3ccf737cac8c464ccad10874"],
       [audited[1], "test-reflection", "b7993e6674135708663cc6f507c89d7104e31fb681ef0ca326f83dff95ee42ae"],
       ["experiments/room-at-dawn/reflection-capture.js", "helper-reflection", "75b358799453fd9b5b8cde386b03cbbbfbfaa74a819f1d0325d1fcb27d678ebf"],
+      [audited[2], "test-comparison", "aca2d1ce20cd31c52dde8d5391371fc870af1574ec339d3ee25eb6c5c144d58c"],
+      ["experiments/room-at-dawn/comparison-capture.ts", "helper-comparison", "9f5747c40f86cc016a4f4a1bb09413ef3f5b969ef89bc7bc8a0969e5bd12b597"],
     ];
     const temp = mkdtempSync(resolve(tmpdir(), "historical-capture-audit-"));
     try {
@@ -102,18 +105,19 @@ describe("historical evidence change routing", () => {
 
       for (const path of audited) expect(route([path])).toMatchObject({ decision: "NOT_APPLICABLE", families: [], broad: false });
       expect(route(audited)).toMatchObject({ decision: "NOT_APPLICABLE", families: [], broad: false });
-      for (const helper of ["experiments/room-at-dawn/capture-sync.cjs", "experiments/room-at-dawn/reflection-capture.js"]) {
+      for (const helper of ["experiments/room-at-dawn/capture-sync.cjs", "experiments/room-at-dawn/reflection-capture.js", "experiments/room-at-dawn/comparison-capture.ts"]) {
         expect(route([helper])).toMatchObject({ decision: "NOT_APPLICABLE", families: [], broad: false });
       }
-      for (const unknown of ["src/tests/unit/roomAtDawnCaptureSyncExtra.test.ts", "src/tests/unit/roomAtDawnReflectionCapture.test.ts.backup", "src/tests/unit/roomatdawncapturesync.test.ts", "src/tests/unit/newCaptureEvidence.test.ts"]) {
-        expect(route([audited[0], unknown])).toMatchObject({ decision: "UNVERIFIED", families: allFamilies, broad: true });
+      for (const unknown of ["src/tests/unit/roomAtDawnCaptureSyncExtra.test.ts", "src/tests/unit/roomAtDawnReflectionCapture.test.ts.backup", "src/tests/unit/roomAtDawnComparisonCaptureExtra.test.ts", "src/tests/unit/roomatdawncapturesync.test.ts", "src/tests/unit/newCaptureEvidence.test.ts"]) {
+        for (const owner of audited) {
+          expect(route([owner, unknown])).toMatchObject({ decision: "UNVERIFIED", families: allFamilies, broad: true });
+        }
       }
       for (const [path, contents] of fixtures) {
         const target = resolve(temp, path);
-        const owner = path.includes("reflection") || path.includes("Reflection") ? audited[1] : audited[0];
-        const helper = owner === audited[1]
-          ? "experiments/room-at-dawn/reflection-capture.js"
-          : "experiments/room-at-dawn/capture-sync.cjs";
+        const pairIndex = Math.floor(fixtures.findIndex(([fixturePath]) => fixturePath === path) / 2);
+        const owner = audited[pairIndex];
+        const helper = fixtures[pairIndex * 2 + 1][0];
         writeFileSync(target, `${contents}-modified`);
         for (const trigger of [owner, helper]) {
           expect(route([trigger])).toMatchObject({ decision: "UNVERIFIED", families: allFamilies, broad: true });
@@ -133,6 +137,7 @@ describe("historical evidence change routing", () => {
       }
       const historical = "docs/architecture/ground-glass-m7e-r187-gather-b1/captures/architecture-rise.json";
       expect(route([...audited, historical])).toMatchObject({ decision: "QUALIFIED", families: classifyChangedPaths([historical]).families, broad: false });
+      expect(route([audited[2], historical])).toMatchObject({ decision: "QUALIFIED", families: classifyChangedPaths([historical]).families, broad: false });
     } finally { rmSync(temp, { recursive: true, force: true }); }
   });
 

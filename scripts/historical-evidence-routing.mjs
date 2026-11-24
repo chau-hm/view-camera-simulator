@@ -25,6 +25,14 @@ const nonHistoricalCaptureAudits = new Map([
     ["src/tests/unit/roomAtDawnReflectionCapture.test.ts", "b7993e6674135708663cc6f507c89d7104e31fb681ef0ca326f83dff95ee42ae"],
     ["experiments/room-at-dawn/reflection-capture.js", "75b358799453fd9b5b8cde386b03cbbbfbfaa74a819f1d0325d1fcb27d678ebf"],
   ]],
+  // Audited from room-at-dawn PR #359 commit ba99cf13a776ffec65c505eed60687d8f7522b91:
+  // test blob ddf5770bddabc075b03a222d74e993290cb2edf6 imports only the
+  // local helper blob 0074da9623269dd68c8965b064c0fc0ba0e9fd99, which has
+  // no runtime imports; neither consumes retained historical evidence.
+  ["src/tests/unit/roomAtDawnComparisonCapture.test.ts", [
+    ["src/tests/unit/roomAtDawnComparisonCapture.test.ts", "aca2d1ce20cd31c52dde8d5391371fc870af1574ec339d3ee25eb6c5c144d58c"],
+    ["experiments/room-at-dawn/comparison-capture.ts", "9f5747c40f86cc016a4f4a1bb09413ef3f5b969ef89bc7bc8a0969e5bd12b597"],
+  ]],
 ]);
 // The imported helper is itself an input to the audit: a PR that changes
 // only that helper must not bypass the same checkout-byte verification.
