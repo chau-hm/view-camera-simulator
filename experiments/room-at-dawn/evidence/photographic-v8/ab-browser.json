@@ -1,0 +1,45 @@
+{
+  "status": "passed",
+  "url": "http://127.0.0.1:5215/view-camera-simulator/experiments/room-at-dawn/optics.html",
+  "report": {
+    "gpu": {
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)"
+    },
+    "gi": {
+      "expected": 302,
+      "baked": 302,
+      "matched": 302,
+      "missing": [],
+      "mismatch": [],
+      "stale": [],
+      "invalid": [],
+      "duplicateKeys": 0
+    },
+    "captures": [
+      {
+        "slot": "A",
+        "requestId": "room-request-4",
+        "generationId": "room-generation-2",
+        "frameId": "room-generation-2:frame:6",
+        "width": 960,
+        "height": 720
+      },
+      {
+        "slot": "B",
+        "requestId": "room-request-6",
+        "generationId": "room-generation-2",
+        "frameId": "room-generation-2:frame:15",
+        "width": 960,
+        "height": 720
+      }
+    ],
+    "focus": 1570,
+    "dimensions": [
+      960,
+      720
+    ]
+  },
+  "sourceCommit": "2e1b6287",
+  "note": "Browser test covers completed capture, changed-state disclosure and cancellation on input and both unmount paths; timeout/failure paths not directly exercised."
+}
