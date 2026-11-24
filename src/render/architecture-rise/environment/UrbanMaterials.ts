@@ -41,14 +41,17 @@ function stonePattern(name: string, width: number, depth: number, color: THREE.C
 }
 
 export function createUrbanMaterials(groundTint: THREE.Color) {
-  const roadColor = new THREE.Color("#8a8377").lerp(groundTint, 0.12);
+  const roadColor = new THREE.Color("#827a6f").lerp(groundTint, 0.12);
   const stone = (name: string, color: string, pattern: "limestone" | "plaster" | "cut-stone") =>
     Object.assign(createProceduralSurfaceMaterial({
       color, pattern, repeat: [1, 1], roughness: 0.93, normalStrength: 0.09,
     }), { name });
-  const districtBrick = (name: string, color: string) => {
-    const material = stonePattern(name, 7, 7, color);
-    material.userData.urbanFacadeTileMm = [1370, 518];
+  const masonry = (
+    name: string, color: string,
+    columns: number, courses: number, tileMm: readonly [number, number],
+  ) => {
+    const material = stonePattern(name, columns, courses, color);
+    material.userData.urbanFacadeTileMm = tileMm;
     return material;
   };
   return {
@@ -56,9 +59,9 @@ export function createUrbanMaterials(groundTint: THREE.Color) {
     flags: stonePattern("flags", 3, 4, "#a99e8c"),
     pavingTrim: solid("granite-curb", "#a69d8f"),
     drainage: solid("drainage-channel", "#6c6962"),
-    limestone: stone("limestone", "#af9f86", "limestone"),
-    tanBrick: districtBrick("buff-brick", "#9d8673"),
-    umberBrick: districtBrick("umber-brick", "#927767"),
+    limestone: masonry("limestone", "#ad9e88", 4, 7, [1740, 1460]),
+    tanBrick: masonry("buff-brick", "#9d8673", 7, 7, [1370, 518]),
+    umberBrick: masonry("umber-brick", "#927767", 7, 7, [1370, 518]),
     plaster: stone("plaster", "#b4a99a", "plaster"),
     band: solid("window-stone", "#b1a48e"),
     roof: stonePattern("slate", 6, 7, "#605f5e"),

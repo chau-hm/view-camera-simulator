@@ -15,17 +15,21 @@ type Townhouse = {
   bays: number;
   finish: FacadeFinish;
   shop?: true;
+  dressed?: true;
 };
 
 const townhouses: readonly Townhouse[] = [
-  { id: "east-corner-shop", x: 5090, z: 8450, width: 2280, depth: 1690, eaves: 2550, roofRise: 570, floors: 2, bays: 3, finish: "limestone", shop: true },
+  { id: "east-corner-shop", x: 5090, z: 8450, width: 2280, depth: 1690, eaves: 2550, roofRise: 570, floors: 2, bays: 3, finish: "limestone", shop: true, dressed: true },
   { id: "east-pale-terrace", x: 4520, z: 10475, width: 2120, depth: 1380, eaves: 2730, roofRise: 520, floors: 2, bays: 3, finish: "plaster" },
   { id: "east-rear-terrace", x: 3780, z: 12375, width: 2400, depth: 1490, eaves: 2400, roofRise: 490, floors: 2, bays: 3, finish: "tanBrick" },
   { id: "east-lane-end", x: 6700, z: 12250, width: 2320, depth: 1720, eaves: 3000, roofRise: 670, floors: 3, bays: 3, finish: "umberBrick" },
-  { id: "west-corner-house", x: -3780, z: 9625, width: 2440, depth: 2010, eaves: 2490, roofRise: 630, floors: 2, bays: 3, finish: "limestone" },
+  { id: "west-corner-house", x: -3780, z: 9625, width: 2440, depth: 2010, eaves: 2490, roofRise: 630, floors: 2, bays: 3, finish: "limestone", dressed: true },
   { id: "west-stone-row", x: -6510, z: 9695, width: 2400, depth: 1840, eaves: 2780, roofRise: 560, floors: 2, bays: 3, finish: "tanBrick" },
   { id: "west-rear-terrace", x: -3885, z: 12140, width: 1970, depth: 1940, eaves: 2750, roofRise: 570, floors: 2, bays: 2, finish: "plaster" },
   { id: "west-lane-end", x: -6300, z: 12190, width: 2200, depth: 1850, eaves: 2350, roofRise: 510, floors: 2, bays: 3, finish: "umberBrick" },
+  { id: "west-row-extension", x: -9320, z: 9825, width: 2480, depth: 2130, eaves: 2920, roofRise: 640, floors: 3, bays: 3, finish: "plaster" },
+  { id: "west-end-terrace", x: -12000, z: 10265, width: 2530, depth: 1800, eaves: 2540, roofRise: 610, floors: 2, bays: 3, finish: "umberBrick" },
+  { id: "rear-court", x: -1570, z: 12450, width: 1760, depth: 1480, eaves: 2230, roofRise: 380, floors: 2, bays: 2, finish: "tanBrick" },
 ];
 
 type Opening = {
@@ -107,6 +111,13 @@ function addElevation(
     }
     place(casework, w + 75, 48, 65, u, top + 19, -21);
     place(casework, w + (kind === "door" ? 105 : 100), 38, 89, u, sill + 2, -29);
+    if (house.dressed && kind !== "shop") {
+      place(casework, w + 107, 21, 77, u, top + 48, -25);
+      if (kind === "sash") {
+        place(casework, w * .55, 22, 54, u, sill - 28, -14);
+        place(materials.band, 72, 49, 49, u, top + 42, -44);
+      }
+    }
     if (kind === "door") {
       place(materials.band, w + 175, 37, 143, u, 18.5, -81);
       place(materials.timber, 26, 16, 20, u + w * .31, mid - 35, 67);
@@ -120,6 +131,13 @@ function addElevation(
 
   for (const [y, height, depth] of [[house.eaves - 92, 47, 60], [house.eaves - 32, 56, 108]]) {
     place(materials.band, width + 26, height, depth, 0, y, 9);
+  }
+  if (house.dressed) {
+    const brackets = Math.floor(width / 196);
+    for (let i = 0; i < brackets; i++) {
+      const u = ((i + 0.5) / brackets - 0.5) * width;
+      place(materials.band, 55, 38, 56, u, house.eaves - 133, -15);
+    }
   }
   if (face.front && house.shop) {
     const span = width * .67;

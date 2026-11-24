@@ -36,12 +36,13 @@ function pavedSurface(
 
 export function addUrbanStreet(root: THREE.Group, m: UrbanMaterials, groundY: number) {
   const [front, back] = [-2000, 13520];
+  const [westernEdge, easternEdge] = [-13430, 8000];
   const street = localGroup(root, "street");
-  pavedSurface(street, "architecture-rise-urban-sett-pavement", m.setts, [-8000, 8000, front, back], groundY + 3, [1090, 710]);
+  pavedSurface(street, "architecture-rise-urban-sett-pavement", m.setts, [westernEdge, easternEdge, front, back], groundY + 3, [1090, 710]);
   // The existing raised near pavement sits inside this open street apron.
   // Sidewalks stop short of the teaching frontage and the canonical cube sites.
   for (const [label, west, east, start, end] of [
-    ["west-walk", -7990, -2310, 8040, 13430],
+    ["west-walk", westernEdge + 10, -2310, 8040, 13430],
     ["east-walk", 3450, 7990, 7180, 13430],
     ["hero-apron", -1620, 2000, 8370, 10890],
   ] as const) {
@@ -64,7 +65,11 @@ export function addUrbanStreet(root: THREE.Group, m: UrbanMaterials, groundY: nu
     curb.box(m.drainage, [east - west, 5, 54], [(west + east) / 2, groundY + 5, start - 64]);
     curb.mount();
   }
-  pavedSurface(street, "architecture-rise-urban-foreground-pavement", m.flags, [-8000, 8000, -2000, 1660], groundY + 8, [1870, 1960]);
+  // A thin contrasting sett course follows the drainage slope across the
+  // scene. It stays flush with the road underneath the freestanding references.
+  pavedSurface(street, "architecture-rise-urban-sett-gutter", m.drainage,
+    [westernEdge, easternEdge, 7770, 7810], groundY + 4, [600, 600]);
+  pavedSurface(street, "architecture-rise-urban-foreground-pavement", m.flags, [westernEdge, easternEdge, front, 1660], groundY + 8, [1870, 1960]);
 }
 
 function addBollards(root: THREE.Group, m: UrbanMaterials, y: number, name: string, positions: readonly (readonly [number, number])[]) {
@@ -112,10 +117,12 @@ function addTree(root: THREE.Group, m: UrbanMaterials, x: number, y: number, z: 
     batch.tube(m.treeBark, at(-23, low, 20), at(dx, by, dz), 22 * size, 9 * size);
     for (let lobe = 0; lobe < 5; lobe++) {
       const a = angle + lobe * 1.256637;
-      const radius = (185 + ((branch * 13 + lobe * 53) % 91)) * size;
+      const radius = (144 + ((branch * 13 + lobe * 53) % 97)) * size;
       const c = at(dx + Math.cos(a) * 138, by + (lobe % 3) * 97, dz + Math.sin(a) * 137);
       const geometry = new THREE.IcosahedronGeometry(toWorld(radius), 1);
-      batch.round(foliage[(branch + lobe) % foliage.length], geometry, c, [1.12, .83, 1]);
+      batch.round(foliage[(branch + lobe) % foliage.length], geometry, c, [1.14, .78, 1]);
+      const tip = at(dx + Math.cos(a + .37) * 251, by + 70 + (lobe % 3) * 92, dz + Math.sin(a + .37) * 205);
+      batch.round(foliage[(branch + lobe + 1) % foliage.length], new THREE.IcosahedronGeometry(toWorld(radius * .49), 0), tip, [1.2, .67, 1]);
     }
   }
   batch.mount();
