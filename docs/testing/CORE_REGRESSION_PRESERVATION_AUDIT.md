@@ -57,9 +57,27 @@ The current exact-base browser runs were separately executed:
 
 Those focused browser reports record commit `af680d7f`, stable during execution. Their only dirty-state entry was the untracked audit inventory JSON in the disposable checkout; no tracked source was changed. The browser reports' source-state fingerprint therefore differs from the clean full/candidate fingerprint.
 
-The local full-versus-candidate Vitest steps differ by 73.015 s in Run 1 and 107.809 s in Run 2. Those are measured differences for this macOS environment only. They are not GitHub runner estimates, billed-time estimates, full-workflow savings, or a basis to apply the same delta to CI. The full `ci:local` command includes CSS, lint, typecheck, build, and Vitest; the candidate command does not repeat those other steps, so command totals are not an end-to-end comparison.
+## Exact-head GitHub Actions evidence
 
-Exact-current-source GitHub Actions job duration, runner minutes, source-history fetch duration, and historical qualification decision are `NOT_MEASURED` until the B4 PR head run completes. Older GitHub runs are not treated as current-source timing evidence. GitHub billing data is unavailable to this audit unless a run-level billing/runner report exposes it.
+GitHub PR run #2215 executed at head `c6b1957facf73ebaea92aee38e57cc43814c16c8`, based on `af680d7f9409bab13c6654abaaa2dad5aeac8079`. It used `ubuntu-26.04` and the workflow's Node 24 setup. The PR event completed successfully; the full workflow wall time was 17m21s and authoritative `ci` job time was 16m54s. The deploy job was skipped for the PR event.
+
+| GitHub step | Result | Measured elapsed time |
+|---|---|---:|
+| Dependency installation | Passed | 58 s |
+| Chromium installation | Passed | 19 s |
+| Lint | Passed | 24 s |
+| TypeScript check | Passed | 31 s |
+| Full Unit/Integration (`npm run test`) | 354 files / 4,384 tests passed; Vitest reported 297.51 s | 298 s step wall time |
+| Ordinary Chromium smoke | 2/2 passed | 126 s |
+| Production Preview build/isolation browser gate | 4/4 passed | 431 s |
+| M7R archive integrity | Passed; historical qualification remains `not-qualified` | 1 s |
+| M7V policy/skip governance | Passed | 5 s |
+
+All nine retained source-history fetch steps succeeded; their individually reported durations sum to 9 s at whole-second precision (0–2 s per step). The historical qualification decision job completed in 11 s and reported `NOT_APPLICABLE` for this docs-only PR; its machine-readable result artifact was retained (761 bytes, SHA-256 `1ae3820d673c2d247b073f3848bb324473d0cfefba676888d4e1dfcb1b28932c`). This is an explicit not-applicable result, not a skipped or missing qualification.
+
+The GitHub run measured the full suite and required gates, not the Core candidate. Candidate-on-GitHub runtime and billed runner minutes/cost remain `NOT_MEASURED`; job elapsed time is not billing evidence. This runner measurement is not directly comparable to the local macOS timings above.
+
+The local full-versus-candidate Vitest steps differ by 73.015 s in Run 1 and 107.809 s in Run 2. Those are measured differences for this macOS environment only. They are not GitHub candidate estimates, billed-time estimates, full-workflow savings, or a basis to apply the same delta to CI. The full `ci:local` command includes CSS, lint, typecheck, build, and Vitest; the candidate command does not repeat those other steps, so command totals are not an end-to-end comparison.
 
 ## Candidate and exclusion reconciliation
 
@@ -112,7 +130,7 @@ The archive lane validates frozen artifacts, evaluator output, retained source i
 - 271 inventory rows are `INVENTORY_ONLY`; their declaration names and case counts are captured, but full assertion-body and sibling-equivalence review is not complete. All remain Category D and mandatory.
 - Static imports/re-exports and literal mocks are recorded, but this is not a complete runtime dependency graph.
 - No full development E2E matrix, native WebGPU experiment, visual/raster qualification, or full historical archive replay was run as part of the local baseline.
-- Matched GitHub-hosted timing and billed runner minutes are `NOT_MEASURED` at documentation authoring time; inspect the exact B4 PR head Actions before finalizing a GitHub cost claim.
+- The exact-head full GitHub job and step timings are measured in run #2215. Candidate-on-GitHub timing and billed runner minutes/cost remain `NOT_MEASURED`; no matched cost comparison was available.
 - The local report files are ignored worktree artifacts; the committed JSON inventory and this measurement record preserve their key results, hashes, source identity, and commands. The candidate-vs-omitted mutation used an isolated clone at the same `af680d7f` base.
 
-The next step is to keep full mandatory GitHub Vitest while collecting exact-head GitHub workflow evidence and closing the specific ownership/mutation gaps listed in the decision record.
+The next step is to keep full mandatory GitHub Vitest while closing the specific ownership/mutation gaps listed in the decision record. Run #2215 establishes a full-suite timing baseline, but does not establish Core-candidate savings.

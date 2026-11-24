@@ -4,7 +4,7 @@
 
 # `RETAIN_FULL_GITHUB_SUITE`
 
-Keep `npm run test` on every authoritative GitHub `ci` execution. Do not replace it with the 48-file Core Regression candidate in this change. This is the final B4 decision because the candidate has demonstrated blind spots, the owner map is not complete enough for GitHub impact routing, historical evaluator/provenance Unit contracts do not have equivalent conditional owners, and current-source GitHub runner-time evidence is insufficient to justify the added routing complexity.
+Keep `npm run test` on every authoritative GitHub `ci` execution. Do not replace it with the 48-file Core Regression candidate in this change. This is the final B4 decision because the candidate has demonstrated blind spots, the owner map is not complete enough for GitHub impact routing, and historical evaluator/provenance Unit contracts do not have equivalent conditional owners. The full GitHub run is now measured; candidate-on-GitHub timing and billed runner cost remain unavailable, so there is no matched savings evidence to justify added routing complexity.
 
 This decision does not make the audit unsuccessful. It resolves B3's `CORE_REGRESSION_NEEDS_REVIEW` by retaining the current gate until the required preservation proof exists.
 
@@ -16,10 +16,12 @@ This decision does not make the audit unsuccessful. It resolves B3's `CORE_REGRE
 | Core candidate, same local source/tool/worker conditions | 48 files / 611 cases; 11.012 s and 16.223 s | Measured candidate-only Vitest steps; not an equivalent full Local CI pipeline |
 | Paired local Vitest step differences | 73.015 s and 107.809 s | Run-to-run variation is substantial; descriptive only, not a GitHub or billing projection |
 | Full `ci:local` duration | 160.413 s and 163.271 s | Includes CSS check, lint, typecheck, full Vitest, and build |
-| Current exact B4 PR-head GitHub CI duration | `NOT_MEASURED` until the published PR's checks complete | Record actual job and step timestamps from that exact head before claiming current GitHub runtime |
-| Current GitHub billed runner minutes / cost | `NOT_MEASURED` | No billing evidence is available from local measurements or job elapsed timestamps alone |
-| Candidate runtime on GitHub-hosted runner | `NOT_MEASURED` | No matched candidate/full execution exists on the same GitHub runner and source revision |
-| Historical decision and source-history fetch timing on exact B4 PR head | `NOT_MEASURED` until the published run completes | Use the actual historical-qualification job and source-fetch step logs; do not substitute older PR runs |
+| Current exact B4 PR-head GitHub workflow | Run #2215, `pull_request`, head `c6b1957facf73ebaea92aee38e57cc43814c16c8`, base `af680d7f9409bab13c6654abaaa2dad5aeac8079`; Ubuntu `ubuntu-26.04`, Node 24 | Entire workflow 17m21s; authoritative `ci` job 16m54s; both concluded success |
+| GitHub `ci` step durations | Install 58s; Chromium setup 19s; lint 24s; typecheck 31s; full Unit/Integration 298s; ordinary smoke 126s; Production Preview 431s; M7R 1s; M7V 5s | Measured step wall times from GitHub job timestamps. Vitest reported 354 files / 4,384 tests passed in 297.51s. Browser results: 2/2 and 4/4 passed. Production Preview step includes its production build/browser qualification. |
+| Historical qualification on exact B4 PR head | Decision job 11s; result `NOT_APPLICABLE`; result artifact 761 bytes, SHA-256 `1ae3820d673c2d247b073f3848bb324473d0cfefba676888d4e1dfcb1b28932c` | Changed-mode qualification ran and preserved an explicit result; docs-only change selected no historical family. |
+| Retained source-history fetches | 9 steps; all passed; summed reported step wall time 9s | Sum of per-step GitHub timestamps (rounded to whole seconds); per-fetch values were 0–2s |
+| Current GitHub billed runner minutes / cost | `NOT_MEASURED` | GitHub API job elapsed times are not billed-runner usage data |
+| Core candidate runtime on GitHub-hosted runner | `NOT_MEASURED` | No matched candidate/full execution exists on the same GitHub runner and source revision |
 
 Local candidate runtime is shorter in both matched pairs, but full and candidate times each vary materially between runs. These measurements show only a smaller local Vitest selection, not a stable saving or whole-workflow reduction. Ordinary browser smoke, Production Preview, package installation, Chromium setup, build, source-history fetches, job startup, and historical qualification remain separate costs. Neither paired local difference can be applied to total GitHub elapsed time or billed runner minutes.
 
@@ -27,7 +29,7 @@ Local candidate runtime is shorter in both matched pairs, but full and candidate
 
 | Option | Coverage model | Advantages | B4 evidence and risks | Decision |
 |---|---|---|---|---|
-| A — Retain full mandatory Vitest | Run `npm run test` on every authoritative application CI event | Existing, simple, independent proof across all 354 files / 4,384 cases; no changed-file classifier can omit a test; preserves all M7 Unit contracts | Continues full Vitest cost. Cost should first be measured from exact current GitHub Actions logs. | **Select** |
+| A — Retain full mandatory Vitest | Run `npm run test` on every authoritative application CI event | Existing, simple, independent proof across all 354 files / 4,384 cases; no changed-file classifier can omit a test; preserves all M7 Unit contracts | Continues full Vitest cost. Exact B4 `ci` elapsed time is 16m54s; candidate-on-GitHub time and billed cost remain unmeasured. | **Select** |
 | B — Core mandatory plus automatically affected tests | Run candidate, then resolve changed files to affected tests; unknown impact must run full suite | Could reduce routine work while keeping Unit tests independent of local execution | B3 owner data is not a complete transitive dependency graph. `src/scenes/**` reports incomplete without selecting full Vitest; renderer, shared optics, fixtures, dynamic imports, schemas, and history evaluators can cross owner boundaries. Candidate misses at least the demonstrated B1 defect. | Reject for now |
 | C — Core plus dedicated domain gates | Use stable required jobs for optics, rendering, scenes, historical evaluator/provenance, and other domains | Named domain ownership could preserve contracts more clearly than one broad selector | More job startup; possible duplicate installs/builds/browser runs/source fetches; harder Required Check and skipped-result aggregation; no evidence that added jobs reduce aggregate runner time. Archive jobs do not execute active evaluator Unit tests. | Reject for now |
 | Hybrid B/C | Core plus conservative affected selection and independent domain jobs | Could eventually combine clear owners with a broad fallback | Highest routing and maintenance complexity; all impact/fail-closed and cost questions above remain unresolved. | No current authorization |
@@ -55,7 +57,7 @@ The current local owner map remains useful for developer feedback, not GitHub su
 
 Do this only if measured GitHub runtime gives a concrete reason to consider reduction:
 
-1. Update the current exact-head GitHub timing table from the B4 PR run: `ci`, historical decision, source-history fetch steps, ordinary Chromium, Production Preview, and aggregate run/job durations. Keep billed runner minutes `NOT_MEASURED` unless the provider exposes them.
+1. Preserve B4 run #2215 as the measured full-suite baseline: `ci` 16m54s, workflow 17m21s, historical decision `NOT_APPLICABLE` in 11s, and nine successful source-history fetches totaling 9s. Keep billed runner minutes and candidate-on-GitHub time `NOT_MEASURED`; obtain a same-runner comparison only if a separate shadow experiment is justified.
 2. Review the 271 `INVENTORY_ONLY` files in bounded contract-owner groups. Promote a file out of Category D only after reading its full assertions, source owner, callers, sibling tests, CI route, and realistic fault model.
 3. Extend mutation evidence to the high-impact gaps without changing production or required-CI behavior: focus/focus-plane boundaries, fixed image-circle/raster references, stale-frame and renderer generations, scene/task reachability, shared evaluator routing, exact-source provenance, and browser pixel delivery. Use throwaway worktrees and report survivors as uncovered contracts.
 4. Build a reviewed test-impact map for actual source paths, including dynamic/data/test-support dependencies and new, removed, and renamed paths. Add negative routing proof for unknown paths and every incomplete owner. An empty or incomplete impact result must resolve to full Vitest.
