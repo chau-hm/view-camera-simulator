@@ -16,15 +16,24 @@ import { createHdrReadback } from "./hdr-readback.js";
 import { createFocusTrace } from "./focus-trace.js";
 import { createFocusStageReadback } from "./focus-stage-readback.js";
 import { inspectRoomSurfaceProbes, measureRoomSurfacePatchRgba } from "./room-surface-inspection.js";
+import {
+  bindRoomComparisonIntent,
+  createRoomComparisonIntent,
+  createRoomComparisonState,
+  evaluateRoomComparisonFrame,
+  listRoomComparisonStateChanges,
+  roomComparisonIntentMatchesGuard,
+} from "./comparison-capture.ts";
 import { calculateGroundGlassNaturalIlluminationGain } from "../../src/core/optics/groundGlassNaturalIllumination.ts";
 import { calculateGroundGlassCoverageRenderGain } from "../../src/render/groundGlassCoverage.ts";
 import bakeUrl from "./vendor/bake/gi.bin?url";
 import { deriveOpticsState } from "../../src/core/optics/deriveOpticsState.ts";
+import { SIMULATOR_LENS_DEFINITIONS } from "../../src/core/optics/lensCatalog.ts";
 import { GroundGlassRTT } from "../../src/render/GroundGlassRTT.tsx";
 import { projectWorldPointToFilmPlaneGroundGlass } from "../../src/render/groundGlassFilmPlaneProjection.ts";
 import { resolveGroundGlassImageDistanceMm } from "../../src/render/groundGlassRttScenes.ts";
 import { computePhysicalCoCDiameterMm } from "../../src/core/optics/thinLensModel.ts";
-import { architectureRiseScene } from "../../src/scenes/definitions/architecture-rise.ts";
+import { roomCameraScene } from "./room-camera-scene.ts";
 import {
   DEFAULT_CAMERA_STATE,
   CAMERA_CONSTANTS,
@@ -37,14 +46,8 @@ let observerRequestSequence = 0;
 let observerGenerationSequence = 0;
 const HDR_FIELDS = { "0.1": [0.1, 0.1, 0.1], "0.5": [0.5, 0.5, 0.5], "1": [1, 1, 1], "2": [2, 2, 2], "4": [4, 4, 4], "8": [8, 8, 8], mixed: [0.1, 2, 8] };
 const focusStageEnabled = new URLSearchParams(window.location.search).get("focusStage") === "1";
-const roomBounds = { min: { x: -2400, y: -1400, z: -15000 }, max: { x: 3000, y: 3000, z: 10000 } };
-const sceneDefinition = {
-  ...architectureRiseScene,
-  bounds: roomBounds,
-  focusTargets: [],
-  compositionTargets: [],
-  cameraRigTranslationCapability: { enabled: true, axis: "x", state: "mirrorShiftLessonState" },
-};
+const sceneDefinition = roomCameraScene;
+const roomBounds = roomCameraScene.bounds;
 const ROOM_RANGE_ROW_STYLE = {
   display: "grid",
   gridTemplateColumns: "minmax(8rem, 1fr) 8ch minmax(8rem, 1.2fr)",
@@ -160,6 +163,7 @@ class RenderBoundary extends React.Component {
   }
   componentDidCatch(error) {
     if (window.__roomOptics) window.__roomOptics.renderError = String(error?.message || error);
+    this.props.onError?.(error);
   }
   render() {
     return this.state.error ? (
@@ -346,9 +350,20 @@ function App() {
     [progress, setProgress] = useState("building");
   const [presetKey, setPresetKey] = useState("wide");
   const preset = ROOM_PRESETS[presetKey];
+  const [activeReferenceStateId, setActiveReferenceStateId] = useState("");
   const [generationEpoch, setGenerationEpoch] = useState(1);
   const [hdr, setHdr] = useState(true);
-  const [renderQuality, setRenderQuality] = useState("low");
+  const [renderQuality, setRenderQuality] = useState("high");
+  const [comparisonCaptureNonce, setComparisonCaptureNonce] = useState(0);
+  const [comparisonPendingSlot, setComparisonPendingSlot] = useState(null);
+  const [comparisonStatus, setComparisonStatus] = useState("A/B captures stay in memory until replaced or cleared.");
+  const [comparisonImages, setComparisonImages] = useState({ A: null, B: null });
+  const [comparisonZoom, setComparisonZoom] = useState(1);
+  const comparisonIntentRef = useRef(null);
+  const comparisonCommittedRef = useRef(null);
+  const comparisonTimeoutRef = useRef(null);
+  const comparisonCaptureTokenRef = useRef(0);
+  const cancelComparisonCaptureRef = useRef(null);
   const [subjectMode, setSubjectMode] = useState("room");
   const [hdrField, setHdrField] = useState("mixed");
   const [hdrDepth, setHdrDepth] = useState(2.5);
@@ -546,8 +561,89 @@ function App() {
       channelId: "default",
       sceneId: sceneDefinition.id,
     }),
-    [camera, mode, rawDebug, presetKey, generationEpoch, hdr, displayExposure, reflectionsEnabled, renderQuality, subjectMode, hdrField, hdrDepth],
+    [camera, mode, rawDebug, presetKey, generationEpoch, hdr, displayExposure, reflectionsEnabled, renderQuality, subjectMode, hdrField, hdrDepth, comparisonCaptureNonce],
   );
+  const comparisonState = useMemo(() => createRoomComparisonState({
+    camera,
+    presetKey,
+    subjectMode,
+    renderQuality,
+    rawDebug,
+    previewMode: mode,
+    hdr,
+    displayExposure,
+    reflectionsEnabled,
+  }), [camera, presetKey, subjectMode, renderQuality, rawDebug, mode, hdr, displayExposure, reflectionsEnabled]);
+  const finishComparisonCapture = useCallback((pending) => {
+    if (!pending || comparisonIntentRef.current !== pending) return false;
+    comparisonIntentRef.current = null;
+    comparisonCaptureTokenRef.current += 1;
+    if (comparisonTimeoutRef.current !== null) window.clearTimeout(comparisonTimeoutRef.current);
+    comparisonTimeoutRef.current = null;
+    setComparisonPendingSlot(null);
+    return true;
+  }, []);
+  const cancelComparisonCapture = useCallback((reason, guard = {}) => {
+    const pending = comparisonIntentRef.current;
+    if (!roomComparisonIntentMatchesGuard(pending, guard)) return false;
+    if (!finishComparisonCapture(pending)) return false;
+    setComparisonStatus(reason);
+    return true;
+  }, [finishComparisonCapture]);
+  cancelComparisonCaptureRef.current = cancelComparisonCapture;
+  useLayoutEffect(() => {
+    const current = { request, generation, state: comparisonState };
+    comparisonCommittedRef.current = current;
+    const pending = comparisonIntentRef.current;
+    if (!pending) return;
+    if (!pending.requestId) {
+      if (pending.state.fingerprint !== comparisonState.fingerprint) {
+        cancelComparisonCapture("Capture cancelled because the camera or presentation changed before its request started.", {
+          slot: pending.slot,
+        });
+        return;
+      }
+      comparisonIntentRef.current = bindRoomComparisonIntent(pending, request, generation);
+      setComparisonStatus(`Waiting for completed ${pending.slot} frame…`);
+      return;
+    }
+    if (pending.requestId !== request.requestId || pending.generationId !== generation.generationId ||
+        pending.state.fingerprint !== comparisonState.fingerprint) {
+      cancelComparisonCapture("Capture cancelled because the camera or presentation changed before the frame completed. Capture again.", {
+        slot: pending.slot,
+        requestId: pending.requestId,
+        generationId: pending.generationId,
+      });
+    }
+  }, [request, generation, comparisonState, cancelComparisonCapture]);
+  const captureComparison = (slot) => {
+    if (comparisonIntentRef.current) cancelComparisonCaptureRef.current?.("Previous capture cancelled; starting a new request.");
+    const token = ++comparisonCaptureTokenRef.current;
+    const state = comparisonCommittedRef.current?.state || comparisonState;
+    comparisonIntentRef.current = createRoomComparisonIntent(slot, state);
+    setComparisonPendingSlot(slot);
+    setComparisonStatus(`Requesting a fresh Ground Glass frame for ${slot} (up to 120 seconds)…`);
+    if (comparisonTimeoutRef.current !== null) window.clearTimeout(comparisonTimeoutRef.current);
+    comparisonTimeoutRef.current = window.setTimeout(() => {
+      if (comparisonCaptureTokenRef.current !== token) return;
+      cancelComparisonCaptureRef.current?.("Capture timed out waiting for its completed Ground Glass frame. Check renderer diagnostics and try again.");
+    }, 120_000);
+    setComparisonCaptureNonce((value) => value + 1);
+  };
+  const clearComparison = (slot) => {
+    cancelComparisonCaptureRef.current?.(`Cancelled ${slot} capture.`, { slot });
+    setComparisonImages((current) => ({ ...current, [slot]: null }));
+  };
+  useEffect(() => () => {
+    comparisonCaptureTokenRef.current += 1;
+    comparisonIntentRef.current = null;
+    if (comparisonTimeoutRef.current !== null) window.clearTimeout(comparisonTimeoutRef.current);
+    comparisonTimeoutRef.current = null;
+  }, []);
+  useEffect(() => {
+    if (!show) cancelComparisonCaptureRef.current?.("Capture cancelled because the views were unmounted.");
+    else if (!groundEnabled) cancelComparisonCaptureRef.current?.("Capture cancelled because Ground Glass was unmounted.");
+  }, [show, groundEnabled]);
   const handleFrame = useCallback((frame) => {
     manualTrace.current?.record("frame-completed", { frame });
     const samples = window.__focusStageSamples;
@@ -566,14 +662,98 @@ function App() {
       }
     }
     if (window.__roomOptics) window.__roomOptics.frame = frame;
-  }, []);
+    const pending = comparisonIntentRef.current;
+    if (!pending) return;
+    const current = comparisonCommittedRef.current;
+    const published = window.__roomOptics;
+    const publishedState = published?.camera ? createRoomComparisonState({
+      camera: published.camera,
+      presetKey: published.presetKey,
+      subjectMode: published.subjectMode,
+      renderQuality: published.renderQuality,
+      rawDebug: published.rawDebug,
+      previewMode: published.previewMode,
+      hdr: published.hdr,
+      displayExposure: published.displayExposure,
+      reflectionsEnabled: published.reflectionsEnabled,
+    }) : null;
+    const decision = evaluateRoomComparisonFrame(
+      pending,
+      frame,
+      current,
+      published?.request && published?.generation && publishedState
+        ? { request: published.request, generation: published.generation, state: publishedState }
+        : null,
+    );
+    if (decision.kind === "ignore") return;
+    if (decision.kind === "reject") {
+      cancelComparisonCaptureRef.current?.(`Capture failed: ${decision.reason}`, {
+        slot: pending.slot,
+        requestId: pending.requestId,
+        generationId: pending.generationId,
+      });
+      return;
+    }
+    if (!finishComparisonCapture(pending)) return;
+    try {
+      const canvas = document.querySelector('[data-rtt-resource-channel="default"] canvas');
+      if (!canvas) throw new Error("Ground Glass canvas is unavailable");
+      const image = canvas.toDataURL("image/png");
+      const snapshot = pending.state;
+      const captured = {
+        image,
+        provenance: {
+          composition: snapshot.presetKey,
+          focalLengthMm: snapshot.camera.focalLengthMm,
+          focusDistanceMm: snapshot.camera.focusDistanceMm,
+          aperture: snapshot.camera.aperture,
+          frontTiltDeg: snapshot.camera.frontTiltDeg,
+          frontSwingDeg: snapshot.camera.frontSwingDeg,
+          frontRiseMm: snapshot.camera.frontRiseMm,
+          frontShiftMm: snapshot.camera.frontShiftMm,
+          rearTiltDeg: snapshot.camera.rearTiltDeg,
+          rearSwingDeg: snapshot.camera.rearSwingDeg,
+          displayExposure: snapshot.displayExposure,
+          renderQuality: snapshot.renderQuality,
+          previewMode: snapshot.previewMode,
+          rawDebug: snapshot.rawDebug,
+          hdr: snapshot.hdr,
+          reflectionsEnabled: snapshot.reflectionsEnabled,
+          requestId: pending.requestId,
+          generationId: pending.generationId,
+          frameId: decision.frameId,
+          capturedAt: new Date().toISOString(),
+          width: canvas.width,
+          height: canvas.height,
+          comparisonState: snapshot,
+          presentation: "synchronous canvas snapshot from completed Ground Glass frame callback",
+        },
+      };
+      setComparisonImages((images) => ({ ...images, [pending.slot]: captured }));
+      setComparisonStatus(`Saved ${pending.slot} from ${pending.requestId} / ${decision.frameId}.`);
+    } catch (error) {
+      setComparisonStatus(`Capture failed: ${String(error?.message || error)}`);
+    }
+  }, [finishComparisonCapture]);
   const handleDisposed = useCallback((retiredGeneration, outcome, reason) => {
+    cancelComparisonCaptureRef.current?.(
+      `Capture cancelled because renderer generation ${retiredGeneration?.generationId || "unknown"} was disposed${reason ? `: ${reason}` : ` (${outcome || "renderer retired"})`}.`,
+      { generationId: retiredGeneration?.generationId },
+    );
     window.__roomRetirements ||= [];
     window.__roomRetirements.push({
       generation: retiredGeneration,
       outcome,
       reason: reason ?? null,
     });
+  }, []);
+  const handleRttBoundaryError = useCallback((error) => {
+    const pending = comparisonIntentRef.current;
+    if (!pending) return;
+    cancelComparisonCaptureRef.current?.(
+      `Capture cancelled after Ground Glass renderer error: ${String(error?.message || error)}.`,
+      { slot: pending.slot, requestId: pending.requestId || undefined, generationId: pending.generationId || undefined },
+    );
   }, []);
   const handleObservation = useCallback((observation) => {
     if (observation.scope === "request") {
@@ -587,6 +767,16 @@ function App() {
     const current = window.__roomOptics;
     if (!current) return;
     current.observation = observation;
+    const pending = comparisonIntentRef.current;
+    const observationFailure = observation.info?.frameExecutionError || observation.info?.uniformPreparationError || observation.info?.failedPass;
+    if (pending && observationFailure &&
+        observation.requestIdentity?.requestId === pending.requestId &&
+        observation.generation?.generationId === pending.generationId) {
+      cancelComparisonCaptureRef.current?.(`Capture cancelled after Ground Glass renderer failure: ${observationFailure}.`, {
+        requestId: pending.requestId,
+        generationId: pending.generationId,
+      });
+    }
     if (
       observation.scope === "request" &&
       observation.requestIdentity?.requestId === current.request?.requestId &&
@@ -688,7 +878,10 @@ function App() {
     }
   }, []);
   const handleObserverStatus = useCallback((next) => setObserverStatus(next), []);
-  const set = (key, value) => setCamera((c) => ({ ...c, [key]: value }));
+  const set = (key, value) => {
+    setActiveReferenceStateId("");
+    setCamera((c) => ({ ...c, [key]: value }));
+  };
   const rangeControl = (id, label, value, min, max, step, onChange) => (
     <div style={ROOM_RANGE_ROW_STYLE}>
       <label htmlFor={`room-at-dawn-${id}`} style={ROOM_RANGE_LABEL_STYLE}>
@@ -834,7 +1027,7 @@ function App() {
           <h2>Ground Glass ({mode})</h2>
           <div style={{ width: 480, height: 360, background: "#111" }}>
             {owner && show && groundEnabled && (
-              <RenderBoundary key={generationEpoch}>
+              <RenderBoundary key={generationEpoch} onError={handleRttBoundaryError}>
                 <GroundGlassRTT
                   key={generationEpoch}
                   developmentHdrColor={hdr}
@@ -892,6 +1085,21 @@ function App() {
           </select>
         </label>
         <label>
+          Lens{" "}
+          <select
+            aria-label="Lens"
+            value={camera.focalLengthMm}
+            onChange={(event) => set("focalLengthMm", Number(event.target.value))}
+          >
+            {SIMULATOR_LENS_DEFINITIONS.map((lens) => (
+              <option key={lens.id} value={lens.focalLengthMm}>
+                {lens.focalLengthMm} mm
+                {lens.coverage.kind === "angular" ? ` · ${lens.coverage.fullCoverageAngleDeg}° coverage` : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
           <input
             aria-label="Reflections"
             type="checkbox"
@@ -924,7 +1132,7 @@ function App() {
             aria-label="Display exposure"
             type="number"
             min="0.1"
-            max="100"
+            max="400"
             step="1"
             value={displayExposure}
             onChange={(e) => {
@@ -936,6 +1144,7 @@ function App() {
             }}
           />
         </label>
+        <small>Display-only exposure for viewing; it does not alter physical aperture illumination.</small>
         <label>
           Composition{" "}
           <select
@@ -944,6 +1153,7 @@ function App() {
             onChange={(e) => {
               const key = e.target.value;
               const selected = ROOM_PRESETS[key];
+              setActiveReferenceStateId("");
               setGenerationEpoch((n) => n + 1);
               setPresetKey(key);
               setCamera((c) => ({
@@ -966,6 +1176,37 @@ function App() {
             ))}
           </select>
         </label>
+        {Array.isArray(preset.referenceStates) && preset.referenceStates.length > 0 && (
+          <label>
+            Optical reference state{" "}
+            <select
+              aria-label="Optical reference state"
+              value={activeReferenceStateId}
+              onChange={(event) => {
+                const reference = preset.referenceStates.find((item) => item.id === event.target.value);
+                if (!reference) {
+                  setActiveReferenceStateId("");
+                  return;
+                }
+                const allowedCameraKeys = new Set([
+                  "focalLengthMm", "focusDistanceMm", "aperture",
+                  "frontRiseMm", "frontShiftMm", "frontTiltDeg", "frontSwingDeg",
+                  "rearRiseMm", "rearShiftMm", "rearTiltDeg", "rearSwingDeg",
+                ]);
+                const updates = Object.fromEntries(Object.entries(reference.camera || {}).filter(
+                  ([key, value]) => allowedCameraKeys.has(key) && typeof value === "number" && Number.isFinite(value),
+                ));
+                setCamera((current) => ({ ...current, ...updates }));
+                setActiveReferenceStateId(reference.id);
+              }}
+            >
+              <option value="">Manual camera settings</option>
+              {preset.referenceStates.map((reference) => (
+                <option key={reference.id} value={reference.id}>{reference.label}</option>
+              ))}
+            </select>
+          </label>
+        )}
         {rangeControl(
           "cameraLateralMm",
           "Camera lateral position (mm)",
@@ -1018,6 +1259,7 @@ function App() {
         </button>{" "}
         <button
           onClick={() => {
+            if (groundEnabled) cancelComparisonCaptureRef.current?.("Capture cancelled because Ground Glass was unmounted.");
             if (!groundEnabled) setGenerationEpoch((n) => n + 1);
             setGroundEnabled((v) => !v);
           }}
@@ -1029,6 +1271,7 @@ function App() {
         </button>{" "}
         <button
           onClick={() => {
+            if (show) cancelComparisonCaptureRef.current?.("Capture cancelled because the views were unmounted.");
             if (!show) setGenerationEpoch((n) => n + 1);
             setShow((s) => !s);
           }}
@@ -1036,6 +1279,67 @@ function App() {
           {show ? "Unmount views" : "Remount views"}
         </button>
       </div>
+      <section aria-label="Ground Glass A/B comparison" style={{ marginBlock: 24, maxWidth: 1000 }}>
+        <h2>Ground Glass A/B comparison</h2>
+        <p>Captures use the next completed Ground Glass frame and retain native pixels in this page's memory.</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          {["A", "B"].map((slot) => (
+            <span key={slot}>
+              <button
+                type="button"
+                disabled={!owner || !show || !groundEnabled || subjectMode !== "room" || Boolean(comparisonPendingSlot)}
+                onClick={() => captureComparison(slot)}
+              >
+                {comparisonPendingSlot === slot ? `Capturing ${slot}…` : `${comparisonImages[slot] ? `Replace ${slot}` : `Capture ${slot}`}`}
+              </button>{" "}
+              <button type="button" disabled={!comparisonImages[slot] && comparisonPendingSlot !== slot} onClick={() => clearComparison(slot)}>
+                Clear {slot}
+              </button>
+            </span>
+          ))}
+          <label>
+            Shared crop zoom{" "}
+            <input aria-label="Comparison zoom" type="range" min="1" max="4" step="0.25" value={comparisonZoom} onChange={(event) => setComparisonZoom(Number(event.target.value))} />
+            {comparisonZoom.toFixed(2)}×
+          </label>
+          <span role="status" aria-live="polite">{comparisonStatus}</span>
+        </div>
+        {comparisonImages.A && comparisonImages.B && (() => {
+          const changes = listRoomComparisonStateChanges(
+            comparisonImages.A.provenance.comparisonState,
+            comparisonImages.B.provenance.comparisonState,
+          );
+          return (
+            <div aria-label="A/B camera state differences" style={{ marginBlock: 12 }}>
+              <strong>{changes.length ? `${changes.length} recorded setting${changes.length === 1 ? "" : "s"} changed:` : "No recorded camera or presentation settings changed."}</strong>
+              {changes.length > 0 && <ul>
+                {changes.map((change) => <li key={change.key}>{change.label}: A {String(change.a)} → B {String(change.b)}</li>)}
+              </ul>}
+            </div>
+          );
+        })()}
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "flex-start", marginTop: 12 }}>
+          {["A", "B"].map((slot) => {
+            const capture = comparisonImages[slot];
+            return (
+              <article key={slot} aria-label={`Capture ${slot}`} style={{ width: 480, maxWidth: "100%" }}>
+                <h3>{slot}{capture ? ` · ${capture.provenance.focalLengthMm} mm · ${capture.provenance.focusDistanceMm} mm · f/${capture.provenance.aperture}` : " · empty"}</h3>
+                <div style={{ width: "100%", aspectRatio: "4 / 3", overflow: "hidden", background: "#111", display: "grid", placeItems: "center" }}>
+                  {capture ? <img
+                    src={capture.image}
+                    alt={`Ground Glass capture ${slot} at ${capture.provenance.focusDistanceMm} millimetres focus`}
+                    style={{ width: "100%", height: "100%", objectFit: "contain", transform: `scale(${comparisonZoom})`, transformOrigin: "center" }}
+                  /> : <span>No capture</span>}
+                </div>
+                {capture && <details>
+                  <summary>Frame and camera details</summary>
+                  <pre style={{ whiteSpace: "pre-wrap" }}>{JSON.stringify(capture.provenance, null, 2)}</pre>
+                </details>}
+              </article>
+            );
+          })}
+        </div>
+      </section>
       <pre style={{ whiteSpace: "pre-wrap" }}>
         {JSON.stringify(
           {
