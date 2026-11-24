@@ -28,6 +28,23 @@ const physicalLens = (overrides: Partial<CameraState>) => {
   return new THREE.Vector3(...vecToWorld(deriveOpticsState(camera, scene).lensCenterWorld));
 };
 
+const testedCameraStates = (): Partial<CameraState>[] => {
+  const solved = {
+    frontSwingDeg: geometry.reachableFrontSwingDeg,
+    focusDistanceMm: geometry.reachableFacadeFocusDistanceMm,
+  };
+  const rise = { frontRiseMm: geometry.reachableFrontRiseMm };
+  const states: Partial<CameraState>[] = [{}, rise, solved, { ...solved, ...rise }];
+  for (const frontRiseMm of [CAMERA_CONSTANTS.riseMinMm, CAMERA_CONSTANTS.riseMaxMm]) {
+    for (const frontSwingDeg of [CAMERA_CONSTANTS.swingMinDeg, CAMERA_CONSTANTS.swingMaxDeg]) {
+      for (const focusDistanceMm of [geometry.focusDistanceRangeMm.min, geometry.focusDistanceRangeMm.max]) {
+        states.push({ frontRiseMm, frontSwingDeg, focusDistanceMm });
+      }
+    }
+  }
+  return states;
+};
+
 function materialName(hit: THREE.Intersection | undefined): string | undefined {
   if (!(hit?.object instanceof THREE.Mesh)) return undefined;
   const material = hit.object.material;
@@ -66,19 +83,7 @@ function mountedResources(group: THREE.Group) {
 describe("registered Oblique Architecture building", () => {
   it("puts the first visible teaching window surface at every scored station sample", () => {
     const group = mount();
-    const solved = {
-      frontSwingDeg: geometry.reachableFrontSwingDeg,
-      focusDistanceMm: geometry.reachableFacadeFocusDistanceMm,
-    };
-    const rise = { frontRiseMm: geometry.reachableFrontRiseMm };
-    const states: Partial<CameraState>[] = [{}, rise, solved, { ...solved, ...rise }];
-    for (const frontRiseMm of [CAMERA_CONSTANTS.riseMinMm, CAMERA_CONSTANTS.riseMaxMm]) {
-      for (const frontSwingDeg of [CAMERA_CONSTANTS.swingMinDeg, CAMERA_CONSTANTS.swingMaxDeg]) {
-        for (const focusDistanceMm of [geometry.focusDistanceRangeMm.min, geometry.focusDistanceRangeMm.max]) {
-          states.push({ frontRiseMm, frontSwingDeg, focusDistanceMm });
-        }
-      }
-    }
+    const states = testedCameraStates();
     try {
       for (const state of states) {
         const lens = physicalLens(state);
@@ -102,6 +107,79 @@ describe("registered Oblique Architecture building", () => {
       const blocked = firstFocusHit(group, lens, target);
       expect(blocked?.surface).toBe(blocker.name);
       expect(blocked?.errorMm).toBeGreaterThan(100);
+    } finally {
+      dispose(group);
+    }
+  });
+
+  it("preserves roof, base, and elevation sightlines through the complete industrial district", () => {
+    const group = mount();
+    const b = geometry.building;
+    const observer = scene.cameraPlacement;
+    const environment = group.getObjectByName("oblique-architecture-industrial-environment");
+    try {
+      if (!environment) throw new Error("Industrial district missing from the registered scene");
+      const meshes: THREE.Mesh[] = [];
+      const districtMeshes = new Set<THREE.Mesh>();
+      environment.traverse(object => {
+        if (object instanceof THREE.Mesh) districtMeshes.add(object);
+      });
+      group.traverse(object => {
+        if (object instanceof THREE.Mesh) meshes.push(object);
+      });
+      expect(districtMeshes.size).toBeGreaterThan(0);
+      const v2 = meshes.filter(mesh => !districtMeshes.has(mesh));
+
+      const across = [0.13, 0.5, 0.87].map(fraction => b.leftX + b.width * fraction);
+      const along = geometry.focusTargets.map(target => target.worldPosition.z);
+      const heights = [geometry.ground.y + 160, geometry.windowRowCenters[1], geometry.buildingTopY - 30];
+      const probes = [
+        ...across.flatMap(x => heights.map(y => ({ x, y, z: b.nearZ + 40 }))),
+        ...along.flatMap(z => heights.map(y => ({ x: b.leftX + 40, y, z }))),
+      ].map(point => new THREE.Vector3(...vecToWorld(point)));
+      const views = [
+        ...testedCameraStates().map(physicalLens),
+        new THREE.Vector3(...vecToWorld(observer.position)),
+      ];
+
+      for (const origin of views) {
+        for (const target of probes) {
+          const direction = target.clone().sub(origin);
+          const ray = new THREE.Raycaster(origin, direction.clone().normalize(), 0, direction.length() + 0.24);
+          const before = ray.intersectObjects(v2, false)[0];
+          const after = ray.intersectObjects(meshes, false)[0];
+          const context = JSON.stringify({ origin, target });
+          expect(before?.object, context).toBeDefined();
+          expect(after?.object, context).toBe(before?.object);
+          expect(after?.distance, context).toBeCloseTo(before.distance, 9);
+        }
+      }
+
+      const lens = physicalLens({});
+      const point = new THREE.Vector3(...vecToWorld(geometry.focusTargets[1].worldPosition));
+      const control = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.22, 0.18), new THREE.MeshStandardMaterial());
+      control.name = "oblique-architecture-industrial-loading-blocker";
+      control.position.copy(lens).lerp(point, 0.48);
+      environment.add(control);
+      group.updateMatrixWorld(true);
+      const visible = () => {
+        const hit = firstFocusHit(group, lens, point);
+        if (hit?.material !== "oblique-architecture-glazing" || hit.errorMm >= 0.25) {
+          throw new Error(`Teaching sightline interrupted by ${hit?.surface ?? "missing surface"}`);
+        }
+      };
+      try {
+        expect(visible).toThrow(control.name);
+      } finally {
+        control.removeFromParent();
+        control.geometry.dispose();
+        control.material.dispose();
+      }
+      expect(visible).not.toThrow();
+      console.info(JSON.stringify({
+        additionalSightlines: { probes: probes.length, views: views.length, matched: probes.length * views.length },
+        environmentNegativeControl: "detected, removed, recovered",
+      }));
     } finally {
       dispose(group);
     }
