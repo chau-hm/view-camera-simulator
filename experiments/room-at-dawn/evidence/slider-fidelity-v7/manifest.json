@@ -1,0 +1,26 @@
+{
+  "version": "slider-fidelity-v7",
+  "baselineSource": "a597c18500ccf3eeea991604452f970f94deb42f",
+  "captureSource": "6bf3a52f52b205a40a1bc01424c339b8f674a209",
+  "reviewCorrection": "04e4ad04 (surface normals for instanced hits; captured laptop surface is non-instanced)",
+  "browser": "Chromium 149.0.7827.55",
+  "backend": "WebGL2 / ANGLE Metal / Apple M4 Pro",
+  "cases": {
+    "baseline": "baseline/baseline.json",
+    "baselineNarrow": "baseline/baseline-narrow.json",
+    "depth": "depth/manifest.json",
+    "wide": "wide/manifest.json",
+    "deskNear": "desk-focus-330/room-surface-capture.json",
+    "deskFar": "desk-focus-1000/room-surface-capture.json",
+    "calibration": "calibration/room-focus-calibration-analysis.json",
+    "tiltSwing": "calibration/room-v5-optics-calibration.json"
+  },
+  "limitations": [
+    "The user-reported visual symptom needs manual confirmation.",
+    "Raw fixture PNG is not bound to an exact completed frame.",
+    "RGB8 resampling sensitivity is not a native pixel-phase uncertainty bound.",
+    "The laptop point has a canonical blur prediction, not an independently measured point blur.",
+    "The fabric patch and reflection parity remain unverified.",
+    "See README for CI and regression outcomes."
+  ]
+}

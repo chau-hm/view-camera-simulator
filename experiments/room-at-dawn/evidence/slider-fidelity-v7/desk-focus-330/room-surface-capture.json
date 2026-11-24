@@ -1,0 +1,6119 @@
+{
+  "source": {
+    "commit": "6bf3a52f52b205a40a1bc01424c339b8f674a209",
+    "dirtyWorktree": false
+  },
+  "url": "http://127.0.0.1:5215/view-camera-simulator/experiments/room-at-dawn/optics.html?rttDiagnostics=1&focusStage=1",
+  "browser": "149.0.7827.55",
+  "requestedBackend": "Metal",
+  "gpu": {
+    "available": true,
+    "canvasWidth": 960,
+    "canvasHeight": 720,
+    "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)"
+  },
+  "image": {
+    "path": "ground-glass-high-native-canvas.png",
+    "bytes": 424111,
+    "dimensions": [
+      960,
+      720
+    ]
+  },
+  "captureFrameIdentity": {
+    "requestId": "room-request-7",
+    "generationId": "room-generation-4",
+    "frameId": "room-generation-4:frame:1"
+  },
+  "currentFrameIdentityAtInspection": {
+    "requestId": "room-request-7",
+    "generationId": "room-generation-4",
+    "frameId": "room-generation-4:frame:2"
+  },
+  "finalCurrentFrameIdentity": {
+    "requestId": "room-request-7",
+    "generationId": "room-generation-4",
+    "frameId": "room-generation-4:frame:9"
+  },
+  "state": {
+    "presetKey": "desk",
+    "preset": {
+      "label": "Desk / Material Detail",
+      "origin": [
+        3.2,
+        0.84,
+        0.08
+      ],
+      "focalLengthMm": 90,
+      "focusDistanceMm": 310,
+      "aperture": 5.6,
+      "subjects": "desk objects near, chair mid, room far; near clipping/occlusion unverified"
+    },
+    "camera": {
+      "focalLengthMm": 90,
+      "aperture": 5.6,
+      "focusDistanceMm": 330,
+      "focusStandard": "front",
+      "frontRiseMm": 0,
+      "frontShiftMm": 0,
+      "frontTiltDeg": 0,
+      "frontSwingDeg": 0,
+      "rearRiseMm": 0,
+      "rearShiftMm": 0,
+      "rearTiltDeg": 0,
+      "rearSwingDeg": 0,
+      "cameraBodyPitchDeg": 0,
+      "cameraBodyPivotWorld": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "viewpointAnchor": "mid",
+      "cameraRigPlacement": {
+        "kind": "identity",
+        "rigOriginWorld": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "basePitchDeg": 0
+      },
+      "activeSceneId": "architecture-rise",
+      "activeTaskId": null,
+      "mode": "free",
+      "groundGlassAssistEnabled": false,
+      "gridEnabled": true,
+      "geometryView": "side",
+      "focusMode": "finite",
+      "lastFiniteFocusDepthMm": 2000,
+      "mirrorShiftLessonState": {
+        "rigLateralMm": 0
+      }
+    },
+    "optics": {
+      "lensCenterWorld": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "lensPlane": {
+        "point": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "normal": {
+          "x": 0,
+          "y": 0,
+          "z": 1
+        },
+        "distance": 0
+      },
+      "filmPlane": {
+        "point": {
+          "x": 0,
+          "y": 0,
+          "z": -123.75
+        },
+        "normal": {
+          "x": 0,
+          "y": 0,
+          "z": 1
+        },
+        "distance": -123.75
+      },
+      "filmPlaneCornersWorld": {
+        "topLeft": {
+          "x": -63.5,
+          "y": 50.8,
+          "z": -123.75
+        },
+        "topRight": {
+          "x": 63.5,
+          "y": 50.8,
+          "z": -123.75
+        },
+        "bottomLeft": {
+          "x": -63.5,
+          "y": -50.8,
+          "z": -123.75
+        },
+        "bottomRight": {
+          "x": 63.5,
+          "y": -50.8,
+          "z": -123.75
+        }
+      },
+      "focusPlane": {
+        "point": {
+          "x": 0,
+          "y": 0,
+          "z": 330
+        },
+        "normal": {
+          "x": 0,
+          "y": 0,
+          "z": 1
+        },
+        "distance": 330
+      }
+    },
+    "rendererInfo": {
+      "profile": "high",
+      "logicalWidthPx": 480,
+      "logicalHeightPx": 360,
+      "internalWidthPx": 960,
+      "internalHeightPx": 720,
+      "resolutionScale": 1,
+      "effectiveDevicePixelRatio": 2,
+      "zoomRenderScale": 1,
+      "wasClamped": false,
+      "configuredCanvasDpr": 2,
+      "rendererPixelRatio": 2,
+      "canvasCssWidthPx": 480,
+      "canvasCssHeightPx": 360,
+      "drawingBufferWidthPx": 960,
+      "drawingBufferHeightPx": 720,
+      "colorTargetWidthPx": 960,
+      "colorTargetHeightPx": 720,
+      "depthTargetWidthPx": 960,
+      "depthTargetHeightPx": 720,
+      "blurTargetWidthPx": 960,
+      "blurTargetHeightPx": 720,
+      "dofTechnique": "physical-coc-near-far-oriented-gather",
+      "footprintRepresentation": "local-affine-ellipse",
+      "gatherScale": 1,
+      "sampleCount": 32,
+      "maximumCoCRadiusPx": 60,
+      "groundGlassPhysicalBoundaryRadiusPx": 0.1889763779527559,
+      "cocStorageFormat": "half-float-mm",
+      "cocAvailable": true,
+      "cocTargetWidthPx": 960,
+      "cocTargetHeightPx": 720,
+      "gatherTargetWidthPx": 960,
+      "gatherTargetHeightPx": 720,
+      "farGatherTargetWidthPx": 960,
+      "farGatherTargetHeightPx": 720,
+      "nearGatherTargetWidthPx": 960,
+      "nearGatherTargetHeightPx": 720,
+      "finalTargetWidthPx": 960,
+      "finalTargetHeightPx": 720,
+      "horizontalShaderRenderWidthPx": 960,
+      "horizontalShaderRenderHeightPx": 720,
+      "verticalShaderRenderWidthPx": 960,
+      "verticalShaderRenderHeightPx": 720,
+      "depthTextureAvailable": true,
+      "resourceGeneration": 1,
+      "inspectionWindowActive": false,
+      "inspectionCenterU": 0.5,
+      "inspectionCenterV": 0.5,
+      "sampledFilmWidthMm": 127,
+      "sampledFilmHeightMm": 101.6,
+      "profilingEnabled": false,
+      "profilingBackend": "disabled",
+      "channel": "default",
+      "ownerId": "ground-glass-rtt-owner-_r_0_",
+      "rawColorVariance": 353.04358266445524,
+      "rawNonBackgroundPixelCount": 1024,
+      "rawContentful": true,
+      "finalColorVariance": 495.384538852883,
+      "finalNonBackgroundPixelCount": 1024,
+      "finalContentful": true,
+      "renderSanitySampleCount": 1024,
+      "renderSanitySubjectGeneration": 1,
+      "renderSanityStateKey": "1|architecture-rise|upright|room-at-dawn:desk|0|0|0.500000|0.500000|1.000000|1.000000|5.6|960|720|0.000000:0.000000:0.000000|0.000000|0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:1.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:-123.750000|0.000000:0.000000:1.000000|0.000000:0.000000:-123.750000|0.000000:0.000000:1.000000|-63.500000:50.800000:-123.750000|63.500000:50.800000:-123.750000|-63.500000:-50.800000:-123.750000|63.500000:-50.800000:-123.750000|0.000000:0.000000:0.000000|0.000000:0.000000:1.000000|parallel-circle|149.849396|0.000000|0.000000|null|null|0.000000:0.000000:330.000000|0.000000:0.000000:1.000000|0.000000:0.000000:324.646582|0.000000:0.000000:1.000000|0.000000:0.000000:335.532934|0.000000:0.000000:1.000000|1.948819,0.000000,0.000000,0.000000,0.000000,2.436024,0.000000,0.000000,0.000000,0.000000,-1.000400,-1.000000,0.000000,0.000000,-20.004001,0.000000|subject-generation:1|hdr-exposure:19",
+      "renderSanitySubjectIdentity": "room-at-dawn:desk",
+      "renderSanityError": null,
+      "rendererStats": {
+        "calls": 152,
+        "triangles": 1344498,
+        "points": 0,
+        "lines": 0,
+        "geometries": 313,
+        "textures": 121,
+        "sampledAtMs": 4912.400000095367
+      },
+      "cameraNearWorld": 0.01,
+      "cameraFarWorld": 11,
+      "cameraConfigurationOk": true,
+      "cameraConfigurationError": null,
+      "projectionDeterminant": -0.0950337717326936,
+      "projectionMatrix": [
+        1.9488188976377951,
+        0,
+        0,
+        0,
+        0,
+        2.4360236220472444,
+        0,
+        0,
+        0,
+        0,
+        -1.0018198362147406,
+        -1,
+        0,
+        0,
+        -0.020018198362147407,
+        0
+      ],
+      "cameraPositionWorld": [
+        0,
+        0,
+        0
+      ],
+      "cameraUpWorld": [
+        0,
+        1,
+        0
+      ],
+      "cameraForwardWorld": [
+        0,
+        0,
+        1
+      ],
+      "groundGlassIlluminanceGain": 2.0408163265306127,
+      "groundGlassNaturalIlluminationEnabled": true,
+      "groundGlassNaturalIlluminationKind": "parallel-cos4",
+      "groundGlassNaturalIlluminationStateJson": "{\"kind\":\"parallel-cos4\",\"imageDistanceMm\":123.75,\"opticalAxisOffsetXMm\":0,\"opticalAxisOffsetYMm\":0}",
+      "groundGlassNaturalIlluminationImageDistanceMm": 123.75,
+      "groundGlassNaturalIlluminationOffsetXMm": 0,
+      "groundGlassNaturalIlluminationOffsetYMm": 0,
+      "groundGlassCoverageEnabled": true,
+      "groundGlassCoverageKind": "parallel-circle",
+      "groundGlassCoverageRadiusMm": 149.849396400978,
+      "groundGlassCoverageOffsetXMm": 0,
+      "groundGlassCoverageOffsetYMm": 0,
+      "dofMode": "parallel-thin-lens",
+      "uniformsFinite": true,
+      "uniformPreparationError": null,
+      "focalLengthMm": 90
+    },
+    "colorPath": "HDR HalfFloat",
+    "renderQuality": "high",
+    "previewMode": "upright",
+    "rawDebug": false,
+    "displayExposure": 19,
+    "reflectionsEnabled": true,
+    "gi": {
+      "expected": 302,
+      "baked": 302,
+      "matched": 302,
+      "missing": [],
+      "mismatch": [],
+      "stale": [],
+      "invalid": [],
+      "duplicateKeys": 0
+    }
+  },
+  "requestedFocusDistanceMm": 330,
+  "requestedKnownSourcePointM": [
+    3.2526249945163728,
+    0.7558000087738037,
+    0.4084353408021827
+  ],
+  "focusSelectionValidation": "public focus slider step: 10 mm; range 100..8000 mm",
+  "probes": [
+    {
+      "id": "screen-r0-c0",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "display-uv-through-rtt-orientation",
+      "requestedDisplayUv": {
+        "u": 0.16,
+        "v": 0.18
+      },
+      "canonicalFilmUv": {
+        "u": 0.16,
+        "v": 0.18
+      },
+      "projectedRawFilmUv": {
+        "u": 0.1599999999999995,
+        "v": 0.17999999999999977
+      },
+      "projectedDisplayUv": {
+        "u": 0.1599999999999995,
+        "v": 0.17999999999999977
+      },
+      "projectedUvError": 5.4672143489065705e-16,
+      "sourceM": [
+        3.3328124873340133,
+        0.7400000095367432,
+        0.46062865464530095
+      ],
+      "runtimeWorldM": [
+        0.13281248733401307,
+        -0.0999999904632568,
+        0.38062865464530093
+      ],
+      "worldMm": {
+        "x": 132.81248733401307,
+        "y": -99.99999046325681,
+        "z": 380.6286546453009
+      },
+      "distanceFromLensMm": 415.35205262715465,
+      "objectDistanceAlongLensNormalMm": 380.6286546453009,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": 0.8016423588343509,
+        "majorRadiusMm": 0.40082117941717543,
+        "minorRadiusMm": 0.40082117941717543,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": 50.62865464530091,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        0,
+        1,
+        0
+      ],
+      "mesh": {
+        "name": "deskTop",
+        "type": "Mesh",
+        "path": "desk[0]/deskTop[0]",
+        "giMeshKey": "desk/deskTop#0",
+        "giCount": 12096,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 12096,
+        "giAttributes": {
+          "gi": {
+            "count": 12096,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 12096,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "desk/deskTop#0/material[0]:MeshStandardMaterial",
+        "name": null,
+        "type": "MeshStandardMaterial",
+        "supportedPbr": true,
+        "color": "ffffff",
+        "roughness": 1,
+        "metalness": 0,
+        "ior": null,
+        "transmission": null,
+        "sheen": null,
+        "textures": {
+          "map": {
+            "present": true,
+            "width": 4096,
+            "height": 2304,
+            "colorSpace": "srgb",
+            "mapping": 300
+          },
+          "normalMap": {
+            "present": true,
+            "width": 512,
+            "height": 512,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "roughnessMap": {
+            "present": true,
+            "width": 2048,
+            "height": 1152,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": null,
+      "rayDistanceM": 0.41535205262715463,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    },
+    {
+      "id": "screen-r0-c1",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "display-uv-through-rtt-orientation",
+      "requestedDisplayUv": {
+        "u": 0.34,
+        "v": 0.18
+      },
+      "canonicalFilmUv": {
+        "u": 0.34,
+        "v": 0.18
+      },
+      "projectedRawFilmUv": {
+        "u": 0.34000000000000014,
+        "v": 0.17999999999999997
+      },
+      "projectedDisplayUv": {
+        "u": 0.34000000000000014,
+        "v": 0.17999999999999997
+      },
+      "projectedUvError": 1.1443916996305594e-16,
+      "sourceM": [
+        3.2526249945163728,
+        0.7558000087738037,
+        0.40048932437997614
+      ],
+      "runtimeWorldM": [
+        0.05262499451637259,
+        -0.08419999122619626,
+        0.3204893243799761
+      ],
+      "worldMm": {
+        "x": 52.624994516372595,
+        "y": -84.19999122619626,
+        "z": 320.48932437997615
+      },
+      "distanceFromLensMm": 335.5181598838926,
+      "objectDistanceAlongLensNormalMm": 320.48932437997615,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": -0.17884777931637816,
+        "majorRadiusMm": 0.08942388965818908,
+        "minorRadiusMm": 0.08942388965818908,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": -9.510675620023846,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        0,
+        1,
+        0
+      ],
+      "mesh": {
+        "name": "laptopLid",
+        "type": "Mesh",
+        "path": "desk[0]/laptopLid[0]",
+        "giMeshKey": "desk/laptopLid#0",
+        "giCount": 1930,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 1930,
+        "giAttributes": {
+          "gi": {
+            "count": 1930,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 1930,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "desk/laptopLid#0/material[0]:MeshStandardMaterial",
+        "name": null,
+        "type": "MeshStandardMaterial",
+        "supportedPbr": true,
+        "color": "ffffff",
+        "roughness": 1,
+        "metalness": 1,
+        "ior": null,
+        "transmission": null,
+        "sheen": null,
+        "textures": {
+          "map": {
+            "present": true,
+            "width": 2048,
+            "height": 1428,
+            "colorSpace": "srgb",
+            "mapping": 300
+          },
+          "normalMap": {
+            "present": true,
+            "width": 512,
+            "height": 512,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "roughnessMap": {
+            "present": true,
+            "width": 2048,
+            "height": 1428,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": null,
+      "rayDistanceM": 0.3355181598838926,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    },
+    {
+      "id": "screen-r0-c2",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "display-uv-through-rtt-orientation",
+      "requestedDisplayUv": {
+        "u": 0.52,
+        "v": 0.18
+      },
+      "canonicalFilmUv": {
+        "u": 0.52,
+        "v": 0.18
+      },
+      "projectedRawFilmUv": {
+        "u": 0.5199999999999996,
+        "v": 0.17999999999999997
+      },
+      "projectedDisplayUv": {
+        "u": 0.5199999999999996,
+        "v": 0.17999999999999997
+      },
+      "projectedUvError": 4.449557262054371e-16,
+      "sourceM": [
+        3.1934218756854538,
+        0.7558000087738037,
+        0.4004893243799762
+      ],
+      "runtimeWorldM": [
+        -0.0065781243145464074,
+        -0.08419999122619626,
+        0.3204893243799762
+      ],
+      "worldMm": {
+        "x": -6.5781243145464074,
+        "y": -84.19999122619626,
+        "z": 320.48932437997615
+      },
+      "distanceFromLensMm": 331.430712643718,
+      "objectDistanceAlongLensNormalMm": 320.48932437997615,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": -0.17884777931637816,
+        "majorRadiusMm": 0.08942388965818908,
+        "minorRadiusMm": 0.08942388965818908,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": -9.510675620023846,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        0,
+        1,
+        0
+      ],
+      "mesh": {
+        "name": "laptopLid",
+        "type": "Mesh",
+        "path": "desk[0]/laptopLid[0]",
+        "giMeshKey": "desk/laptopLid#0",
+        "giCount": 1930,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 1930,
+        "giAttributes": {
+          "gi": {
+            "count": 1930,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 1930,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "desk/laptopLid#0/material[0]:MeshStandardMaterial",
+        "name": null,
+        "type": "MeshStandardMaterial",
+        "supportedPbr": true,
+        "color": "ffffff",
+        "roughness": 1,
+        "metalness": 1,
+        "ior": null,
+        "transmission": null,
+        "sheen": null,
+        "textures": {
+          "map": {
+            "present": true,
+            "width": 2048,
+            "height": 1428,
+            "colorSpace": "srgb",
+            "mapping": 300
+          },
+          "normalMap": {
+            "present": true,
+            "width": 512,
+            "height": 512,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "roughnessMap": {
+            "present": true,
+            "width": 2048,
+            "height": 1428,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": null,
+      "rayDistanceM": 0.331430712643718,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    },
+    {
+      "id": "screen-r0-c3",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "display-uv-through-rtt-orientation",
+      "requestedDisplayUv": {
+        "u": 0.7,
+        "v": 0.18
+      },
+      "canonicalFilmUv": {
+        "u": 0.7,
+        "v": 0.18
+      },
+      "projectedRawFilmUv": {
+        "u": 0.7000000000000001,
+        "v": 0.17999999999999997
+      },
+      "projectedDisplayUv": {
+        "u": 0.7000000000000001,
+        "v": 0.17999999999999997
+      },
+      "projectedUvError": 1.1443916996305594e-16,
+      "sourceM": [
+        3.1342187568545343,
+        0.7558000087738037,
+        0.40048932437997625
+      ],
+      "runtimeWorldM": [
+        -0.06578124314546585,
+        -0.08419999122619626,
+        0.32048932437997624
+      ],
+      "worldMm": {
+        "x": -65.78124314546585,
+        "y": -84.19999122619626,
+        "z": 320.4893243799762
+      },
+      "distanceFromLensMm": 337.8316407824881,
+      "objectDistanceAlongLensNormalMm": 320.4893243799762,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": -0.17884777931637816,
+        "majorRadiusMm": 0.08942388965818908,
+        "minorRadiusMm": 0.08942388965818908,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": -9.51067562002379,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        0,
+        1,
+        0
+      ],
+      "mesh": {
+        "name": "laptopLid",
+        "type": "Mesh",
+        "path": "desk[0]/laptopLid[0]",
+        "giMeshKey": "desk/laptopLid#0",
+        "giCount": 1930,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 1930,
+        "giAttributes": {
+          "gi": {
+            "count": 1930,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 1930,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "desk/laptopLid#0/material[0]:MeshStandardMaterial",
+        "name": null,
+        "type": "MeshStandardMaterial",
+        "supportedPbr": true,
+        "color": "ffffff",
+        "roughness": 1,
+        "metalness": 1,
+        "ior": null,
+        "transmission": null,
+        "sheen": null,
+        "textures": {
+          "map": {
+            "present": true,
+            "width": 2048,
+            "height": 1428,
+            "colorSpace": "srgb",
+            "mapping": 300
+          },
+          "normalMap": {
+            "present": true,
+            "width": 512,
+            "height": 512,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "roughnessMap": {
+            "present": true,
+            "width": 2048,
+            "height": 1428,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": null,
+      "rayDistanceM": 0.33783164078248806,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    },
+    {
+      "id": "screen-r0-c4",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "display-uv-through-rtt-orientation",
+      "requestedDisplayUv": {
+        "u": 0.88,
+        "v": 0.18
+      },
+      "canonicalFilmUv": {
+        "u": 0.88,
+        "v": 0.18
+      },
+      "projectedRawFilmUv": {
+        "u": 0.8799999999999992,
+        "v": 0.17999999999999997
+      },
+      "projectedDisplayUv": {
+        "u": 0.8799999999999992,
+        "v": 0.17999999999999997
+      },
+      "projectedUvError": 7.776515945702111e-16,
+      "sourceM": [
+        3.0750156380236153,
+        0.7558000087738037,
+        0.40048932437997625
+      ],
+      "runtimeWorldM": [
+        -0.12498436197638485,
+        -0.08419999122619626,
+        0.32048932437997624
+      ],
+      "worldMm": {
+        "x": -124.98436197638485,
+        "y": -84.19999122619626,
+        "z": 320.4893243799762
+      },
+      "distanceFromLensMm": 354.15270195590654,
+      "objectDistanceAlongLensNormalMm": 320.4893243799762,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": -0.17884777931637816,
+        "majorRadiusMm": 0.08942388965818908,
+        "minorRadiusMm": 0.08942388965818908,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": -9.51067562002379,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        0,
+        1,
+        0
+      ],
+      "mesh": {
+        "name": "laptopLid",
+        "type": "Mesh",
+        "path": "desk[0]/laptopLid[0]",
+        "giMeshKey": "desk/laptopLid#0",
+        "giCount": 1930,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 1930,
+        "giAttributes": {
+          "gi": {
+            "count": 1930,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 1930,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "desk/laptopLid#0/material[0]:MeshStandardMaterial",
+        "name": null,
+        "type": "MeshStandardMaterial",
+        "supportedPbr": true,
+        "color": "ffffff",
+        "roughness": 1,
+        "metalness": 1,
+        "ior": null,
+        "transmission": null,
+        "sheen": null,
+        "textures": {
+          "map": {
+            "present": true,
+            "width": 2048,
+            "height": 1428,
+            "colorSpace": "srgb",
+            "mapping": 300
+          },
+          "normalMap": {
+            "present": true,
+            "width": 512,
+            "height": 512,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "roughnessMap": {
+            "present": true,
+            "width": 2048,
+            "height": 1428,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": null,
+      "rayDistanceM": 0.35415270195590653,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    },
+    {
+      "id": "screen-r1-c0",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "display-uv-through-rtt-orientation",
+      "requestedDisplayUv": {
+        "u": 0.16,
+        "v": 0.4
+      },
+      "canonicalFilmUv": {
+        "u": 0.16,
+        "v": 0.4
+      },
+      "projectedRawFilmUv": {
+        "u": 0.16000000000000006,
+        "v": 0.39999999999999997
+      },
+      "projectedDisplayUv": {
+        "u": 0.16000000000000006,
+        "v": 0.39999999999999997
+      },
+      "projectedUvError": 7.850462293418876e-17,
+      "sourceM": [
+        3.3490225953309216,
+        0.8049358599221361,
+        0.5070853675822494
+      ],
+      "runtimeWorldM": [
+        0.14902259533092144,
+        -0.03506414007786385,
+        0.4270853675822494
+      ],
+      "worldMm": {
+        "x": 149.02259533092143,
+        "y": -35.06414007786385,
+        "z": 427.08536758224943
+      },
+      "distanceFromLensMm": 453.6949845892378,
+      "objectDistanceAlongLensNormalMm": 427.08536758224943,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": 1.3700134699608864,
+        "majorRadiusMm": 0.6850067349804432,
+        "minorRadiusMm": 0.6850067349804432,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": 97.08536758224943,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        -0.97001136990875,
+        0,
+        -0.24305954465470034
+      ],
+      "mesh": {
+        "name": "mug",
+        "type": "Mesh",
+        "path": "desk[0]/mug[0]",
+        "giMeshKey": "desk/mug#0",
+        "giCount": 3834,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 3834,
+        "giAttributes": {
+          "gi": {
+            "count": 3834,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 3834,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "desk/mug#0/material[0]:MeshStandardMaterial",
+        "name": null,
+        "type": "MeshStandardMaterial",
+        "supportedPbr": true,
+        "color": "ffffff",
+        "roughness": 0.14,
+        "metalness": 0,
+        "ior": null,
+        "transmission": null,
+        "sheen": null,
+        "textures": {
+          "map": {
+            "present": true,
+            "width": 512,
+            "height": 512,
+            "colorSpace": "srgb",
+            "mapping": 300
+          },
+          "normalMap": {
+            "present": true,
+            "width": 512,
+            "height": 512,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "roughnessMap": {
+            "present": false
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": null,
+      "rayDistanceM": 0.4536949845892378,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    },
+    {
+      "id": "screen-r1-c1",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "display-uv-through-rtt-orientation",
+      "requestedDisplayUv": {
+        "u": 0.34,
+        "v": 0.4
+      },
+      "canonicalFilmUv": {
+        "u": 0.34,
+        "v": 0.4
+      },
+      "projectedRawFilmUv": {
+        "u": 0.34,
+        "v": 0.39999999999999997
+      },
+      "projectedDisplayUv": {
+        "u": 0.34,
+        "v": 0.39999999999999997
+      },
+      "projectedUvError": 5.551115123125783e-17,
+      "sourceM": [
+        3.843671919191919,
+        0.5181640404040404,
+        3.9999999999999996
+      ],
+      "runtimeWorldM": [
+        0.6436719191919189,
+        -0.32183595959595956,
+        3.9199999999999995
+      ],
+      "worldMm": {
+        "x": 643.671919191919,
+        "y": -321.83595959595954,
+        "z": 3919.9999999999995
+      },
+      "distanceFromLensMm": 3985.5102464358633,
+      "objectDistanceAlongLensNormalMm": 3919.9999999999995,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": 5.519428753644316,
+        "majorRadiusMm": 2.759714376822158,
+        "minorRadiusMm": 2.759714376822158,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": 3589.9999999999995,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        0,
+        0,
+        -1
+      ],
+      "mesh": {
+        "name": "wallBack",
+        "type": "Mesh",
+        "path": "room[0]/wallBack[0]",
+        "giMeshKey": "room/wallBack#0",
+        "giCount": 6156,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 6156,
+        "giAttributes": {
+          "gi": {
+            "count": 6156,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 6156,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "room/wallBack#0/material[0]:MeshStandardMaterial",
+        "name": null,
+        "type": "MeshStandardMaterial",
+        "supportedPbr": true,
+        "color": "ecece9",
+        "roughness": 0.93,
+        "metalness": 0,
+        "ior": null,
+        "transmission": null,
+        "sheen": null,
+        "textures": {
+          "map": {
+            "present": false
+          },
+          "normalMap": {
+            "present": true,
+            "width": 1024,
+            "height": 1024,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "roughnessMap": {
+            "present": false
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": null,
+      "rayDistanceM": 3.9855102464358634,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    },
+    {
+      "id": "screen-r1-c2",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "display-uv-through-rtt-orientation",
+      "requestedDisplayUv": {
+        "u": 0.52,
+        "v": 0.4
+      },
+      "canonicalFilmUv": {
+        "u": 0.52,
+        "v": 0.4
+      },
+      "projectedRawFilmUv": {
+        "u": 0.52,
+        "v": 0.39999999999999997
+      },
+      "projectedDisplayUv": {
+        "u": 0.52,
+        "v": 0.39999999999999997
+      },
+      "projectedUvError": 5.551115123125783e-17,
+      "sourceM": [
+        3.1759381450621906,
+        0.7437525802487619,
+        1.252304940375562
+      ],
+      "runtimeWorldM": [
+        -0.024061854937809546,
+        -0.09624741975123807,
+        1.1723049403755619
+      ],
+      "worldMm": {
+        "x": -24.061854937809546,
+        "y": -96.24741975123807,
+        "z": 1172.304940375562
+      },
+      "distanceFromLensMm": 1176.4953939139623,
+      "objectDistanceAlongLensNormalMm": 1172.304940375562,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": 4.330265280722468,
+        "majorRadiusMm": 2.165132640361234,
+        "minorRadiusMm": 2.165132640361234,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": 842.304940375562,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        0.25041343239462976,
+        0.27719756272061147,
+        -0.9276069340502435
+      ],
+      "mesh": {
+        "name": "cardigan",
+        "type": "Mesh",
+        "path": "clutter[0]/cardigan[0]",
+        "giMeshKey": "clutter/cardigan#0",
+        "giCount": 20790,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 20790,
+        "giAttributes": {
+          "gi": {
+            "count": 20790,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 20790,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "clutter/cardigan#0/material[0]:MeshPhysicalMaterial",
+        "name": null,
+        "type": "MeshPhysicalMaterial",
+        "supportedPbr": true,
+        "color": "808c78",
+        "roughness": 0.98,
+        "metalness": 0,
+        "ior": 1.5,
+        "transmission": 0,
+        "sheen": 0.5,
+        "textures": {
+          "map": {
+            "present": false
+          },
+          "normalMap": {
+            "present": true,
+            "width": 512,
+            "height": 512,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "roughnessMap": {
+            "present": false
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": null,
+      "rayDistanceM": 1.1764953939139622,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    },
+    {
+      "id": "screen-r1-c3",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "display-uv-through-rtt-orientation",
+      "requestedDisplayUv": {
+        "u": 0.7,
+        "v": 0.4
+      },
+      "canonicalFilmUv": {
+        "u": 0.7,
+        "v": 0.4
+      },
+      "projectedRawFilmUv": {
+        "u": 0.7,
+        "v": 0.39999999999999997
+      },
+      "projectedDisplayUv": {
+        "u": 0.7,
+        "v": 0.39999999999999997
+      },
+      "projectedUvError": 5.551115123125783e-17,
+      "sourceM": [
+        2.977681321826908,
+        0.751072528730763,
+        1.1631471033039447
+      ],
+      "runtimeWorldM": [
+        -0.22231867817309237,
+        -0.08892747126923695,
+        1.0831471033039446
+      ],
+      "worldMm": {
+        "x": -222.31867817309237,
+        "y": -88.92747126923695,
+        "z": 1083.1471033039445
+      },
+      "distanceFromLensMm": 1109.297677454838,
+      "objectDistanceAlongLensNormalMm": 1083.1471033039445,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": 4.190618420251794,
+        "majorRadiusMm": 2.095309210125897,
+        "minorRadiusMm": 2.095309210125897,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": 753.1471033039445,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        -0.1319415728245327,
+        0.7094307898901026,
+        -0.6923145063600025
+      ],
+      "mesh": {
+        "name": "cardigan",
+        "type": "Mesh",
+        "path": "clutter[0]/cardigan[0]",
+        "giMeshKey": "clutter/cardigan#0",
+        "giCount": 20790,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 20790,
+        "giAttributes": {
+          "gi": {
+            "count": 20790,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 20790,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "clutter/cardigan#0/material[0]:MeshPhysicalMaterial",
+        "name": null,
+        "type": "MeshPhysicalMaterial",
+        "supportedPbr": true,
+        "color": "808c78",
+        "roughness": 0.98,
+        "metalness": 0,
+        "ior": 1.5,
+        "transmission": 0,
+        "sheen": 0.5,
+        "textures": {
+          "map": {
+            "present": false
+          },
+          "normalMap": {
+            "present": true,
+            "width": 512,
+            "height": 512,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "roughnessMap": {
+            "present": false
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": null,
+      "rayDistanceM": 1.109297677454838,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    },
+    {
+      "id": "screen-r1-c4",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "display-uv-through-rtt-orientation",
+      "requestedDisplayUv": {
+        "u": 0.88,
+        "v": 0.4
+      },
+      "canonicalFilmUv": {
+        "u": 0.88,
+        "v": 0.4
+      },
+      "projectedRawFilmUv": {
+        "u": 0.8800000000000001,
+        "v": 0.39999999999999997
+      },
+      "projectedDisplayUv": {
+        "u": 0.8800000000000001,
+        "v": 0.39999999999999997
+      },
+      "projectedUvError": 1.2412670766236366e-16,
+      "sourceM": [
+        1.8196430140572053,
+        0.5493985292752013,
+        3.619560236436403
+      ],
+      "runtimeWorldM": [
+        -1.3803569859427949,
+        -0.2906014707247987,
+        3.5395602364364027
+      ],
+      "worldMm": {
+        "x": -1380.3569859427948,
+        "y": -290.6014707247987,
+        "z": 3539.5602364364026
+      },
+      "distanceFromLensMm": 3810.291496826748,
+      "objectDistanceAlongLensNormalMm": 3539.5602364364026,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": 5.464896905263316,
+        "majorRadiusMm": 2.732448452631658,
+        "minorRadiusMm": 2.732448452631658,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": 3209.5602364364026,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        0.7403964153617147,
+        0.6552002790491995,
+        -0.15008578364846709
+      ],
+      "mesh": {
+        "name": "clockBody",
+        "type": "Mesh",
+        "path": "fixtures[0]/nightstand[0]/alarmClock[0]/clockBody[0]",
+        "giMeshKey": "fixtures/nightstand/alarmClock/clockBody#0",
+        "giCount": 1414,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 1414,
+        "giAttributes": {
+          "gi": {
+            "count": 1414,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 1414,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "fixtures/nightstand/alarmClock/clockBody#0/material[0]:MeshStandardMaterial",
+        "name": null,
+        "type": "MeshStandardMaterial",
+        "supportedPbr": true,
+        "color": "0d0d0e",
+        "roughness": 0.44,
+        "metalness": 0,
+        "ior": null,
+        "transmission": null,
+        "sheen": null,
+        "textures": {
+          "map": {
+            "present": false
+          },
+          "normalMap": {
+            "present": true,
+            "width": 512,
+            "height": 512,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "roughnessMap": {
+            "present": false
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": null,
+      "rayDistanceM": 3.8102914968267476,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    },
+    {
+      "id": "screen-r2-c0",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "display-uv-through-rtt-orientation",
+      "requestedDisplayUv": {
+        "u": 0.16,
+        "v": 0.62
+      },
+      "canonicalFilmUv": {
+        "u": 0.16,
+        "v": 0.62
+      },
+      "projectedRawFilmUv": {
+        "u": 0.16,
+        "v": 0.62
+      },
+      "projectedDisplayUv": {
+        "u": 0.16,
+        "v": 0.62
+      },
+      "projectedUvError": 0,
+      "sourceM": [
+        4.5678028282828285,
+        1.2262031515151515,
+        4
+      ],
+      "runtimeWorldM": [
+        1.3678028282828283,
+        0.3862031515151515,
+        3.92
+      ],
+      "worldMm": {
+        "x": 1367.8028282828284,
+        "y": 386.2031515151515,
+        "z": 3920
+      },
+      "distanceFromLensMm": 4169.704719917076,
+      "objectDistanceAlongLensNormalMm": 3920,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": 5.519428753644316,
+        "majorRadiusMm": 2.759714376822158,
+        "minorRadiusMm": 2.759714376822158,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": 3590,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        0,
+        0,
+        -1
+      ],
+      "mesh": {
+        "name": "wallBack",
+        "type": "Mesh",
+        "path": "room[0]/wallBack[0]",
+        "giMeshKey": "room/wallBack#0",
+        "giCount": 6156,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 6156,
+        "giAttributes": {
+          "gi": {
+            "count": 6156,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 6156,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "room/wallBack#0/material[0]:MeshStandardMaterial",
+        "name": null,
+        "type": "MeshStandardMaterial",
+        "supportedPbr": true,
+        "color": "ecece9",
+        "roughness": 0.93,
+        "metalness": 0,
+        "ior": null,
+        "transmission": null,
+        "sheen": null,
+        "textures": {
+          "map": {
+            "present": false
+          },
+          "normalMap": {
+            "present": true,
+            "width": 1024,
+            "height": 1024,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "roughnessMap": {
+            "present": false
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": null,
+      "rayDistanceM": 4.169704719917076,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    },
+    {
+      "id": "screen-r2-c1",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "display-uv-through-rtt-orientation",
+      "requestedDisplayUv": {
+        "u": 0.34,
+        "v": 0.62
+      },
+      "canonicalFilmUv": {
+        "u": 0.34,
+        "v": 0.62
+      },
+      "projectedRawFilmUv": {
+        "u": 0.3399999999999999,
+        "v": 0.62
+      },
+      "projectedDisplayUv": {
+        "u": 0.3399999999999999,
+        "v": 0.62
+      },
+      "projectedUvError": 1.1102230246251565e-16,
+      "sourceM": [
+        3.8436719191919195,
+        1.2262031515151515,
+        4
+      ],
+      "runtimeWorldM": [
+        0.6436719191919194,
+        0.3862031515151515,
+        3.92
+      ],
+      "worldMm": {
+        "x": 643.6719191919193,
+        "y": 386.2031515151515,
+        "z": 3920
+      },
+      "distanceFromLensMm": 3991.2236737367202,
+      "objectDistanceAlongLensNormalMm": 3920,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": 5.519428753644316,
+        "majorRadiusMm": 2.759714376822158,
+        "minorRadiusMm": 2.759714376822158,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": 3590,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        0,
+        0,
+        -1
+      ],
+      "mesh": {
+        "name": "wallBack",
+        "type": "Mesh",
+        "path": "room[0]/wallBack[0]",
+        "giMeshKey": "room/wallBack#0",
+        "giCount": 6156,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 6156,
+        "giAttributes": {
+          "gi": {
+            "count": 6156,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 6156,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "room/wallBack#0/material[0]:MeshStandardMaterial",
+        "name": null,
+        "type": "MeshStandardMaterial",
+        "supportedPbr": true,
+        "color": "ecece9",
+        "roughness": 0.93,
+        "metalness": 0,
+        "ior": null,
+        "transmission": null,
+        "sheen": null,
+        "textures": {
+          "map": {
+            "present": false
+          },
+          "normalMap": {
+            "present": true,
+            "width": 1024,
+            "height": 1024,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "roughnessMap": {
+            "present": false
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": null,
+      "rayDistanceM": 3.9912236737367204,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    },
+    {
+      "id": "screen-r2-c2",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "display-uv-through-rtt-orientation",
+      "requestedDisplayUv": {
+        "u": 0.52,
+        "v": 0.62
+      },
+      "canonicalFilmUv": {
+        "u": 0.52,
+        "v": 0.62
+      },
+      "projectedRawFilmUv": {
+        "u": 0.52,
+        "v": 0.62
+      },
+      "projectedDisplayUv": {
+        "u": 0.52,
+        "v": 0.62
+      },
+      "projectedUvError": 0,
+      "sourceM": [
+        3.119732743194712,
+        1.2252828326653835,
+        3.990658673092292
+      ],
+      "runtimeWorldM": [
+        -0.08026725680528823,
+        0.38528283266538355,
+        3.910658673092292
+      ],
+      "worldMm": {
+        "x": -80.26725680528824,
+        "y": 385.2828326653835,
+        "z": 3910.658673092292
+      },
+      "distanceFromLensMm": 3930.411804263476,
+      "objectDistanceAlongLensNormalMm": 3910.658673092292,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": 5.5182168383061505,
+        "majorRadiusMm": 2.7591084191530753,
+        "minorRadiusMm": 2.7591084191530753,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": 3580.658673092292,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        0.003990578607441267,
+        0.015699521217727757,
+        -0.9998687915501273
+      ],
+      "mesh": {
+        "name": "poster",
+        "type": "Mesh",
+        "path": "decor[0]/poster[0]",
+        "giMeshKey": "decor/poster#0",
+        "giCount": 336,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 336,
+        "giAttributes": {
+          "gi": {
+            "count": 336,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 336,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "decor/poster#0/material[0]:MeshStandardMaterial",
+        "name": null,
+        "type": "MeshStandardMaterial",
+        "supportedPbr": true,
+        "color": "ffffff",
+        "roughness": 0.8,
+        "metalness": 0,
+        "ior": null,
+        "transmission": null,
+        "sheen": null,
+        "textures": {
+          "map": {
+            "present": true,
+            "width": 400,
+            "height": 560,
+            "colorSpace": "srgb",
+            "mapping": 300
+          },
+          "normalMap": {
+            "present": false
+          },
+          "roughnessMap": {
+            "present": false
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": null,
+      "rayDistanceM": 3.930411804263476,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    },
+    {
+      "id": "screen-r2-c3",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "display-uv-through-rtt-orientation",
+      "requestedDisplayUv": {
+        "u": 0.7,
+        "v": 0.62
+      },
+      "canonicalFilmUv": {
+        "u": 0.7,
+        "v": 0.62
+      },
+      "projectedRawFilmUv": {
+        "u": 0.7000000000000001,
+        "v": 0.62
+      },
+      "projectedDisplayUv": {
+        "u": 0.7000000000000001,
+        "v": 0.62
+      },
+      "projectedUvError": 1.1102230246251565e-16,
+      "sourceM": [
+        2.3954101010101008,
+        1.2262031515151517,
+        4.000000000000001
+      ],
+      "runtimeWorldM": [
+        -0.8045898989898994,
+        0.3862031515151517,
+        3.920000000000001
+      ],
+      "worldMm": {
+        "x": -804.5898989898994,
+        "y": 386.2031515151517,
+        "z": 3920.000000000001
+      },
+      "distanceFromLensMm": 4020.3131444946944,
+      "objectDistanceAlongLensNormalMm": 3920.000000000001,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": 5.519428753644316,
+        "majorRadiusMm": 2.759714376822158,
+        "minorRadiusMm": 2.759714376822158,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": 3590.000000000001,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        0,
+        0,
+        -1
+      ],
+      "mesh": {
+        "name": "wallBack",
+        "type": "Mesh",
+        "path": "room[0]/wallBack[0]",
+        "giMeshKey": "room/wallBack#0",
+        "giCount": 6156,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 6156,
+        "giAttributes": {
+          "gi": {
+            "count": 6156,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 6156,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "room/wallBack#0/material[0]:MeshStandardMaterial",
+        "name": null,
+        "type": "MeshStandardMaterial",
+        "supportedPbr": true,
+        "color": "ecece9",
+        "roughness": 0.93,
+        "metalness": 0,
+        "ior": null,
+        "transmission": null,
+        "sheen": null,
+        "textures": {
+          "map": {
+            "present": false
+          },
+          "normalMap": {
+            "present": true,
+            "width": 1024,
+            "height": 1024,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "roughnessMap": {
+            "present": false
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": null,
+      "rayDistanceM": 4.020313144494694,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    },
+    {
+      "id": "screen-r2-c4",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "display-uv-through-rtt-orientation",
+      "requestedDisplayUv": {
+        "u": 0.88,
+        "v": 0.62
+      },
+      "canonicalFilmUv": {
+        "u": 0.88,
+        "v": 0.62
+      },
+      "projectedRawFilmUv": {
+        "u": 0.8799999999999999,
+        "v": 0.6199999999999999
+      },
+      "projectedDisplayUv": {
+        "u": 0.8799999999999999,
+        "v": 0.6199999999999999
+      },
+      "projectedUvError": 1.5700924586837752e-16,
+      "sourceM": [
+        1.6712791919191925,
+        1.2262031515151512,
+        3.999999999999999
+      ],
+      "runtimeWorldM": [
+        -1.5287208080808077,
+        0.3862031515151513,
+        3.919999999999999
+      ],
+      "worldMm": {
+        "x": -1528.7208080808077,
+        "y": 386.20315151515126,
+        "z": 3919.999999999999
+      },
+      "distanceFromLensMm": 4225.226642832247,
+      "objectDistanceAlongLensNormalMm": 3919.999999999999,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": 5.519428753644313,
+        "majorRadiusMm": 2.7597143768221564,
+        "minorRadiusMm": 2.7597143768221564,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": 3589.999999999999,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        0,
+        0,
+        -1
+      ],
+      "mesh": {
+        "name": "wallBack",
+        "type": "Mesh",
+        "path": "room[0]/wallBack[0]",
+        "giMeshKey": "room/wallBack#0",
+        "giCount": 6156,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 6156,
+        "giAttributes": {
+          "gi": {
+            "count": 6156,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 6156,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "room/wallBack#0/material[0]:MeshStandardMaterial",
+        "name": null,
+        "type": "MeshStandardMaterial",
+        "supportedPbr": true,
+        "color": "ecece9",
+        "roughness": 0.93,
+        "metalness": 0,
+        "ior": null,
+        "transmission": null,
+        "sheen": null,
+        "textures": {
+          "map": {
+            "present": false
+          },
+          "normalMap": {
+            "present": true,
+            "width": 1024,
+            "height": 1024,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "roughnessMap": {
+            "present": false
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": null,
+      "rayDistanceM": 4.225226642832247,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    },
+    {
+      "id": "screen-r3-c0",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "display-uv-through-rtt-orientation",
+      "requestedDisplayUv": {
+        "u": 0.16,
+        "v": 0.82
+      },
+      "canonicalFilmUv": {
+        "u": 0.16,
+        "v": 0.82
+      },
+      "projectedRawFilmUv": {
+        "u": 0.15999999999999995,
+        "v": 0.8199999999999998
+      },
+      "projectedDisplayUv": {
+        "u": 0.15999999999999995,
+        "v": 0.8199999999999998
+      },
+      "projectedUvError": 1.2412670766236366e-16,
+      "sourceM": [
+        4.5678028282828285,
+        1.8698750707070704,
+        4
+      ],
+      "runtimeWorldM": [
+        1.3678028282828283,
+        1.0298750707070705,
+        3.92
+      ],
+      "worldMm": {
+        "x": 1367.8028282828284,
+        "y": 1029.8750707070706,
+        "z": 3920
+      },
+      "distanceFromLensMm": 4277.607653621636,
+      "objectDistanceAlongLensNormalMm": 3920,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": 5.519428753644316,
+        "majorRadiusMm": 2.759714376822158,
+        "minorRadiusMm": 2.759714376822158,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": 3590,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        0,
+        0,
+        -1
+      ],
+      "mesh": {
+        "name": "wallBack",
+        "type": "Mesh",
+        "path": "room[0]/wallBack[0]",
+        "giMeshKey": "room/wallBack#0",
+        "giCount": 6156,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 6156,
+        "giAttributes": {
+          "gi": {
+            "count": 6156,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 6156,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "room/wallBack#0/material[0]:MeshStandardMaterial",
+        "name": null,
+        "type": "MeshStandardMaterial",
+        "supportedPbr": true,
+        "color": "ecece9",
+        "roughness": 0.93,
+        "metalness": 0,
+        "ior": null,
+        "transmission": null,
+        "sheen": null,
+        "textures": {
+          "map": {
+            "present": false
+          },
+          "normalMap": {
+            "present": true,
+            "width": 1024,
+            "height": 1024,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "roughnessMap": {
+            "present": false
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": null,
+      "rayDistanceM": 4.277607653621636,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    },
+    {
+      "id": "screen-r3-c1",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "display-uv-through-rtt-orientation",
+      "requestedDisplayUv": {
+        "u": 0.34,
+        "v": 0.82
+      },
+      "canonicalFilmUv": {
+        "u": 0.34,
+        "v": 0.82
+      },
+      "projectedRawFilmUv": {
+        "u": 0.34,
+        "v": 0.8199999999999998
+      },
+      "projectedDisplayUv": {
+        "u": 0.34,
+        "v": 0.8199999999999998
+      },
+      "projectedUvError": 1.1102230246251565e-16,
+      "sourceM": [
+        3.843671919191919,
+        1.8698750707070704,
+        4
+      ],
+      "runtimeWorldM": [
+        0.6436719191919189,
+        1.0298750707070705,
+        3.92
+      ],
+      "worldMm": {
+        "x": 643.671919191919,
+        "y": 1029.8750707070706,
+        "z": 3920
+      },
+      "distanceFromLensMm": 4103.8221453688875,
+      "objectDistanceAlongLensNormalMm": 3920,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": 5.519428753644316,
+        "majorRadiusMm": 2.759714376822158,
+        "minorRadiusMm": 2.759714376822158,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": 3590,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        0,
+        0,
+        -1
+      ],
+      "mesh": {
+        "name": "wallBack",
+        "type": "Mesh",
+        "path": "room[0]/wallBack[0]",
+        "giMeshKey": "room/wallBack#0",
+        "giCount": 6156,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 6156,
+        "giAttributes": {
+          "gi": {
+            "count": 6156,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 6156,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "room/wallBack#0/material[0]:MeshStandardMaterial",
+        "name": null,
+        "type": "MeshStandardMaterial",
+        "supportedPbr": true,
+        "color": "ecece9",
+        "roughness": 0.93,
+        "metalness": 0,
+        "ior": null,
+        "transmission": null,
+        "sheen": null,
+        "textures": {
+          "map": {
+            "present": false
+          },
+          "normalMap": {
+            "present": true,
+            "width": 1024,
+            "height": 1024,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "roughnessMap": {
+            "present": false
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": null,
+      "rayDistanceM": 4.103822145368888,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    },
+    {
+      "id": "screen-r3-c2",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "display-uv-through-rtt-orientation",
+      "requestedDisplayUv": {
+        "u": 0.52,
+        "v": 0.82
+      },
+      "canonicalFilmUv": {
+        "u": 0.52,
+        "v": 0.82
+      },
+      "projectedRawFilmUv": {
+        "u": 0.52,
+        "v": 0.8199999999999998
+      },
+      "projectedDisplayUv": {
+        "u": 0.52,
+        "v": 0.8199999999999998
+      },
+      "projectedUvError": 1.1102230246251565e-16,
+      "sourceM": [
+        3.11954101010101,
+        1.8698750707070704,
+        3.9999999999999996
+      ],
+      "runtimeWorldM": [
+        -0.08045898989899003,
+        1.0298750707070705,
+        3.9199999999999995
+      ],
+      "worldMm": {
+        "x": -80.45898989899003,
+        "y": 1029.8750707070706,
+        "z": 3919.9999999999995
+      },
+      "distanceFromLensMm": 4053.8273656286174,
+      "objectDistanceAlongLensNormalMm": 3919.9999999999995,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": 5.519428753644316,
+        "majorRadiusMm": 2.759714376822158,
+        "minorRadiusMm": 2.759714376822158,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": 3589.9999999999995,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        0,
+        0,
+        -1
+      ],
+      "mesh": {
+        "name": "wallBack",
+        "type": "Mesh",
+        "path": "room[0]/wallBack[0]",
+        "giMeshKey": "room/wallBack#0",
+        "giCount": 6156,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 6156,
+        "giAttributes": {
+          "gi": {
+            "count": 6156,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 6156,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "room/wallBack#0/material[0]:MeshStandardMaterial",
+        "name": null,
+        "type": "MeshStandardMaterial",
+        "supportedPbr": true,
+        "color": "ecece9",
+        "roughness": 0.93,
+        "metalness": 0,
+        "ior": null,
+        "transmission": null,
+        "sheen": null,
+        "textures": {
+          "map": {
+            "present": false
+          },
+          "normalMap": {
+            "present": true,
+            "width": 1024,
+            "height": 1024,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "roughnessMap": {
+            "present": false
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": null,
+      "rayDistanceM": 4.053827365628617,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    },
+    {
+      "id": "screen-r3-c3",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "display-uv-through-rtt-orientation",
+      "requestedDisplayUv": {
+        "u": 0.7,
+        "v": 0.82
+      },
+      "canonicalFilmUv": {
+        "u": 0.7,
+        "v": 0.82
+      },
+      "projectedRawFilmUv": {
+        "u": 0.7000000000000001,
+        "v": 0.8199999999999998
+      },
+      "projectedDisplayUv": {
+        "u": 0.7000000000000001,
+        "v": 0.8199999999999998
+      },
+      "projectedUvError": 1.5700924586837752e-16,
+      "sourceM": [
+        2.395410101010101,
+        1.8698750707070704,
+        4
+      ],
+      "runtimeWorldM": [
+        -0.804589898989899,
+        1.0298750707070705,
+        3.92
+      ],
+      "worldMm": {
+        "x": -804.589898989899,
+        "y": 1029.8750707070706,
+        "z": 3920
+      },
+      "distanceFromLensMm": 4132.119016536246,
+      "objectDistanceAlongLensNormalMm": 3920,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": 5.519428753644316,
+        "majorRadiusMm": 2.759714376822158,
+        "minorRadiusMm": 2.759714376822158,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": 3590,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        0,
+        0,
+        -1
+      ],
+      "mesh": {
+        "name": "wallBack",
+        "type": "Mesh",
+        "path": "room[0]/wallBack[0]",
+        "giMeshKey": "room/wallBack#0",
+        "giCount": 6156,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 6156,
+        "giAttributes": {
+          "gi": {
+            "count": 6156,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 6156,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "room/wallBack#0/material[0]:MeshStandardMaterial",
+        "name": null,
+        "type": "MeshStandardMaterial",
+        "supportedPbr": true,
+        "color": "ecece9",
+        "roughness": 0.93,
+        "metalness": 0,
+        "ior": null,
+        "transmission": null,
+        "sheen": null,
+        "textures": {
+          "map": {
+            "present": false
+          },
+          "normalMap": {
+            "present": true,
+            "width": 1024,
+            "height": 1024,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "roughnessMap": {
+            "present": false
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": null,
+      "rayDistanceM": 4.132119016536246,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    },
+    {
+      "id": "screen-r3-c4",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "display-uv-through-rtt-orientation",
+      "requestedDisplayUv": {
+        "u": 0.88,
+        "v": 0.82
+      },
+      "canonicalFilmUv": {
+        "u": 0.88,
+        "v": 0.82
+      },
+      "projectedRawFilmUv": {
+        "u": 0.8799999999999999,
+        "v": 0.8199999999999998
+      },
+      "projectedDisplayUv": {
+        "u": 0.8799999999999999,
+        "v": 0.8199999999999998
+      },
+      "projectedUvError": 1.5700924586837752e-16,
+      "sourceM": [
+        1.6712791919191925,
+        1.86987507070707,
+        3.999999999999999
+      ],
+      "runtimeWorldM": [
+        -1.5287208080808077,
+        1.02987507070707,
+        3.919999999999999
+      ],
+      "worldMm": {
+        "x": -1528.7208080808077,
+        "y": 1029.87507070707,
+        "z": 3919.999999999999
+      },
+      "distanceFromLensMm": 4331.74675740897,
+      "objectDistanceAlongLensNormalMm": 3919.999999999999,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": 5.519428753644313,
+        "majorRadiusMm": 2.7597143768221564,
+        "minorRadiusMm": 2.7597143768221564,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": 3589.999999999999,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        0,
+        0,
+        -1
+      ],
+      "mesh": {
+        "name": "wallBack",
+        "type": "Mesh",
+        "path": "room[0]/wallBack[0]",
+        "giMeshKey": "room/wallBack#0",
+        "giCount": 6156,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 6156,
+        "giAttributes": {
+          "gi": {
+            "count": 6156,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 6156,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "room/wallBack#0/material[0]:MeshStandardMaterial",
+        "name": null,
+        "type": "MeshStandardMaterial",
+        "supportedPbr": true,
+        "color": "ecece9",
+        "roughness": 0.93,
+        "metalness": 0,
+        "ior": null,
+        "transmission": null,
+        "sheen": null,
+        "textures": {
+          "map": {
+            "present": false
+          },
+          "normalMap": {
+            "present": true,
+            "width": 1024,
+            "height": 1024,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "roughnessMap": {
+            "present": false
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": null,
+      "rayDistanceM": 4.331746757408969,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    },
+    {
+      "id": "laptop-lid",
+      "valid": true,
+      "rejection": null,
+      "frameIdentity": {
+        "requestId": "room-request-7",
+        "generationId": "room-generation-4",
+        "frameId": "room-generation-4:frame:1"
+      },
+      "previewMode": "upright",
+      "probeCoordinateSource": "known-source-point",
+      "requestedDisplayUv": null,
+      "canonicalFilmUv": {
+        "u": 0.34387096779672943,
+        "v": 0.18774193559345845
+      },
+      "projectedRawFilmUv": {
+        "u": 0.34387096779672943,
+        "v": 0.18774193559345845
+      },
+      "projectedDisplayUv": {
+        "u": 0.34387096779672943,
+        "v": 0.18774193559345845
+      },
+      "projectedUvError": null,
+      "sourceM": [
+        3.2526249945163728,
+        0.7558000087738037,
+        0.4084353408021827
+      ],
+      "runtimeWorldM": [
+        0.05262499451637259,
+        -0.08419999122619626,
+        0.3284353408021827
+      ],
+      "worldMm": {
+        "x": 52.624994516372595,
+        "y": -84.19999122619626,
+        "z": 328.4353408021827
+      },
+      "distanceFromLensMm": 343.1163092279142,
+      "objectDistanceAlongLensNormalMm": 328.4353408021827,
+      "expectedFootprint": {
+        "valid": true,
+        "signedCoCDiameterMm": -0.028711482991140055,
+        "majorRadiusMm": 0.014355741495570028,
+        "minorRadiusMm": 0.014355741495570028,
+        "orientationRad": 0
+      },
+      "signedFocusPlaneDistanceMm": -1.5646591978173205,
+      "focusDistanceMm": 330,
+      "apertureFNumber": 5.6,
+      "surfaceNormalWorld": [
+        0,
+        1,
+        0
+      ],
+      "mesh": {
+        "name": "laptopLid",
+        "type": "Mesh",
+        "path": "desk[0]/laptopLid[0]",
+        "giMeshKey": "desk/laptopLid#0",
+        "giCount": 1930,
+        "giInstanced": false,
+        "instanceId": null,
+        "geometryVertexCount": 1930,
+        "giAttributes": {
+          "gi": {
+            "count": 1930,
+            "itemSize": 3
+          },
+          "gd": {
+            "count": 1930,
+            "itemSize": 3
+          },
+          "giB": null
+        },
+        "hasMatchedBake": true
+      },
+      "material": {
+        "stableId": "desk/laptopLid#0/material[0]:MeshStandardMaterial",
+        "name": null,
+        "type": "MeshStandardMaterial",
+        "supportedPbr": true,
+        "color": "ffffff",
+        "roughness": 1,
+        "metalness": 1,
+        "ior": null,
+        "transmission": null,
+        "sheen": null,
+        "textures": {
+          "map": {
+            "present": true,
+            "width": 2048,
+            "height": 1428,
+            "colorSpace": "srgb",
+            "mapping": 300
+          },
+          "normalMap": {
+            "present": true,
+            "width": 512,
+            "height": 512,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "roughnessMap": {
+            "present": true,
+            "width": 2048,
+            "height": 1428,
+            "colorSpace": null,
+            "mapping": 300
+          },
+          "metalnessMap": {
+            "present": false
+          },
+          "aoMap": {
+            "present": false
+          },
+          "emissiveMap": {
+            "present": false
+          },
+          "alphaMap": {
+            "present": false
+          },
+          "displacementMap": {
+            "present": false
+          }
+        }
+      },
+      "knownSourcePoint": {
+        "worldMm": {
+          "x": 52.624994516372595,
+          "y": -84.19999122619626,
+          "z": 328.4353408021827
+        },
+        "surfaceErrorMm": 0,
+        "allowedSurfaceErrorMm": 2
+      },
+      "rayDistanceM": 0.3431163092279142,
+      "nearestHit": true,
+      "raycastScope": "mounted-render-scene",
+      "viewTransform": [
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        -3.2,
+        -0.84,
+        -0.08,
+        1
+      ]
+    }
+  ],
+  "patchMeasurements": [
+    {
+      "id": "screen-r0-c0",
+      "giMeshKey": "desk/deskTop#0",
+      "materialId": "desk/deskTop#0/material[0]:MeshStandardMaterial",
+      "roles": [
+        "upstream-wood-or-desk-geometry"
+      ],
+      "isKnownPoint": false,
+      "valid": false,
+      "rejection": "ROI ambiguous: perimeter ray misses or changes GI mesh/material/normal",
+      "rejectedPerimeterRay": "screen-r0-c0:roi:1",
+      "perimeter": [
+        {
+          "id": "screen-r0-c0:roi:0",
+          "valid": true,
+          "rejection": null,
+          "frameIdentity": {
+            "requestId": "room-request-7",
+            "generationId": "room-generation-4",
+            "frameId": "room-generation-4:frame:1"
+          },
+          "previewMode": "upright",
+          "probeCoordinateSource": "display-uv-through-rtt-orientation",
+          "requestedDisplayUv": {
+            "u": 0.1527007299270068,
+            "v": 0.17026425591098726
+          },
+          "canonicalFilmUv": {
+            "u": 0.1527007299270068,
+            "v": 0.17026425591098726
+          },
+          "projectedRawFilmUv": {
+            "u": 0.15270072992700714,
+            "v": 0.1702642559109873
+          },
+          "projectedDisplayUv": {
+            "u": 0.15270072992700714,
+            "v": 0.1702642559109873
+          },
+          "projectedUvError": 3.342213888644167e-16,
+          "sourceM": [
+            3.3316581699049133,
+            0.7400000095367432,
+            0.44939025164835006
+          ],
+          "runtimeWorldM": [
+            0.13165816990491308,
+            -0.0999999904632568,
+            0.36939025164835004
+          ],
+          "worldMm": {
+            "x": 131.65816990491308,
+            "y": -99.99999046325681,
+            "z": 369.39025164835004
+          },
+          "distanceFromLensMm": 404.7011611154505,
+          "objectDistanceAlongLensNormalMm": 369.39025164835004,
+          "expectedFootprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0.642671550905979,
+            "majorRadiusMm": 0.3213357754529895,
+            "minorRadiusMm": 0.3213357754529895,
+            "orientationRad": 0
+          },
+          "signedFocusPlaneDistanceMm": 39.390251648350045,
+          "focusDistanceMm": 330,
+          "apertureFNumber": 5.6,
+          "surfaceNormalWorld": [
+            0,
+            1,
+            0
+          ],
+          "mesh": {
+            "name": "deskTop",
+            "type": "Mesh",
+            "path": "desk[0]/deskTop[0]",
+            "giMeshKey": "desk/deskTop#0",
+            "giCount": 12096,
+            "giInstanced": false,
+            "instanceId": null,
+            "geometryVertexCount": 12096,
+            "giAttributes": {
+              "gi": {
+                "count": 12096,
+                "itemSize": 3
+              },
+              "gd": {
+                "count": 12096,
+                "itemSize": 3
+              },
+              "giB": null
+            },
+            "hasMatchedBake": true
+          },
+          "material": {
+            "stableId": "desk/deskTop#0/material[0]:MeshStandardMaterial",
+            "name": null,
+            "type": "MeshStandardMaterial",
+            "supportedPbr": true,
+            "color": "ffffff",
+            "roughness": 1,
+            "metalness": 0,
+            "ior": null,
+            "transmission": null,
+            "sheen": null,
+            "textures": {
+              "map": {
+                "present": true,
+                "width": 4096,
+                "height": 2304,
+                "colorSpace": "srgb",
+                "mapping": 300
+              },
+              "normalMap": {
+                "present": true,
+                "width": 512,
+                "height": 512,
+                "colorSpace": null,
+                "mapping": 300
+              },
+              "roughnessMap": {
+                "present": true,
+                "width": 2048,
+                "height": 1152,
+                "colorSpace": null,
+                "mapping": 300
+              },
+              "metalnessMap": {
+                "present": false
+              },
+              "aoMap": {
+                "present": false
+              },
+              "emissiveMap": {
+                "present": false
+              },
+              "alphaMap": {
+                "present": false
+              },
+              "displacementMap": {
+                "present": false
+              }
+            }
+          },
+          "knownSourcePoint": null,
+          "rayDistanceM": 0.40470116111545046,
+          "nearestHit": true,
+          "raycastScope": "mounted-render-scene",
+          "viewTransform": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            -3.2,
+            -0.84,
+            -0.08,
+            1
+          ]
+        },
+        {
+          "id": "screen-r0-c0:roi:1",
+          "valid": true,
+          "rejection": null,
+          "frameIdentity": {
+            "requestId": "room-request-7",
+            "generationId": "room-generation-4",
+            "frameId": "room-generation-4:frame:1"
+          },
+          "previewMode": "upright",
+          "probeCoordinateSource": "display-uv-through-rtt-orientation",
+          "requestedDisplayUv": {
+            "u": 0.1599999999999995,
+            "v": 0.17026425591098726
+          },
+          "canonicalFilmUv": {
+            "u": 0.1599999999999995,
+            "v": 0.17026425591098726
+          },
+          "projectedRawFilmUv": {
+            "u": 0.16,
+            "v": 0.17026425591098715
+          },
+          "projectedDisplayUv": {
+            "u": 0.16,
+            "v": 0.17026425591098715
+          },
+          "projectedUvError": 5.117875266520904e-16,
+          "sourceM": [
+            3.3252901820274015,
+            0.7427937614168164,
+            0.4390704035639395
+          ],
+          "runtimeWorldM": [
+            0.12529018202740128,
+            -0.09720623858318356,
+            0.3590704035639395
+          ],
+          "worldMm": {
+            "x": 125.29018202740127,
+            "y": -97.20623858318356,
+            "z": 359.07040356393946
+          },
+          "distanceFromLensMm": 392.52800823319666,
+          "objectDistanceAlongLensNormalMm": 359.07040356393946,
+          "expectedFootprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0.48792964045134085,
+            "majorRadiusMm": 0.24396482022567043,
+            "minorRadiusMm": 0.24396482022567043,
+            "orientationRad": 0
+          },
+          "signedFocusPlaneDistanceMm": 29.070403563939465,
+          "focusDistanceMm": 330,
+          "apertureFNumber": 5.6,
+          "surfaceNormalWorld": [
+            -0.2199930014046148,
+            0.9744689928025868,
+            -0.04486938153464371
+          ],
+          "mesh": {
+            "name": "usbCable",
+            "type": "Mesh",
+            "path": "desk[0]/usbCable[0]",
+            "giMeshKey": "desk/usbCable#0",
+            "giCount": 126,
+            "giInstanced": false,
+            "instanceId": null,
+            "geometryVertexCount": 126,
+            "giAttributes": {
+              "gi": {
+                "count": 126,
+                "itemSize": 3
+              },
+              "gd": {
+                "count": 126,
+                "itemSize": 3
+              },
+              "giB": null
+            },
+            "hasMatchedBake": true
+          },
+          "material": {
+            "stableId": "desk/usbCable#0/material[0]:MeshStandardMaterial",
+            "name": null,
+            "type": "MeshStandardMaterial",
+            "supportedPbr": true,
+            "color": "ffffff",
+            "roughness": 0.5,
+            "metalness": 0,
+            "ior": null,
+            "transmission": null,
+            "sheen": null,
+            "textures": {
+              "map": {
+                "present": false
+              },
+              "normalMap": {
+                "present": false
+              },
+              "roughnessMap": {
+                "present": false
+              },
+              "metalnessMap": {
+                "present": false
+              },
+              "aoMap": {
+                "present": false
+              },
+              "emissiveMap": {
+                "present": false
+              },
+              "alphaMap": {
+                "present": false
+              },
+              "displacementMap": {
+                "present": false
+              }
+            }
+          },
+          "knownSourcePoint": null,
+          "rayDistanceM": 0.39252800823319667,
+          "nearestHit": true,
+          "raycastScope": "mounted-render-scene",
+          "viewTransform": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            -3.2,
+            -0.84,
+            -0.08,
+            1
+          ]
+        },
+        {
+          "id": "screen-r0-c0:roi:2",
+          "valid": true,
+          "rejection": null,
+          "frameIdentity": {
+            "requestId": "room-request-7",
+            "generationId": "room-generation-4",
+            "frameId": "room-generation-4:frame:1"
+          },
+          "previewMode": "upright",
+          "probeCoordinateSource": "display-uv-through-rtt-orientation",
+          "requestedDisplayUv": {
+            "u": 0.1672992700729922,
+            "v": 0.17026425591098726
+          },
+          "canonicalFilmUv": {
+            "u": 0.1672992700729922,
+            "v": 0.17026425591098726
+          },
+          "projectedRawFilmUv": {
+            "u": 0.16729927007299225,
+            "v": 0.17026425591098715
+          },
+          "projectedDisplayUv": {
+            "u": 0.16729927007299225,
+            "v": 0.17026425591098715
+          },
+          "projectedUvError": 1.2412670766236366e-16,
+          "sourceM": [
+            3.323930521621275,
+            0.7417391449159829,
+            0.4429660544818116
+          ],
+          "runtimeWorldM": [
+            0.12393052162127471,
+            -0.09826085508401705,
+            0.3629660544818116
+          ],
+          "worldMm": {
+            "x": 123.93052162127472,
+            "y": -98.26085508401705,
+            "z": 362.96605448181157
+          },
+          "distanceFromLensMm": 395.9271732746527,
+          "objectDistanceAlongLensNormalMm": 362.96605448181157,
+          "expectedFootprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0.547377209945958,
+            "majorRadiusMm": 0.273688604972979,
+            "minorRadiusMm": 0.273688604972979,
+            "orientationRad": 0
+          },
+          "signedFocusPlaneDistanceMm": 32.96605448181157,
+          "focusDistanceMm": 330,
+          "apertureFNumber": 5.6,
+          "surfaceNormalWorld": [
+            -0.9605064059127256,
+            -0.22432013132433373,
+            -0.16464483861710352
+          ],
+          "mesh": {
+            "name": "usbCable",
+            "type": "Mesh",
+            "path": "desk[0]/usbCable[0]",
+            "giMeshKey": "desk/usbCable#0",
+            "giCount": 126,
+            "giInstanced": false,
+            "instanceId": null,
+            "geometryVertexCount": 126,
+            "giAttributes": {
+              "gi": {
+                "count": 126,
+                "itemSize": 3
+              },
+              "gd": {
+                "count": 126,
+                "itemSize": 3
+              },
+              "giB": null
+            },
+            "hasMatchedBake": true
+          },
+          "material": {
+            "stableId": "desk/usbCable#0/material[0]:MeshStandardMaterial",
+            "name": null,
+            "type": "MeshStandardMaterial",
+            "supportedPbr": true,
+            "color": "ffffff",
+            "roughness": 0.5,
+            "metalness": 0,
+            "ior": null,
+            "transmission": null,
+            "sheen": null,
+            "textures": {
+              "map": {
+                "present": false
+              },
+              "normalMap": {
+                "present": false
+              },
+              "roughnessMap": {
+                "present": false
+              },
+              "metalnessMap": {
+                "present": false
+              },
+              "aoMap": {
+                "present": false
+              },
+              "emissiveMap": {
+                "present": false
+              },
+              "alphaMap": {
+                "present": false
+              },
+              "displacementMap": {
+                "present": false
+              }
+            }
+          },
+          "knownSourcePoint": null,
+          "rayDistanceM": 0.3959271732746527,
+          "nearestHit": true,
+          "raycastScope": "mounted-render-scene",
+          "viewTransform": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            -3.2,
+            -0.84,
+            -0.08,
+            1
+          ]
+        },
+        {
+          "id": "screen-r0-c0:roi:3",
+          "valid": true,
+          "rejection": null,
+          "frameIdentity": {
+            "requestId": "room-request-7",
+            "generationId": "room-generation-4",
+            "frameId": "room-generation-4:frame:1"
+          },
+          "previewMode": "upright",
+          "probeCoordinateSource": "display-uv-through-rtt-orientation",
+          "requestedDisplayUv": {
+            "u": 0.1672992700729922,
+            "v": 0.17999999999999977
+          },
+          "canonicalFilmUv": {
+            "u": 0.1672992700729922,
+            "v": 0.17999999999999977
+          },
+          "projectedRawFilmUv": {
+            "u": 0.16729927007299192,
+            "v": 0.1799999999999997
+          },
+          "projectedDisplayUv": {
+            "u": 0.16729927007299192,
+            "v": 0.1799999999999997
+          },
+          "projectedUvError": 2.897767167584095e-16,
+          "sourceM": [
+            3.3299612102336695,
+            0.7400000095367432,
+            0.46062865464530084
+          ],
+          "runtimeWorldM": [
+            0.12996121023366936,
+            -0.0999999904632568,
+            0.3806286546453008
+          ],
+          "worldMm": {
+            "x": 129.96121023366936,
+            "y": -99.99999046325681,
+            "z": 380.6286546453008
+          },
+          "distanceFromLensMm": 414.4491368010593,
+          "objectDistanceAlongLensNormalMm": 380.6286546453008,
+          "expectedFootprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0.8016423588343473,
+            "majorRadiusMm": 0.40082117941717366,
+            "minorRadiusMm": 0.40082117941717366,
+            "orientationRad": 0
+          },
+          "signedFocusPlaneDistanceMm": 50.6286546453008,
+          "focusDistanceMm": 330,
+          "apertureFNumber": 5.6,
+          "surfaceNormalWorld": [
+            0,
+            1,
+            0
+          ],
+          "mesh": {
+            "name": "deskTop",
+            "type": "Mesh",
+            "path": "desk[0]/deskTop[0]",
+            "giMeshKey": "desk/deskTop#0",
+            "giCount": 12096,
+            "giInstanced": false,
+            "instanceId": null,
+            "geometryVertexCount": 12096,
+            "giAttributes": {
+              "gi": {
+                "count": 12096,
+                "itemSize": 3
+              },
+              "gd": {
+                "count": 12096,
+                "itemSize": 3
+              },
+              "giB": null
+            },
+            "hasMatchedBake": true
+          },
+          "material": {
+            "stableId": "desk/deskTop#0/material[0]:MeshStandardMaterial",
+            "name": null,
+            "type": "MeshStandardMaterial",
+            "supportedPbr": true,
+            "color": "ffffff",
+            "roughness": 1,
+            "metalness": 0,
+            "ior": null,
+            "transmission": null,
+            "sheen": null,
+            "textures": {
+              "map": {
+                "present": true,
+                "width": 4096,
+                "height": 2304,
+                "colorSpace": "srgb",
+                "mapping": 300
+              },
+              "normalMap": {
+                "present": true,
+                "width": 512,
+                "height": 512,
+                "colorSpace": null,
+                "mapping": 300
+              },
+              "roughnessMap": {
+                "present": true,
+                "width": 2048,
+                "height": 1152,
+                "colorSpace": null,
+                "mapping": 300
+              },
+              "metalnessMap": {
+                "present": false
+              },
+              "aoMap": {
+                "present": false
+              },
+              "emissiveMap": {
+                "present": false
+              },
+              "alphaMap": {
+                "present": false
+              },
+              "displacementMap": {
+                "present": false
+              }
+            }
+          },
+          "knownSourcePoint": null,
+          "rayDistanceM": 0.41444913680105927,
+          "nearestHit": true,
+          "raycastScope": "mounted-render-scene",
+          "viewTransform": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            -3.2,
+            -0.84,
+            -0.08,
+            1
+          ]
+        },
+        {
+          "id": "screen-r0-c0:roi:4",
+          "valid": true,
+          "rejection": null,
+          "frameIdentity": {
+            "requestId": "room-request-7",
+            "generationId": "room-generation-4",
+            "frameId": "room-generation-4:frame:1"
+          },
+          "previewMode": "upright",
+          "probeCoordinateSource": "display-uv-through-rtt-orientation",
+          "requestedDisplayUv": {
+            "u": 0.1672992700729922,
+            "v": 0.18973574408901228
+          },
+          "canonicalFilmUv": {
+            "u": 0.1672992700729922,
+            "v": 0.18973574408901228
+          },
+          "projectedRawFilmUv": {
+            "u": 0.16729927007299186,
+            "v": 0.18973574408901223
+          },
+          "projectedDisplayUv": {
+            "u": 0.16729927007299186,
+            "v": 0.18973574408901223
+          },
+          "projectedUvError": 3.376611507232129e-16,
+          "sourceM": [
+            3.3340392471335965,
+            0.7400000095367432,
+            0.47257235458486113
+          ],
+          "runtimeWorldM": [
+            0.13403924713359627,
+            -0.0999999904632568,
+            0.3925723545848611
+          ],
+          "worldMm": {
+            "x": 134.03924713359626,
+            "y": -99.99999046325681,
+            "z": 392.5723545848611
+          },
+          "distanceFromLensMm": 426.70782913967577,
+          "objectDistanceAlongLensNormalMm": 392.5723545848611,
+          "expectedFootprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0.960613166762719,
+            "majorRadiusMm": 0.4803065833813595,
+            "minorRadiusMm": 0.4803065833813595,
+            "orientationRad": 0
+          },
+          "signedFocusPlaneDistanceMm": 62.5723545848611,
+          "focusDistanceMm": 330,
+          "apertureFNumber": 5.6,
+          "surfaceNormalWorld": [
+            0,
+            1,
+            0
+          ],
+          "mesh": {
+            "name": "deskTop",
+            "type": "Mesh",
+            "path": "desk[0]/deskTop[0]",
+            "giMeshKey": "desk/deskTop#0",
+            "giCount": 12096,
+            "giInstanced": false,
+            "instanceId": null,
+            "geometryVertexCount": 12096,
+            "giAttributes": {
+              "gi": {
+                "count": 12096,
+                "itemSize": 3
+              },
+              "gd": {
+                "count": 12096,
+                "itemSize": 3
+              },
+              "giB": null
+            },
+            "hasMatchedBake": true
+          },
+          "material": {
+            "stableId": "desk/deskTop#0/material[0]:MeshStandardMaterial",
+            "name": null,
+            "type": "MeshStandardMaterial",
+            "supportedPbr": true,
+            "color": "ffffff",
+            "roughness": 1,
+            "metalness": 0,
+            "ior": null,
+            "transmission": null,
+            "sheen": null,
+            "textures": {
+              "map": {
+                "present": true,
+                "width": 4096,
+                "height": 2304,
+                "colorSpace": "srgb",
+                "mapping": 300
+              },
+              "normalMap": {
+                "present": true,
+                "width": 512,
+                "height": 512,
+                "colorSpace": null,
+                "mapping": 300
+              },
+              "roughnessMap": {
+                "present": true,
+                "width": 2048,
+                "height": 1152,
+                "colorSpace": null,
+                "mapping": 300
+              },
+              "metalnessMap": {
+                "present": false
+              },
+              "aoMap": {
+                "present": false
+              },
+              "emissiveMap": {
+                "present": false
+              },
+              "alphaMap": {
+                "present": false
+              },
+              "displacementMap": {
+                "present": false
+              }
+            }
+          },
+          "knownSourcePoint": null,
+          "rayDistanceM": 0.42670782913967575,
+          "nearestHit": true,
+          "raycastScope": "mounted-render-scene",
+          "viewTransform": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            -3.2,
+            -0.84,
+            -0.08,
+            1
+          ]
+        },
+        {
+          "id": "screen-r0-c0:roi:5",
+          "valid": true,
+          "rejection": null,
+          "frameIdentity": {
+            "requestId": "room-request-7",
+            "generationId": "room-generation-4",
+            "frameId": "room-generation-4:frame:1"
+          },
+          "previewMode": "upright",
+          "probeCoordinateSource": "display-uv-through-rtt-orientation",
+          "requestedDisplayUv": {
+            "u": 0.1599999999999995,
+            "v": 0.18973574408901228
+          },
+          "canonicalFilmUv": {
+            "u": 0.1599999999999995,
+            "v": 0.18973574408901228
+          },
+          "projectedRawFilmUv": {
+            "u": 0.15999999999999964,
+            "v": 0.18973574408901228
+          },
+          "projectedDisplayUv": {
+            "u": 0.15999999999999964,
+            "v": 0.18973574408901228
+          },
+          "projectedUvError": 1.3877787807814457e-16,
+          "sourceM": [
+            3.3369799941088836,
+            0.7400000095367432,
+            0.4725723545848612
+          ],
+          "runtimeWorldM": [
+            0.1369799941088834,
+            -0.0999999904632568,
+            0.39257235458486117
+          ],
+          "worldMm": {
+            "x": 136.9799941088834,
+            "y": -99.99999046325681,
+            "z": 392.57235458486116
+          },
+          "distanceFromLensMm": 427.64070253312315,
+          "objectDistanceAlongLensNormalMm": 392.57235458486116,
+          "expectedFootprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0.960613166762719,
+            "majorRadiusMm": 0.4803065833813595,
+            "minorRadiusMm": 0.4803065833813595,
+            "orientationRad": 0
+          },
+          "signedFocusPlaneDistanceMm": 62.57235458486116,
+          "focusDistanceMm": 330,
+          "apertureFNumber": 5.6,
+          "surfaceNormalWorld": [
+            0,
+            1,
+            0
+          ],
+          "mesh": {
+            "name": "deskTop",
+            "type": "Mesh",
+            "path": "desk[0]/deskTop[0]",
+            "giMeshKey": "desk/deskTop#0",
+            "giCount": 12096,
+            "giInstanced": false,
+            "instanceId": null,
+            "geometryVertexCount": 12096,
+            "giAttributes": {
+              "gi": {
+                "count": 12096,
+                "itemSize": 3
+              },
+              "gd": {
+                "count": 12096,
+                "itemSize": 3
+              },
+              "giB": null
+            },
+            "hasMatchedBake": true
+          },
+          "material": {
+            "stableId": "desk/deskTop#0/material[0]:MeshStandardMaterial",
+            "name": null,
+            "type": "MeshStandardMaterial",
+            "supportedPbr": true,
+            "color": "ffffff",
+            "roughness": 1,
+            "metalness": 0,
+            "ior": null,
+            "transmission": null,
+            "sheen": null,
+            "textures": {
+              "map": {
+                "present": true,
+                "width": 4096,
+                "height": 2304,
+                "colorSpace": "srgb",
+                "mapping": 300
+              },
+              "normalMap": {
+                "present": true,
+                "width": 512,
+                "height": 512,
+                "colorSpace": null,
+                "mapping": 300
+              },
+              "roughnessMap": {
+                "present": true,
+                "width": 2048,
+                "height": 1152,
+                "colorSpace": null,
+                "mapping": 300
+              },
+              "metalnessMap": {
+                "present": false
+              },
+              "aoMap": {
+                "present": false
+              },
+              "emissiveMap": {
+                "present": false
+              },
+              "alphaMap": {
+                "present": false
+              },
+              "displacementMap": {
+                "present": false
+              }
+            }
+          },
+          "knownSourcePoint": null,
+          "rayDistanceM": 0.42764070253312314,
+          "nearestHit": true,
+          "raycastScope": "mounted-render-scene",
+          "viewTransform": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            -3.2,
+            -0.84,
+            -0.08,
+            1
+          ]
+        },
+        {
+          "id": "screen-r0-c0:roi:6",
+          "valid": true,
+          "rejection": null,
+          "frameIdentity": {
+            "requestId": "room-request-7",
+            "generationId": "room-generation-4",
+            "frameId": "room-generation-4:frame:1"
+          },
+          "previewMode": "upright",
+          "probeCoordinateSource": "display-uv-through-rtt-orientation",
+          "requestedDisplayUv": {
+            "u": 0.1527007299270068,
+            "v": 0.18973574408901228
+          },
+          "canonicalFilmUv": {
+            "u": 0.1527007299270068,
+            "v": 0.18973574408901228
+          },
+          "projectedRawFilmUv": {
+            "u": 0.15270072992700628,
+            "v": 0.18973574408901225
+          },
+          "projectedDisplayUv": {
+            "u": 0.15270072992700628,
+            "v": 0.18973574408901225
+          },
+          "projectedUvError": 5.28085841456928e-16,
+          "sourceM": [
+            3.339920741084171,
+            0.7400000095367432,
+            0.4725723545848611
+          ],
+          "runtimeWorldM": [
+            0.13992074108417096,
+            -0.0999999904632568,
+            0.39257235458486106
+          ],
+          "worldMm": {
+            "x": 139.92074108417097,
+            "y": -99.99999046325681,
+            "z": 392.57235458486105
+          },
+          "distanceFromLensMm": 428.5917235114287,
+          "objectDistanceAlongLensNormalMm": 392.57235458486105,
+          "expectedFootprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0.960613166762719,
+            "majorRadiusMm": 0.4803065833813595,
+            "minorRadiusMm": 0.4803065833813595,
+            "orientationRad": 0
+          },
+          "signedFocusPlaneDistanceMm": 62.572354584861046,
+          "focusDistanceMm": 330,
+          "apertureFNumber": 5.6,
+          "surfaceNormalWorld": [
+            0,
+            1,
+            0
+          ],
+          "mesh": {
+            "name": "deskTop",
+            "type": "Mesh",
+            "path": "desk[0]/deskTop[0]",
+            "giMeshKey": "desk/deskTop#0",
+            "giCount": 12096,
+            "giInstanced": false,
+            "instanceId": null,
+            "geometryVertexCount": 12096,
+            "giAttributes": {
+              "gi": {
+                "count": 12096,
+                "itemSize": 3
+              },
+              "gd": {
+                "count": 12096,
+                "itemSize": 3
+              },
+              "giB": null
+            },
+            "hasMatchedBake": true
+          },
+          "material": {
+            "stableId": "desk/deskTop#0/material[0]:MeshStandardMaterial",
+            "name": null,
+            "type": "MeshStandardMaterial",
+            "supportedPbr": true,
+            "color": "ffffff",
+            "roughness": 1,
+            "metalness": 0,
+            "ior": null,
+            "transmission": null,
+            "sheen": null,
+            "textures": {
+              "map": {
+                "present": true,
+                "width": 4096,
+                "height": 2304,
+                "colorSpace": "srgb",
+                "mapping": 300
+              },
+              "normalMap": {
+                "present": true,
+                "width": 512,
+                "height": 512,
+                "colorSpace": null,
+                "mapping": 300
+              },
+              "roughnessMap": {
+                "present": true,
+                "width": 2048,
+                "height": 1152,
+                "colorSpace": null,
+                "mapping": 300
+              },
+              "metalnessMap": {
+                "present": false
+              },
+              "aoMap": {
+                "present": false
+              },
+              "emissiveMap": {
+                "present": false
+              },
+              "alphaMap": {
+                "present": false
+              },
+              "displacementMap": {
+                "present": false
+              }
+            }
+          },
+          "knownSourcePoint": null,
+          "rayDistanceM": 0.4285917235114287,
+          "nearestHit": true,
+          "raycastScope": "mounted-render-scene",
+          "viewTransform": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            -3.2,
+            -0.84,
+            -0.08,
+            1
+          ]
+        },
+        {
+          "id": "screen-r0-c0:roi:7",
+          "valid": true,
+          "rejection": null,
+          "frameIdentity": {
+            "requestId": "room-request-7",
+            "generationId": "room-generation-4",
+            "frameId": "room-generation-4:frame:1"
+          },
+          "previewMode": "upright",
+          "probeCoordinateSource": "display-uv-through-rtt-orientation",
+          "requestedDisplayUv": {
+            "u": 0.1527007299270068,
+            "v": 0.17999999999999977
+          },
+          "canonicalFilmUv": {
+            "u": 0.1527007299270068,
+            "v": 0.17999999999999977
+          },
+          "projectedRawFilmUv": {
+            "u": 0.15270072992700676,
+            "v": 0.17999999999999988
+          },
+          "projectedDisplayUv": {
+            "u": 0.15270072992700676,
+            "v": 0.17999999999999988
+          },
+          "projectedUvError": 1.2412670766236366e-16,
+          "sourceM": [
+            3.335417284031171,
+            0.7401816942929546,
+            0.4599371103360872
+          ],
+          "runtimeWorldM": [
+            0.13541728403117093,
+            -0.09981830570704542,
+            0.3799371103360872
+          ],
+          "worldMm": {
+            "x": 135.41728403117094,
+            "y": -99.81830570704543,
+            "z": 379.9371103360872
+          },
+          "distanceFromLensMm": 415.5162364807663,
+          "objectDistanceAlongLensNormalMm": 379.9371103360872,
+          "expectedFootprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0.7921317897059696,
+            "majorRadiusMm": 0.3960658948529848,
+            "minorRadiusMm": 0.3960658948529848,
+            "orientationRad": 0
+          },
+          "signedFocusPlaneDistanceMm": 49.93711033608719,
+          "focusDistanceMm": 330,
+          "apertureFNumber": 5.6,
+          "surfaceNormalWorld": [
+            0.27737347903691767,
+            -0.8583884688603715,
+            -0.43154743615795427
+          ],
+          "mesh": {
+            "name": "clips",
+            "type": "Mesh",
+            "path": "desk[0]/clips[0]",
+            "giMeshKey": "desk/clips#0",
+            "giCount": 378,
+            "giInstanced": false,
+            "instanceId": null,
+            "geometryVertexCount": 378,
+            "giAttributes": {
+              "gi": {
+                "count": 378,
+                "itemSize": 3
+              },
+              "gd": {
+                "count": 378,
+                "itemSize": 3
+              },
+              "giB": null
+            },
+            "hasMatchedBake": true
+          },
+          "material": {
+            "stableId": "desk/clips#0/material[0]:MeshStandardMaterial",
+            "name": null,
+            "type": "MeshStandardMaterial",
+            "supportedPbr": true,
+            "color": "ffffff",
+            "roughness": 0.3,
+            "metalness": 1,
+            "ior": null,
+            "transmission": null,
+            "sheen": null,
+            "textures": {
+              "map": {
+                "present": false
+              },
+              "normalMap": {
+                "present": false
+              },
+              "roughnessMap": {
+                "present": false
+              },
+              "metalnessMap": {
+                "present": false
+              },
+              "aoMap": {
+                "present": false
+              },
+              "emissiveMap": {
+                "present": false
+              },
+              "alphaMap": {
+                "present": false
+              },
+              "displacementMap": {
+                "present": false
+              }
+            }
+          },
+          "knownSourcePoint": null,
+          "rayDistanceM": 0.4155162364807663,
+          "nearestHit": true,
+          "raycastScope": "mounted-render-scene",
+          "viewTransform": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            -3.2,
+            -0.84,
+            -0.08,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "screen-r0-c1",
+      "giMeshKey": "desk/laptopLid#0",
+      "materialId": "desk/laptopLid#0/material[0]:MeshStandardMaterial",
+      "roles": [
+        "PBR-specular-response-candidate"
+      ],
+      "isKnownPoint": false,
+      "sourceM": [
+        3.2526249945163728,
+        0.7558000087738037,
+        0.40048932437997614
+      ],
+      "valid": true,
+      "rejection": null,
+      "patch": {
+        "valid": true,
+        "frameIdentity": {
+          "requestId": "room-request-7",
+          "generationId": "room-generation-4",
+          "frameId": "room-generation-4:frame:1"
+        },
+        "space": "display-referred RGB8",
+        "displayUv": {
+          "u": 0.34000000000000014,
+          "v": 0.17999999999999997
+        },
+        "roi": {
+          "x": 319,
+          "y": 122,
+          "width": 15,
+          "height": 15
+        },
+        "meanRgb8": [
+          66.498,
+          73.467,
+          66.596
+        ],
+        "meanLuma8": 71.489,
+        "lumaStdDev8": 0.488,
+        "meanAbsoluteNeighborGradient8": 0.051,
+        "darkPixelFraction": 0,
+        "highlightPixelFraction": 0,
+        "nonOpaquePixelFraction": 0,
+        "caveats": [
+          "display-referred RGB8 values are not linear scene radiance",
+          "fixed patch may include adjacent surfaces, blur, glare, or occlusion",
+          "gradient statistic describes local texture/edge energy, not sharpness by itself"
+        ]
+      },
+      "perimeterSurface": "same GI mesh/material across all 8 perimeter rays; local normal spread under 18 degrees"
+    },
+    {
+      "id": "screen-r1-c0",
+      "giMeshKey": "desk/mug#0",
+      "materialId": "desk/mug#0/material[0]:MeshStandardMaterial",
+      "roles": [
+        "PBR-specular-response-candidate"
+      ],
+      "isKnownPoint": false,
+      "sourceM": [
+        3.3490225953309216,
+        0.8049358599221361,
+        0.5070853675822494
+      ],
+      "valid": true,
+      "rejection": null,
+      "patch": {
+        "valid": true,
+        "frameIdentity": {
+          "requestId": "room-request-7",
+          "generationId": "room-generation-4",
+          "frameId": "room-generation-4:frame:1"
+        },
+        "space": "display-referred RGB8",
+        "displayUv": {
+          "u": 0.16000000000000006,
+          "v": 0.39999999999999997
+        },
+        "roi": {
+          "x": 146,
+          "y": 281,
+          "width": 15,
+          "height": 15
+        },
+        "meanRgb8": [
+          66,
+          72.6,
+          68.04
+        ],
+        "meanLuma8": 70.868,
+        "lumaStdDev8": 0.353,
+        "meanAbsoluteNeighborGradient8": 0.027,
+        "darkPixelFraction": 0,
+        "highlightPixelFraction": 0,
+        "nonOpaquePixelFraction": 0,
+        "caveats": [
+          "display-referred RGB8 values are not linear scene radiance",
+          "fixed patch may include adjacent surfaces, blur, glare, or occlusion",
+          "gradient statistic describes local texture/edge energy, not sharpness by itself"
+        ]
+      },
+      "perimeterSurface": "same GI mesh/material across all 8 perimeter rays; local normal spread under 18 degrees"
+    },
+    {
+      "id": "screen-r1-c2",
+      "giMeshKey": "clutter/cardigan#0",
+      "materialId": "clutter/cardigan#0/material[0]:MeshPhysicalMaterial",
+      "roles": [
+        "upstream-named-fabric-geometry"
+      ],
+      "isKnownPoint": false,
+      "sourceM": [
+        3.1759381450621906,
+        0.7437525802487619,
+        1.252304940375562
+      ],
+      "valid": true,
+      "rejection": null,
+      "patch": {
+        "valid": true,
+        "frameIdentity": {
+          "requestId": "room-request-7",
+          "generationId": "room-generation-4",
+          "frameId": "room-generation-4:frame:1"
+        },
+        "space": "display-referred RGB8",
+        "displayUv": {
+          "u": 0.52,
+          "v": 0.39999999999999997
+        },
+        "roi": {
+          "x": 492,
+          "y": 281,
+          "width": 15,
+          "height": 15
+        },
+        "meanRgb8": [
+          79.818,
+          85.689,
+          78.124
+        ],
+        "meanLuma8": 83.895,
+        "lumaStdDev8": 1.007,
+        "meanAbsoluteNeighborGradient8": 0.494,
+        "darkPixelFraction": 0,
+        "highlightPixelFraction": 0,
+        "nonOpaquePixelFraction": 0,
+        "caveats": [
+          "display-referred RGB8 values are not linear scene radiance",
+          "fixed patch may include adjacent surfaces, blur, glare, or occlusion",
+          "gradient statistic describes local texture/edge energy, not sharpness by itself"
+        ]
+      },
+      "perimeterSurface": "same GI mesh/material across all 8 perimeter rays; local normal spread under 18 degrees"
+    },
+    {
+      "id": "screen-r1-c4",
+      "giMeshKey": "fixtures/nightstand/alarmClock/clockBody#0",
+      "materialId": "fixtures/nightstand/alarmClock/clockBody#0/material[0]:MeshStandardMaterial",
+      "roles": [
+        "PBR-specular-response-candidate"
+      ],
+      "isKnownPoint": false,
+      "valid": false,
+      "rejection": "ROI ambiguous: perimeter ray misses or changes GI mesh/material/normal",
+      "rejectedPerimeterRay": "screen-r1-c4:roi:0",
+      "perimeter": [
+        {
+          "id": "screen-r1-c4:roi:0",
+          "valid": false,
+          "rejection": "alpha-tested or transparent material cannot be visibility-verified by geometry raycast",
+          "frameIdentity": {
+            "requestId": "room-request-7",
+            "generationId": "room-generation-4",
+            "frameId": "room-generation-4:frame:1"
+          },
+          "previewMode": "upright",
+          "probeCoordinateSource": "display-uv-through-rtt-orientation",
+          "requestedDisplayUv": {
+            "u": 0.8727007299270074,
+            "v": 0.39026425591098746
+          },
+          "canonicalFilmUv": {
+            "u": 0.8727007299270074,
+            "v": 0.39026425591098746
+          },
+          "projectedRawFilmUv": {
+            "u": 0.8727007299270075,
+            "v": 0.3902642559109875
+          },
+          "projectedDisplayUv": {
+            "u": 0.8727007299270075,
+            "v": 0.3902642559109875
+          },
+          "projectedUvError": 1.2412670766236366e-16,
+          "sourceM": [
+            1.7687459631738236,
+            0.5028721886489826,
+            3.8219498948036703
+          ],
+          "runtimeWorldM": [
+            -1.4312540368261766,
+            -0.33712781135101727,
+            3.7419498948036702
+          ],
+          "worldMm": {
+            "x": -1431.2540368261766,
+            "y": -337.1278113510173,
+            "z": 3741.9498948036703
+          },
+          "distanceFromLensMm": 4020.4890615867557,
+          "objectDistanceAlongLensNormalMm": 3741.9498948036703,
+          "expectedFootprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 5.495287607249026,
+            "majorRadiusMm": 2.747643803624513,
+            "minorRadiusMm": 2.747643803624513,
+            "orientationRad": 0
+          },
+          "signedFocusPlaneDistanceMm": 3411.9498948036703,
+          "focusDistanceMm": 330,
+          "apertureFNumber": 5.6,
+          "surfaceNormalWorld": [
+            -0.20309700168809305,
+            0.8057204488773522,
+            -0.5563867055979905
+          ],
+          "mesh": {
+            "name": "glassesLens",
+            "type": "Mesh",
+            "path": "fixtures[0]/nightstand[0]/glasses[0]/glassesLens[0]",
+            "giMeshKey": "fixtures/nightstand/glasses/glassesLens#0",
+            "giCount": 84,
+            "giInstanced": false,
+            "instanceId": null,
+            "geometryVertexCount": 84,
+            "giAttributes": {
+              "gi": {
+                "count": 84,
+                "itemSize": 3
+              },
+              "gd": {
+                "count": 84,
+                "itemSize": 3
+              },
+              "giB": null
+            },
+            "hasMatchedBake": true
+          },
+          "material": {
+            "stableId": "fixtures/nightstand/glasses/glassesLens#0/material[0]:MeshStandardMaterial",
+            "name": null,
+            "type": "MeshStandardMaterial",
+            "supportedPbr": true,
+            "color": "667375",
+            "roughness": 0.04,
+            "metalness": 0,
+            "ior": null,
+            "transmission": null,
+            "sheen": null,
+            "textures": {
+              "map": {
+                "present": false
+              },
+              "normalMap": {
+                "present": false
+              },
+              "roughnessMap": {
+                "present": false
+              },
+              "metalnessMap": {
+                "present": false
+              },
+              "aoMap": {
+                "present": false
+              },
+              "emissiveMap": {
+                "present": false
+              },
+              "alphaMap": {
+                "present": false
+              },
+              "displacementMap": {
+                "present": false
+              }
+            }
+          },
+          "knownSourcePoint": null,
+          "rayDistanceM": 4.020489061586756,
+          "nearestHit": true,
+          "raycastScope": "mounted-render-scene",
+          "viewTransform": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            -3.2,
+            -0.84,
+            -0.08,
+            1
+          ]
+        },
+        {
+          "id": "screen-r1-c4:roi:1",
+          "valid": true,
+          "rejection": null,
+          "frameIdentity": {
+            "requestId": "room-request-7",
+            "generationId": "room-generation-4",
+            "frameId": "room-generation-4:frame:1"
+          },
+          "previewMode": "upright",
+          "probeCoordinateSource": "display-uv-through-rtt-orientation",
+          "requestedDisplayUv": {
+            "u": 0.8800000000000001,
+            "v": 0.39026425591098746
+          },
+          "canonicalFilmUv": {
+            "u": 0.8800000000000001,
+            "v": 0.39026425591098746
+          },
+          "projectedRawFilmUv": {
+            "u": 0.8799999999999999,
+            "v": 0.3902642559109875
+          },
+          "projectedDisplayUv": {
+            "u": 0.8799999999999999,
+            "v": 0.3902642559109875
+          },
+          "projectedUvError": 2.2887833992611187e-16,
+          "sourceM": [
+            1.8205731604264852,
+            0.5213211986169377,
+            3.617175122196902
+          ],
+          "runtimeWorldM": [
+            -1.379426839573515,
+            -0.31867880138306226,
+            3.537175122196902
+          ],
+          "worldMm": {
+            "x": -1379.426839573515,
+            "y": -318.67880138306225,
+            "z": 3537.175122196902
+          },
+          "distanceFromLensMm": 3809.9845707398067,
+          "objectDistanceAlongLensNormalMm": 3537.175122196902,
+          "expectedFootprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 5.464518024107278,
+            "majorRadiusMm": 2.732259012053639,
+            "minorRadiusMm": 2.732259012053639,
+            "orientationRad": 0
+          },
+          "signedFocusPlaneDistanceMm": 3207.175122196902,
+          "focusDistanceMm": 330,
+          "apertureFNumber": 5.6,
+          "surfaceNormalWorld": [
+            0.9800665778412416,
+            0,
+            -0.1986693307950613
+          ],
+          "mesh": {
+            "name": "clockBody",
+            "type": "Mesh",
+            "path": "fixtures[0]/nightstand[0]/alarmClock[0]/clockBody[0]",
+            "giMeshKey": "fixtures/nightstand/alarmClock/clockBody#0",
+            "giCount": 1414,
+            "giInstanced": false,
+            "instanceId": null,
+            "geometryVertexCount": 1414,
+            "giAttributes": {
+              "gi": {
+                "count": 1414,
+                "itemSize": 3
+              },
+              "gd": {
+                "count": 1414,
+                "itemSize": 3
+              },
+              "giB": null
+            },
+            "hasMatchedBake": true
+          },
+          "material": {
+            "stableId": "fixtures/nightstand/alarmClock/clockBody#0/material[0]:MeshStandardMaterial",
+            "name": null,
+            "type": "MeshStandardMaterial",
+            "supportedPbr": true,
+            "color": "0d0d0e",
+            "roughness": 0.44,
+            "metalness": 0,
+            "ior": null,
+            "transmission": null,
+            "sheen": null,
+            "textures": {
+              "map": {
+                "present": false
+              },
+              "normalMap": {
+                "present": true,
+                "width": 512,
+                "height": 512,
+                "colorSpace": null,
+                "mapping": 300
+              },
+              "roughnessMap": {
+                "present": false
+              },
+              "metalnessMap": {
+                "present": false
+              },
+              "aoMap": {
+                "present": false
+              },
+              "emissiveMap": {
+                "present": false
+              },
+              "alphaMap": {
+                "present": false
+              },
+              "displacementMap": {
+                "present": false
+              }
+            }
+          },
+          "knownSourcePoint": null,
+          "rayDistanceM": 3.8099845707398066,
+          "nearestHit": true,
+          "raycastScope": "mounted-render-scene",
+          "viewTransform": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            -3.2,
+            -0.84,
+            -0.08,
+            1
+          ]
+        },
+        {
+          "id": "screen-r1-c4:roi:2",
+          "valid": false,
+          "rejection": "hit does not have a count-matched baked-GI mesh/material identity",
+          "frameIdentity": {
+            "requestId": "room-request-7",
+            "generationId": "room-generation-4",
+            "frameId": "room-generation-4:frame:1"
+          },
+          "previewMode": "upright",
+          "probeCoordinateSource": "display-uv-through-rtt-orientation",
+          "requestedDisplayUv": {
+            "u": 0.8872992700729928,
+            "v": 0.39026425591098746
+          },
+          "canonicalFilmUv": {
+            "u": 0.8872992700729928,
+            "v": 0.39026425591098746
+          },
+          "projectedRawFilmUv": {
+            "u": 0.8872992700729927,
+            "v": 0.3902642559109875
+          },
+          "projectedDisplayUv": {
+            "u": 0.8872992700729927,
+            "v": 0.3902642559109875
+          },
+          "projectedUvError": 1.2412670766236366e-16,
+          "sourceM": [
+            1.7969022400703771,
+            0.5219617518277568,
+            3.610065302303268
+          ],
+          "runtimeWorldM": [
+            -1.403097759929623,
+            -0.3180382481722432,
+            3.5300653023032678
+          ],
+          "worldMm": {
+            "x": -1403.097759929623,
+            "y": -318.0382481722432,
+            "z": 3530.065302303268
+          },
+          "distanceFromLensMm": 3811.9801533776977,
+          "objectDistanceAlongLensNormalMm": 3530.065302303268,
+          "expectedFootprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 5.463385574232603,
+            "majorRadiusMm": 2.7316927871163017,
+            "minorRadiusMm": 2.7316927871163017,
+            "orientationRad": 0
+          },
+          "signedFocusPlaneDistanceMm": 3200.065302303268,
+          "focusDistanceMm": 330,
+          "apertureFNumber": 5.6,
+          "surfaceNormalWorld": [
+            -0.1986693307950613,
+            0,
+            -0.9800665778412416
+          ],
+          "mesh": {
+            "name": "clockGlow",
+            "type": "Mesh",
+            "path": "fixtures[0]/nightstand[0]/alarmClock[0]/clockGlow[0]",
+            "giMeshKey": null,
+            "giCount": null,
+            "giInstanced": false,
+            "instanceId": null,
+            "geometryVertexCount": 4,
+            "giAttributes": {
+              "gi": null,
+              "gd": null,
+              "giB": null
+            },
+            "hasMatchedBake": false
+          },
+          "material": {
+            "stableId": "fixtures[0]/nightstand[0]/alarmClock[0]/clockGlow[0]/material[0]:MeshBasicMaterial",
+            "name": null,
+            "type": "MeshBasicMaterial",
+            "supportedPbr": false,
+            "color": "7389a6",
+            "roughness": null,
+            "metalness": null,
+            "ior": null,
+            "transmission": null,
+            "sheen": null,
+            "textures": {
+              "map": {
+                "present": true,
+                "width": 472,
+                "height": 200,
+                "colorSpace": "srgb",
+                "mapping": 300
+              },
+              "normalMap": {
+                "present": false
+              },
+              "roughnessMap": {
+                "present": false
+              },
+              "metalnessMap": {
+                "present": false
+              },
+              "aoMap": {
+                "present": false
+              },
+              "emissiveMap": {
+                "present": false
+              },
+              "alphaMap": {
+                "present": false
+              },
+              "displacementMap": {
+                "present": false
+              }
+            }
+          },
+          "knownSourcePoint": null,
+          "rayDistanceM": 3.811980153377698,
+          "nearestHit": true,
+          "raycastScope": "mounted-render-scene",
+          "viewTransform": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            -3.2,
+            -0.84,
+            -0.08,
+            1
+          ]
+        },
+        {
+          "id": "screen-r1-c4:roi:3",
+          "valid": false,
+          "rejection": "hit does not have a count-matched baked-GI mesh/material identity",
+          "frameIdentity": {
+            "requestId": "room-request-7",
+            "generationId": "room-generation-4",
+            "frameId": "room-generation-4:frame:1"
+          },
+          "previewMode": "upright",
+          "probeCoordinateSource": "display-uv-through-rtt-orientation",
+          "requestedDisplayUv": {
+            "u": 0.8872992700729928,
+            "v": 0.39999999999999997
+          },
+          "canonicalFilmUv": {
+            "u": 0.8872992700729928,
+            "v": 0.39999999999999997
+          },
+          "projectedRawFilmUv": {
+            "u": 0.8872992700729928,
+            "v": 0.39999999999999986
+          },
+          "projectedDisplayUv": {
+            "u": 0.8872992700729928,
+            "v": 0.39999999999999986
+          },
+          "projectedUvError": 1.1102230246251565e-16,
+          "sourceM": [
+            1.7969022400703774,
+            0.5501780729583738,
+            3.610065302303267
+          ],
+          "runtimeWorldM": [
+            -1.4030977599296228,
+            -0.2898219270416261,
+            3.530065302303267
+          ],
+          "worldMm": {
+            "x": -1403.0977599296227,
+            "y": -289.8219270416261,
+            "z": 3530.065302303267
+          },
+          "distanceFromLensMm": 3809.7297951218407,
+          "objectDistanceAlongLensNormalMm": 3530.065302303267,
+          "expectedFootprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 5.463385574232603,
+            "majorRadiusMm": 2.7316927871163017,
+            "minorRadiusMm": 2.7316927871163017,
+            "orientationRad": 0
+          },
+          "signedFocusPlaneDistanceMm": 3200.065302303267,
+          "focusDistanceMm": 330,
+          "apertureFNumber": 5.6,
+          "surfaceNormalWorld": [
+            -0.1986693307950613,
+            0,
+            -0.9800665778412416
+          ],
+          "mesh": {
+            "name": "clockGlow",
+            "type": "Mesh",
+            "path": "fixtures[0]/nightstand[0]/alarmClock[0]/clockGlow[0]",
+            "giMeshKey": null,
+            "giCount": null,
+            "giInstanced": false,
+            "instanceId": null,
+            "geometryVertexCount": 4,
+            "giAttributes": {
+              "gi": null,
+              "gd": null,
+              "giB": null
+            },
+            "hasMatchedBake": false
+          },
+          "material": {
+            "stableId": "fixtures[0]/nightstand[0]/alarmClock[0]/clockGlow[0]/material[0]:MeshBasicMaterial",
+            "name": null,
+            "type": "MeshBasicMaterial",
+            "supportedPbr": false,
+            "color": "7389a6",
+            "roughness": null,
+            "metalness": null,
+            "ior": null,
+            "transmission": null,
+            "sheen": null,
+            "textures": {
+              "map": {
+                "present": true,
+                "width": 472,
+                "height": 200,
+                "colorSpace": "srgb",
+                "mapping": 300
+              },
+              "normalMap": {
+                "present": false
+              },
+              "roughnessMap": {
+                "present": false
+              },
+              "metalnessMap": {
+                "present": false
+              },
+              "aoMap": {
+                "present": false
+              },
+              "emissiveMap": {
+                "present": false
+              },
+              "alphaMap": {
+                "present": false
+              },
+              "displacementMap": {
+                "present": false
+              }
+            }
+          },
+          "knownSourcePoint": null,
+          "rayDistanceM": 3.8097297951218407,
+          "nearestHit": true,
+          "raycastScope": "mounted-render-scene",
+          "viewTransform": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            -3.2,
+            -0.84,
+            -0.08,
+            1
+          ]
+        },
+        {
+          "id": "screen-r1-c4:roi:4",
+          "valid": true,
+          "rejection": null,
+          "frameIdentity": {
+            "requestId": "room-request-7",
+            "generationId": "room-generation-4",
+            "frameId": "room-generation-4:frame:1"
+          },
+          "previewMode": "upright",
+          "probeCoordinateSource": "display-uv-through-rtt-orientation",
+          "requestedDisplayUv": {
+            "u": 0.8872992700729928,
+            "v": 0.4097357440890125
+          },
+          "canonicalFilmUv": {
+            "u": 0.8872992700729928,
+            "v": 0.4097357440890125
+          },
+          "projectedRawFilmUv": {
+            "u": 0.887299270072993,
+            "v": 0.40973574408901237
+          },
+          "projectedDisplayUv": {
+            "u": 0.887299270072993,
+            "v": 0.40973574408901237
+          },
+          "projectedUvError": 2.482534153247273e-16,
+          "sourceM": [
+            1.6419145970655453,
+            0.5494971658167205,
+            4
+          ],
+          "runtimeWorldM": [
+            -1.5580854029344549,
+            -0.2905028341832795,
+            3.92
+          ],
+          "worldMm": {
+            "x": -1558.0854029344548,
+            "y": -290.5028341832795,
+            "z": 3920
+          },
+          "distanceFromLensMm": 4228.288308465489,
+          "objectDistanceAlongLensNormalMm": 3920,
+          "expectedFootprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 5.519428753644316,
+            "majorRadiusMm": 2.759714376822158,
+            "minorRadiusMm": 2.759714376822158,
+            "orientationRad": 0
+          },
+          "signedFocusPlaneDistanceMm": 3590,
+          "focusDistanceMm": 330,
+          "apertureFNumber": 5.6,
+          "surfaceNormalWorld": [
+            0,
+            0,
+            -1
+          ],
+          "mesh": {
+            "name": "wallBack",
+            "type": "Mesh",
+            "path": "room[0]/wallBack[0]",
+            "giMeshKey": "room/wallBack#0",
+            "giCount": 6156,
+            "giInstanced": false,
+            "instanceId": null,
+            "geometryVertexCount": 6156,
+            "giAttributes": {
+              "gi": {
+                "count": 6156,
+                "itemSize": 3
+              },
+              "gd": {
+                "count": 6156,
+                "itemSize": 3
+              },
+              "giB": null
+            },
+            "hasMatchedBake": true
+          },
+          "material": {
+            "stableId": "room/wallBack#0/material[0]:MeshStandardMaterial",
+            "name": null,
+            "type": "MeshStandardMaterial",
+            "supportedPbr": true,
+            "color": "ecece9",
+            "roughness": 0.93,
+            "metalness": 0,
+            "ior": null,
+            "transmission": null,
+            "sheen": null,
+            "textures": {
+              "map": {
+                "present": false
+              },
+              "normalMap": {
+                "present": true,
+                "width": 1024,
+                "height": 1024,
+                "colorSpace": null,
+                "mapping": 300
+              },
+              "roughnessMap": {
+                "present": false
+              },
+              "metalnessMap": {
+                "present": false
+              },
+              "aoMap": {
+                "present": false
+              },
+              "emissiveMap": {
+                "present": false
+              },
+              "alphaMap": {
+                "present": false
+              },
+              "displacementMap": {
+                "present": false
+              }
+            }
+          },
+          "knownSourcePoint": null,
+          "rayDistanceM": 4.228288308465489,
+          "nearestHit": true,
+          "raycastScope": "mounted-render-scene",
+          "viewTransform": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            -3.2,
+            -0.84,
+            -0.08,
+            1
+          ]
+        },
+        {
+          "id": "screen-r1-c4:roi:5",
+          "valid": true,
+          "rejection": null,
+          "frameIdentity": {
+            "requestId": "room-request-7",
+            "generationId": "room-generation-4",
+            "frameId": "room-generation-4:frame:1"
+          },
+          "previewMode": "upright",
+          "probeCoordinateSource": "display-uv-through-rtt-orientation",
+          "requestedDisplayUv": {
+            "u": 0.8800000000000001,
+            "v": 0.4097357440890125
+          },
+          "canonicalFilmUv": {
+            "u": 0.8800000000000001,
+            "v": 0.4097357440890125
+          },
+          "projectedRawFilmUv": {
+            "u": 0.8800000000000001,
+            "v": 0.4097357440890126
+          },
+          "projectedDisplayUv": {
+            "u": 0.8800000000000001,
+            "v": 0.4097357440890126
+          },
+          "projectedUvError": 1.1102230246251565e-16,
+          "sourceM": [
+            1.6712791919191918,
+            0.5494971658167209,
+            3.9999999999999996
+          ],
+          "runtimeWorldM": [
+            -1.5287208080808083,
+            -0.29050283418327905,
+            3.9199999999999995
+          ],
+          "worldMm": {
+            "x": -1528.7208080808084,
+            "y": -290.50283418327905,
+            "z": 3919.9999999999995
+          },
+          "distanceFromLensMm": 4217.556070252978,
+          "objectDistanceAlongLensNormalMm": 3919.9999999999995,
+          "expectedFootprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 5.519428753644316,
+            "majorRadiusMm": 2.759714376822158,
+            "minorRadiusMm": 2.759714376822158,
+            "orientationRad": 0
+          },
+          "signedFocusPlaneDistanceMm": 3589.9999999999995,
+          "focusDistanceMm": 330,
+          "apertureFNumber": 5.6,
+          "surfaceNormalWorld": [
+            0,
+            0,
+            -1
+          ],
+          "mesh": {
+            "name": "wallBack",
+            "type": "Mesh",
+            "path": "room[0]/wallBack[0]",
+            "giMeshKey": "room/wallBack#0",
+            "giCount": 6156,
+            "giInstanced": false,
+            "instanceId": null,
+            "geometryVertexCount": 6156,
+            "giAttributes": {
+              "gi": {
+                "count": 6156,
+                "itemSize": 3
+              },
+              "gd": {
+                "count": 6156,
+                "itemSize": 3
+              },
+              "giB": null
+            },
+            "hasMatchedBake": true
+          },
+          "material": {
+            "stableId": "room/wallBack#0/material[0]:MeshStandardMaterial",
+            "name": null,
+            "type": "MeshStandardMaterial",
+            "supportedPbr": true,
+            "color": "ecece9",
+            "roughness": 0.93,
+            "metalness": 0,
+            "ior": null,
+            "transmission": null,
+            "sheen": null,
+            "textures": {
+              "map": {
+                "present": false
+              },
+              "normalMap": {
+                "present": true,
+                "width": 1024,
+                "height": 1024,
+                "colorSpace": null,
+                "mapping": 300
+              },
+              "roughnessMap": {
+                "present": false
+              },
+              "metalnessMap": {
+                "present": false
+              },
+              "aoMap": {
+                "present": false
+              },
+              "emissiveMap": {
+                "present": false
+              },
+              "alphaMap": {
+                "present": false
+              },
+              "displacementMap": {
+                "present": false
+              }
+            }
+          },
+          "knownSourcePoint": null,
+          "rayDistanceM": 4.217556070252979,
+          "nearestHit": true,
+          "raycastScope": "mounted-render-scene",
+          "viewTransform": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            -3.2,
+            -0.84,
+            -0.08,
+            1
+          ]
+        },
+        {
+          "id": "screen-r1-c4:roi:6",
+          "valid": true,
+          "rejection": null,
+          "frameIdentity": {
+            "requestId": "room-request-7",
+            "generationId": "room-generation-4",
+            "frameId": "room-generation-4:frame:1"
+          },
+          "previewMode": "upright",
+          "probeCoordinateSource": "display-uv-through-rtt-orientation",
+          "requestedDisplayUv": {
+            "u": 0.8727007299270074,
+            "v": 0.4097357440890125
+          },
+          "canonicalFilmUv": {
+            "u": 0.8727007299270074,
+            "v": 0.4097357440890125
+          },
+          "projectedRawFilmUv": {
+            "u": 0.8727007299270073,
+            "v": 0.40973574408901237
+          },
+          "projectedDisplayUv": {
+            "u": 0.8727007299270073,
+            "v": 0.40973574408901237
+          },
+          "projectedUvError": 1.5700924586837752e-16,
+          "sourceM": [
+            1.700643786772838,
+            0.5494971658167206,
+            3.9999999999999996
+          ],
+          "runtimeWorldM": [
+            -1.4993562132271623,
+            -0.2905028341832794,
+            3.9199999999999995
+          ],
+          "worldMm": {
+            "x": -1499.3562132271622,
+            "y": -290.5028341832794,
+            "z": 3919.9999999999995
+          },
+          "distanceFromLensMm": 4207.001420348157,
+          "objectDistanceAlongLensNormalMm": 3919.9999999999995,
+          "expectedFootprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 5.519428753644316,
+            "majorRadiusMm": 2.759714376822158,
+            "minorRadiusMm": 2.759714376822158,
+            "orientationRad": 0
+          },
+          "signedFocusPlaneDistanceMm": 3589.9999999999995,
+          "focusDistanceMm": 330,
+          "apertureFNumber": 5.6,
+          "surfaceNormalWorld": [
+            0,
+            0,
+            -1
+          ],
+          "mesh": {
+            "name": "wallBack",
+            "type": "Mesh",
+            "path": "room[0]/wallBack[0]",
+            "giMeshKey": "room/wallBack#0",
+            "giCount": 6156,
+            "giInstanced": false,
+            "instanceId": null,
+            "geometryVertexCount": 6156,
+            "giAttributes": {
+              "gi": {
+                "count": 6156,
+                "itemSize": 3
+              },
+              "gd": {
+                "count": 6156,
+                "itemSize": 3
+              },
+              "giB": null
+            },
+            "hasMatchedBake": true
+          },
+          "material": {
+            "stableId": "room/wallBack#0/material[0]:MeshStandardMaterial",
+            "name": null,
+            "type": "MeshStandardMaterial",
+            "supportedPbr": true,
+            "color": "ecece9",
+            "roughness": 0.93,
+            "metalness": 0,
+            "ior": null,
+            "transmission": null,
+            "sheen": null,
+            "textures": {
+              "map": {
+                "present": false
+              },
+              "normalMap": {
+                "present": true,
+                "width": 1024,
+                "height": 1024,
+                "colorSpace": null,
+                "mapping": 300
+              },
+              "roughnessMap": {
+                "present": false
+              },
+              "metalnessMap": {
+                "present": false
+              },
+              "aoMap": {
+                "present": false
+              },
+              "emissiveMap": {
+                "present": false
+              },
+              "alphaMap": {
+                "present": false
+              },
+              "displacementMap": {
+                "present": false
+              }
+            }
+          },
+          "knownSourcePoint": null,
+          "rayDistanceM": 4.207001420348157,
+          "nearestHit": true,
+          "raycastScope": "mounted-render-scene",
+          "viewTransform": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            -3.2,
+            -0.84,
+            -0.08,
+            1
+          ]
+        },
+        {
+          "id": "screen-r1-c4:roi:7",
+          "valid": true,
+          "rejection": null,
+          "frameIdentity": {
+            "requestId": "room-request-7",
+            "generationId": "room-generation-4",
+            "frameId": "room-generation-4:frame:1"
+          },
+          "previewMode": "upright",
+          "probeCoordinateSource": "display-uv-through-rtt-orientation",
+          "requestedDisplayUv": {
+            "u": 0.8727007299270074,
+            "v": 0.39999999999999997
+          },
+          "canonicalFilmUv": {
+            "u": 0.8727007299270074,
+            "v": 0.39999999999999997
+          },
+          "projectedRawFilmUv": {
+            "u": 0.8727007299270072,
+            "v": 0.39999999999999997
+          },
+          "projectedDisplayUv": {
+            "u": 0.8727007299270072,
+            "v": 0.39999999999999997
+          },
+          "projectedUvError": 2.220446049250313e-16,
+          "sourceM": [
+            1.700643786772838,
+            0.5181640404040402,
+            4.000000000000001
+          ],
+          "runtimeWorldM": [
+            -1.4993562132271623,
+            -0.3218359595959598,
+            3.920000000000001
+          ],
+          "worldMm": {
+            "x": -1499.3562132271622,
+            "y": -321.83595959595976,
+            "z": 3920.000000000001
+          },
+          "distanceFromLensMm": 4209.281107152617,
+          "objectDistanceAlongLensNormalMm": 3920.000000000001,
+          "expectedFootprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 5.519428753644316,
+            "majorRadiusMm": 2.759714376822158,
+            "minorRadiusMm": 2.759714376822158,
+            "orientationRad": 0
+          },
+          "signedFocusPlaneDistanceMm": 3590.000000000001,
+          "focusDistanceMm": 330,
+          "apertureFNumber": 5.6,
+          "surfaceNormalWorld": [
+            0,
+            0,
+            -1
+          ],
+          "mesh": {
+            "name": "wallBack",
+            "type": "Mesh",
+            "path": "room[0]/wallBack[0]",
+            "giMeshKey": "room/wallBack#0",
+            "giCount": 6156,
+            "giInstanced": false,
+            "instanceId": null,
+            "geometryVertexCount": 6156,
+            "giAttributes": {
+              "gi": {
+                "count": 6156,
+                "itemSize": 3
+              },
+              "gd": {
+                "count": 6156,
+                "itemSize": 3
+              },
+              "giB": null
+            },
+            "hasMatchedBake": true
+          },
+          "material": {
+            "stableId": "room/wallBack#0/material[0]:MeshStandardMaterial",
+            "name": null,
+            "type": "MeshStandardMaterial",
+            "supportedPbr": true,
+            "color": "ecece9",
+            "roughness": 0.93,
+            "metalness": 0,
+            "ior": null,
+            "transmission": null,
+            "sheen": null,
+            "textures": {
+              "map": {
+                "present": false
+              },
+              "normalMap": {
+                "present": true,
+                "width": 1024,
+                "height": 1024,
+                "colorSpace": null,
+                "mapping": 300
+              },
+              "roughnessMap": {
+                "present": false
+              },
+              "metalnessMap": {
+                "present": false
+              },
+              "aoMap": {
+                "present": false
+              },
+              "emissiveMap": {
+                "present": false
+              },
+              "alphaMap": {
+                "present": false
+              },
+              "displacementMap": {
+                "present": false
+              }
+            }
+          },
+          "knownSourcePoint": null,
+          "rayDistanceM": 4.209281107152616,
+          "nearestHit": true,
+          "raycastScope": "mounted-render-scene",
+          "viewTransform": [
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            -3.2,
+            -0.84,
+            -0.08,
+            1
+          ]
+        }
+      ]
+    },
+    {
+      "id": "screen-r1-c1",
+      "giMeshKey": "room/wallBack#0",
+      "materialId": "room/wallBack#0/material[0]:MeshStandardMaterial",
+      "roles": [],
+      "isKnownPoint": false,
+      "sourceM": [
+        3.843671919191919,
+        0.5181640404040404,
+        3.9999999999999996
+      ],
+      "valid": true,
+      "rejection": null,
+      "patch": {
+        "valid": true,
+        "frameIdentity": {
+          "requestId": "room-request-7",
+          "generationId": "room-generation-4",
+          "frameId": "room-generation-4:frame:1"
+        },
+        "space": "display-referred RGB8",
+        "displayUv": {
+          "u": 0.34,
+          "v": 0.39999999999999997
+        },
+        "roi": {
+          "x": 319,
+          "y": 281,
+          "width": 15,
+          "height": 15
+        },
+        "meanRgb8": [
+          75.311,
+          82.991,
+          78
+        ],
+        "meanLuma8": 80.998,
+        "lumaStdDev8": 0.123,
+        "meanAbsoluteNeighborGradient8": 0.018,
+        "darkPixelFraction": 0,
+        "highlightPixelFraction": 0,
+        "nonOpaquePixelFraction": 0,
+        "caveats": [
+          "display-referred RGB8 values are not linear scene radiance",
+          "fixed patch may include adjacent surfaces, blur, glare, or occlusion",
+          "gradient statistic describes local texture/edge energy, not sharpness by itself"
+        ]
+      },
+      "perimeterSurface": "same GI mesh/material across all 8 perimeter rays; local normal spread under 18 degrees"
+    },
+    {
+      "id": "screen-r2-c2",
+      "giMeshKey": "decor/poster#0",
+      "materialId": "decor/poster#0/material[0]:MeshStandardMaterial",
+      "roles": [],
+      "isKnownPoint": false,
+      "sourceM": [
+        3.119732743194712,
+        1.2252828326653835,
+        3.990658673092292
+      ],
+      "valid": true,
+      "rejection": null,
+      "patch": {
+        "valid": true,
+        "frameIdentity": {
+          "requestId": "room-request-7",
+          "generationId": "room-generation-4",
+          "frameId": "room-generation-4:frame:1"
+        },
+        "space": "display-referred RGB8",
+        "displayUv": {
+          "u": 0.52,
+          "v": 0.62
+        },
+        "roi": {
+          "x": 492,
+          "y": 439,
+          "width": 15,
+          "height": 15
+        },
+        "meanRgb8": [
+          48.307,
+          62.671,
+          58.987
+        ],
+        "meanLuma8": 59.351,
+        "lumaStdDev8": 0.662,
+        "meanAbsoluteNeighborGradient8": 0.357,
+        "darkPixelFraction": 0,
+        "highlightPixelFraction": 0,
+        "nonOpaquePixelFraction": 0,
+        "caveats": [
+          "display-referred RGB8 values are not linear scene radiance",
+          "fixed patch may include adjacent surfaces, blur, glare, or occlusion",
+          "gradient statistic describes local texture/edge energy, not sharpness by itself"
+        ]
+      },
+      "perimeterSurface": "same GI mesh/material across all 8 perimeter rays; local normal spread under 18 degrees"
+    }
+  ],
+  "errors": [],
+  "evidenceLimits": [
+    "same completed RTT frame and native output canvas data URL; not compositor presentation proof",
+    "patch metrics are display-referred RGB8 statistics and do not measure linear radiance or sharpness",
+    "raycast confirms the first base-geometry surface only; alpha/displacement/custom shader surfaces are rejected",
+    "screen-probe patch may include adjacent surfaces, defocus, reflections, or highlight clipping"
+  ]
+}
