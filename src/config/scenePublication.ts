@@ -27,9 +27,24 @@ export const scenePublication = {
   "macro-depth-of-field": true,
   "macro-oblique-plane": true,
   "macro-compound-movements": true,
+
+  // Free Practice
+  "still-life-studio": false,
 } as const satisfies Record<string, boolean>;
 
 export type ScenePublicationConfig = Readonly<Record<string, boolean>>;
+
+/**
+ * The named qualification build can expose a scene to browser tests before its
+ * manual publication gate is opened. Standard builds use the manual flag, and
+ * production route validation itself remains unchanged.
+ */
+export const resolveScenePublication = (
+  mode: string = import.meta.env.MODE,
+): ScenePublicationConfig =>
+  mode === "still-life-studio-qualification"
+    ? { ...scenePublication, "still-life-studio": true }
+    : scenePublication;
 
 export const isScenePublished = (
   sceneId: string,

@@ -1,11 +1,27 @@
+import { rmSync } from "node:fs";
+import { resolve } from "node:path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 const basePath = process.env.VITE_BASE_PATH ?? "/view-camera-simulator/";
 
+const omitDevelopmentFringeCandidateFromProduction = {
+  name: "omit-development-fringe-candidate-from-production",
+  apply: "build" as const,
+  closeBundle() {
+    rmSync(
+      resolve(
+        process.cwd(),
+        "dist/assets/generated/fringe-club/development",
+      ),
+      { recursive: true, force: true },
+    );
+  },
+};
+
 export default defineConfig({
   base: basePath,
-  plugins: [react()],
+  plugins: [react(), omitDevelopmentFringeCandidateFromProduction],
   build: {
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
@@ -25,6 +41,10 @@ export default defineConfig({
           }
           if (id.includes("stats-gl")) {
             return "stats-gl";
+          }
+          // Keep the opt-in Observer WebGPU pilot out of the default WebGL bundle.
+          if (id.endsWith("/three/build/three.webgpu.js")) {
+            return "three-webgpu";
           }
           if (id.includes("/three/") || id.endsWith("/three/build/three.module.js")) {
             return "three";

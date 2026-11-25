@@ -1,0 +1,90 @@
+{
+  "build": "Vite production preview",
+  "captureSourceSha": "1d91487094e90f0c9481bd839b3db4be62a7ba17",
+  "testId": "architecture-rise-webgpu-production.spec.ts › production preview keeps Architecture Rise on WebGL for default and explicit WebGPU requests",
+  "testProject": "chromium-production-preview",
+  "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION=true npm run test:e2e -- --config=playwright.production.config.ts --project=chromium-production-preview --workers=1 src/tests/e2e/architecture-rise-webgpu-production.spec.ts",
+  "processArguments": [
+    "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+    "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7c-r187-lifecycle/node_modules/playwright/lib/worker/workerProcessEntry.js"
+  ],
+  "browserVersion": "149.0.7827.55",
+  "operatingSystem": "darwin 27.0.0",
+  "threeRevision": "187",
+  "route": "/simulator/free/architecture-rise?observerRenderer=webgpu&observerOutput=standard&rttDiagnostics=1",
+  "evidence": {
+    "requestedRenderer": "webgpu-pilot",
+    "selectionReason": "development-gate-disabled",
+    "rendererAttempt": "webgl",
+    "rendererFamily": "webgl-renderer",
+    "executionBackend": "webgl2",
+    "applicationFallback": "none",
+    "initializationAttempts": "0",
+    "sceneCompatibility": "verified",
+    "pilotEligibility": "eligible",
+    "sceneSubjectId": "architecture-rise",
+    "rendererGenerationAttributeAvailable": false,
+    "hasDevelopmentFixtureAttribute": false,
+    "hasTestProbeAttribute": false
+  },
+  "groundGlassDiagnostics": "rttDiagnostics attributes are development-only; production captures are pixel-analyzed",
+  "defaultObserverPixels": {
+    "width": 514,
+    "height": 411,
+    "distinctColorBuckets": 443,
+    "foregroundPixelSamples": 147171,
+    "contentful": true
+  },
+  "defaultGroundGlassPixels": {
+    "width": 514,
+    "height": 412,
+    "distinctColorBuckets": 196,
+    "foregroundPixelSamples": 197915,
+    "contentful": true
+  },
+  "requestedObserverPixels": {
+    "width": 514,
+    "height": 411,
+    "distinctColorBuckets": 443,
+    "foregroundPixelSamples": 147171,
+    "contentful": true
+  },
+  "requestedGroundGlassPixels": {
+    "width": 514,
+    "height": 412,
+    "distinctColorBuckets": 196,
+    "foregroundPixelSamples": 197915,
+    "contentful": true
+  },
+  "candidateObserverPixels": {
+    "width": 514,
+    "height": 411,
+    "distinctColorBuckets": 443,
+    "foregroundPixelSamples": 147171,
+    "contentful": true
+  },
+  "candidateGroundGlassPixels": {
+    "width": 514,
+    "height": 412,
+    "distinctColorBuckets": 196,
+    "foregroundPixelSamples": 197915,
+    "contentful": true
+  },
+  "standardObserverPixels": {
+    "width": 514,
+    "height": 411,
+    "distinctColorBuckets": 443,
+    "foregroundPixelSamples": 147171,
+    "contentful": true
+  },
+  "standardGroundGlassPixels": {
+    "width": 514,
+    "height": 412,
+    "distinctColorBuckets": 196,
+    "foregroundPixelSamples": 197915,
+    "contentful": true
+  },
+  "webgpuModuleRequests": [],
+  "pageErrors": [],
+  "consoleErrors": []
+}

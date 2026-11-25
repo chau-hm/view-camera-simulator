@@ -1,0 +1,421 @@
+import * as THREE from "three";
+import {
+  adaptObserverMaterialForOutput,
+  type MaterialAwareOutputInterventionId,
+  type MaterialAwareOutputTransform,
+  type MaterialAwareNode,
+} from "./materialAwareNodeMaterials";
+import {
+  observerOutputOwnerIdentity,
+  readObserverOutputSourceMaterial,
+  observerOutputTrackerIdentity,
+} from "./observerMaterialOutputIdentity";
+import type { ObserverMaterialSignatures } from "./observerMaterialSignatures";
+
+export { readObserverOutputSourceMaterial } from "./observerMaterialOutputIdentity";
+
+export type MaterialOutputOwnerKind = "observer-controller" | "registered-subject";
+
+export type MaterialOutputRenderStateOverride = Readonly<{
+  opacity?: number;
+  forceSinglePass?: boolean;
+  blending?: THREE.Material["blending"];
+}>;
+
+const applyMaterialOutputRenderStateOverride = (
+  output: MaterialAwareNode,
+  owner: MaterialOutputOwner,
+): boolean => {
+  const override = owner.renderStateOverride;
+  if (!override) return false;
+  let changed = false;
+  let needsPipelineUpdate = false;
+  const outputWithRenderState = output as THREE.Material & { forceSinglePass?: boolean };
+  if (override.forceSinglePass !== undefined && outputWithRenderState.forceSinglePass !== override.forceSinglePass) {
+    outputWithRenderState.forceSinglePass = override.forceSinglePass;
+    changed = true;
+    needsPipelineUpdate = true;
+  }
+  if (override.blending !== undefined && output.blending !== override.blending) {
+    output.blending = override.blending;
+    changed = true;
+    needsPipelineUpdate = true;
+  }
+  if (override.opacity !== undefined && output.opacity !== override.opacity) {
+    output.opacity = override.opacity;
+    changed = true;
+  }
+  if (needsPipelineUpdate) output.needsUpdate = true;
+  return changed;
+};
+
+/**
+ * Disposal authority for adapted NodeMaterials. `identity` is the cache
+ * boundary: one source material may have separate adapted copies for separate
+ * scene owners, even when traversal encounters both usages in one frame.
+ */
+export type MaterialOutputOwner = Readonly<{
+  identity: object;
+  kind: MaterialOutputOwnerKind;
+  /** Optional output-graph variant; only scoped Anatomy audit owners set this. */
+  outputTransform?: MaterialAwareOutputTransform;
+  /** Experimental mode identity recorded on adapted copies for audit evidence. */
+  outputInterventionId?: MaterialAwareOutputInterventionId;
+  /** Development-only, renderable-scoped state override for Anatomy mechanism experiments. */
+  renderStateOverride?: MaterialOutputRenderStateOverride;
+  retain: (output: MaterialAwareNode) => void;
+  release: (output: MaterialAwareNode) => void;
+}>;
+
+export type MaterialAwareRenderable = (THREE.Mesh | THREE.Line | THREE.Points) & {
+  material: THREE.Material | THREE.Material[];
+};
+
+export type UnsupportedMaterialAssignment = Readonly<{
+  objectName: string;
+  materialFamily: string;
+}>;
+
+export type MaterialRenderableReconciliation = Readonly<{
+  materials: THREE.Material[];
+  unsupported: readonly UnsupportedMaterialAssignment[];
+  assignmentReplacements: number;
+  dirty: boolean;
+}>;
+
+export type MaterialAdaptationMeasure = <T>(operation: () => T) => T;
+
+type ManagedMaterial = {
+  source: THREE.Material;
+  output: MaterialAwareNode;
+  owner: MaterialOutputOwner;
+  lastSeenFrame: number;
+  signature: string;
+  shaderSignature: string;
+  attachments: Set<MaterialAttachment>;
+  retainedCount: number;
+  released: boolean;
+};
+
+type MaterialAttachment = {
+  renderable: MaterialAwareRenderable;
+  materialIndex: number;
+  record: ManagedMaterial;
+  lastSeenFrame: number;
+};
+
+export const isMaterialAwareRenderable = (
+  object: THREE.Object3D,
+): object is MaterialAwareRenderable =>
+  (object instanceof THREE.Mesh || object instanceof THREE.Line || object instanceof THREE.Points) &&
+  "material" in object;
+
+/** A controller owner is scoped to one tracker/renderer generation. */
+export const createObserverControllerMaterialOutputOwner = (): MaterialOutputOwner => {
+  const identity = {};
+  const ownedOutputs = new Set<MaterialAwareNode>();
+  return {
+    identity,
+    kind: "observer-controller",
+    retain: (output) => {
+      ownedOutputs.add(output);
+    },
+    release: (output) => {
+      if (!ownedOutputs.delete(output)) return;
+      output.dispose();
+    },
+  };
+};
+
+/**
+ * Renderer-generation-scoped source-to-NodeMaterial tracker. Source resources
+ * are borrowed only; every adapted material is released through its explicit
+ * owner. Renderable assignments are restored only while the corresponding
+ * adapted copy is still attached, so a later R3F-authored assignment wins.
+ */
+export class MaterialAwareMaterialTracker {
+  readonly identity = {};
+  readonly controllerOwner = createObserverControllerMaterialOutputOwner();
+
+  private readonly records = new Map<THREE.Material, Map<object, ManagedMaterial>>();
+  private readonly attachmentsByRenderable = new Map<MaterialAwareRenderable, MaterialAttachment[]>();
+  private recordCount = 0;
+  private attachmentCountValue = 0;
+  readonly rendererGeneration: number;
+  private readonly onOutputCreated?: (output: MaterialAwareNode) => void;
+
+  constructor(
+    rendererGeneration: number,
+    onOutputCreated?: (output: MaterialAwareNode) => void,
+  ) {
+    this.rendererGeneration = rendererGeneration;
+    this.onOutputCreated = onOutputCreated;
+  }
+
+  get managedMaterialCount(): number {
+    return this.recordCount;
+  }
+
+  /** Number of currently tracked renderable/material-slot attachments. */
+  get attachmentCount(): number {
+    return this.attachmentCountValue;
+  }
+
+  /** Number of renderables with at least one tracked adapted material slot. */
+  get trackedRenderableCount(): number {
+    return this.attachmentsByRenderable.size;
+  }
+
+  /**
+   * Temporarily retains an owner's detached output while a scoped variant is
+   * attached to the same source. The returned release is idempotent.
+   */
+  retainOutput(sourceMaterial: THREE.Material, owner: MaterialOutputOwner): () => void {
+    const source = readObserverOutputSourceMaterial(sourceMaterial) ?? sourceMaterial;
+    const record = this.getRecord(source, owner);
+    if (!record || record.released) throw new Error("Cannot retain a missing material-aware output record");
+    record.retainedCount += 1;
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      record.retainedCount = Math.max(0, record.retainedCount - 1);
+    };
+  }
+
+  reconcileRenderable(
+    renderable: MaterialAwareRenderable,
+    owner: MaterialOutputOwner,
+    frame: number,
+    getSignatures: (source: THREE.Material) => ObserverMaterialSignatures,
+    measureAdaptation: MaterialAdaptationMeasure = (operation) => operation(),
+  ): MaterialRenderableReconciliation {
+    const previousAttachments = this.attachmentsByRenderable.get(renderable) ?? [];
+
+    const attachedMaterials = Array.isArray(renderable.material)
+      ? renderable.material
+      : [renderable.material];
+    const nextMaterials: THREE.Material[] = [];
+    const nextAttachments: MaterialAttachment[] = [];
+    const unsupported: UnsupportedMaterialAssignment[] = [];
+    let assignmentReplacements = 0;
+    let dirty = false;
+
+    attachedMaterials.forEach((attached, materialIndex) => {
+      const source = readObserverOutputSourceMaterial(attached) ?? attached;
+      const existing = this.getRecord(source, owner);
+      let record = existing;
+
+      if (record) {
+        const currentRecord = record;
+        if (currentRecord.released) {
+          throw new Error("A released material-aware output was found in the tracker cache");
+        }
+        const signatures = getSignatures(source);
+        if (signatures.signature !== currentRecord.signature) {
+          measureAdaptation(() => {
+            currentRecord.output.copy(source);
+            if (signatures.shaderSignature !== currentRecord.shaderSignature) {
+              currentRecord.output.needsUpdate = true;
+            }
+            applyMaterialOutputRenderStateOverride(currentRecord.output, currentRecord.owner);
+          });
+          currentRecord.signature = signatures.signature;
+          currentRecord.shaderSignature = signatures.shaderSignature;
+          dirty = true;
+        }
+      } else {
+        const output = measureAdaptation(() => adaptObserverMaterialForOutput(
+          source,
+          owner.outputTransform,
+          owner.outputInterventionId,
+        ));
+        if (!output) {
+          unsupported.push({
+            objectName: renderable.name || renderable.type,
+            materialFamily: source.type,
+          });
+          nextMaterials.push(attached);
+          return;
+        }
+        applyMaterialOutputRenderStateOverride(output, owner);
+        const signatures = getSignatures(source);
+
+        Object.defineProperties(output, {
+          [observerOutputOwnerIdentity]: {
+            configurable: false,
+            enumerable: false,
+            value: owner.identity,
+          },
+          [observerOutputTrackerIdentity]: {
+            configurable: false,
+            enumerable: false,
+            value: this.identity,
+          },
+        });
+
+        record = {
+          source,
+          output,
+          owner,
+          lastSeenFrame: frame,
+          signature: signatures.signature,
+          shaderSignature: signatures.shaderSignature,
+          attachments: new Set(),
+          retainedCount: 0,
+          released: false,
+        };
+        let retained = false;
+        try {
+          owner.retain(output);
+          retained = true;
+          this.onOutputCreated?.(output);
+        } catch (error) {
+          if (retained) owner.release(output);
+          else output.dispose();
+          throw error;
+        }
+        this.setRecord(source, owner, record);
+        this.recordCount += 1;
+        dirty = true;
+      }
+
+      const activeRecord = record;
+      if (!activeRecord) throw new Error("Material-aware adaptation did not produce a managed output");
+      activeRecord.lastSeenFrame = frame;
+      const output = activeRecord.output;
+      if (output !== attached) assignmentReplacements += 1;
+      nextMaterials.push(output);
+      const previousAttachment = previousAttachments.find(
+        (attachment) => attachment.materialIndex === materialIndex,
+      );
+      const attachment = previousAttachment?.record === activeRecord
+        ? previousAttachment
+        : {
+          renderable,
+          materialIndex,
+          record: activeRecord,
+          lastSeenFrame: frame,
+        };
+      attachment.lastSeenFrame = frame;
+      if (attachment !== previousAttachment) {
+        activeRecord.attachments.add(attachment);
+        this.attachmentCountValue += 1;
+      }
+      nextAttachments.push(attachment);
+    });
+
+    previousAttachments.forEach((attachment) => {
+      if (!nextAttachments.includes(attachment)) this.detachAttachment(attachment);
+    });
+    if (nextAttachments.length === 0) this.attachmentsByRenderable.delete(renderable);
+    else this.attachmentsByRenderable.set(renderable, nextAttachments);
+    return {
+      materials: nextMaterials,
+      unsupported,
+      assignmentReplacements,
+      dirty,
+    };
+  }
+
+  /** Detach missing slots, then release unused copies after two complete frames. */
+  releaseStaleMaterials(frame: number): number {
+    const staleAttachments: MaterialAttachment[] = [];
+    this.attachmentsByRenderable.forEach((attachments) => {
+      attachments.forEach((attachment) => {
+        if (frame - attachment.lastSeenFrame >= 2) staleAttachments.push(attachment);
+      });
+    });
+    staleAttachments.forEach((attachment) => {
+      this.restoreAttachment(attachment);
+      this.detachAttachment(attachment);
+    });
+
+    const stale: ManagedMaterial[] = [];
+    this.records.forEach((byOwner) => {
+      byOwner.forEach((record) => {
+        if (frame - record.lastSeenFrame >= 2 && record.attachments.size === 0 && record.retainedCount === 0) stale.push(record);
+      });
+    });
+    stale.forEach((record) => this.releaseRecord(record, true));
+    return stale.length;
+  }
+
+  /** Restore authored assignments, then release each adapted copy exactly once. */
+  dispose(): void {
+    const allRecords: ManagedMaterial[] = [];
+    this.records.forEach((byOwner) => byOwner.forEach((record) => allRecords.push(record)));
+    allRecords.forEach((record) => this.releaseRecord(record, true));
+    this.attachmentsByRenderable.clear();
+    this.records.clear();
+    this.recordCount = 0;
+    this.attachmentCountValue = 0;
+  }
+
+  private getRecord(
+    source: THREE.Material,
+    owner: MaterialOutputOwner,
+  ): ManagedMaterial | undefined {
+    const record = this.records.get(source)?.get(owner.identity);
+    if (record && record.owner !== owner) {
+      throw new Error("Conflicting material-output ownership policies share one owner identity");
+    }
+    return record;
+  }
+
+  private setRecord(
+    source: THREE.Material,
+    owner: MaterialOutputOwner,
+    record: ManagedMaterial,
+  ): void {
+    const byOwner = this.records.get(source) ?? new Map<object, ManagedMaterial>();
+    const existing = byOwner.get(owner.identity);
+    if (existing && existing.owner !== owner) {
+      throw new Error("Conflicting material-output ownership policies share one owner identity");
+    }
+    byOwner.set(owner.identity, record);
+    this.records.set(source, byOwner);
+  }
+
+  private restoreAttachment(attachment: MaterialAttachment): void {
+    const { renderable, materialIndex, record } = attachment;
+    const attached = renderable.material;
+    if (Array.isArray(attached)) {
+      const current = attached[materialIndex];
+      if (current !== record.output) return;
+      const restored = [...attached];
+      restored[materialIndex] = record.source;
+      renderable.material = restored;
+    } else if (materialIndex === 0 && attached === record.output) {
+      renderable.material = record.source;
+    }
+  }
+
+  private detachAttachment(attachment: MaterialAttachment): void {
+    attachment.record.attachments.delete(attachment);
+    const renderableAttachments = this.attachmentsByRenderable.get(attachment.renderable);
+    if (!renderableAttachments) return;
+    const attachmentIndex = renderableAttachments.indexOf(attachment);
+    if (attachmentIndex < 0) return;
+    const remaining = renderableAttachments.filter((candidate) => candidate !== attachment);
+    if (remaining.length === 0) this.attachmentsByRenderable.delete(attachment.renderable);
+    else this.attachmentsByRenderable.set(attachment.renderable, remaining);
+    this.attachmentCountValue = Math.max(0, this.attachmentCountValue - 1);
+  }
+
+  private releaseRecord(record: ManagedMaterial, restore: boolean): void {
+    if (record.released) return;
+    record.released = true;
+    const attachments = [...record.attachments];
+    attachments.forEach((attachment) => {
+      if (restore) this.restoreAttachment(attachment);
+      this.detachAttachment(attachment);
+    });
+
+    const byOwner = this.records.get(record.source);
+    byOwner?.delete(record.owner.identity);
+    if (byOwner?.size === 0) this.records.delete(record.source);
+    this.recordCount = Math.max(0, this.recordCount - 1);
+    record.owner.release(record.output);
+  }
+}

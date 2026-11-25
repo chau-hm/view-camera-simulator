@@ -1,0 +1,23 @@
+
+> view-camera-simulator@0.0.0 build
+> tsc -b && vite build
+
+vite v8.1.4 building client environment for production...
+[2Ktransforming...✓ 734 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                     2.59 kB │ gzip:   1.05 kB
+dist/assets/index-Czv2VDRm.css                    102.28 kB │ gzip:  16.61 kB
+dist/assets/rolldown-runtime-QTnfLwEv.js            0.69 kB │ gzip:   0.42 kB
+dist/assets/react-BwGFFZJM.js                       8.70 kB │ gzip:   3.28 kB
+dist/assets/three-stdlib-URaoKCec.js               14.35 kB │ gzip:   4.26 kB
+dist/assets/GroundGlassWebGPUAdapter-D6GC3D7o.js  123.28 kB │ gzip:  35.78 kB
+dist/assets/vendor-C-cBnW_Y.js                    143.24 kB │ gzip:  46.70 kB
+dist/assets/react-runtime-CFdvXQJG.js             181.78 kB │ gzip:  57.19 kB
+dist/assets/three-C2GwbsLi.js                     219.82 kB │ gzip:  65.31 kB
+dist/assets/three-webgpu-16YWc24D.js              421.50 kB │ gzip: 114.19 kB
+dist/assets/SimulatorWorkspace-Cz7QUcn-.js        434.32 kB │ gzip:  95.26 kB
+dist/assets/index-CT4iXW5u.js                     759.35 kB │ gzip: 197.99 kB
+dist/assets/react-fiber-mlPNegpI.js               924.33 kB │ gzip: 245.29 kB
+
+✓ built in 243ms

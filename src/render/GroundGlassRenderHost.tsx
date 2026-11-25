@@ -1,0 +1,690 @@
+import {
+  Component,
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ComponentType,
+  type ReactNode,
+} from "react";
+import type {
+  GroundGlassBackendDiagnosticDetails,
+  GroundGlassBackendDiagnostics,
+  GroundGlassMountedRuntimeEvidence,
+  GroundGlassPilotRecoveryAction,
+  GroundGlassPilotRecoveryActionEvidence,
+} from "./backend/groundGlassBackendDiagnostics";
+import { isGroundGlassPilotRecoveryAction } from "./backend/groundGlassBackendDiagnostics";
+import type {
+  GroundGlassFrameResult,
+  GroundGlassRendererGenerationIdentity,
+} from "./backend/groundGlassBackendContracts";
+import { selectGroundGlassBackend, type GroundGlassBackendPolicyInput } from "./backend/groundGlassBackendPolicy";
+import type { GroundGlassFrameRequest, GroundGlassFrameRequestInput } from "./groundGlassFrameRequest";
+import { createGroundGlassFrameRequestFingerprint } from "./groundGlassFrameRequest";
+import {
+  createGroundGlassWebGpuAttemptIdentity,
+  holdGroundGlassFrameResultForTest,
+  recordGroundGlassWebGpuTestEvent,
+  registerGroundGlassPilotRecoveryActionForTest,
+} from "./webgpu/groundGlassWebGpuTestSeam";
+import { GroundGlassWebGLAdapter } from "./GroundGlassWebGLAdapter";
+import type { GroundGlassRttRuntimeInfoChangeHandler } from "./groundGlassRttDimensions";
+import type { GroundGlassRuntimeInfoObservation } from "./groundGlassRuntimeObservation";
+import {
+  GroundGlassRenderHostState,
+  type GroundGlassCleanupOutcome,
+} from "./groundGlassRenderHostState";
+import {
+  createGroundGlassRawWebGpuPolicyInput,
+} from "./webgpu/groundGlassRawWebGpuPolicyInput";
+import type { GroundGlassRenderOperationId } from "./groundGlassPassGraph";
+import {
+  recordRendererLifecycleEvent,
+  rendererLifecycleTraceEnabled,
+} from "./testing/m7nRendererLifecycleTrace";
+
+const GroundGlassRenderHostStateContext = createContext<GroundGlassRenderHostState | null>(null);
+
+class GroundGlassAdapterErrorBoundary extends Component<{
+  children: ReactNode;
+  onFailure: (error: Error) => void;
+}, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: Error) {
+    this.props.onFailure(error);
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+export const GroundGlassRenderHostStateProvider = ({
+  children,
+  owner: suppliedOwner,
+}: {
+  children: ReactNode;
+  /** Intended for focused lifecycle tests; production creates one app-lifetime owner. */
+  owner?: GroundGlassRenderHostState;
+}) => {
+  const [createdOwner] = useState(() => new GroundGlassRenderHostState());
+  const owner = suppliedOwner ?? createdOwner;
+  return (
+    <GroundGlassRenderHostStateContext.Provider value={owner}>
+      {children}
+    </GroundGlassRenderHostStateContext.Provider>
+  );
+};
+
+type GroundGlassWebGpuAdapterProps = Readonly<{
+  request: GroundGlassFrameRequest;
+  generation: GroundGlassRendererGenerationIdentity;
+  isGenerationActive: () => boolean;
+  onAdapterStarted: (generation: GroundGlassRendererGenerationIdentity) => void;
+  onRendererMounted: (
+    generation: GroundGlassRendererGenerationIdentity,
+    runtime: GroundGlassMountedRuntimeEvidence,
+    details: GroundGlassBackendDiagnosticDetails,
+  ) => void;
+  onBackendDetails: (details: GroundGlassBackendDiagnosticDetails) => void;
+  onFrameResult: (result: GroundGlassFrameResult) => void;
+  onAdapterDisposed: (
+    generation: GroundGlassRendererGenerationIdentity,
+    outcome: GroundGlassCleanupOutcome,
+    reason?: string,
+  ) => void;
+  onFailure: (
+    error: Error,
+    stage: "initialization" | "runtime",
+    failedPass: GroundGlassRenderOperationId | null,
+  ) => void;
+}>;
+
+export type GroundGlassRenderHostProps = Readonly<{
+  request: GroundGlassFrameRequestInput;
+  onRuntimeInfoChange?: GroundGlassRttRuntimeInfoChangeHandler;
+  onDiagnosticsChange?: (
+    channel: GroundGlassFrameRequestInput["channel"],
+    diagnostics: GroundGlassBackendDiagnostics | null,
+  ) => void;
+  onFramePublished?: (result: Extract<GroundGlassFrameResult, { status: "completed" }>) => void;
+}>;
+
+/**
+ * Application-facing Ground Glass lifecycle seam. M2 deliberately mounts one adapter only:
+ * the existing WebGL GroundGlassRTT implementation.
+ */
+export const GroundGlassRenderHost = ({
+  request,
+  onRuntimeInfoChange,
+  onDiagnosticsChange,
+  onFramePublished,
+}: GroundGlassRenderHostProps) => {
+  const sharedOwner = useContext(GroundGlassRenderHostStateContext);
+  const [localOwner] = useState(() => new GroundGlassRenderHostState());
+  const owner = sharedOwner ?? localOwner;
+  const reactId = useId();
+  const [hostId] = useState(() => `gg-host-${reactId}-${Math.random().toString(36).slice(2)}`);
+  const [WebGpuAdapter, setWebGpuAdapter] = useState<ComponentType<GroundGlassWebGpuAdapterProps> | null>(null);
+  const channel = request.channel;
+  const fingerprint = createGroundGlassFrameRequestFingerprint(request);
+  const subscribe = useCallback(
+    (listener: () => void) => owner.subscribe(channel, listener),
+    [channel, owner],
+  );
+  const getSnapshot = useCallback(() => owner.getSnapshot(channel), [channel, owner]);
+  const state = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  const diagnostics = owner.getDiagnostics(channel);
+  const runtimeInfoChangeRef = useRef(onRuntimeInfoChange);
+  const diagnosticsChangeRef = useRef(onDiagnosticsChange);
+  const framePublishedRef = useRef(onFramePublished);
+  const traceReportedGenerationIdRef = useRef<string | null>(null);
+  const lifecycleEffectEpochRef = useRef(0);
+  runtimeInfoChangeRef.current = onRuntimeInfoChange;
+  diagnosticsChangeRef.current = onDiagnosticsChange;
+  framePublishedRef.current = onFramePublished;
+
+  const policyInput = useMemo(
+    () => createGroundGlassRawWebGpuPolicyInput(request, state.retryState),
+    [request, state.retryState],
+  );
+  const policyInputIdentity = JSON.stringify(policyInput);
+
+  useLayoutEffect(() => {
+    lifecycleEffectEpochRef.current += 1;
+    owner.attachHost(channel, hostId);
+    recordGroundGlassWebGpuTestEvent({ kind: "host-attached", channelId: channel, hostId });
+    return () => {
+      const cleanupEpoch = ++lifecycleEffectEpochRef.current;
+      // React StrictMode replays effect cleanup/setup in one commit. Deferring only the detach
+      // decision to the next microtask lets the replayed setup cancel that synthetic detach;
+      // a real unmount still revokes publication before the next browser frame.
+      queueMicrotask(() => {
+        if (lifecycleEffectEpochRef.current === cleanupEpoch) owner.detachHost(channel, hostId);
+      });
+    };
+  }, [channel, hostId, owner]);
+
+  // This is the acceptance boundary: only a committed React tree can create a request revision.
+  useLayoutEffect(() => {
+    if (policyInput.authorization.status === "authorized" && owner.getSnapshot(channel).retryState === null) {
+      owner.beginPilotSession(channel, policyInput.authorization);
+    }
+    const acceptedPolicyInput: GroundGlassBackendPolicyInput = {
+      ...policyInput,
+      retryState: owner.getSnapshot(channel).retryState,
+    };
+    owner.acceptRequest(channel, hostId, request, acceptedPolicyInput);
+    const acceptedState = owner.getSnapshot(channel);
+    const acceptedRequest = acceptedState.activeHostId === hostId ? acceptedState.activeRequest : null;
+    if (acceptedRequest) {
+      if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
+        surface: "ground-glass",
+        event: "ground-glass-request-accepted",
+        sceneId: acceptedRequest.identity.sceneId,
+        mountGeneration: hostId,
+        rendererGeneration: acceptedState.activeGeneration?.generationId ?? null,
+        status: "accepted",
+        detail: {
+          channel,
+          requestId: acceptedRequest.identity.requestId,
+          activeGenerationId: acceptedState.activeGeneration?.generationId ?? null,
+        },
+      });
+      recordGroundGlassWebGpuTestEvent({
+        kind: "host-request-accepted",
+        channelId: channel,
+        hostId,
+        requestId: acceptedRequest.identity.requestId,
+        sceneId: acceptedRequest.identity.sceneId,
+        activeGenerationId: acceptedState.activeGeneration?.generationId ?? null,
+        latestAcceptedRequestId: acceptedRequest.identity.requestId,
+        latestAcceptedSceneId: acceptedRequest.identity.sceneId,
+      });
+    }
+    if (!acceptedRequest) {
+      if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
+        surface: "ground-glass",
+        event: "ground-glass-request-not-active-after-acceptance",
+        sceneId: request.scene.id,
+        mountGeneration: hostId,
+        status: "not-active",
+        detail: { channel },
+      });
+    }
+  }, [channel, fingerprint, hostId, owner, policyInput, policyInputIdentity, request]);
+
+  const generation = state.activeGeneration;
+  const activeForThisHost = state.activeHostId === hostId && generation !== null;
+  const acceptedRequest = state.activeRequest;
+  const shouldMountAdapter = activeForThisHost &&
+    acceptedRequest !== null &&
+    state.selection?.status === "selected";
+  const shouldMountWebGpuAdapter = shouldMountAdapter &&
+    state.selection?.status === "selected" &&
+    state.selection.selectedBackend === "webgpu";
+
+  useEffect(() => {
+    if (!rendererLifecycleTraceEnabled) return;
+    if (!generation || !activeForThisHost || !acceptedRequest) return;
+    if (traceReportedGenerationIdRef.current === generation.generationId) return;
+    traceReportedGenerationIdRef.current = generation.generationId;
+    if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
+      surface: "ground-glass",
+      event: "ground-glass-generation-active",
+      sceneId: acceptedRequest.identity.sceneId,
+      mountGeneration: hostId,
+      rendererGeneration: generation.generationId,
+      status: "active",
+      detail: {
+        channel,
+        requestId: acceptedRequest.identity.requestId,
+      },
+    });
+  }, [acceptedRequest, activeForThisHost, channel, generation, hostId]);
+
+  const isGenerationActive = useCallback(() => {
+    const latest = owner.getSnapshot(channel);
+    return Boolean(
+      generation &&
+      latest.activeHostId === hostId &&
+      latest.activeGeneration?.generationId === generation.generationId &&
+      latest.retiringGeneration === null &&
+      latest.selection?.status === "selected" &&
+      latest.selection.selectedBackend === "webgpu",
+    );
+  }, [channel, generation, hostId, owner]);
+
+  useEffect(() => {
+    diagnosticsChangeRef.current?.(channel, diagnostics);
+  }, [channel, diagnostics]);
+
+  const handlePilotRecoveryActionForTest = useCallback((
+    action: GroundGlassPilotRecoveryAction,
+  ): GroundGlassPilotRecoveryActionEvidence => {
+    if (!isGroundGlassPilotRecoveryAction(action)) {
+      return owner.recordInvalidPilotRecoveryAction(channel, action);
+    }
+    const current = owner.getSnapshot(channel);
+    if (current.terminalWebGlFailure) {
+      return owner.recordPilotRecoveryAction(channel, action, "channel-terminally-unavailable");
+    }
+    const latestRequest = current.latestRequest;
+    if (current.activeHostId !== hostId || !latestRequest) {
+      return owner.recordPilotRecoveryAction(channel, action, "host-not-active");
+    }
+    const nextPilotSessionId = action === "new-pilot-session"
+      ? owner.createNewPilotSessionId(channel)
+      : current.retryState?.pilotSessionId;
+    const freshPolicyInput = createGroundGlassRawWebGpuPolicyInput(
+      latestRequest,
+      current.retryState,
+      nextPilotSessionId,
+    );
+    const authorization = owner.authorizePilotRetry(channel, freshPolicyInput, action);
+    if (authorization.status === "authorized") {
+      // Re-evaluate after this generation has safely retired before mounting the next attempt.
+      owner.acceptRequest(channel, hostId, latestRequest, freshPolicyInput);
+    }
+    return owner.getSnapshot(channel).pilotRecoveryAction ??
+      owner.recordPilotRecoveryAction(channel, action, "recovery-action-result-unavailable");
+  }, [channel, hostId, owner]);
+
+  useEffect(() => registerGroundGlassPilotRecoveryActionForTest(
+    channel,
+    hostId,
+    handlePilotRecoveryActionForTest,
+    () => {
+      const current = owner.getSnapshot(channel);
+      return current.activeHostId === hostId || (
+        current.terminalWebGlFailure &&
+        current.activeHostId === null &&
+        current.pendingHostId === null
+      );
+    },
+    (action) => owner.recordInvalidPilotRecoveryAction(channel, action),
+  ), [channel, handlePilotRecoveryActionForTest, hostId, owner]);
+
+  const handleRendererMounted = useCallback((
+    mountedGeneration: GroundGlassRendererGenerationIdentity,
+    actualExecutionApi: "webgl" | "webgl2",
+  ) => {
+    owner.reportRendererMounted(channel, hostId, mountedGeneration, actualExecutionApi);
+    const mountedState = owner.getSnapshot(channel);
+    const mountedRequest = mountedState.activeRequest;
+    const mountedRuntime = mountedState.mountedRuntime;
+    if (
+      mountedRequest &&
+      mountedState.activeHostId === hostId &&
+      mountedState.activeGeneration?.generationId === mountedGeneration.generationId &&
+      mountedRuntime.status === "mounted"
+    ) {
+      if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
+        surface: "ground-glass",
+        event: "ground-glass-renderer-mounted",
+        sceneId: mountedRequest.identity.sceneId,
+        mountGeneration: hostId,
+        rendererGeneration: mountedGeneration.generationId,
+        status: "mounted",
+        detail: {
+          channel,
+          requestId: mountedRequest.identity.requestId,
+          rendererFamily: mountedRuntime.rendererFamily,
+          executionApi: actualExecutionApi,
+        },
+      });
+      recordGroundGlassWebGpuTestEvent({
+        kind: "renderer-mounted",
+        attemptId: createGroundGlassWebGpuAttemptIdentity(
+          channel,
+          mountedGeneration.generationId,
+          mountedRequest.identity.requestId,
+          mountedRequest.identity.sceneId,
+        ).attemptId,
+        channelId: channel,
+        hostId,
+        generationId: mountedGeneration.generationId,
+        requestId: mountedRequest.identity.requestId,
+        sceneId: mountedRequest.identity.sceneId,
+        rendererFamily: mountedRuntime.rendererFamily,
+        executionApi: actualExecutionApi,
+        internalFallback: mountedRuntime.internalFallback,
+      });
+    }
+  }, [channel, hostId, owner]);
+
+  const handleWebGpuRendererMounted = useCallback((
+    mountedGeneration: GroundGlassRendererGenerationIdentity,
+    runtime: GroundGlassMountedRuntimeEvidence,
+    details: GroundGlassBackendDiagnosticDetails,
+  ) => {
+    owner.reportWebGpuRendererMounted(channel, hostId, mountedGeneration, runtime, details);
+    const mountedState = owner.getSnapshot(channel);
+    const mountedRequest = mountedState.activeRequest;
+    const mountedRuntime = mountedState.mountedRuntime;
+    if (
+      mountedRequest &&
+      mountedState.activeHostId === hostId &&
+      mountedState.activeGeneration?.generationId === mountedGeneration.generationId &&
+      mountedRuntime.status === "mounted"
+    ) {
+      recordGroundGlassWebGpuTestEvent({
+        kind: "renderer-mounted",
+        attemptId: createGroundGlassWebGpuAttemptIdentity(
+          channel,
+          mountedGeneration.generationId,
+          mountedRequest.identity.requestId,
+          mountedRequest.identity.sceneId,
+        ).attemptId,
+        channelId: channel,
+        hostId,
+        generationId: mountedGeneration.generationId,
+        requestId: mountedRequest.identity.requestId,
+        sceneId: mountedRequest.identity.sceneId,
+        rendererFamily: mountedRuntime.rendererFamily,
+        executionApi: mountedRuntime.actualExecutionApi,
+        internalFallback: mountedRuntime.internalFallback,
+      });
+    }
+  }, [channel, hostId, owner]);
+
+  const handleWebGpuBackendDetails = useCallback((details: GroundGlassBackendDiagnosticDetails) => {
+    if (!generation) return;
+    owner.reportBackendDetails(channel, hostId, generation, details);
+  }, [channel, generation, hostId, owner]);
+
+  const handleAdapterStarted = useCallback((
+    startedGeneration: GroundGlassRendererGenerationIdentity,
+  ) => {
+    owner.markAdapterStarted(channel, hostId, startedGeneration);
+  }, [channel, hostId, owner]);
+
+  const handleFrameResult = useCallback((result: GroundGlassFrameResult) => {
+    const deliver = () => {
+      const beforeResult = owner.getSnapshot(channel);
+      const accepted = owner.receiveFrameResult(channel, hostId, result);
+      if (result.status === "failed") {
+        recordGroundGlassWebGpuTestEvent({
+          kind: "failed-frame-result",
+          attemptId: createGroundGlassWebGpuAttemptIdentity(
+            channel,
+            result.generation.generationId,
+            result.request.requestId,
+            result.request.sceneId,
+          ).attemptId,
+          channelId: channel,
+          hostId,
+          generationId: result.generation.generationId,
+          requestId: result.request.requestId,
+          sceneId: result.request.sceneId,
+          failedStage: result.failedStage,
+          failureReason: result.failureReason,
+          acceptedByHost: accepted,
+        });
+      }
+      if (result.status === "completed") {
+        const publishable = accepted && owner.canPublishFrameNow(channel, hostId, result);
+        if (publishable) {
+          framePublishedRef.current?.(result);
+          if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
+            surface: "ground-glass",
+            event: "ground-glass-current-frame-published",
+            sceneId: result.request.sceneId,
+            mountGeneration: hostId,
+            rendererGeneration: result.generation.generationId,
+            status: "published",
+            detail: {
+              channel,
+              requestId: result.request.requestId,
+              activeGenerationId: beforeResult.activeGeneration?.generationId ?? null,
+            },
+          });
+        } else {
+          if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
+            surface: "ground-glass",
+            event: "ground-glass-stale-frame-result-rejected",
+            sceneId: result.request.sceneId,
+            mountGeneration: hostId,
+            rendererGeneration: result.generation.generationId,
+            status: "rejected-stale",
+            detail: {
+              channel,
+              requestId: result.request.requestId,
+              acceptedByHost: accepted,
+              activeGenerationId: beforeResult.activeGeneration?.generationId ?? null,
+              activeRequestId: beforeResult.activeRequest?.identity.requestId ?? null,
+            },
+          });
+        }
+        recordGroundGlassWebGpuTestEvent({
+          kind: "host-frame-result",
+          attemptId: createGroundGlassWebGpuAttemptIdentity(
+            channel,
+            result.generation.generationId,
+            result.request.requestId,
+            result.request.sceneId,
+          ).attemptId,
+          channelId: channel,
+          hostId,
+          generationId: result.generation.generationId,
+          requestId: result.request.requestId,
+          sceneId: result.request.sceneId,
+          frameStatus: "completed",
+          acceptedByHost: publishable,
+          latestAcceptedRequestId: beforeResult.activeRequest?.identity.requestId ?? null,
+          latestAcceptedSceneId: beforeResult.activeRequest?.identity.sceneId ?? null,
+          activeGenerationId: beforeResult.activeGeneration?.generationId ?? null,
+          activeRendererFamily: beforeResult.mountedRuntime.status === "mounted"
+            ? beforeResult.mountedRuntime.rendererFamily
+            : null,
+        });
+      }
+    };
+    if (!holdGroundGlassFrameResultForTest(result, deliver)) deliver();
+  }, [channel, hostId, owner]);
+
+  const handleRuntimeObservation = useCallback((observation: GroundGlassRuntimeInfoObservation) => {
+    if (
+      !observation ||
+      typeof observation !== "object" ||
+      observation.channelId !== channel ||
+      !observation.generation ||
+      typeof observation.generation.generationId !== "string" ||
+      typeof observation.generation.channelId !== "string" ||
+      typeof observation.ownerId !== "string" ||
+      !observation.ownerId.trim() ||
+      (observation.scope === "request" && !observation.requestIdentity) ||
+      (observation.scope === "generation" && observation.requestIdentity !== null) ||
+      (observation.scope !== "request" && observation.scope !== "generation") ||
+      (observation.info !== null && (
+        observation.info.channel !== observation.channelId ||
+        observation.info.ownerId !== observation.ownerId
+      )) ||
+      !owner.canReceiveRuntimeInfo(
+        observation.channelId,
+        hostId,
+        observation.generation,
+        observation.scope === "request" ? observation.requestIdentity : null,
+        observation.ownerId,
+      )
+    ) return;
+    runtimeInfoChangeRef.current?.(
+      observation.channelId,
+      observation.info,
+      observation.ownerId,
+    );
+  }, [channel, hostId, owner]);
+
+  const handleAdapterDisposed = useCallback((
+    retiredGeneration: GroundGlassRendererGenerationIdentity,
+    outcome: GroundGlassCleanupOutcome,
+    reason?: string,
+  ) => {
+    const beforeCleanup = owner.getSnapshot(channel);
+    const currentGeneration = beforeCleanup.retiringGeneration?.generationId === retiredGeneration.generationId ||
+      beforeCleanup.activeGeneration?.generationId === retiredGeneration.generationId;
+    owner.reportAdapterDisposed(channel, retiredGeneration, outcome, reason);
+    if (currentGeneration) {
+      const afterCleanup = owner.getSnapshot(channel);
+      const generationRetired =
+        afterCleanup.activeGeneration?.generationId !== retiredGeneration.generationId &&
+        afterCleanup.retiringGeneration?.generationId !== retiredGeneration.generationId;
+      if (generationRetired) {
+        if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
+          surface: "ground-glass",
+          event: "ground-glass-generation-retired",
+          mountGeneration: hostId,
+          rendererGeneration: retiredGeneration.generationId,
+          status: outcome,
+          detail: { channel, reason: reason ?? null },
+        });
+      }
+      recordGroundGlassWebGpuTestEvent({
+        kind: "cleanup-acknowledged",
+        channelId: channel,
+        hostId,
+        generationId: retiredGeneration.generationId,
+        outcome,
+        reason: reason ?? null,
+      });
+    }
+  }, [channel, hostId, owner]);
+
+  const handleAdapterFailureAtStage = useCallback((
+    error: Error,
+    stage: "initialization" | "runtime",
+    failedPass: GroundGlassRenderOperationId | null,
+  ) => {
+    const current = owner.getSnapshot(channel);
+    const activeGeneration = current.activeGeneration;
+    if (!activeGeneration || current.activeHostId !== hostId) return;
+    const failureReason = error.message || String(error);
+    if (!owner.reportAdapterFailure(
+      channel,
+      hostId,
+      activeGeneration,
+      failureReason,
+      stage,
+      failedPass,
+    )) return;
+
+    const latest = owner.getSnapshot(channel);
+    const latestRequest = latest.latestRequest ?? latest.activeRequest;
+    if (!latestRequest) return;
+    if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
+      surface: "ground-glass",
+      event: "ground-glass-renderer-failure-reported",
+      sceneId: latestRequest.identity.sceneId,
+      mountGeneration: hostId,
+      rendererGeneration: activeGeneration.generationId,
+      status: "failed",
+      detail: {
+        channel,
+        requestId: latestRequest.identity.requestId,
+        failureStage: stage,
+        failedPass,
+      },
+    });
+    const latestPolicyInput = createGroundGlassRawWebGpuPolicyInput(
+      latestRequest,
+      latest.retryState,
+    );
+    if (current.selection?.status !== "selected" || current.selection.selectedBackend !== "webgpu") {
+      // A WebGL failure is terminal for this host generation. The boundary removes the failed
+      // adapter and its own cleanup reports; no second WebGL mount is attempted.
+      return;
+    }
+    let replacementPolicyInput = latestPolicyInput;
+    const replacementSelection = selectGroundGlassBackend(replacementPolicyInput);
+    if (
+      replacementSelection.status === "selected" &&
+      replacementSelection.selectedBackend === "webgpu"
+    ) {
+      // Failure to consume the session latch is an invariant violation. Fail closed rather
+      // than allowing another attempt or mounting over uncertain ownership.
+      replacementPolicyInput = {
+        ...latestPolicyInput,
+        requestedBackend: "webgl",
+        webglAvailable: false,
+      };
+    }
+    owner.requestSafeReplacement(channel, hostId, replacementPolicyInput);
+  }, [channel, hostId, owner]);
+
+  const handleAdapterFailure = useCallback((error: Error) => {
+    const stage = state.selection?.status === "selected" && state.selection.selectedBackend === "webgpu"
+      ? "runtime"
+      : "initialization";
+    handleAdapterFailureAtStage(error, stage, null);
+  }, [handleAdapterFailureAtStage, state.selection]);
+
+  const handleWebGpuFailure = useCallback((
+    error: Error,
+    stage: "initialization" | "runtime",
+    failedPass: GroundGlassRenderOperationId | null,
+  ) => handleAdapterFailureAtStage(error, stage, failedPass), [handleAdapterFailureAtStage]);
+
+  useEffect(() => {
+    if (!shouldMountWebGpuAdapter || WebGpuAdapter) return;
+    let current = true;
+    import("./webgpu/GroundGlassWebGPUAdapter")
+      .then((module) => {
+        if (current) setWebGpuAdapter(() => module.GroundGlassWebGPUAdapter);
+      })
+      .catch((cause: unknown) => {
+        if (!current) return;
+        const error = cause instanceof Error ? cause : new Error(String(cause));
+        handleWebGpuFailure(error, "initialization", null);
+      });
+    return () => { current = false; };
+  }, [WebGpuAdapter, generation?.generationId, handleWebGpuFailure, shouldMountWebGpuAdapter]);
+
+  if (!shouldMountAdapter || !generation || !acceptedRequest) return null;
+
+  if (state.selection?.status === "selected" && state.selection.selectedBackend === "webgpu") {
+    if (!WebGpuAdapter) {
+      return <div data-testid="ground-glass-webgpu-loading" data-generation={generation.generationId} />;
+    }
+    return (
+      <GroundGlassAdapterErrorBoundary key={generation.generationId} onFailure={handleAdapterFailure}>
+        <WebGpuAdapter
+          request={acceptedRequest}
+          generation={generation}
+          isGenerationActive={isGenerationActive}
+          onAdapterStarted={handleAdapterStarted}
+          onRendererMounted={handleWebGpuRendererMounted}
+          onBackendDetails={handleWebGpuBackendDetails}
+          onFrameResult={handleFrameResult}
+          onAdapterDisposed={handleAdapterDisposed}
+          onFailure={handleWebGpuFailure}
+        />
+      </GroundGlassAdapterErrorBoundary>
+    );
+  }
+
+  return (
+    <GroundGlassAdapterErrorBoundary key={generation.generationId} onFailure={handleAdapterFailure}>
+      <GroundGlassWebGLAdapter
+        request={acceptedRequest}
+        generation={generation}
+        onAdapterStarted={handleAdapterStarted}
+        onRendererMounted={handleRendererMounted}
+        onFrameResult={handleFrameResult}
+        onRuntimeObservation={handleRuntimeObservation}
+        onAdapterDisposed={handleAdapterDisposed}
+      />
+    </GroundGlassAdapterErrorBoundary>
+  );
+};

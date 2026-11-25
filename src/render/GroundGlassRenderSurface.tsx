@@ -1,7 +1,12 @@
+import { useCallback, useState } from "react";
+import { REVISION } from "three";
 import type { DerivedOpticsState } from "../types/optics";
-import { GroundGlassRTT } from "./GroundGlassRTT";
+import { GroundGlassRenderHost } from "./GroundGlassRenderHost";
+import type { GroundGlassBackendDiagnostics } from "./backend/groundGlassBackendDiagnostics";
+import { normalizeGroundGlassFrameRequestInput } from "./groundGlassFrameRequest";
 import { isGroundGlassRttScene } from "./groundGlassRttScenes";
 import type { SceneDefinition } from "../types/scene";
+import type { SceneVariationDescriptor } from "../types/sceneVariation";
 import type { EffectiveCameraMovementCalibration } from "../scenes/cameraMovementEffectiveCalibration";
 import type {
   GroundGlassRttChannel,
@@ -14,6 +19,7 @@ export type GroundGlassRenderSurfaceProps = {
   opticsState: DerivedOpticsState;
   focalLengthMm: number;
   scene: SceneDefinition;
+  variationDescriptor?: SceneVariationDescriptor;
   apertureNumber: number;
   previewMode: "raw" | "upright";
   rawDebug?: boolean;
@@ -36,6 +42,7 @@ export const GroundGlassRenderSurface = ({
   opticsState,
   focalLengthMm,
   scene,
+  variationDescriptor,
   apertureNumber,
   previewMode,
   rawDebug,
@@ -56,13 +63,93 @@ export const GroundGlassRenderSurface = ({
   const rttRuntimeInfo = explicitRuntimeInfo;
   const runtimeInfoChange = explicitRuntimeInfoChange;
   const sceneId = scene.id;
+  const [backendDiagnostics, setBackendDiagnostics] = useState<GroundGlassBackendDiagnostics | null>(null);
+  const testEvidenceEnabled = import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM === "true";
+  const policyDecision = backendDiagnostics?.policySelection.policyDecision;
+  const policyEvidenceRevisions = policyDecision?.status === "authorized" &&
+      policyDecision.sceneEligibility.status === "eligible"
+    ? policyDecision.sceneEligibility.evidenceRevisions.join(",")
+    : undefined;
+  const backendDetails = backendDiagnostics?.backendDetails;
+  const webGpuBackendDetails = backendDetails?.backend === "webgpu" ? backendDetails : null;
+  const handleBackendDiagnosticsChange = useCallback((
+    _channel: GroundGlassRttChannel,
+    diagnostics: GroundGlassBackendDiagnostics | null,
+  ) => setBackendDiagnostics(diagnostics), []);
   if (isGroundGlassRttScene(sceneId)) {
     return (
       <div
         data-testid="ground-glass-rtt"
+        data-three-revision={import.meta.env.DEV ? REVISION : undefined}
         data-rtt-channel={channel}
         data-rtt-scene-id={sceneId}
+        data-renderer-generation={backendDiagnostics?.rendererGeneration?.generationId}
+        data-frame-request-id={backendDiagnostics?.requestIdentity.requestId}
+        data-frame-channel-id={backendDiagnostics?.requestIdentity.channelId}
+        data-frame-scene-id={backendDiagnostics?.requestIdentity.sceneId}
+        data-policy-requested-backend={testEvidenceEnabled ? backendDiagnostics?.policySelection.requestedBackend ?? "default" : undefined}
+        data-policy-selected-backend={backendDiagnostics?.policySelection.status === "selected"
+          ? backendDiagnostics.policySelection.selectedBackend
+          : "unavailable"}
+        data-policy-evidence-revisions={import.meta.env.DEV ? policyEvidenceRevisions : undefined}
+        data-mounted-renderer-revision={import.meta.env.DEV ? webGpuBackendDetails?.rendererRevision : undefined}
+        data-mounted-scene-source-revision={import.meta.env.DEV ? webGpuBackendDetails?.sceneSourceRevision : undefined}
+        data-mounted-verification-evidence-revision={import.meta.env.DEV
+          ? webGpuBackendDetails?.verificationEvidenceRevision
+          : undefined}
+        data-attempted-backend={testEvidenceEnabled ? backendDiagnostics?.attemptedBackend.status === "not-started"
+          ? "not-started"
+          : backendDiagnostics?.attemptedBackend.backend : undefined}
+        data-backend-attempt-status={testEvidenceEnabled ? backendDiagnostics?.attemptedBackend.status : undefined}
+        data-pilot-session-id={backendDiagnostics?.pilotSessionId ?? undefined}
+        data-pilot-retry-status={backendDiagnostics?.retryState?.status ?? "none"}
+        data-pilot-retry-epoch={backendDiagnostics?.retryState?.retryEpoch}
+        data-pilot-recovery-action={import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM === "true"
+          ? backendDiagnostics?.pilotRecoveryAction?.action
+          : undefined}
+        data-pilot-recovery-result={import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM === "true"
+          ? backendDiagnostics?.pilotRecoveryAction?.status
+          : undefined}
+        data-pilot-recovery-reason={import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM === "true"
+          ? backendDiagnostics?.pilotRecoveryAction?.reason ?? undefined
+          : undefined}
+        data-pilot-retry-failure-count={import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM === "true"
+          ? backendDiagnostics?.retryState?.failureHistory.length
+          : undefined}
+        data-pilot-failure-backend={import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM === "true"
+          ? backendDiagnostics?.lastFailure?.backend
+          : undefined}
+        data-pilot-failure-stage={import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM === "true"
+          ? backendDiagnostics?.lastFailure?.stage
+          : undefined}
+        data-pilot-failure-pass={import.meta.env.DEV && import.meta.env.VITE_GROUND_GLASS_WEBGPU_TEST_SEAM === "true"
+          ? backendDiagnostics?.lastFailure?.failedPass ?? undefined
+          : undefined}
+        data-last-failure-host-id={testEvidenceEnabled ? backendDiagnostics?.lastFailure?.hostId : undefined}
+        data-last-failure-channel-id={testEvidenceEnabled ? backendDiagnostics?.lastFailure?.generation.channelId : undefined}
+        data-last-failure-session-id={testEvidenceEnabled ? backendDiagnostics?.lastFailure?.pilotSessionId ?? undefined : undefined}
+        data-last-failure-retry-epoch={testEvidenceEnabled ? backendDiagnostics?.lastFailure?.retryEpoch ?? undefined : undefined}
+        data-last-failure-generation-id={testEvidenceEnabled ? backendDiagnostics?.lastFailure?.generation.generationId : undefined}
+        data-last-failure-request-id={testEvidenceEnabled ? backendDiagnostics?.lastFailure?.request?.requestId : undefined}
+        data-last-failure-scene-id={testEvidenceEnabled ? backendDiagnostics?.lastFailure?.request?.sceneId : undefined}
+        data-last-failure-operation={testEvidenceEnabled ? backendDiagnostics?.lastFailure?.failedPass ?? undefined : undefined}
+        data-application-fallback={backendDiagnostics?.applicationFallback.status ?? "unknown"}
+        data-mounted-renderer-family={backendDiagnostics?.mountedRuntime.status === "mounted" ? backendDiagnostics.mountedRuntime.rendererFamily : undefined}
+        data-actual-execution-api={backendDiagnostics?.mountedRuntime.status === "mounted" ? backendDiagnostics.mountedRuntime.actualExecutionApi : undefined}
+        data-internal-fallback={testEvidenceEnabled && backendDiagnostics?.mountedRuntime.status === "mounted" ? backendDiagnostics.mountedRuntime.internalFallback : undefined}
+        data-render-host-lifecycle={backendDiagnostics?.lifecycleStatus}
+        data-frame-result-status={backendDiagnostics?.frame.current?.status}
+        data-last-completed-request-id={backendDiagnostics?.frame.lastSuccessfullyCompleted?.request.requestId}
+        data-render-cleanup-status={backendDiagnostics?.cleanup?.status}
         data-rtt-camera-ok={rttRuntimeInfo?.cameraConfigurationOk === undefined ? undefined : String(rttRuntimeInfo.cameraConfigurationOk)}
+        data-rtt-camera-near-world={rttRuntimeInfo?.cameraNearWorld}
+        data-rtt-camera-far-world={rttRuntimeInfo?.cameraFarWorld}
+        data-rtt-projection-determinant={rttRuntimeInfo?.projectionDeterminant ?? undefined}
+        data-rtt-projection-matrix={rttRuntimeInfo?.projectionMatrix?.join(",")}
+        data-rtt-preview-mode={previewMode}
+        data-rtt-raw-debug={String(rawDebug === true)}
+        data-rtt-dof-processing-enabled={String(rawDebug !== true)}
+        data-rtt-dof-model={opticsState.diagnostics.groundGlassDofModel ?? "unknown"}
         data-rtt-depth-available={rttRuntimeInfo?.depthTextureAvailable === undefined ? undefined : String(rttRuntimeInfo.depthTextureAvailable)}
         data-rtt-uniforms-finite={rttRuntimeInfo?.uniformsFinite === undefined ? undefined : String(rttRuntimeInfo.uniformsFinite)}
         data-rtt-dof-mode={rttRuntimeInfo?.dofMode}
@@ -85,7 +172,9 @@ export const GroundGlassRenderSurface = ({
         data-rtt-ground-glass-illuminance-gain={rttRuntimeInfo?.groundGlassIlluminanceGain}
         data-rtt-natural-illumination-enabled={rttRuntimeInfo?.groundGlassNaturalIlluminationEnabled === undefined ? undefined : String(rttRuntimeInfo.groundGlassNaturalIlluminationEnabled)}
         data-rtt-natural-illumination-kind={rttRuntimeInfo?.groundGlassNaturalIlluminationKind}
+        data-rtt-natural-illumination-state={rttRuntimeInfo?.groundGlassNaturalIlluminationStateJson}
         data-rtt-natural-illumination-image-distance-mm={rttRuntimeInfo?.groundGlassNaturalIlluminationImageDistanceMm}
+        data-rtt-natural-illumination-reference-film-incidence-cosine={rttRuntimeInfo?.groundGlassNaturalIlluminationReferenceFilmIncidenceCosine}
         data-rtt-natural-illumination-offset-x-mm={rttRuntimeInfo?.groundGlassNaturalIlluminationOffsetXMm}
         data-rtt-natural-illumination-offset-y-mm={rttRuntimeInfo?.groundGlassNaturalIlluminationOffsetYMm}
         data-rtt-coverage-enabled={rttRuntimeInfo?.groundGlassCoverageEnabled === undefined ? undefined : String(rttRuntimeInfo.groundGlassCoverageEnabled)}
@@ -101,6 +190,8 @@ export const GroundGlassRenderSurface = ({
         data-rtt-camera-forward={rttRuntimeInfo?.cameraForwardWorld?.join(",")}
         data-rtt-logical-width={rttRuntimeInfo?.logicalWidthPx}
         data-rtt-logical-height={rttRuntimeInfo?.logicalHeightPx}
+        data-rtt-resolution-scale={rttRuntimeInfo?.resolutionScale}
+        data-rtt-effective-device-pixel-ratio={rttRuntimeInfo?.effectiveDevicePixelRatio}
         data-rtt-internal-width={rttRuntimeInfo?.internalWidthPx}
         data-rtt-internal-height={rttRuntimeInfo?.internalHeightPx}
         data-rtt-canvas-css-width={rttRuntimeInfo?.canvasCssWidthPx}
@@ -121,6 +212,8 @@ export const GroundGlassRenderSurface = ({
         data-rtt-was-clamped={rttRuntimeInfo?.wasClamped === undefined ? undefined : String(rttRuntimeInfo.wasClamped)}
         data-rtt-sanity-state={rttRuntimeInfo?.renderSanityStateKey}
         data-rtt-sanity-error={rttRuntimeInfo?.renderSanityError ?? undefined}
+        data-rtt-frame-error={rttRuntimeInfo?.frameExecutionError ?? undefined}
+        data-rtt-failed-pass={rttRuntimeInfo?.failedPass}
         data-rtt-inspection-window-active={rttRuntimeInfo?.inspectionWindowActive === undefined ? undefined : String(rttRuntimeInfo.inspectionWindowActive)}
         data-rtt-inspection-center-u={rttRuntimeInfo?.inspectionCenterU}
         data-rtt-inspection-center-v={rttRuntimeInfo?.inspectionCenterV}
@@ -140,21 +233,25 @@ export const GroundGlassRenderSurface = ({
         data-rtt-profiling-gpu-last-error={rttRuntimeInfo?.profilingSnapshot?.profilingDiagnostics.lastGpuQueryError ?? undefined}
         style={{ position: "absolute", inset: 0 }}
       >
-        <GroundGlassRTT
-          opticsState={opticsState}
-          focalLengthMm={focalLengthMm}
-          scene={scene}
-          widthPx={widthPx}
-          heightPx={heightPx}
-          aperture={apertureNumber}
-          previewMode={previewMode}
-          rawDebug={rawDebug}
-          renderQuality={renderQuality}
-          channel={channel}
-          inspectionWindow={inspectionWindow}
-          presentationRegion={presentationRegion}
-          effectiveCameraMovementCalibration={effectiveCameraMovementCalibration}
+        <GroundGlassRenderHost
+          request={normalizeGroundGlassFrameRequestInput({
+            opticsState,
+            focalLengthMm,
+            scene,
+            variationDescriptor,
+            widthPx,
+            heightPx,
+            aperture: apertureNumber,
+            previewMode,
+            rawDebug,
+            renderQuality,
+            channel,
+            inspectionWindow,
+            presentationRegion,
+            effectiveCameraMovementCalibration,
+          })}
           onRuntimeInfoChange={runtimeInfoChange}
+          onDiagnosticsChange={handleBackendDiagnosticsChange}
         />
       </div>
     );

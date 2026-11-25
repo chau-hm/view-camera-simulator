@@ -1,0 +1,5 @@
+
+> view-camera-simulator@0.0.0 check:css
+> node ./scripts/check-css-structure.mjs
+
+CSS structure check passed

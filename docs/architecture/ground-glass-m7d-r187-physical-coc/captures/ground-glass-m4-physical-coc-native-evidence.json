@@ -1,0 +1,3161 @@
+{
+  "browserVersion": "156.0.8078.76",
+  "operatingSystem": "darwin arm64",
+  "threeRevision": "187",
+  "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+  "sourceSha": "7118694af4a32a0827e5575519dc49be82c3b23e",
+  "testProject": "chrome-native-webgpu",
+  "testInvocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_RAW_PILOT=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true npm run test:e2e -- --project=chrome-native-webgpu --workers=1 src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts",
+  "environment": "headed native-required Chrome",
+  "sceneId": "architecture-rise",
+  "m4CompatibilityEvidence": {
+    "feature": "physical-coc",
+    "status": "research-only",
+    "sourceRevision": "architecture-rise-raw-rtt-v1",
+    "evidenceRevision": "m4-architecture-rise-physical-coc-native-r187-v1",
+    "testedContext": {
+      "rendererFamily": "webgpu-renderer",
+      "executionApi": "webgpu",
+      "rendererRevision": "r187",
+      "runtimeDescription": "Three.js r187 native WebGPU in Chrome 156.0.8078.76 on Darwin arm64"
+    },
+    "evidence": [
+      "M7D native-required controlled M4 TSL kernel vectors compared with computePhysicalBlurFootprint at frozen tolerances, with captured RGBA16F half bits, decoded storage, and GPU sampled decode",
+      "registered Architecture Rise plinth, street sign, checker, sign edge, focus-chart, and clear-depth probes reconstructed from observed depth24plus and compared with independent analytical surface points",
+      "the M4 adapter observed depth24plus, rgba16float, and rgba8unorm allocations through the Three.js r187 WebGPU backend and rejected unsupported formats",
+      "native M4 physical and validity writer failures remained local to the optional pass while the M3 Raw frame completed and a later request recovered",
+      "r187 native M4 resize and unmount captures rejected stale diagnostic readbacks and recorded confirmed adapter cleanup",
+      "independently identifiable native captures and numerical/storage qualification are recorded in docs/architecture/GROUND_GLASS_M7D_R187_PHYSICAL_COC_REPORT.json"
+    ],
+    "requiredCapabilities": {
+      "adapterFeatures": [],
+      "textureStorageFormats": [
+        "depth24plus",
+        "rgba16float",
+        "rgba8unorm"
+      ]
+    },
+    "knownIncompatibilities": [
+      "the depth24plus reconstruction remains depth-limited near focal inversion and does not establish exact U=f from rounded raster depth",
+      "M5 Gather/B1 and M6 presentation remain tied to r186 evidence and are not authorized on r187",
+      "photographic quality, cross-browser behavior, and production WebGPU are not qualified"
+    ]
+  },
+  "rendererFamily": "webgpu-renderer",
+  "actualExecutionApi": "webgpu",
+  "internalFallback": "none",
+  "trustedDevelopmentAuthorization": {
+    "nativeRequired": true,
+    "rawPilotRequest": true,
+    "physicalCocResearchBuildFlag": true,
+    "r187QualificationFlag": true,
+    "testSeamFlag": true
+  },
+  "initialGeneration": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+  "retiredGeneration": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+  "remountedGeneration": "gg-mvwlmuwl-zefo53ftyeh-default-generation-4",
+  "nativeKernelMeasurements": {
+    "validControlledCaseCount": 13,
+    "maxCpuToTslErrorMm": 0.003906250007275958,
+    "maxCalculationToRgba16fErrorMm": 0.00390625,
+    "maxRgba16fToGpuSampleErrorMm": 0,
+    "maxOrientationModuloPiErrorRad": 0.001347984719040074,
+    "overflowCases": [
+      {
+        "id": "storage-overrange-positive-coc",
+        "calculatedFootprintMm": [
+          65999.59375,
+          32999.796875,
+          32999.796875,
+          0
+        ],
+        "decodedStorage": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "storage-overrange-negative-coc",
+        "calculatedFootprintMm": [
+          -65999.7734375,
+          32999.88671875,
+          32999.88671875,
+          0
+        ],
+        "decodedStorage": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "storage-overrange-ellipse-radius",
+        "calculatedFootprintMm": [
+          131999.1875,
+          65999.59375,
+          65999.59375,
+          0
+        ],
+        "decodedStorage": [
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    ],
+    "limits": {
+      "kernelAbsoluteMm": 0.0005,
+      "kernelRelative": 0.00002,
+      "orientationModuloPiRad": 0.003
+    }
+  },
+  "controlledKernelReferences": [
+    {
+      "id": "ellipse-circular",
+      "testCase": {
+        "id": "ellipse-circular",
+        "kernelOverride": {
+          "lens": {
+            "centerWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "film": {
+            "planePointWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": -0.15257437070938215
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "optics": {
+            "focalLengthMm": 150,
+            "apertureFNumber": 16
+          }
+        },
+        "probe": {
+          "id": "ellipse-circular",
+          "u": 0.5,
+          "v": 0.5,
+          "controlledObjectPointMm": [
+            0,
+            0,
+            270
+          ]
+        }
+      },
+      "cpuReference": {
+        "valid": true,
+        "signedCoCDiameterMm": -5.1368230358504965,
+        "majorRadiusMm": 2.5684115179252482,
+        "minorRadiusMm": 2.5684115179252482,
+        "orientationRad": 0
+      }
+    },
+    {
+      "id": "ellipse-film-tilt",
+      "testCase": {
+        "id": "ellipse-film-tilt",
+        "kernelOverride": {
+          "lens": {
+            "centerWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "film": {
+            "planePointWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": -0.15257437070938215
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": -0.20791169081775931,
+              "z": 0.9781476007338057
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 0.9781476007338057,
+              "z": 0.20791169081775931
+            }
+          },
+          "optics": {
+            "focalLengthMm": 150,
+            "apertureFNumber": 16
+          }
+        },
+        "probe": {
+          "id": "ellipse-film-tilt",
+          "u": 0.5,
+          "v": 0.5,
+          "controlledObjectPointMm": [
+            120,
+            0,
+            270
+          ]
+        }
+      },
+      "cpuReference": {
+        "valid": true,
+        "signedCoCDiameterMm": -5.1938859326578735,
+        "majorRadiusMm": 2.7245980627185866,
+        "minorRadiusMm": 2.4752688709013118,
+        "orientationRad": 0.8781677988829394
+      }
+    },
+    {
+      "id": "ellipse-film-swing",
+      "testCase": {
+        "id": "ellipse-film-swing",
+        "kernelOverride": {
+          "lens": {
+            "centerWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "film": {
+            "planePointWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": -0.15257437070938215
+            },
+            "planeNormal": {
+              "x": 0.24192189559966776,
+              "y": 0,
+              "z": 0.9702957262759966
+            },
+            "planeBasisX": {
+              "x": 0.9702957262759966,
+              "y": 0,
+              "z": -0.24192189559966776
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "optics": {
+            "focalLengthMm": 150,
+            "apertureFNumber": 16
+          }
+        },
+        "probe": {
+          "id": "ellipse-film-swing",
+          "u": 0.5,
+          "v": 0.5,
+          "controlledObjectPointMm": [
+            120,
+            0,
+            270
+          ]
+        }
+      },
+      "cpuReference": {
+        "valid": true,
+        "signedCoCDiameterMm": -5.355158171723933,
+        "majorRadiusMm": 2.7798075805799494,
+        "minorRadiusMm": 2.5791100834215483,
+        "orientationRad": 1.5707963267948966
+      }
+    },
+    {
+      "id": "ellipse-compound-tilt-swing",
+      "testCase": {
+        "id": "ellipse-compound-tilt-swing",
+        "kernelOverride": {
+          "lens": {
+            "centerWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "film": {
+            "planePointWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": -0.15257437070938215
+            },
+            "planeNormal": {
+              "x": 0.22153354236610878,
+              "y": 0.17364817766693036,
+              "z": 0.9595671941035071
+            },
+            "planeBasisX": {
+              "x": 0.9743700647852352,
+              "y": 4.8197051257506495e-18,
+              "z": -0.22495105434386498
+            },
+            "planeBasisY": {
+              "x": -0.03906234065106678,
+              "y": 0.9848077530122081,
+              "z": -0.16919758612316496
+            }
+          },
+          "optics": {
+            "focalLengthMm": 150,
+            "apertureFNumber": 16
+          }
+        },
+        "probe": {
+          "id": "ellipse-compound-tilt-swing",
+          "u": 0.5,
+          "v": 0.5,
+          "controlledObjectPointMm": [
+            120,
+            0,
+            270
+          ]
+        }
+      },
+      "cpuReference": {
+        "valid": true,
+        "signedCoCDiameterMm": -5.377409045092826,
+        "majorRadiusMm": 2.817862122220555,
+        "minorRadiusMm": 2.56546690221478,
+        "orientationRad": 1.7713634999200059
+      }
+    },
+    {
+      "id": "ellipse-off-axis",
+      "testCase": {
+        "id": "ellipse-off-axis",
+        "kernelOverride": {
+          "lens": {
+            "centerWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "film": {
+            "planePointWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": -0.15257437070938215
+            },
+            "planeNormal": {
+              "x": 0.22153354236610878,
+              "y": 0.17364817766693036,
+              "z": 0.9595671941035071
+            },
+            "planeBasisX": {
+              "x": 0.9743700647852352,
+              "y": 4.8197051257506495e-18,
+              "z": -0.22495105434386498
+            },
+            "planeBasisY": {
+              "x": -0.03906234065106678,
+              "y": 0.9848077530122081,
+              "z": -0.16919758612316496
+            }
+          },
+          "optics": {
+            "focalLengthMm": 150,
+            "apertureFNumber": 16
+          }
+        },
+        "probe": {
+          "id": "ellipse-off-axis",
+          "u": 0.5,
+          "v": 0.5,
+          "controlledObjectPointMm": [
+            480,
+            0,
+            270
+          ]
+        }
+      },
+      "cpuReference": {
+        "valid": true,
+        "signedCoCDiameterMm": -5.475627959220823,
+        "majorRadiusMm": 3.345097477198615,
+        "minorRadiusMm": 2.2407793608536286,
+        "orientationRad": 1.9218919311518627
+      }
+    },
+    {
+      "id": "ellipse-negative-principal-angle",
+      "testCase": {
+        "id": "ellipse-negative-principal-angle",
+        "kernelOverride": {
+          "lens": {
+            "centerWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "film": {
+            "planePointWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": -0.15257437070938215
+            },
+            "planeNormal": {
+              "x": 0.22153354236610878,
+              "y": 0.17364817766693036,
+              "z": 0.9595671941035071
+            },
+            "planeBasisX": {
+              "x": 0.41591669121985453,
+              "y": -0.9068503498648162,
+              "z": 0.06808633427339816
+            },
+            "planeBasisY": {
+              "x": 0.8820069135621624,
+              "y": 0.38401660555634165,
+              "z": -0.2731209458930849
+            }
+          },
+          "optics": {
+            "focalLengthMm": 150,
+            "apertureFNumber": 16
+          }
+        },
+        "probe": {
+          "id": "ellipse-negative-principal-angle",
+          "u": 0.5,
+          "v": 0.5,
+          "controlledObjectPointMm": [
+            120,
+            0,
+            270
+          ]
+        }
+      },
+      "cpuReference": {
+        "valid": true,
+        "signedCoCDiameterMm": -5.3774090450928265,
+        "majorRadiusMm": 2.817862122220555,
+        "minorRadiusMm": 2.565466902214781,
+        "orientationRad": 2.941592653589793
+      }
+    },
+    {
+      "id": "ellipse-near-pi-orientation",
+      "testCase": {
+        "id": "ellipse-near-pi-orientation",
+        "kernelOverride": {
+          "lens": {
+            "centerWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "film": {
+            "planePointWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": -0.15257437070938215
+            },
+            "planeNormal": {
+              "x": 0.22153354236610878,
+              "y": 0.17364817766693036,
+              "z": 0.9595671941035071
+            },
+            "planeBasisX": {
+              "x": 0.2418571011768749,
+              "y": -0.9630558359628252,
+              "z": 0.11844238864639184
+            },
+            "planeBasisY": {
+              "x": 0.9446840912268198,
+              "y": 0.2058391780271633,
+              "z": -0.2553472157123695
+            }
+          },
+          "optics": {
+            "focalLengthMm": 150,
+            "apertureFNumber": 16
+          }
+        },
+        "probe": {
+          "id": "ellipse-near-pi-orientation",
+          "u": 0.5,
+          "v": 0.5,
+          "controlledObjectPointMm": [
+            120,
+            0,
+            270
+          ]
+        }
+      },
+      "cpuReference": {
+        "valid": true,
+        "signedCoCDiameterMm": -5.377409045092826,
+        "majorRadiusMm": 2.817862122220555,
+        "minorRadiusMm": 2.5654669022147805,
+        "orientationRad": 3.1315926535897933
+      }
+    },
+    {
+      "id": "ellipse-near-circular",
+      "testCase": {
+        "id": "ellipse-near-circular",
+        "kernelOverride": {
+          "lens": {
+            "centerWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "film": {
+            "planePointWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": -0.15257437070938215
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": -1.7453292519943295e-10,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 1.7453292519943295e-10
+            }
+          },
+          "optics": {
+            "focalLengthMm": 150,
+            "apertureFNumber": 16
+          }
+        },
+        "probe": {
+          "id": "ellipse-near-circular",
+          "u": 0.5,
+          "v": 0.5,
+          "controlledObjectPointMm": [
+            0,
+            0,
+            270
+          ]
+        }
+      },
+      "cpuReference": {
+        "valid": true,
+        "signedCoCDiameterMm": -5.1368230358504965,
+        "majorRadiusMm": 2.5684115179252482,
+        "minorRadiusMm": 2.5684115179252482,
+        "orientationRad": 0
+      }
+    },
+    {
+      "id": "storage-exact-zero",
+      "testCase": {
+        "id": "storage-exact-zero",
+        "kernelOverride": {
+          "lens": {
+            "centerWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "film": {
+            "planePointWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": -0.15257437070938215
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "optics": {
+            "focalLengthMm": 150,
+            "apertureFNumber": 16
+          }
+        },
+        "probe": {
+          "id": "storage-exact-zero",
+          "u": 0.5,
+          "v": 0.5,
+          "controlledObjectPointMm": [
+            0,
+            0,
+            8890
+          ]
+        }
+      },
+      "cpuReference": {
+        "valid": true,
+        "signedCoCDiameterMm": 0,
+        "majorRadiusMm": 0,
+        "minorRadiusMm": 0,
+        "orientationRad": 0
+      }
+    },
+    {
+      "id": "storage-small-positive-coc",
+      "testCase": {
+        "id": "storage-small-positive-coc",
+        "kernelOverride": {
+          "lens": {
+            "centerWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "film": {
+            "planePointWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": -0.15257437070938215
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "optics": {
+            "focalLengthMm": 150,
+            "apertureFNumber": 0.025741132981815795
+          }
+        },
+        "probe": {
+          "id": "storage-small-positive-coc",
+          "u": 0.5,
+          "v": 0.5,
+          "controlledObjectPointMm": [
+            0,
+            0,
+            8890.889
+          ]
+        }
+      },
+      "cpuReference": {
+        "valid": true,
+        "signedCoCDiameterMm": 0.01,
+        "majorRadiusMm": 0.005,
+        "minorRadiusMm": 0.005,
+        "orientationRad": 0
+      }
+    },
+    {
+      "id": "storage-small-negative-coc",
+      "testCase": {
+        "id": "storage-small-negative-coc",
+        "kernelOverride": {
+          "lens": {
+            "centerWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "film": {
+            "planePointWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": -0.15257437070938215
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "optics": {
+            "focalLengthMm": 150,
+            "apertureFNumber": 28.604118993134087
+          }
+        },
+        "probe": {
+          "id": "storage-small-negative-coc",
+          "u": 0.5,
+          "v": 0.5,
+          "controlledObjectPointMm": [
+            0,
+            0,
+            8001
+          ]
+        }
+      },
+      "cpuReference": {
+        "valid": true,
+        "signedCoCDiameterMm": -0.01,
+        "majorRadiusMm": 0.005,
+        "minorRadiusMm": 0.005,
+        "orientationRad": 0
+      }
+    },
+    {
+      "id": "storage-0.1mm-reference",
+      "testCase": {
+        "id": "storage-0.1mm-reference",
+        "kernelOverride": {
+          "lens": {
+            "centerWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "film": {
+            "planePointWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": -0.15257437070938215
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "optics": {
+            "focalLengthMm": 150,
+            "apertureFNumber": 821.8916857360794
+          }
+        },
+        "probe": {
+          "id": "storage-0.1mm-reference",
+          "u": 0.5,
+          "v": 0.5,
+          "controlledObjectPointMm": [
+            0,
+            0,
+            270
+          ]
+        }
+      },
+      "cpuReference": {
+        "valid": true,
+        "signedCoCDiameterMm": -0.1,
+        "majorRadiusMm": 0.05,
+        "minorRadiusMm": 0.05,
+        "orientationRad": 0
+      }
+    },
+    {
+      "id": "storage-near-binary16-maximum",
+      "testCase": {
+        "id": "storage-near-binary16-maximum",
+        "kernelOverride": {
+          "lens": {
+            "centerWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "film": {
+            "planePointWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": -0.15257437070938215
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "optics": {
+            "focalLengthMm": 150,
+            "apertureFNumber": 0.0012842057589626242
+          }
+        },
+        "probe": {
+          "id": "storage-near-binary16-maximum",
+          "u": 0.5,
+          "v": 0.5,
+          "controlledObjectPointMm": [
+            0,
+            0,
+            270
+          ]
+        }
+      },
+      "cpuReference": {
+        "valid": true,
+        "signedCoCDiameterMm": -63999.99999999999,
+        "majorRadiusMm": 31999.999999999996,
+        "minorRadiusMm": 31999.999999999996,
+        "orientationRad": 0
+      }
+    },
+    {
+      "id": "storage-overrange-positive-coc",
+      "testCase": {
+        "id": "storage-overrange-positive-coc",
+        "kernelOverride": {
+          "lens": {
+            "centerWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "film": {
+            "planePointWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": -0.15257437070938215
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "optics": {
+            "focalLengthMm": 150,
+            "apertureFNumber": 0.000019502808404410108
+          }
+        },
+        "probe": {
+          "id": "storage-overrange-positive-coc",
+          "u": 0.5,
+          "v": 0.5,
+          "controlledObjectPointMm": [
+            0,
+            0,
+            17780
+          ]
+        }
+      },
+      "cpuReference": {
+        "valid": true,
+        "signedCoCDiameterMm": 66000,
+        "majorRadiusMm": 33000,
+        "minorRadiusMm": 33000,
+        "orientationRad": 0
+      }
+    },
+    {
+      "id": "storage-overrange-negative-coc",
+      "testCase": {
+        "id": "storage-overrange-negative-coc",
+        "kernelOverride": {
+          "lens": {
+            "centerWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "film": {
+            "planePointWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": -0.15257437070938215
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "optics": {
+            "focalLengthMm": 150,
+            "apertureFNumber": 0.000039005616808820474
+          }
+        },
+        "probe": {
+          "id": "storage-overrange-negative-coc",
+          "u": 0.5,
+          "v": 0.5,
+          "controlledObjectPointMm": [
+            0,
+            0,
+            4445
+          ]
+        }
+      },
+      "cpuReference": {
+        "valid": true,
+        "signedCoCDiameterMm": -66000,
+        "majorRadiusMm": 33000,
+        "minorRadiusMm": 33000,
+        "orientationRad": 0
+      }
+    },
+    {
+      "id": "storage-overrange-ellipse-radius",
+      "testCase": {
+        "id": "storage-overrange-ellipse-radius",
+        "kernelOverride": {
+          "lens": {
+            "centerWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "film": {
+            "planePointWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": -0.15257437070938215
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "optics": {
+            "focalLengthMm": 150,
+            "apertureFNumber": 0.000009751404202205054
+          }
+        },
+        "probe": {
+          "id": "storage-overrange-ellipse-radius",
+          "u": 0.5,
+          "v": 0.5,
+          "controlledObjectPointMm": [
+            0,
+            0,
+            17780
+          ]
+        }
+      },
+      "cpuReference": {
+        "valid": true,
+        "signedCoCDiameterMm": 132000,
+        "majorRadiusMm": 66000,
+        "minorRadiusMm": 66000,
+        "orientationRad": 0
+      }
+    },
+    {
+      "id": "invalid-geometry-lens-basis",
+      "testCase": {
+        "id": "invalid-geometry-lens-basis",
+        "kernelOverride": {
+          "lens": {
+            "centerWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "film": {
+            "planePointWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": -0.15257437070938215
+            },
+            "planeNormal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "planeBasisX": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "planeBasisY": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            }
+          },
+          "optics": {
+            "focalLengthMm": 150,
+            "apertureFNumber": 16
+          }
+        },
+        "probe": {
+          "id": "invalid-geometry-lens-basis",
+          "u": 0.5,
+          "v": 0.5,
+          "controlledObjectPointMm": [
+            0,
+            0,
+            270
+          ]
+        }
+      },
+      "cpuReference": {
+        "valid": false,
+        "signedCoCDiameterMm": 0,
+        "majorRadiusMm": 0,
+        "minorRadiusMm": 0,
+        "orientationRad": 0
+      }
+    }
+  ],
+  "focalBoundaryReferences": [
+    {
+      "id": "depth-derived-canonical-u-f-no-parallel-authority",
+      "inputSource": "scene-depth-with-independent-analytic-surface",
+      "expectedWorldM": [
+        0.8782712154900871,
+        -1.0135686154559147,
+        5.045
+      ],
+      "focalLengthOverrideMm": 5045,
+      "explicitParallelLimitIdentity": false
+    },
+    {
+      "id": "controlled-u-f-exact-authorized",
+      "inputSource": "controlled-object-point",
+      "focalLengthMm": 150,
+      "explicitParallelLimitIdentity": true
+    }
+  ],
+  "probeReadback": {
+    "token": "m4-physical-1793463119883",
+    "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-5",
+    "channelId": "default",
+    "sceneId": "architecture-rise",
+    "rendererGenerationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none",
+    "widthPx": 514,
+    "heightPx": 411,
+    "depthFormat": "depth24plus",
+    "cocStorageFormat": "rgba16float",
+    "validityStorageFormat": "rgba8unorm",
+    "samples": [
+      {
+        "id": "near-foreground-plinth",
+        "u": 0.6857976653696498,
+        "v": 0.98661800486618,
+        "depth": 0.9974762201309204,
+        "reconstructedWorldM": [
+          -0.4778830111026764,
+          -1.001288890838623,
+          3.0900046825408936
+        ],
+        "kernelObjectPositionM": [
+          -0.4778830409049988,
+          -1.001288890838623,
+          3.0900046825408936
+        ],
+        "controlledObjectPoint": false,
+        "expectedWorldM": [
+          -0.477882212340189,
+          -1.00128745220716,
+          3.09
+        ],
+        "expectedSurfaceId": "plinth-foreground-left-front",
+        "kernelFootprintMm": [
+          -0.30200955271720886,
+          0.15100477635860443,
+          0.15100477635860443,
+          0
+        ],
+        "storedFootprintMm": [
+          -0.302001953125,
+          0.1510009765625,
+          0.1510009765625,
+          0
+        ],
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "depthConfidence": {
+          "status": "resolved",
+          "scope": "probe-only",
+          "evidence": "paired-analytic-surface-reference",
+          "surfaceId": "plinth-foreground-left-front",
+          "canonicalObjectDistanceMm": 3090,
+          "reconstructedObjectDistanceMm": 3090.0046825408936,
+          "canonicalUMinusFmm": 2940,
+          "reconstructedUMinusFmm": 2940.0046825408936,
+          "signedReconstructionErrorMm": 0.0046825408935546875,
+          "absoluteReconstructionErrorMm": 0.0046825408935546875,
+          "observedUMinusFIntervalMm": [
+            2940,
+            2940.0046825408936
+          ],
+          "canonicalExpectedBranch": "finite-real",
+          "reconstructedBranch": "finite-real",
+          "kernelSelectedBranch": "finite-real"
+        }
+      },
+      {
+        "id": "far-street-sign-face",
+        "u": 0.7714007782101168,
+        "v": 0.14476885644768855,
+        "depth": 0.9989698529243469,
+        "reconstructedWorldM": [
+          -1.2955900430679321,
+          1.356618046760559,
+          5.735013008117676
+        ],
+        "kernelObjectPositionM": [
+          -1.2955901622772217,
+          1.3566181659698486,
+          5.735013484954834
+        ],
+        "controlledObjectPoint": false,
+        "expectedWorldM": [
+          -1.2955871873262923,
+          1.3566148812420347,
+          5.735
+        ],
+        "expectedSurfaceId": "street-sign-front-face",
+        "kernelFootprintMm": [
+          -0.08851460367441177,
+          0.04425730183720589,
+          0.04425730183720589,
+          0
+        ],
+        "storedFootprintMm": [
+          -0.0885009765625,
+          0.04425048828125,
+          0.04425048828125,
+          0
+        ],
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "depthConfidence": {
+          "status": "resolved",
+          "scope": "probe-only",
+          "evidence": "paired-analytic-surface-reference",
+          "surfaceId": "street-sign-front-face",
+          "canonicalObjectDistanceMm": 5735,
+          "reconstructedObjectDistanceMm": 5735.013008117676,
+          "canonicalUMinusFmm": 5585,
+          "reconstructedUMinusFmm": 5585.013008117676,
+          "signedReconstructionErrorMm": 0.01300811767578125,
+          "absoluteReconstructionErrorMm": 0.01300811767578125,
+          "observedUMinusFIntervalMm": [
+            5585,
+            5585.013008117676
+          ],
+          "canonicalExpectedBranch": "finite-real",
+          "reconstructedBranch": "finite-real",
+          "kernelSelectedBranch": "finite-real"
+        }
+      },
+      {
+        "id": "off-axis-midground-checker",
+        "u": 0.2908560311284047,
+        "v": 0.8017031630170316,
+        "depth": 0.9987296462059021,
+        "reconstructedWorldM": [
+          0.8775850534439087,
+          -1.0127767324447632,
+          5.041058540344238
+        ],
+        "kernelObjectPositionM": [
+          0.8775851130485535,
+          -1.0127767324447632,
+          5.0410590171813965
+        ],
+        "controlledObjectPoint": false,
+        "expectedWorldM": [
+          0.8782712154900871,
+          -1.0135686154559147,
+          5.045
+        ],
+        "expectedSurfaceId": "plinth-mid-right-checker-cell",
+        "kernelFootprintMm": [
+          -0.1228487640619278,
+          0.0614243820309639,
+          0.0614243820309639,
+          0
+        ],
+        "storedFootprintMm": [
+          -0.122802734375,
+          0.0614013671875,
+          0.0614013671875,
+          0
+        ],
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "depthConfidence": {
+          "status": "resolved",
+          "scope": "probe-only",
+          "evidence": "paired-analytic-surface-reference",
+          "surfaceId": "plinth-mid-right-checker-cell",
+          "canonicalObjectDistanceMm": 5045,
+          "reconstructedObjectDistanceMm": 5041.058540344238,
+          "canonicalUMinusFmm": 4895,
+          "reconstructedUMinusFmm": 4891.058540344238,
+          "signedReconstructionErrorMm": -3.9414596557617188,
+          "absoluteReconstructionErrorMm": 3.9414596557617188,
+          "observedUMinusFIntervalMm": [
+            4891.058540344238,
+            4895
+          ],
+          "canonicalExpectedBranch": "finite-real",
+          "reconstructedBranch": "finite-real",
+          "kernelSelectedBranch": "finite-real"
+        }
+      },
+      {
+        "id": "asymmetric-sign-edge",
+        "u": 0.8608949416342413,
+        "v": 0.14476885644768855,
+        "depth": 0.9989698529243469,
+        "reconstructedWorldM": [
+          -1.7228096723556519,
+          1.356618046760559,
+          5.735013008117676
+        ],
+        "kernelObjectPositionM": [
+          -1.7228097915649414,
+          1.3566181659698486,
+          5.735013484954834
+        ],
+        "controlledObjectPoint": false,
+        "expectedWorldM": [
+          -1.7228059014267187,
+          1.3566148812420347,
+          5.735
+        ],
+        "expectedSurfaceId": "street-sign-front-face-edge",
+        "kernelFootprintMm": [
+          -0.08851460367441177,
+          0.04425730183720589,
+          0.04425730183720589,
+          0
+        ],
+        "storedFootprintMm": [
+          -0.0885009765625,
+          0.04425048828125,
+          0.04425048828125,
+          0
+        ],
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "depthConfidence": {
+          "status": "resolved",
+          "scope": "probe-only",
+          "evidence": "paired-analytic-surface-reference",
+          "surfaceId": "street-sign-front-face-edge",
+          "canonicalObjectDistanceMm": 5735,
+          "reconstructedObjectDistanceMm": 5735.013008117676,
+          "canonicalUMinusFmm": 5585,
+          "reconstructedUMinusFmm": 5585.013008117676,
+          "signedReconstructionErrorMm": 0.01300811767578125,
+          "absoluteReconstructionErrorMm": 0.01300811767578125,
+          "observedUMinusFIntervalMm": [
+            5585,
+            5585.013008117676
+          ],
+          "canonicalExpectedBranch": "finite-real",
+          "reconstructedBranch": "finite-real",
+          "kernelSelectedBranch": "finite-real"
+        }
+      },
+      {
+        "id": "far-focus-chart-cell",
+        "u": 0.45622568093385213,
+        "v": 0.29318734793187345,
+        "depth": 0.9995884895324707,
+        "reconstructedWorldM": [
+          0.3237453103065491,
+          1.2236331701278687,
+          8.88509464263916
+        ],
+        "kernelObjectPositionM": [
+          0.3237453103065491,
+          1.2236332893371582,
+          8.885095596313477
+        ],
+        "controlledObjectPoint": false,
+        "expectedWorldM": [
+          0.32370550305725426,
+          1.2234825350480827,
+          8.884
+        ],
+        "expectedSurfaceId": "focus-chart-cell-63",
+        "kernelFootprintMm": [
+          -0.0000891742020030506,
+          0.0000445871010015253,
+          0.0000445871010015253,
+          0
+        ],
+        "storedFootprintMm": [
+          -0.00008916854858398438,
+          0.00004458427429199219,
+          0.00004458427429199219,
+          0
+        ],
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "depthConfidence": {
+          "status": "resolved",
+          "scope": "probe-only",
+          "evidence": "paired-analytic-surface-reference",
+          "surfaceId": "focus-chart-cell-63",
+          "canonicalObjectDistanceMm": 8884,
+          "reconstructedObjectDistanceMm": 8885.09464263916,
+          "canonicalUMinusFmm": 8734,
+          "reconstructedUMinusFmm": 8735.09464263916,
+          "signedReconstructionErrorMm": 1.0946426391601562,
+          "absoluteReconstructionErrorMm": 1.0946426391601562,
+          "observedUMinusFIntervalMm": [
+            8734,
+            8735.09464263916
+          ],
+          "canonicalExpectedBranch": "finite-real",
+          "reconstructedBranch": "finite-real",
+          "kernelSelectedBranch": "finite-real"
+        }
+      },
+      {
+        "id": "background-top-left",
+        "u": 0.01,
+        "v": 0.01,
+        "depth": 1,
+        "reconstructedWorldM": [
+          5.710308074951172,
+          4.568246364593506,
+          14.00042724609375
+        ],
+        "kernelObjectPositionM": [
+          5.71030855178833,
+          4.568246841430664,
+          14.000428199768066
+        ],
+        "controlledObjectPoint": false,
+        "expectedWorldM": null,
+        "expectedSurfaceId": "background-candidate",
+        "kernelFootprintMm": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "storedFootprintMm": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "validityCode": 0,
+        "focalBranchCode": 3,
+        "depthConfidence": {
+          "status": "not-assessed",
+          "scope": "probe-only",
+          "reason": "clear-depth"
+        }
+      },
+      {
+        "id": "background-top-right",
+        "u": 0.99,
+        "v": 0.01,
+        "depth": 1,
+        "reconstructedWorldM": [
+          -5.710308074951172,
+          4.568246364593506,
+          14.00042724609375
+        ],
+        "kernelObjectPositionM": [
+          -5.71030855178833,
+          4.568246841430664,
+          14.000428199768066
+        ],
+        "controlledObjectPoint": false,
+        "expectedWorldM": null,
+        "expectedSurfaceId": "background-candidate",
+        "kernelFootprintMm": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "storedFootprintMm": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "validityCode": 0,
+        "focalBranchCode": 3,
+        "depthConfidence": {
+          "status": "not-assessed",
+          "scope": "probe-only",
+          "reason": "clear-depth"
+        }
+      },
+      {
+        "id": "background-bottom-left",
+        "u": 0.01,
+        "v": 0.99,
+        "depth": 0.9978049993515015,
+        "reconstructedWorldM": [
+          1.4027140140533447,
+          -1.1221712827682495,
+          3.439148426055908
+        ],
+        "kernelObjectPositionM": [
+          1.4027140140533447,
+          -1.1221712827682495,
+          3.4391486644744873
+        ],
+        "controlledObjectPoint": false,
+        "expectedWorldM": null,
+        "expectedSurfaceId": "background-candidate",
+        "kernelFootprintMm": [
+          -0.25501400232315063,
+          0.12750700116157532,
+          0.12750700116157532,
+          0
+        ],
+        "storedFootprintMm": [
+          -0.2548828125,
+          0.12744140625,
+          0.12744140625,
+          0
+        ],
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "depthConfidence": {
+          "status": "not-assessed",
+          "scope": "probe-only",
+          "reason": "no-independent-reference"
+        }
+      },
+      {
+        "id": "unreferenced-visible-surface-pixel",
+        "u": 0.6857976653696498,
+        "v": 0.98661800486618,
+        "depth": 0.9974762201309204,
+        "reconstructedWorldM": [
+          -0.4778830111026764,
+          -1.001288890838623,
+          3.0900046825408936
+        ],
+        "kernelObjectPositionM": [
+          -0.4778830409049988,
+          -1.001288890838623,
+          3.0900046825408936
+        ],
+        "controlledObjectPoint": false,
+        "expectedWorldM": null,
+        "expectedSurfaceId": null,
+        "kernelFootprintMm": [
+          -0.30200955271720886,
+          0.15100477635860443,
+          0.15100477635860443,
+          0
+        ],
+        "storedFootprintMm": [
+          -0.302001953125,
+          0.1510009765625,
+          0.1510009765625,
+          0
+        ],
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "depthConfidence": {
+          "status": "not-assessed",
+          "scope": "probe-only",
+          "reason": "no-independent-reference"
+        }
+      },
+      {
+        "id": "controlled-u-f-minus-0.01",
+        "u": 0.0009727626459143969,
+        "v": 0.5,
+        "depth": 1,
+        "reconstructedWorldM": [
+          5.8155083656311035,
+          0,
+          14.00042724609375
+        ],
+        "kernelObjectPositionM": [
+          0.25,
+          0,
+          0.1499900072813034
+        ],
+        "controlledObjectPoint": true,
+        "expectedWorldM": null,
+        "expectedSurfaceId": null,
+        "kernelFootprintMm": [
+          9.375636100769043,
+          4.6878180503845215,
+          4.6878180503845215,
+          0
+        ],
+        "storedFootprintMm": null,
+        "validityCode": 1,
+        "focalBranchCode": 1,
+        "depthConfidence": {
+          "status": "not-assessed",
+          "scope": "probe-only",
+          "reason": "controlled-object-point"
+        }
+      },
+      {
+        "id": "controlled-u-f-minus-0.001",
+        "u": 0.0029182879377431907,
+        "v": 0.5,
+        "depth": 1,
+        "reconstructedWorldM": [
+          5.792835712432861,
+          0,
+          14.00042724609375
+        ],
+        "kernelObjectPositionM": [
+          0.25,
+          0,
+          0.1499989926815033
+        ],
+        "controlledObjectPoint": true,
+        "expectedWorldM": null,
+        "expectedSurfaceId": null,
+        "kernelFootprintMm": [
+          9.3750638961792,
+          4.6875319480896,
+          4.6875319480896,
+          0
+        ],
+        "storedFootprintMm": null,
+        "validityCode": 1,
+        "focalBranchCode": 1,
+        "depthConfidence": {
+          "status": "not-assessed",
+          "scope": "probe-only",
+          "reason": "controlled-object-point"
+        }
+      },
+      {
+        "id": "controlled-u-f-exact-unresolved",
+        "u": 0.0048638132295719845,
+        "v": 0.5,
+        "depth": 1,
+        "reconstructedWorldM": [
+          5.770163536071777,
+          0,
+          14.00042724609375
+        ],
+        "kernelObjectPositionM": [
+          0.25,
+          0,
+          0.15000000596046448
+        ],
+        "controlledObjectPoint": true,
+        "expectedWorldM": null,
+        "expectedSurfaceId": null,
+        "kernelFootprintMm": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "storedFootprintMm": null,
+        "validityCode": 4,
+        "focalBranchCode": 0,
+        "depthConfidence": {
+          "status": "not-assessed",
+          "scope": "probe-only",
+          "reason": "controlled-object-point"
+        }
+      },
+      {
+        "id": "controlled-u-f-exact-authorized",
+        "u": 0.006809338521400778,
+        "v": 0.5,
+        "depth": 1,
+        "reconstructedWorldM": [
+          5.747490882873535,
+          0,
+          14.00042724609375
+        ],
+        "kernelObjectPositionM": [
+          0.25,
+          0,
+          0.15000000596046448
+        ],
+        "controlledObjectPoint": true,
+        "expectedWorldM": null,
+        "expectedSurfaceId": null,
+        "kernelFootprintMm": [
+          -9.375,
+          4.6875,
+          4.6875,
+          0
+        ],
+        "storedFootprintMm": null,
+        "validityCode": 1,
+        "focalBranchCode": 2,
+        "depthConfidence": {
+          "status": "not-assessed",
+          "scope": "probe-only",
+          "reason": "controlled-object-point"
+        }
+      },
+      {
+        "id": "controlled-u-f-plus-0.001",
+        "u": 0.008754863813229572,
+        "v": 0.5,
+        "depth": 1,
+        "reconstructedWorldM": [
+          5.724818229675293,
+          0,
+          14.00042724609375
+        ],
+        "kernelObjectPositionM": [
+          0.25,
+          0,
+          0.15000101923942566
+        ],
+        "controlledObjectPoint": true,
+        "expectedWorldM": null,
+        "expectedSurfaceId": null,
+        "kernelFootprintMm": [
+          -9.3749361038208,
+          4.6874680519104,
+          4.6874680519104,
+          0
+        ],
+        "storedFootprintMm": null,
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "depthConfidence": {
+          "status": "not-assessed",
+          "scope": "probe-only",
+          "reason": "controlled-object-point"
+        }
+      },
+      {
+        "id": "controlled-u-f-plus-0.01",
+        "u": 0.010700389105058366,
+        "v": 0.5,
+        "depth": 1,
+        "reconstructedWorldM": [
+          5.702145576477051,
+          0,
+          14.00042724609375
+        ],
+        "kernelObjectPositionM": [
+          0.25,
+          0,
+          0.15001000463962555
+        ],
+        "controlledObjectPoint": true,
+        "expectedWorldM": null,
+        "expectedSurfaceId": null,
+        "kernelFootprintMm": [
+          -9.374364852905273,
+          4.687182426452637,
+          4.687182426452637,
+          0
+        ],
+        "storedFootprintMm": null,
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "depthConfidence": {
+          "status": "not-assessed",
+          "scope": "probe-only",
+          "reason": "controlled-object-point"
+        }
+      }
+    ],
+    "controlledKernelCases": [
+      {
+        "id": "ellipse-circular",
+        "probeId": "ellipse-circular",
+        "calculatedFootprintMm": [
+          -5.1368231773376465,
+          2.5684115886688232,
+          2.5684115886688232,
+          0
+        ],
+        "orientationPrincipalAngleRad": 0,
+        "orientationDefined": false,
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "storageFormat": "rgba16float",
+        "storedHalfFloatBits": [
+          50467,
+          16675,
+          16675,
+          0
+        ],
+        "readbackFootprintMm": [
+          -5.13671875,
+          2.568359375,
+          2.568359375,
+          0
+        ],
+        "sampledFootprintMm": [
+          -5.13671875,
+          2.568359375,
+          2.568359375,
+          0
+        ]
+      },
+      {
+        "id": "ellipse-film-tilt",
+        "probeId": "ellipse-film-tilt",
+        "calculatedFootprintMm": [
+          -5.1938862800598145,
+          2.7245984077453613,
+          2.475268840789795,
+          0.2795295715332031
+        ],
+        "orientationPrincipalAngleRad": 0.8781680464744568,
+        "orientationDefined": true,
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "storageFormat": "rgba16float",
+        "storedHalfFloatBits": [
+          50481,
+          16754,
+          16627,
+          13432
+        ],
+        "readbackFootprintMm": [
+          -5.19140625,
+          2.72265625,
+          2.474609375,
+          0.279296875
+        ],
+        "sampledFootprintMm": [
+          -5.19140625,
+          2.72265625,
+          2.474609375,
+          0.279296875
+        ]
+      },
+      {
+        "id": "ellipse-film-swing",
+        "probeId": "ellipse-film-swing",
+        "calculatedFootprintMm": [
+          -5.355157852172852,
+          2.7798073291778564,
+          2.5791101455688477,
+          0.5
+        ],
+        "orientationPrincipalAngleRad": 1.5707963705062866,
+        "orientationDefined": true,
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "storageFormat": "rgba16float",
+        "storedHalfFloatBits": [
+          50522,
+          16783,
+          16680,
+          14336
+        ],
+        "readbackFootprintMm": [
+          -5.3515625,
+          2.779296875,
+          2.578125,
+          0.5
+        ],
+        "sampledFootprintMm": [
+          -5.3515625,
+          2.779296875,
+          2.578125,
+          0.5
+        ]
+      },
+      {
+        "id": "ellipse-compound-tilt-swing",
+        "probeId": "ellipse-compound-tilt-swing",
+        "calculatedFootprintMm": [
+          -5.3774094581604,
+          2.8178625106811523,
+          2.565467119216919,
+          0.5638425350189209
+        ],
+        "orientationPrincipalAngleRad": -1.3702292442321777,
+        "orientationDefined": true,
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "storageFormat": "rgba16float",
+        "storedHalfFloatBits": [
+          50528,
+          16802,
+          16673,
+          14466
+        ],
+        "readbackFootprintMm": [
+          -5.375,
+          2.81640625,
+          2.564453125,
+          0.5634765625
+        ],
+        "sampledFootprintMm": [
+          -5.375,
+          2.81640625,
+          2.564453125,
+          0.5634765625
+        ]
+      },
+      {
+        "id": "ellipse-off-axis",
+        "probeId": "ellipse-off-axis",
+        "calculatedFootprintMm": [
+          -5.47562837600708,
+          3.3450980186462402,
+          2.2407796382904053,
+          0.6117571592330933
+        ],
+        "orientationPrincipalAngleRad": -1.219700813293457,
+        "orientationDefined": true,
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "storageFormat": "rgba16float",
+        "storedHalfFloatBits": [
+          50553,
+          17072,
+          16507,
+          14564
+        ],
+        "readbackFootprintMm": [
+          -5.47265625,
+          3.34375,
+          2.240234375,
+          0.611328125
+        ],
+        "sampledFootprintMm": [
+          -5.47265625,
+          3.34375,
+          2.240234375,
+          0.611328125
+        ]
+      },
+      {
+        "id": "ellipse-negative-principal-angle",
+        "probeId": "ellipse-negative-principal-angle",
+        "calculatedFootprintMm": [
+          -5.3774094581604,
+          2.8178622722625732,
+          2.565467357635498,
+          0.936337947845459
+        ],
+        "orientationPrincipalAngleRad": -0.20000030100345612,
+        "orientationDefined": true,
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "storageFormat": "rgba16float",
+        "storedHalfFloatBits": [
+          50528,
+          16802,
+          16673,
+          15229
+        ],
+        "readbackFootprintMm": [
+          -5.375,
+          2.81640625,
+          2.564453125,
+          0.93603515625
+        ],
+        "sampledFootprintMm": [
+          -5.375,
+          2.81640625,
+          2.564453125,
+          0.93603515625
+        ]
+      },
+      {
+        "id": "ellipse-near-pi-orientation",
+        "probeId": "ellipse-near-pi-orientation",
+        "calculatedFootprintMm": [
+          -5.3774094581604,
+          2.8178625106811523,
+          2.565467119216919,
+          0.996816873550415
+        ],
+        "orientationPrincipalAngleRad": -0.010000000707805157,
+        "orientationDefined": true,
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "storageFormat": "rgba16float",
+        "storedHalfFloatBits": [
+          50528,
+          16802,
+          16673,
+          15353
+        ],
+        "readbackFootprintMm": [
+          -5.375,
+          2.81640625,
+          2.564453125,
+          0.99658203125
+        ],
+        "sampledFootprintMm": [
+          -5.375,
+          2.81640625,
+          2.564453125,
+          0.99658203125
+        ]
+      },
+      {
+        "id": "ellipse-near-circular",
+        "probeId": "ellipse-near-circular",
+        "calculatedFootprintMm": [
+          -5.1368231773376465,
+          2.5684115886688232,
+          2.5684115886688232,
+          0
+        ],
+        "orientationPrincipalAngleRad": 0,
+        "orientationDefined": false,
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "storageFormat": "rgba16float",
+        "storedHalfFloatBits": [
+          50467,
+          16675,
+          16675,
+          0
+        ],
+        "readbackFootprintMm": [
+          -5.13671875,
+          2.568359375,
+          2.568359375,
+          0
+        ],
+        "sampledFootprintMm": [
+          -5.13671875,
+          2.568359375,
+          2.568359375,
+          0
+        ]
+      },
+      {
+        "id": "storage-exact-zero",
+        "probeId": "storage-exact-zero",
+        "calculatedFootprintMm": [
+          0,
+          3.99086097502277e-8,
+          3.99086097502277e-8,
+          0
+        ],
+        "orientationPrincipalAngleRad": 0,
+        "orientationDefined": false,
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "storageFormat": "rgba16float",
+        "storedHalfFloatBits": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "readbackFootprintMm": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "sampledFootprintMm": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "storage-small-positive-coc",
+        "probeId": "storage-small-positive-coc",
+        "calculatedFootprintMm": [
+          0.01039996836334467,
+          0.005199984181672335,
+          0.005199984181672335,
+          0
+        ],
+        "orientationPrincipalAngleRad": 0,
+        "orientationDefined": false,
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "storageFormat": "rgba16float",
+        "storedHalfFloatBits": [
+          8531,
+          7507,
+          7507,
+          0
+        ],
+        "readbackFootprintMm": [
+          0.01039886474609375,
+          0.005199432373046875,
+          0.005199432373046875,
+          0
+        ],
+        "sampledFootprintMm": [
+          0.01039886474609375,
+          0.005199432373046875,
+          0.005199432373046875,
+          0
+        ]
+      },
+      {
+        "id": "storage-small-negative-coc",
+        "probeId": "storage-small-negative-coc",
+        "calculatedFootprintMm": [
+          -0.01000025775283575,
+          0.005000128876417875,
+          0.005000128876417875,
+          0
+        ],
+        "orientationPrincipalAngleRad": 0,
+        "orientationDefined": false,
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "storageFormat": "rgba16float",
+        "storedHalfFloatBits": [
+          41246,
+          7454,
+          7454,
+          0
+        ],
+        "readbackFootprintMm": [
+          -0.0099945068359375,
+          0.00499725341796875,
+          0.00499725341796875,
+          0
+        ],
+        "sampledFootprintMm": [
+          -0.0099945068359375,
+          0.00499725341796875,
+          0.00499725341796875,
+          0
+        ]
+      },
+      {
+        "id": "storage-0.1mm-reference",
+        "probeId": "storage-0.1mm-reference",
+        "calculatedFootprintMm": [
+          -0.10000000894069672,
+          0.05000000447034836,
+          0.05000000447034836,
+          0
+        ],
+        "orientationPrincipalAngleRad": 0,
+        "orientationDefined": false,
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "storageFormat": "rgba16float",
+        "storedHalfFloatBits": [
+          44646,
+          10854,
+          10854,
+          0
+        ],
+        "readbackFootprintMm": [
+          -0.0999755859375,
+          0.04998779296875,
+          0.04998779296875,
+          0
+        ],
+        "sampledFootprintMm": [
+          -0.0999755859375,
+          0.04998779296875,
+          0.04998779296875,
+          0
+        ]
+      },
+      {
+        "id": "storage-near-binary16-maximum",
+        "probeId": "storage-near-binary16-maximum",
+        "calculatedFootprintMm": [
+          -64000.00390625,
+          32000.001953125,
+          32000.001953125,
+          0
+        ],
+        "orientationPrincipalAngleRad": 0,
+        "orientationDefined": false,
+        "validityCode": 1,
+        "focalBranchCode": 3,
+        "storageFormat": "rgba16float",
+        "storedHalfFloatBits": [
+          64464,
+          30672,
+          30672,
+          0
+        ],
+        "readbackFootprintMm": [
+          -64000,
+          32000,
+          32000,
+          0
+        ],
+        "sampledFootprintMm": [
+          -64000,
+          32000,
+          32000,
+          0
+        ]
+      },
+      {
+        "id": "storage-overrange-positive-coc",
+        "probeId": "storage-overrange-positive-coc",
+        "calculatedFootprintMm": [
+          65999.59375,
+          32999.796875,
+          32999.796875,
+          0
+        ],
+        "orientationPrincipalAngleRad": 0,
+        "orientationDefined": false,
+        "validityCode": 2,
+        "focalBranchCode": 3,
+        "storageFormat": "rgba16float",
+        "storedHalfFloatBits": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "readbackFootprintMm": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "sampledFootprintMm": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "storage-overrange-negative-coc",
+        "probeId": "storage-overrange-negative-coc",
+        "calculatedFootprintMm": [
+          -65999.7734375,
+          32999.88671875,
+          32999.88671875,
+          0
+        ],
+        "orientationPrincipalAngleRad": 0,
+        "orientationDefined": false,
+        "validityCode": 2,
+        "focalBranchCode": 3,
+        "storageFormat": "rgba16float",
+        "storedHalfFloatBits": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "readbackFootprintMm": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "sampledFootprintMm": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "storage-overrange-ellipse-radius",
+        "probeId": "storage-overrange-ellipse-radius",
+        "calculatedFootprintMm": [
+          131999.1875,
+          65999.59375,
+          65999.59375,
+          0
+        ],
+        "orientationPrincipalAngleRad": 0,
+        "orientationDefined": false,
+        "validityCode": 2,
+        "focalBranchCode": 3,
+        "storageFormat": "rgba16float",
+        "storedHalfFloatBits": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "readbackFootprintMm": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "sampledFootprintMm": [
+          0,
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "invalid-geometry-lens-basis",
+        "probeId": "invalid-geometry-lens-basis",
+        "calculatedFootprintMm": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "orientationPrincipalAngleRad": 0,
+        "orientationDefined": true,
+        "validityCode": 3,
+        "focalBranchCode": 1,
+        "storageFormat": "rgba16float",
+        "storedHalfFloatBits": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "readbackFootprintMm": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "sampledFootprintMm": [
+          0,
+          0,
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "depthDerivedExactFocalReadback": {
+    "token": "m4-depth-exact-1793463120485",
+    "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-6",
+    "channelId": "default",
+    "sceneId": "architecture-rise",
+    "rendererGenerationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none",
+    "widthPx": 514,
+    "heightPx": 411,
+    "depthFormat": "depth24plus",
+    "cocStorageFormat": "rgba16float",
+    "validityStorageFormat": "rgba8unorm",
+    "samples": [
+      {
+        "id": "depth-derived-canonical-u-f-no-parallel-authority",
+        "u": 0.2908560311284047,
+        "v": 0.8017031630170316,
+        "depth": 0.9987296462059021,
+        "reconstructedWorldM": [
+          0.8775850534439087,
+          -1.0127767324447632,
+          5.041058540344238
+        ],
+        "kernelObjectPositionM": [
+          0.8775851130485535,
+          -1.0127767324447632,
+          5.0410590171813965
+        ],
+        "controlledObjectPoint": false,
+        "expectedWorldM": [
+          0.8782712154900871,
+          -1.0135686154559147,
+          5.045
+        ],
+        "expectedSurfaceId": "plinth-mid-right-checker-cell",
+        "kernelFootprintMm": [
+          630.639892578125,
+          315.3199462890625,
+          315.3199462890625,
+          0
+        ],
+        "storedFootprintMm": null,
+        "validityCode": 1,
+        "focalBranchCode": 1,
+        "depthConfidence": {
+          "status": "depth-limited",
+          "scope": "probe-only",
+          "evidence": "paired-analytic-surface-reference",
+          "surfaceId": "plinth-mid-right-checker-cell",
+          "canonicalObjectDistanceMm": 5045,
+          "reconstructedObjectDistanceMm": 5041.058540344238,
+          "canonicalUMinusFmm": 0,
+          "reconstructedUMinusFmm": -3.9414596557617188,
+          "signedReconstructionErrorMm": -3.9414596557617188,
+          "absoluteReconstructionErrorMm": 3.9414596557617188,
+          "observedUMinusFIntervalMm": [
+            -3.9414596557617188,
+            0
+          ],
+          "canonicalExpectedBranch": "parallel-limit",
+          "reconstructedBranch": "finite-virtual",
+          "kernelSelectedBranch": "finite-virtual"
+        }
+      }
+    ],
+    "controlledKernelCases": []
+  },
+  "depthDerivedExactFocalHostFrameResult": {
+    "kind": "host-frame-result",
+    "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+    "channelId": "default",
+    "hostId": "gg-host-_r_d_-fkvdotv6q5m",
+    "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+    "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-6",
+    "sceneId": "architecture-rise",
+    "frameStatus": "completed",
+    "acceptedByHost": true,
+    "latestAcceptedRequestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-6",
+    "latestAcceptedSceneId": "architecture-rise",
+    "activeGenerationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+    "activeRendererFamily": "webgpu-renderer",
+    "sequence": 32
+  },
+  "acceptedHostFrameResult": {
+    "kind": "host-frame-result",
+    "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+    "channelId": "default",
+    "hostId": "gg-host-_r_d_-fkvdotv6q5m",
+    "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+    "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-5",
+    "sceneId": "architecture-rise",
+    "frameStatus": "completed",
+    "acceptedByHost": true,
+    "latestAcceptedRequestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-5",
+    "latestAcceptedSceneId": "architecture-rise",
+    "activeGenerationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+    "activeRendererFamily": "webgpu-renderer",
+    "sequence": 28
+  },
+  "hostFrameEventsForReadback": [
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-fkvdotv6q5m",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-5",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-5",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "activeRendererFamily": "webgpu-renderer",
+      "sequence": 28
+    }
+  ],
+  "lifecycleEvents": [
+    {
+      "kind": "attempt",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "channelId": "default",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-3",
+      "sceneId": "architecture-rise",
+      "rendererRevision": "187",
+      "sequence": 14
+    },
+    {
+      "kind": "runtime-observed",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "rendererRevision": "187",
+      "rendererFamily": "webgpu-renderer",
+      "executionApi": "webgpu",
+      "internalFallback": "none",
+      "sequence": 15
+    },
+    {
+      "kind": "renderer-mounted",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-fkvdotv6q5m",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-3",
+      "sceneId": "architecture-rise",
+      "rendererFamily": "webgpu-renderer",
+      "executionApi": "webgpu",
+      "internalFallback": "none",
+      "sequence": 16
+    },
+    {
+      "kind": "queue-completion-settled",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-3",
+      "operation": "sceneRender",
+      "sequence": 17
+    },
+    {
+      "kind": "frame-completed",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-3",
+      "sequence": 19
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-fkvdotv6q5m",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-3",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-3",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "activeRendererFamily": "webgpu-renderer",
+      "sequence": 20
+    },
+    {
+      "kind": "queue-completion-settled",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-4",
+      "operation": "sceneRender",
+      "sequence": 21
+    },
+    {
+      "kind": "frame-completed",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-4",
+      "sequence": 23
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-fkvdotv6q5m",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-4",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-4",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "activeRendererFamily": "webgpu-renderer",
+      "sequence": 24
+    },
+    {
+      "kind": "queue-completion-settled",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-5",
+      "operation": "sceneRender",
+      "sequence": 25
+    },
+    {
+      "kind": "frame-completed",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-5",
+      "sequence": 27
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-fkvdotv6q5m",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-5",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-5",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "activeRendererFamily": "webgpu-renderer",
+      "sequence": 28
+    },
+    {
+      "kind": "queue-completion-settled",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-6",
+      "operation": "sceneRender",
+      "sequence": 29
+    },
+    {
+      "kind": "frame-completed",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-6",
+      "sequence": 31
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-fkvdotv6q5m",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-6",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-6",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "activeRendererFamily": "webgpu-renderer",
+      "sequence": 32
+    },
+    {
+      "kind": "queue-completion-settled",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-7",
+      "operation": "sceneRender",
+      "sequence": 33
+    },
+    {
+      "kind": "frame-completed",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-7",
+      "sequence": 35
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-fkvdotv6q5m",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-7",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-7",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "activeRendererFamily": "webgpu-renderer",
+      "sequence": 36
+    },
+    {
+      "kind": "queue-completion-settled",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-8",
+      "operation": "sceneRender",
+      "sequence": 37
+    },
+    {
+      "kind": "frame-completed",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-8",
+      "sequence": 39
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-fkvdotv6q5m",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-8",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-8",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "activeRendererFamily": "webgpu-renderer",
+      "sequence": 40
+    },
+    {
+      "kind": "queue-completion-settled",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-9",
+      "operation": "sceneRender",
+      "sequence": 41
+    },
+    {
+      "kind": "frame-completed",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-9",
+      "sequence": 43
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-fkvdotv6q5m",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-9",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-9",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "activeRendererFamily": "webgpu-renderer",
+      "sequence": 44
+    },
+    {
+      "kind": "queue-completion-settled",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-10",
+      "operation": "sceneRender",
+      "sequence": 45
+    },
+    {
+      "kind": "queue-completion-settled",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-11",
+      "operation": "sceneRender",
+      "sequence": 46
+    },
+    {
+      "kind": "frame-completed",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-11",
+      "sequence": 48
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-fkvdotv6q5m",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-11",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-11",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "activeRendererFamily": "webgpu-renderer",
+      "sequence": 49
+    },
+    {
+      "kind": "queue-completion-settled",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-12",
+      "operation": "sceneRender",
+      "sequence": 50
+    },
+    {
+      "kind": "frame-completed",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-12",
+      "sequence": 52
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-fkvdotv6q5m",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-12",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-12",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "activeRendererFamily": "webgpu-renderer",
+      "sequence": 53
+    },
+    {
+      "kind": "queue-completion-settled",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-13",
+      "operation": "sceneRender",
+      "sequence": 54
+    },
+    {
+      "kind": "frame-completed",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-13",
+      "sequence": 56
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-fkvdotv6q5m",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-13",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-13",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "activeRendererFamily": "webgpu-renderer",
+      "sequence": 57
+    },
+    {
+      "kind": "cleanup",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-2\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "outcome": "confirmed",
+      "wallClockMs": 2.8000000044703484,
+      "sequence": 58
+    },
+    {
+      "kind": "cleanup-acknowledged",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-fkvdotv6q5m",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-2",
+      "outcome": "confirmed",
+      "reason": null,
+      "sequence": 59
+    },
+    {
+      "kind": "attempt",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-4\"]",
+      "channelId": "default",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-4",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-16",
+      "sceneId": "architecture-rise",
+      "rendererRevision": "187",
+      "sequence": 74
+    },
+    {
+      "kind": "runtime-observed",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-4\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-4",
+      "rendererRevision": "187",
+      "rendererFamily": "webgpu-renderer",
+      "executionApi": "webgpu",
+      "internalFallback": "none",
+      "sequence": 75
+    },
+    {
+      "kind": "renderer-mounted",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-4\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_17_-q0cjn5hzo3",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-4",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-16",
+      "sceneId": "architecture-rise",
+      "rendererFamily": "webgpu-renderer",
+      "executionApi": "webgpu",
+      "internalFallback": "none",
+      "sequence": 76
+    },
+    {
+      "kind": "queue-completion-settled",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-4\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-4",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-16",
+      "operation": "sceneRender",
+      "sequence": 77
+    },
+    {
+      "kind": "frame-completed",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-4\"]",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-4",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-16",
+      "sequence": 79
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwlmuwl-zefo53ftyeh-default-generation-4\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_17_-q0cjn5hzo3",
+      "generationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-4",
+      "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-16",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-16",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwlmuwl-zefo53ftyeh-default-generation-4",
+      "activeRendererFamily": "webgpu-renderer",
+      "sequence": 80
+    }
+  ],
+  "probeSummary": {
+    "requestId": "gg-mvwlmuwl-zefo53ftyeh-default-request-5",
+    "probeStatus": "completed",
+    "probeCount": 15,
+    "maximumWorldErrorMm": 4.078357668837163,
+    "maximumKernelCoCErrorMm": 8.991363422694576e-7,
+    "maximumStorageCoCErrorMm": 0.00013118982315063477
+  },
+  "lifecycle": {
+    "beforeResize": {
+      "width": 514,
+      "height": 411
+    },
+    "afterResize": {
+      "width": 394,
+      "height": 315
+    },
+    "cleanupOutcome": "confirmed"
+  },
+  "pageErrors": []
+}

@@ -1,11 +1,14 @@
 import * as THREE from "three";
 import { resolveRendererCapabilities } from "./backend/rendererCapabilities";
+import type { RendererCapabilities } from "./backend/rendererCapabilities";
 
 export type GroundGlassCocStorageFormat = "half-float-mm" | "encoded-byte";
 
 export type GroundGlassCocTarget = {
   target: THREE.WebGLRenderTarget;
   storageFormat: GroundGlassCocStorageFormat;
+  /** Result from the existing framebuffer probe for the selected target. */
+  rendererCapabilities: RendererCapabilities;
 };
 
 export const GROUND_GLASS_SIGNED_COC_NEUTRAL_BYTE = 128;
@@ -274,13 +277,12 @@ export const createGroundGlassCocTarget = (
     ...targetOptions,
     type: THREE.HalfFloatType,
   });
-  if (
-    resolveRendererCapabilities(renderer, halfFloatTarget)
-      ?.colorRenderTargetRenderable
-  ) {
+  const halfFloatCapabilities = resolveRendererCapabilities(renderer, halfFloatTarget);
+  if (halfFloatCapabilities?.colorRenderTargetRenderable) {
     return {
       target: halfFloatTarget,
       storageFormat: "half-float-mm",
+      rendererCapabilities: halfFloatCapabilities,
     };
   }
   halfFloatTarget.dispose();
@@ -289,10 +291,8 @@ export const createGroundGlassCocTarget = (
     ...targetOptions,
     type: THREE.UnsignedByteType,
   });
-  if (
-    !resolveRendererCapabilities(renderer, encodedByteTarget)
-      ?.colorRenderTargetRenderable
-  ) {
+  const encodedByteCapabilities = resolveRendererCapabilities(renderer, encodedByteTarget);
+  if (!encodedByteCapabilities?.colorRenderTargetRenderable) {
     encodedByteTarget.dispose();
     throw new Error("No renderable Ground Glass CoC color target is available");
   }
@@ -300,6 +300,7 @@ export const createGroundGlassCocTarget = (
   return {
     target: encodedByteTarget,
     storageFormat: "encoded-byte",
+    rendererCapabilities: encodedByteCapabilities,
   };
 };
 

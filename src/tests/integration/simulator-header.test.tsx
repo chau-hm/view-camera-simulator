@@ -8,6 +8,12 @@ import { useAppStore } from "../../state/appStore";
 
 const LocationProbe = () => <div data-testid="route-location">{useLocation().pathname}</div>;
 
+const getSimulatorHeader = (): HTMLElement => {
+  const header = document.querySelector<HTMLElement>("header.simulator-header");
+  if (!header) throw new Error("Simulator application header not found");
+  return header;
+};
+
 const resetHarness = async () => {
   cleanup();
   useAppStore.getState().resetCamera();
@@ -58,7 +64,7 @@ describe("simulator header", () => {
       </MemoryRouter>,
     );
 
-    const header = await screen.findByRole("banner");
+    const header = await waitFor(getSimulatorHeader);
     expect(within(header).getByText("Table Tilt")).toBeInTheDocument();
     expect(within(header).getByText("Guided Lesson")).toBeInTheDocument();
   });
@@ -75,7 +81,7 @@ describe("simulator header", () => {
       </MemoryRouter>,
     );
 
-    let header = await screen.findByRole("banner");
+    let header = await waitFor(getSimulatorHeader);
     expect(within(header).getByText("Understanding Camera Movements")).toBeInTheDocument();
     expect(within(header).getByText("Free Exploration")).toBeInTheDocument();
 
@@ -91,7 +97,7 @@ describe("simulator header", () => {
       </MemoryRouter>,
     );
 
-    header = await screen.findByRole("banner");
+    header = await waitFor(getSimulatorHeader);
     expect(within(header).getByText("Lesson 0 — Meet the View Camera")).toBeInTheDocument();
     expect(within(header).getByText("Lesson")).toBeInTheDocument();
     expect(within(header).queryByText("Understanding Camera Movements")).not.toBeInTheDocument();
@@ -110,7 +116,7 @@ describe("simulator header", () => {
       </MemoryRouter>,
     );
 
-    const header = await screen.findByRole("banner");
+    const header = await waitFor(getSimulatorHeader);
     expect(within(header).getByText("Table Tilt")).toBeInTheDocument();
     expect(within(header).getByText("Guided Lesson")).toBeInTheDocument();
 
@@ -138,7 +144,7 @@ describe("simulator header", () => {
       </MemoryRouter>,
     );
 
-    const header = await screen.findByRole("banner");
+    const header = await waitFor(getSimulatorHeader);
     expect(within(header).getByText("Table Tilt")).toBeInTheDocument();
     expect(within(header).getByText("Free Exploration")).toBeInTheDocument();
 

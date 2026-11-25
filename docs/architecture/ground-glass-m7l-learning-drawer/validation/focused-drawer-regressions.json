@@ -1,0 +1,19 @@
+{
+  "schema": "m7l-focused-drawer-regression-validation-v1",
+  "sourceCommitSha": "ed51a370689421befc9e33b8367f05e2e71308eb",
+  "command": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm run test:e2e -- --project=chromium --workers=1 --retries=0 src/tests/e2e/viewport-learning-overlay.spec.ts --grep=\"Scene-local learning drawer|keyboard focus remains visible|learning drawer supports keyboard|narrow layouts keep the learning surface|Ground Glass expansion keeps one bounded|narrow Ground Glass expansion\"",
+  "exitCode": 0,
+  "passed": 6,
+  "failed": 0,
+  "skipped": 0,
+  "flaky": 0,
+  "retries": 0,
+  "tests": [
+    "Scene-local learning drawer leaves the paired workspace layout intact",
+    "learning drawer supports keyboard focus and internal scrolling without changing Task/Feedback content",
+    "keyboard focus remains visible on the rail while the drawer opens transiently",
+    "narrow layouts keep the learning surface in flow without horizontal overflow",
+    "Ground Glass expansion keeps one bounded learning rail and drawer",
+    "narrow Ground Glass expansion keeps the learning flow outside the clipped frame"
+  ]
+}

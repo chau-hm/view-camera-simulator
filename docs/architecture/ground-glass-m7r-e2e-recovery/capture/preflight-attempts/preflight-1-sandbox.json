@@ -1,0 +1,20 @@
+{
+  "attemptId": "m7r-preflight-1-sandbox",
+  "attemptKind": "capture-runner-runtime-preflight",
+  "executionSourceCommitSha": "d34fe8b39f6c1e0509b3ffecb6fcc6566282d9f8",
+  "captureRunnerSourceCommitSha": "ccae6bdd904d654fc73b12ec5875376575c3e16b",
+  "command": "node scripts/run-m7r-broad-e2e.mjs --execution-worktree=<M7R_EXECUTION_WORKTREE> --execution-sha=d34fe8b39f6c1e0509b3ffecb6fcc6566282d9f8 --output-dir=docs/architecture/ground-glass-m7r-e2e-recovery/capture/main-d34fe8/full-run",
+  "exitCode": 1,
+  "phase": "before-discovery-and-test-execution",
+  "validForBaseline": false,
+  "supersededBy": "capture/main-d34fe8/full-run-attempt-2",
+  "playwrightProcessStarted": false,
+  "testLanesInvoked": false,
+  "error": {
+    "summary": "Headless Chromium launch failed during environment probe",
+    "processSignal": "SIGTRAP",
+    "platformError": "bootstrap_check_in org.chromium.Chromium.MachPortRendezvousServer: Permission denied (1100)",
+    "observedUnder": "workspace sandbox"
+  },
+  "interpretation": "This was a sandbox permission failure before any test execution; it is not a Playwright test outcome and is not counted as a lane attempt."
+}

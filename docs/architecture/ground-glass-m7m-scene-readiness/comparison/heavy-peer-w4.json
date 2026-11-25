@@ -1,0 +1,100 @@
+{
+  "schema": "m7m-playwright-outcomes-v1",
+  "normalizerRevision": "m7m-playwright-normalizer-v1",
+  "captureId": "heavy-peer-w4",
+  "executionSourceCommitSha": "0c32f113c1e3d16a8fd42e7748c64909366c6ae8",
+  "rawCapture": {
+    "sha256": "c7859db6ec761b04d687d9d5b53cd6f93eca2c3de05633cb4d0e604ee096f15c",
+    "bytes": 20808,
+    "retention": "private-local-only",
+    "offlineReplayAvailable": false
+  },
+  "config": {
+    "projectNames": [
+      "chromium",
+      "chromium-renderer-serial"
+    ],
+    "configuredWorkers": 4,
+    "configuredRetries": 0,
+    "testSeam": "disabled"
+  },
+  "stats": {
+    "discovered": 4,
+    "passed": 1,
+    "failed": 3,
+    "skipped": 0,
+    "flaky": 0,
+    "incomplete": 0,
+    "retries": 0,
+    "maxConcurrentTests": 4,
+    "actualWorkerIndices": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "durationMs": 120862
+  },
+  "tests": [
+    {
+      "identity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "status": "unexpected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "workerIndex": 0,
+          "startOffsetMs": 667,
+          "durationMs": 7263,
+          "failureSignature": "scene-canvas-mounted-without-canvas"
+        }
+      ]
+    },
+    {
+      "identity": "macro-bellows-extension.spec.ts::Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions",
+      "status": "unexpected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "timedOut",
+          "retry": 0,
+          "workerIndex": 1,
+          "startOffsetMs": 672,
+          "durationMs": 75246,
+          "failureSignature": "test-timeout"
+        }
+      ]
+    },
+    {
+      "identity": "macro-compound-movements.spec.ts::Macro 4 teaches compound Tilt + Swing + Focus through the public route",
+      "status": "unexpected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "timedOut",
+          "retry": 0,
+          "workerIndex": 2,
+          "startOffsetMs": 667,
+          "durationMs": 120048,
+          "failureSignature": "test-timeout"
+        }
+      ]
+    },
+    {
+      "identity": "mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 3,
+          "startOffsetMs": 667,
+          "durationMs": 65925,
+          "failureSignature": null
+        }
+      ]
+    }
+  ]
+}

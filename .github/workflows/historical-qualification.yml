@@ -1,0 +1,73 @@
+name: Historical Evidence Qualification
+
+on:
+  workflow_call:
+    inputs:
+      mode:
+        description: Use changed-file routing when called by application CI.
+        required: false
+        type: string
+        default: changed
+    outputs:
+      decision:
+        description: QUALIFIED, NOT_APPLICABLE, FAILED, or UNVERIFIED.
+        value: ${{ jobs.qualify.outputs.decision }}
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Run the complete verifiable historical archive.
+        required: true
+        type: choice
+        options:
+          - full
+        default: full
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: historical-qualification-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.event_name == 'push' && format('push-{0}', github.ref) || format('manual-{0}', github.run_id) }}
+  cancel-in-progress: true
+
+jobs:
+  qualify:
+    name: Historical evidence decision
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      decision: ${{ steps.qualify.outputs.decision }}
+    steps:
+      - name: Checkout the event revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Classify changes and run required historical qualification
+        id: qualify
+        env:
+          GITHUB_API_URL: ${{ github.api_url }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_EVENT_PATH: ${{ github.event_path }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
+          HISTORICAL_QUALIFICATION_MODE: ${{ inputs.mode || 'full' }}
+          HISTORICAL_QUALIFICATION_RESULT_PATH: ${{ runner.temp }}/historical-qualification-result.json
+        run: node scripts/run-historical-qualification.mjs
+
+      - name: Preserve machine-readable qualification result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: historical-qualification-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/historical-qualification-result.json
+          if-no-files-found: warn
+          retention-days: 90

@@ -756,6 +756,17 @@ export class GroundGlassProfiler {
     this.maybePublish();
   }
 
+  /** Invalidate and close the in-flight frame after an unexpected RTT failure. */
+  public invalidateCurrentFrame(reason = "frame-execution-error"): void {
+    const frame = this.currentFrame;
+    if (!frame) return;
+    this.invalidateFrame(frame, reason);
+    this.currentFrame = null;
+    this.pendingFrames.delete(frame.id);
+    if (this.backend === "gpu-query") this.rememberDiscardedFrame(frame.id);
+    this.publishSnapshot();
+  }
+
   public pollGpuResults(): void {
     if (this.backend !== "gpu-query") return;
     const timer = this.gpuTimer;
@@ -975,7 +986,12 @@ export class GroundGlassProfiler {
     if (!this.enabled || !this.lastConfig || !this.onSnapshot) return;
     const now = readGroundGlassProfilingClockMs();
     if (now - this.lastPublishedAt < this.publishIntervalMs) return;
-    this.lastPublishedAt = now;
+    this.publishSnapshot();
+  }
+
+  private publishSnapshot(): void {
+    if (!this.enabled || !this.lastConfig || !this.onSnapshot) return;
+    this.lastPublishedAt = readGroundGlassProfilingClockMs();
     this.lastSnapshot = this.snapshot(this.lastConfig);
     this.onSnapshot(this.lastSnapshot);
   }

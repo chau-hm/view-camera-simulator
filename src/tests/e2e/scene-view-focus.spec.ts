@@ -95,7 +95,9 @@ const openOverlayMenuIfNeeded = async (page: Page) => {
   if (await trigger.isVisible()) await trigger.click();
 };
 
-test("View Focus preserves independent Scene and Camera views and resets the active preset", async ({ page }) => {
+test("View Focus preserves independent Scene and Camera views and resets the active preset", {
+  tag: "@m7j-renderer-contention",
+}, async ({ page }) => {
   test.setTimeout(90_000);
   const pageErrors: string[] = [];
   const consoleProblems: string[] = [];
@@ -112,7 +114,24 @@ test("View Focus preserves independent Scene and Camera views and resets the act
 
   await page.goto("/simulator/free/architecture-rise");
   const sceneCanvas = page.getByTestId("scene-canvas");
-  await expect(sceneCanvas.locator("canvas")).toHaveCount(1);
+  await expect(sceneCanvas.locator("canvas")).toHaveCount(1, { timeout: 15_000 });
+  await expect(sceneCanvas).toHaveAttribute("data-observer-renderer-surface", "observer");
+  await expect(sceneCanvas).toHaveAttribute(
+    "data-observer-renderer-status",
+    "active",
+    { timeout: 15_000 },
+  );
+  await expect(sceneCanvas).toHaveAttribute("data-observer-renderer-request", "webgl");
+  await expect(sceneCanvas).toHaveAttribute("data-observer-renderer-family", "webgl-renderer");
+  await expect(sceneCanvas).toHaveAttribute("data-observer-execution-backend", "webgl2");
+  await expect(sceneCanvas).toHaveAttribute("data-observer-application-fallback", "none");
+  await expect(sceneCanvas).toHaveAttribute("data-observer-webgpu-api-present", /^(true|false)$/);
+  await expect(sceneCanvas).toHaveAttribute("data-observer-shadow-map-status", "active");
+  await expect(sceneCanvas).toHaveAttribute("data-observer-shadow-map-type", "pcf");
+  await expect(sceneCanvas).toHaveAttribute("data-observer-tone-mapping-active", /^(true|false)$/);
+  await expect(sceneCanvas).toHaveAttribute("data-observer-tone-mapping", /.+/);
+  await expect(sceneCanvas).toHaveAttribute("data-observer-tone-mapping-exposure", /^\d+(?:\.\d+)?$/);
+  await expect(sceneCanvas).toHaveAttribute("data-observer-output-color-space", /.+/);
   await expect(sceneCanvas).toHaveAttribute("data-view-focus", "scene");
   await expect(sceneCanvas).toHaveAttribute("data-optical-geometry-visible", "true");
   const scenePreset = await readViewState(sceneCanvas);

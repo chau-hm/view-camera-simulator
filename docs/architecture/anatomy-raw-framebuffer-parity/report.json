@@ -1,0 +1,932 @@
+{
+  "schemaVersion": 1,
+  "audit": "anatomy-native-raw-framebuffer-parity",
+  "objective": "Same-generation A0 screenshot controls and A1/A2 raw native final-frame attachment comparison for Front Standard/Bellows B0 material-aware WebGPU.",
+  "outcome": "Q2",
+  "researchDecision": "N2",
+  "preservedDecisions": {
+    "anatomy": "M2 \u2014 OPT-IN IMPLEMENTATION INCOMPLETE",
+    "overall": "G2 \u2014 PARTIAL STAGE ATTRIBUTION",
+    "mInv5": "N2 \u2014 CONTROLLED PROXY IMPROVEMENT"
+  },
+  "provenance": {
+    "baseCommit": "a3c7703a9231bd0a3f75545daa52b678f5d4555d",
+    "measurementCommit": "e12a8c9377f46626ea5665aaa11254fc5b8086ed",
+    "browserVersion": "155.0.8059.84",
+    "operatingSystem": {
+      "platform": "darwin",
+      "architecture": "arm64"
+    },
+    "threeRevision": "186",
+    "gpuAdapterDetails": "Not exposed by the mounted Three r186 backend; no hardware acceleration claim is made.",
+    "hardwareAcceleration": "unconfirmed"
+  },
+  "state": {
+    "rendererFamily": "webgpu-renderer",
+    "executionBackend": "webgpu",
+    "applicationFallback": "none",
+    "outputPolicy": "material-aware",
+    "outputIntervention": "B0",
+    "sceneId": "view-camera-anatomy",
+    "teachingState": "Anatomy \u2014 Front Standard highlighted, Bellows dimmed",
+    "rendererGeneration": 1,
+    "cameraPose": {
+      "position": [
+        0.4455739783837988,
+        0.22278698919189935,
+        0.4381663213814697
+      ],
+      "quaternion": [
+        -0.14691691922855168,
+        0.34266306810514197,
+        0.05434810457292045,
+        0.9263064957833843
+      ],
+      "orbitTarget": [
+        0,
+        0,
+        -0.08167
+      ]
+    },
+    "viewport": {
+      "width": 1440,
+      "height": 1000,
+      "devicePixelRatio": 1,
+      "backingWidth": 1028,
+      "backingHeight": 820
+    },
+    "sourceMaterial": {
+      "type": "MeshStandardMaterial",
+      "opacity": 0.16,
+      "transparent": true,
+      "blending": 1,
+      "premultipliedAlpha": false,
+      "depthTest": true,
+      "depthWrite": false,
+      "side": "double"
+    },
+    "sceneInputsStableBeforeAndAfterEveryCapture": true
+  },
+  "conditions": {
+    "A0": "Uninstrumented scene; screenshot only, no raw byte claim.",
+    "A1": "Normal draw order; one final resolved-attachment copy at finishRender; zero selected-draw hooks/splits.",
+    "A2": "Two real selected Bellows draws split before/after, plus the same final-frame copy used by A1.",
+    "A1PassEffect": "The r186 copy ends the active pass, resolves multisample color, copies the canvas texture, and resumes color/depth with load in the same encoder.",
+    "A2Draws": [
+      {
+        "call": "native-drawIndexed",
+        "commandCount": 1,
+        "drawParameters": {
+          "vertexCount": 240,
+          "firstVertex": 0,
+          "instanceCount": 1,
+          "firstInstance": 0
+        }
+      },
+      {
+        "call": "native-drawIndexed",
+        "commandCount": 1,
+        "drawParameters": {
+          "vertexCount": 240,
+          "firstVertex": 0,
+          "instanceCount": 1,
+          "firstInstance": 0
+        }
+      }
+    ]
+  },
+  "attachment": {
+    "width": 1028,
+    "height": 820,
+    "format": "bgra8unorm",
+    "nativeChannelOrder": "BGRA",
+    "normalizedChannelOrder": "RGBA",
+    "rowOrder": "top-down",
+    "colorRepresentation": "raw native 8-bit normalized attachment bytes; no color-space conversion",
+    "outputColorSpace": "srgb-linear",
+    "toneMapping": 0,
+    "sampleCount": 4,
+    "resolveTarget": true,
+    "depthFormat": "depth24plus",
+    "metadataEqualityGate": "Exact equality required for dimensions, source format, channel and row order, color representation, MSAA/resolve/depth settings, renderer backend, output state, scene/teaching state, camera state, DPR, and viewport before bytes are compared."
+  },
+  "captureOrder": [
+    {
+      "ordinal": 1,
+      "condition": "A1",
+      "trial": 1
+    },
+    {
+      "ordinal": 2,
+      "condition": "A1",
+      "trial": 2
+    },
+    {
+      "ordinal": 3,
+      "condition": "A2",
+      "trial": 1
+    },
+    {
+      "ordinal": 4,
+      "condition": "A2",
+      "trial": 2
+    },
+    {
+      "ordinal": 5,
+      "condition": "A1",
+      "trial": 3
+    },
+    {
+      "ordinal": 6,
+      "condition": "A2",
+      "trial": 3
+    },
+    {
+      "ordinal": 7,
+      "condition": "A1",
+      "trial": 4
+    },
+    {
+      "ordinal": 8,
+      "condition": "A2",
+      "trial": 4
+    }
+  ],
+  "screenshotParity": {
+    "A0RepeatNoiseMae": 0,
+    "A1RepeatNoiseMae": 0,
+    "A2RepeatNoiseMae": 0,
+    "A0AgainstA1Mae": 0,
+    "A0AgainstA1NoiseThreshold": 0,
+    "A0AgainstA1Qualified": true,
+    "A0AgainstA2Mae": 0,
+    "A0AgainstA2NoiseThreshold": 0,
+    "A0AgainstA2Qualified": true,
+    "comparison": "All operands are matching browser canvas screenshots at the same viewport/DPR; no raw GPU bytes are mixed into screenshot metrics."
+  },
+  "rawRepeatNoise": {
+    "A1": {
+      "pairCount": 6,
+      "fullFrame": {
+        "maximumMeanAbsoluteRgbError": 0,
+        "maximumMeanAbsoluteAlphaError": 0,
+        "maximumAbsoluteError": 0,
+        "maximumChangedPixelCount": 0,
+        "minimumExactMatchPixelCount": 842960
+      },
+      "regions": {
+        "bellowsDimmedResponse": {
+          "maximumMeanAbsoluteRgbError": 0,
+          "maximumAbsoluteError": 0,
+          "maximumChangedPixelCount": 0,
+          "minimumExactMatchPixelCount": 5444
+        },
+        "unaffectedBackgroundControl": {
+          "maximumMeanAbsoluteRgbError": 0,
+          "maximumAbsoluteError": 0,
+          "maximumChangedPixelCount": 0,
+          "minimumExactMatchPixelCount": 189482
+        }
+      },
+      "allNineFixedSamplesExact": true
+    },
+    "A2": {
+      "pairCount": 6,
+      "fullFrame": {
+        "maximumMeanAbsoluteRgbError": 0,
+        "maximumMeanAbsoluteAlphaError": 0,
+        "maximumAbsoluteError": 0,
+        "maximumChangedPixelCount": 0,
+        "minimumExactMatchPixelCount": 842960
+      },
+      "regions": {
+        "bellowsDimmedResponse": {
+          "maximumMeanAbsoluteRgbError": 0,
+          "maximumAbsoluteError": 0,
+          "maximumChangedPixelCount": 0,
+          "minimumExactMatchPixelCount": 5444
+        },
+        "unaffectedBackgroundControl": {
+          "maximumMeanAbsoluteRgbError": 0,
+          "maximumAbsoluteError": 0,
+          "maximumChangedPixelCount": 0,
+          "minimumExactMatchPixelCount": 189482
+        }
+      },
+      "allNineFixedSamplesExact": true
+    }
+  },
+  "rawToRawParity": {
+    "criterion": "Per-metric A1/A2 errors must not exceed maximum measured same-condition repeat error; repeats were exact, so any byte difference fails.",
+    "pairs": [
+      {
+        "pair": 1,
+        "A1Request": "anatomy-m-inv6-a1-3-46",
+        "A2Request": "anatomy-m-inv6-a2-3-49",
+        "fullFrame": {
+          "comparedPixelCount": 842960,
+          "meanAbsoluteRgbError": 1.977159849419506e-06,
+          "meanAbsoluteAlphaError": 0,
+          "maxAbsoluteError": 1,
+          "maxAbsoluteErrorByChannel": {
+            "red": 1,
+            "green": 0,
+            "blue": 0,
+            "alpha": 0
+          },
+          "changedPixelCount": 5,
+          "changedPixelPercentage": 0.0005931479548258518,
+          "exactRgbaMatchPixelCount": 842955
+        },
+        "regions": {
+          "bellowsDimmedResponse": {
+            "comparedPixelCount": 5444,
+            "meanAbsoluteRgbError": 6.12294881214793e-05,
+            "meanAbsoluteAlphaError": 0,
+            "maxAbsoluteError": 1,
+            "maxAbsoluteErrorByChannel": {
+              "red": 1,
+              "green": 0,
+              "blue": 0,
+              "alpha": 0
+            },
+            "changedPixelCount": 1,
+            "changedPixelPercentage": 0.018368846436443792,
+            "exactRgbaMatchPixelCount": 5443
+          },
+          "unaffectedBackgroundControl": {
+            "comparedPixelCount": 189482,
+            "meanAbsoluteRgbError": 0,
+            "meanAbsoluteAlphaError": 0,
+            "maxAbsoluteError": 0,
+            "maxAbsoluteErrorByChannel": {
+              "red": 0,
+              "green": 0,
+              "blue": 0,
+              "alpha": 0
+            },
+            "changedPixelCount": 0,
+            "changedPixelPercentage": 0,
+            "exactRgbaMatchPixelCount": 189482
+          }
+        },
+        "allNineFixedSamplesExact": true,
+        "changedPixels": [
+          {
+            "x": 569,
+            "y": 330,
+            "A1": [
+              195,
+              198,
+              202,
+              255
+            ],
+            "A2": [
+              194,
+              198,
+              202,
+              255
+            ]
+          },
+          {
+            "x": 570,
+            "y": 330,
+            "A1": [
+              195,
+              198,
+              202,
+              255
+            ],
+            "A2": [
+              194,
+              198,
+              202,
+              255
+            ]
+          },
+          {
+            "x": 571,
+            "y": 331,
+            "A1": [
+              194,
+              198,
+              202,
+              255
+            ],
+            "A2": [
+              195,
+              198,
+              202,
+              255
+            ]
+          },
+          {
+            "x": 639,
+            "y": 343,
+            "A1": [
+              193,
+              196,
+              200,
+              255
+            ],
+            "A2": [
+              192,
+              196,
+              200,
+              255
+            ]
+          },
+          {
+            "x": 502,
+            "y": 513,
+            "A1": [
+              211,
+              212,
+              215,
+              255
+            ],
+            "A2": [
+              210,
+              212,
+              215,
+              255
+            ]
+          }
+        ],
+        "sameChangedPixelPatternAsFirstPair": true,
+        "qualified": false
+      },
+      {
+        "pair": 2,
+        "A1Request": "anatomy-m-inv6-a1-4-52",
+        "A2Request": "anatomy-m-inv6-a2-4-55",
+        "fullFrame": {
+          "comparedPixelCount": 842960,
+          "meanAbsoluteRgbError": 1.977159849419506e-06,
+          "meanAbsoluteAlphaError": 0,
+          "maxAbsoluteError": 1,
+          "maxAbsoluteErrorByChannel": {
+            "red": 1,
+            "green": 0,
+            "blue": 0,
+            "alpha": 0
+          },
+          "changedPixelCount": 5,
+          "changedPixelPercentage": 0.0005931479548258518,
+          "exactRgbaMatchPixelCount": 842955
+        },
+        "regions": {
+          "bellowsDimmedResponse": {
+            "comparedPixelCount": 5444,
+            "meanAbsoluteRgbError": 6.12294881214793e-05,
+            "meanAbsoluteAlphaError": 0,
+            "maxAbsoluteError": 1,
+            "maxAbsoluteErrorByChannel": {
+              "red": 1,
+              "green": 0,
+              "blue": 0,
+              "alpha": 0
+            },
+            "changedPixelCount": 1,
+            "changedPixelPercentage": 0.018368846436443792,
+            "exactRgbaMatchPixelCount": 5443
+          },
+          "unaffectedBackgroundControl": {
+            "comparedPixelCount": 189482,
+            "meanAbsoluteRgbError": 0,
+            "meanAbsoluteAlphaError": 0,
+            "maxAbsoluteError": 0,
+            "maxAbsoluteErrorByChannel": {
+              "red": 0,
+              "green": 0,
+              "blue": 0,
+              "alpha": 0
+            },
+            "changedPixelCount": 0,
+            "changedPixelPercentage": 0,
+            "exactRgbaMatchPixelCount": 189482
+          }
+        },
+        "allNineFixedSamplesExact": true,
+        "changedPixels": [
+          {
+            "x": 569,
+            "y": 330,
+            "A1": [
+              195,
+              198,
+              202,
+              255
+            ],
+            "A2": [
+              194,
+              198,
+              202,
+              255
+            ]
+          },
+          {
+            "x": 570,
+            "y": 330,
+            "A1": [
+              195,
+              198,
+              202,
+              255
+            ],
+            "A2": [
+              194,
+              198,
+              202,
+              255
+            ]
+          },
+          {
+            "x": 571,
+            "y": 331,
+            "A1": [
+              194,
+              198,
+              202,
+              255
+            ],
+            "A2": [
+              195,
+              198,
+              202,
+              255
+            ]
+          },
+          {
+            "x": 639,
+            "y": 343,
+            "A1": [
+              193,
+              196,
+              200,
+              255
+            ],
+            "A2": [
+              192,
+              196,
+              200,
+              255
+            ]
+          },
+          {
+            "x": 502,
+            "y": 513,
+            "A1": [
+              211,
+              212,
+              215,
+              255
+            ],
+            "A2": [
+              210,
+              212,
+              215,
+              255
+            ]
+          }
+        ],
+        "sameChangedPixelPatternAsFirstPair": true,
+        "qualified": false
+      }
+    ],
+    "perChannelErrorDistributionPair1": {
+      "red": {
+        "0": 842955,
+        "1": 5
+      },
+      "green": {
+        "0": 842960
+      },
+      "blue": {
+        "0": 842960
+      },
+      "alpha": {
+        "0": 842960
+      }
+    },
+    "fixedMInv5Samples": {
+      "indices": [
+        323305,
+        329457,
+        427115,
+        447675,
+        403471,
+        482757,
+        339759,
+        462077,
+        323279
+      ],
+      "firstPair": [
+        {
+          "index": 323305,
+          "x": 513,
+          "y": 314,
+          "A1": [
+            180,
+            182,
+            185,
+            255
+          ],
+          "A2": [
+            180,
+            182,
+            185,
+            255
+          ],
+          "absoluteError": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "index": 329457,
+          "x": 497,
+          "y": 320,
+          "A1": [
+            174,
+            176,
+            179,
+            255
+          ],
+          "A2": [
+            174,
+            176,
+            179,
+            255
+          ],
+          "absoluteError": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "index": 427115,
+          "x": 495,
+          "y": 415,
+          "A1": [
+            157,
+            159,
+            162,
+            255
+          ],
+          "A2": [
+            157,
+            159,
+            162,
+            255
+          ],
+          "absoluteError": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "index": 447675,
+          "x": 495,
+          "y": 435,
+          "A1": [
+            158,
+            160,
+            163,
+            255
+          ],
+          "A2": [
+            158,
+            160,
+            163,
+            255
+          ],
+          "absoluteError": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "index": 403471,
+          "x": 495,
+          "y": 392,
+          "A1": [
+            157,
+            159,
+            161,
+            255
+          ],
+          "A2": [
+            157,
+            159,
+            161,
+            255
+          ],
+          "absoluteError": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "index": 482757,
+          "x": 625,
+          "y": 469,
+          "A1": [
+            195,
+            199,
+            203,
+            255
+          ],
+          "A2": [
+            195,
+            199,
+            203,
+            255
+          ],
+          "absoluteError": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "index": 339759,
+          "x": 519,
+          "y": 330,
+          "A1": [
+            163,
+            166,
+            170,
+            255
+          ],
+          "A2": [
+            163,
+            166,
+            170,
+            255
+          ],
+          "absoluteError": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "index": 462077,
+          "x": 505,
+          "y": 449,
+          "A1": [
+            147,
+            148,
+            151,
+            255
+          ],
+          "A2": [
+            147,
+            148,
+            151,
+            255
+          ],
+          "absoluteError": [
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "index": 323279,
+          "x": 487,
+          "y": 314,
+          "A1": [
+            248,
+            250,
+            252,
+            255
+          ],
+          "A2": [
+            248,
+            250,
+            252,
+            255
+          ],
+          "absoluteError": [
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "bothPairsExact": true
+    },
+    "regions": {
+      "bellowsDimmedResponse": {
+        "screenshotMaskSourcePixels": 5444,
+        "mappedFramebufferPixels": 5444,
+        "mapping": "each CSS screenshot mask pixel maps only to the center pixel of its corresponding native framebuffer cell; this is a mapped-center mask, not every native sample covered by the CSS pixel"
+      },
+      "unaffectedBackgroundControl": {
+        "screenshotMaskSourcePixels": 189482,
+        "mappedFramebufferPixels": 189482,
+        "mapping": "each CSS screenshot mask pixel maps only to the center pixel of its corresponding native framebuffer cell; this is a mapped-center mask, not every native sample covered by the CSS pixel"
+      }
+    },
+    "resampling": "none",
+    "browserComposition": "excluded",
+    "colorConversion": "native BGRA to RGBA channel ordering only"
+  },
+  "negativeControls": {
+    "syntheticOneByteChangeDetected": true,
+    "drawIdentityAndPassState": {
+      "twoRealBellowsBackendDraws": true,
+      "oneCommandEach": true,
+      "loadStatePreserved": true
+    },
+    "transparentDrawCalibration": {
+      "classification": "F2 controlled fixture; validates native readback and transparent-draw/blend/order controls, but does not measure the actual Anatomy draw.",
+      "status": "passed",
+      "orientation": {
+        "apiRowOrder": "top-down",
+        "asymmetricQuadrantControl": "passed"
+      },
+      "controls": {
+        "opaqueSingleDraw": {
+          "active": true,
+          "pixel": [
+            191,
+            64,
+            26,
+            255
+          ],
+          "expected": [
+            191,
+            64,
+            26,
+            255
+          ],
+          "maxByteError": 0
+        },
+        "transparentSingleDraw": {
+          "active": true,
+          "pixel": [
+            48,
+            16,
+            6,
+            64
+          ],
+          "expected": [
+            48,
+            16,
+            6,
+            64
+          ],
+          "maxByteError": 0
+        },
+        "changedBlendState": {
+          "active": true,
+          "normalPixel": [
+            48,
+            16,
+            6,
+            64
+          ],
+          "disabledPixel": [
+            191,
+            64,
+            26,
+            64
+          ],
+          "rgbDifference": 70.33333333333333
+        },
+        "changedDrawOrder": {
+          "active": true,
+          "firstOrderPixel": [
+            37,
+            40,
+            99,
+            159
+          ],
+          "reversedOrderPixel": [
+            58,
+            40,
+            78,
+            160
+          ],
+          "rgbDifference": 14
+        }
+      },
+      "lifecycle": {
+        "targetDisposeCount": 2,
+        "geometryDisposeCount": 1,
+        "materialDisposeCount": 8
+      },
+      "restoredCanvasMae": 0,
+      "restorationNoiseThreshold": 0
+    },
+    "lifecycle": "A separate deterministic focused browser test holds native mapAsync pending across SPA navigation for A1 and the existing A2 teardown regression covers rejected readback.",
+    "groundGlass": {
+      "contentfulBeforeAndAfter": true,
+      "repeatNoiseMae": 0.0011112790097339226,
+      "restorationMae": 0,
+      "withinRepeatNoise": true,
+      "ownership": "A1/A2 only own FramebufferTexture snapshots and readback buffers; Ground Glass resources are borrowed and untouched."
+    },
+    "productionIsolation": {
+      "status": "passed",
+      "testsPassed": 2,
+      "result": "Production preview remained WebGL-only for Architecture Rise and denied the Anatomy material-aware WebGPU candidate.",
+      "loadedJavaScript": "No AnatomyGpuBlendIntermediateProbe, anatomy-gpu-blend-intermediate, GPU_BLEND_INTERMEDIATE, or Anatomy output-intervention event identifier was found in JavaScript assets loaded by the production Anatomy route."
+    }
+  },
+  "resourceOwnership": {
+    "owned": {
+      "A1": "one FramebufferTexture and one readback buffer per capture",
+      "A2": "five FramebufferTextures and five readback buffers per capture"
+    },
+    "borrowed": "native renderer/device/context/canvas texture, scene geometry/materials/textures, and Ground Glass RTT",
+    "noBorrowedResourceDisposed": true,
+    "settlementCounts": {
+      "A1": {
+        "trials": 4,
+        "temporaryFramebufferTexturesCreatedAndDisposed": 4,
+        "readbackBuffersCreatedAndDestroyed": 4,
+        "disposalFailures": 0
+      },
+      "A2": {
+        "trials": 4,
+        "temporaryFramebufferTexturesCreatedAndDisposed": 20,
+        "readbackBuffersCreatedAndDestroyed": 20,
+        "disposalFailures": 0
+      }
+    }
+  },
+  "classifications": {
+    "finalFrameEquivalence": "F2 or unqualified",
+    "MInv5SelectedDrawBoundaryPixelValues": "F2; final-frame equality does not rule out transient intermediate differences that later draws overwrite",
+    "MInv5SelectedDrawIdentityAndPassMetadata": "F1",
+    "nativeBlendDescriptorMapping": "F3",
+    "nativeSourceFragmentRgbAlpha": "F0"
+  },
+  "interpretation": "A1/A2 raw output differences exceeded same-condition repeat noise or region-specific limits. This measures a final-frame instrumentation perturbation; selected native pixels remain F2 and the likely pass/resolve mechanism needs a narrower follow-up.",
+  "hypothesis": "Extra pass color/depth store-load boundaries and/or MSAA resolve timing may account for the LSB changes; the current experiment does not isolate the cause.",
+  "smallestNextInvestigation": "Repeat the same Front Standard/B0 run after fixing the specific failed metadata, repeatability, visual, or raw-region control; do not expand scene scope.",
+  "validation": {
+    "focusedNativeAnatomySuite": {
+      "status": "passed",
+      "passed": 7,
+      "skipped": 0
+    },
+    "mInv6Measurement": {
+      "status": "passed",
+      "outcome": "Q2"
+    },
+    "pr263FourStateNativeExperiment": {
+      "status": "passed",
+      "passed": 1
+    },
+    "nativeThirteenStateAnatomyAudit": {
+      "status": "passed-with-existing-skip",
+      "passed": 2,
+      "skipped": 1,
+      "statesCaptured": 13,
+      "skipNotCountedAsPass": true
+    },
+    "architectureRiseStrictParity": {
+      "status": "passed",
+      "passed": 1,
+      "criteria": 81,
+      "failures": 0
+    },
+    "productionPreviewIsolation": {
+      "status": "passed",
+      "passed": 2,
+      "productionCaptureIdentifiersFound": false
+    },
+    "npmTest": {
+      "status": "passed",
+      "testFiles": 259,
+      "tests": 2407
+    },
+    "typecheck": "passed",
+    "lint": "passed",
+    "checkCss": "passed",
+    "build": {
+      "status": "passed",
+      "viteModulesTransformed": 701
+    },
+    "gitDiffCheck": "passed"
+  }
+}

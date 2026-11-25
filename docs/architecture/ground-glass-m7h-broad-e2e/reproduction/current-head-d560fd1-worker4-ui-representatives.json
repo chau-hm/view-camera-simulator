@@ -1,0 +1,303 @@
+{
+  "config": {
+    "argv": [
+      "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+      "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7h-broad-e2e-triage/node_modules/.bin/playwright",
+      "test",
+      "--project=chromium",
+      "--workers=4",
+      "--reporter=json",
+      "--grep",
+      "Architecture \\+ Foreground exposes the cumulative photographic problem in Free Practice|Architecture \\+ Foreground is discoverable from the Scenes page|learning drawer supports keyboard focus and internal scrolling without changing Task/Feedback content"
+    ],
+    "configFile": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7h-broad-e2e-triage/playwright.config.ts",
+    "rootDir": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7h-broad-e2e-triage/src/tests/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 3
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7h-broad-e2e-triage/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 3
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7h-broad-e2e-triage/src/tests/e2e",
+        "testIgnore": [
+          "**/*-production.spec.ts"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.61.1",
+    "workers": 4,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 4355 --strictPort",
+      "url": "http://127.0.0.1:4355",
+      "reuseExistingServer": false,
+      "timeout": 120000,
+      "env": {
+        "CODEX_SANDBOX_NETWORK_DISABLED": "1",
+        "NODE": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+        "INIT_CWD": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7h-broad-e2e-triage",
+        "TERM": "dumb",
+        "PLAYWRIGHT_JSON_OUTPUT_NAME": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7h-broad-e2e-triage/docs/architecture/ground-glass-m7h-broad-e2e/reproduction/current-head-d560fd1-worker4-ui-representatives.json",
+        "HOMEBREW_REPOSITORY": "/opt/homebrew",
+        "npm_config_global_prefix": "/Users/homan/.nvm/versions/node/v24.3.0",
+        "CODEX_APPLY_PATCH_PRESERVE_LINE_ENDINGS": "1",
+        "FPATH": "/opt/homebrew/share/zsh/site-functions:/usr/local/share/zsh/site-functions:/usr/share/zsh/site-functions:/usr/share/zsh/5.9/functions",
+        "COLOR": "0",
+        "NO_COLOR": "1",
+        "npm_config_noproxy": "",
+        "npm_config_local_prefix": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7h-broad-e2e-triage",
+        "LC_ALL": "C.UTF-8",
+        "npm_config_globalconfig": "/Users/homan/.nvm/versions/node/v24.3.0/etc/npmrc",
+        "PLAYWRIGHT_WEB_SERVER_PORT": "4355",
+        "__CF_USER_TEXT_ENCODING": "0x1F7:0x0:0x0",
+        "CODEX_PERMISSION_PROFILE": ":workspace",
+        "npm_execpath": "/Users/homan/.nvm/versions/node/v24.3.0/lib/node_modules/npm/bin/npm-cli.js",
+        "PAGER": "cat",
+        "PATH": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7h-broad-e2e-triage/node_modules/.bin:/Users/homan/repo/view-camera-simulator/.worktrees/node_modules/.bin:/Users/homan/repo/view-camera-simulator/node_modules/.bin:/Users/homan/repo/node_modules/.bin:/Users/homan/node_modules/.bin:/Users/node_modules/.bin:/node_modules/.bin:/Users/homan/.nvm/versions/node/v24.3.0/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin:/Users/homan/.nvm/versions/node/v24.3.0/bin:/Applications/Blender.app/Contents/MacOS:/opt/homebrew/bin:/opt/homebrew/sbin:/Library/Frameworks/Python.framework/Versions/3.11/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/usr/local/go/bin:/opt/homebrew/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/homan/.codex/tmp/arg0-macos/codex-arg0leyLBF:/Users/homan/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/Users/homan/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/homan/.local/bin:/Applications/Obsidian.app/Contents/MacOS",
+        "npm_package_json": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7h-broad-e2e-triage/package.json",
+        "_": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7h-broad-e2e-triage/node_modules/.bin/playwright",
+        "npm_config_userconfig": "/Users/homan/.npmrc",
+        "npm_config_init_module": "/Users/homan/.npm-init.js",
+        "CODEX_THREAD_ID": "01a19227-5af7-7123-8439-9c3066c9c84a",
+        "npm_command": "run",
+        "PWD": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7h-broad-e2e-triage",
+        "npm_lifecycle_event": "test:e2e",
+        "EDITOR": "vi",
+        "npm_package_name": "view-camera-simulator",
+        "LANG": "C.UTF-8",
+        "npm_config_npm_version": "11.12.0",
+        "CODEX_TOOL_CALL_ID": "exec-8556a5a0-a4ea-4deb-96d2-dd3d2484d615",
+        "CODEX_CI": "1",
+        "npm_config_node_gyp": "/Users/homan/.nvm/versions/node/v24.3.0/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js",
+        "npm_package_version": "0.0.0",
+        "CODEX_VERSION": "0.166.0-alpha.5.1",
+        "SHLVL": "1",
+        "HOME": "/Users/homan",
+        "HOMEBREW_PREFIX": "/opt/homebrew",
+        "GH_PAGER": "cat",
+        "npm_config_cache": "/Users/homan/.npm",
+        "LOGNAME": "homan",
+        "npm_lifecycle_script": "playwright test",
+        "LC_CTYPE": "C.UTF-8",
+        "npm_config_user_agent": "npm/11.12.0 node/v24.3.0 darwin arm64 workspaces/false",
+        "INFOPATH": "/opt/homebrew/share/info:",
+        "HOMEBREW_CELLAR": "/opt/homebrew/Cellar",
+        "GIT_PAGER": "cat",
+        "CODEX_SESSION_ID": "01a19227-5af7-7123-8439-9c3066c9c84a",
+        "npm_node_execpath": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+        "npm_config_prefix": "/Users/homan/.nvm/versions/node/v24.3.0",
+        "COLORTERM": "",
+        "VITE_BASE_PATH": "/",
+        "VITE_GROUND_GLASS_WEBGPU_TEST_SEAM": "false",
+        "VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH": "false",
+        "VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION": "false",
+        "VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH": "false",
+        "VITE_GROUND_GLASS_WEBGPU_APERTURE_GATHER_R187_QUALIFICATION": "false",
+        "VITE_GROUND_GLASS_WEBGPU_RAW_PILOT": "false",
+        "VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION": "false",
+        "VITE_GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION": "false"
+      }
+    }
+  },
+  "suites": [
+    {
+      "title": "architecture-foreground-tilt-focus.spec.ts",
+      "file": "architecture-foreground-tilt-focus.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Architecture + Foreground is discoverable from the Scenes page",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 30000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 5670,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('scene-canvas')\nExpected: \u001b[32m\"architecture-foreground\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('scene-canvas')\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('scene-canvas')\nExpected: \u001b[32m\"architecture-foreground\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('scene-canvas')\u001b[22m\n\n    at /Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7h-broad-e2e-triage/src/tests/e2e/architecture-foreground-tilt-focus.spec.ts:38:50",
+                    "location": {
+                      "file": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7h-broad-e2e-triage/src/tests/e2e/architecture-foreground-tilt-focus.spec.ts",
+                      "column": 50,
+                      "line": 38
+                    },
+                    "snippet": "  36 |   await card.getByRole(\"link\", { name: \"Open Scene\" }).click();\n  37 |   await expect(page).toHaveURL(/\\/simulator\\/free\\/architecture-foreground$/);\n> 38 |   await expect(page.getByTestId(\"scene-canvas\")).toHaveAttribute(\n     |                                                  ^\n  39 |     \"data-scene-subject-id\",\n  40 |     \"architecture-foreground\",\n  41 |   );"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7h-broad-e2e-triage/src/tests/e2e/architecture-foreground-tilt-focus.spec.ts",
+                        "column": 50,
+                        "line": 38
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByTestId('scene-canvas')\nExpected: \u001b[32m\"architecture-foreground\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByTestId('scene-canvas')\u001b[22m\n\n\n  36 |   await card.getByRole(\"link\", { name: \"Open Scene\" }).click();\n  37 |   await expect(page).toHaveURL(/\\/simulator\\/free\\/architecture-foreground$/);\n> 38 |   await expect(page.getByTestId(\"scene-canvas\")).toHaveAttribute(\n     |                                                  ^\n  39 |     \"data-scene-subject-id\",\n  40 |     \"architecture-foreground\",\n  41 |   );\n    at /Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7h-broad-e2e-triage/src/tests/e2e/architecture-foreground-tilt-focus.spec.ts:38:50"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-01T13:58:19.199Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7h-broad-e2e-triage/test-results/architecture-foreground-ti-07439-erable-from-the-Scenes-page-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7h-broad-e2e-triage/src/tests/e2e/architecture-foreground-tilt-focus.spec.ts",
+                    "column": 50,
+                    "line": 38
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "443e99a1cd12001fa8b5-8c538c9dcf865735de48",
+          "file": "architecture-foreground-tilt-focus.spec.ts",
+          "line": 15,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "architecture-foreground.spec.ts",
+      "file": "architecture-foreground.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Architecture + Foreground exposes the cumulative photographic problem in Free Practice",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "status": "passed",
+                  "duration": 36634,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-01T13:58:19.199Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "e2385c20fd370ed47d10-ff62bb8a911ba512b344",
+          "file": "architecture-foreground.spec.ts",
+          "line": 10,
+          "column": 1
+        }
+      ]
+    },
+    {
+      "title": "viewport-learning-overlay.spec.ts",
+      "file": "viewport-learning-overlay.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "learning drawer supports keyboard focus and internal scrolling without changing Task/Feedback content",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 120000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "status": "passed",
+                  "duration": 31755,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-11-01T13:58:19.205Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "f6e284dc6527f10f5ac4-2caec4bf345cbca93351",
+          "file": "viewport-learning-overlay.spec.ts",
+          "line": 108,
+          "column": 1
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-11-01T13:58:17.995Z",
+    "duration": 38041.184,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

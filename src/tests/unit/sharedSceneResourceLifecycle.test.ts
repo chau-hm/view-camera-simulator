@@ -24,6 +24,12 @@ import {
   getGroundGlassSceneProfile,
 } from "../../render/groundGlassSceneProfiles";
 import {
+  MaterialAwareMaterialTracker,
+} from "../../render/backend/materialAwareMaterialTracker";
+import {
+  getObserverMaterialSignatures,
+} from "../../render/backend/observerMaterialSignatures";
+import {
   getRegisteredSceneSubject,
   getSceneSubjectRegistration,
   type SceneSubjectRegistration,
@@ -334,4 +340,91 @@ describe("module-shared scene subject resource lifecycle", () => {
       expect(factorySource).not.toContain("disposeTeachingSubjectResources");
     });
   }
+
+  it("keeps Anatomy output copies observer-owned while Ground Glass borrows module materials", () => {
+    const interactiveScene = new THREE.Scene();
+    const rttScene = new THREE.Scene();
+    const interactiveGroup = createRegisteredSceneAsset(
+      VIEW_CAMERA_ANATOMY_ASSET_KEY,
+      { presentation: VIEW_CAMERA_ANATOMY_PRESENTATION },
+    );
+    interactiveScene.add(interactiveGroup);
+
+    const profile = getGroundGlassSceneProfile(viewCameraAnatomyScene);
+    const mountedRtt = profile.mountSubject(
+      rttScene,
+      createGroundGlassContext(viewCameraAnatomyScene),
+    );
+    if (!mountedRtt) throw new Error("Expected the Anatomy Ground Glass subject");
+
+    let observerMesh: THREE.Mesh | undefined;
+    let rttMesh: THREE.Mesh | undefined;
+    interactiveGroup.traverse((object) => {
+      if (observerMesh || !(object instanceof THREE.Mesh)) return;
+      if (object.material instanceof THREE.MeshStandardMaterial) observerMesh = object;
+    });
+    mountedRtt.group.traverse((object) => {
+      if (rttMesh || !(object instanceof THREE.Mesh)) return;
+      if (object.material instanceof THREE.MeshStandardMaterial) rttMesh = object;
+    });
+    if (!observerMesh || !rttMesh) throw new Error("Expected Anatomy meshes in both render paths");
+
+    const source = observerMesh.material;
+    expect(rttMesh.material).toBe(source);
+    expect(rttMesh.geometry).toBe(observerMesh.geometry);
+    const originalColor = (source as THREE.MeshStandardMaterial).color.clone();
+    const sourceDispose = vi.spyOn(source as THREE.Material, "dispose");
+    const geometryDispose = vi.spyOn(observerMesh.geometry, "dispose");
+    const firstTracker = new MaterialAwareMaterialTracker(101);
+    const firstOutput = firstTracker.reconcileRenderable(
+      observerMesh as THREE.Mesh & { material: THREE.Material | THREE.Material[] },
+      firstTracker.controllerOwner,
+      1,
+      getObserverMaterialSignatures,
+    ).materials[0]!;
+    const firstOutputDispose = vi.spyOn(firstOutput, "dispose");
+    observerMesh.material = firstOutput;
+
+    (source as THREE.MeshStandardMaterial).color.set("#d14b77");
+    const refreshedOutput = firstTracker.reconcileRenderable(
+      observerMesh as THREE.Mesh & { material: THREE.Material | THREE.Material[] },
+      firstTracker.controllerOwner,
+      2,
+      getObserverMaterialSignatures,
+    ).materials[0]!;
+    observerMesh.material = refreshedOutput;
+
+    expect(refreshedOutput).toBe(firstOutput);
+    expect((firstOutput as THREE.MeshStandardMaterial).color.getHexString()).toBe("d14b77");
+    expect(rttMesh.material).toBe(source);
+    expect((rttMesh.material as THREE.MeshStandardMaterial).color.getHexString()).toBe("d14b77");
+
+    firstTracker.dispose();
+    expect(observerMesh.material).toBe(source);
+    expect(firstOutputDispose).toHaveBeenCalledTimes(1);
+    expect(rttScene.children).toContain(mountedRtt.group);
+    expect(rttMesh.material).toBe(source);
+    expect(sourceDispose).not.toHaveBeenCalled();
+    expect(geometryDispose).not.toHaveBeenCalled();
+
+    const secondTracker = new MaterialAwareMaterialTracker(102);
+    const remountedOutput = secondTracker.reconcileRenderable(
+      observerMesh as THREE.Mesh & { material: THREE.Material | THREE.Material[] },
+      secondTracker.controllerOwner,
+      1,
+      getObserverMaterialSignatures,
+    ).materials[0]!;
+    observerMesh.material = remountedOutput;
+    expect(remountedOutput).not.toBe(firstOutput);
+    secondTracker.dispose();
+    expect(observerMesh.material).toBe(source);
+    expect(rttMesh.material).toBe(source);
+
+    mountedRtt.dispose();
+    interactiveScene.remove(interactiveGroup);
+    disposeRegisteredSceneAsset(VIEW_CAMERA_ANATOMY_ASSET_KEY, interactiveGroup);
+    (source as THREE.MeshStandardMaterial).color.copy(originalColor);
+    expect(sourceDispose).not.toHaveBeenCalled();
+    expect(geometryDispose).not.toHaveBeenCalled();
+  });
 });

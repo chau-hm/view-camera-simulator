@@ -1,0 +1,135 @@
+{
+  "schemaVersion": "rq2.1-native-m3-revalidation-v1",
+  "baseCommit": "bbb60902e73ecdbc97628c3b604785a871ed0f50",
+  "activeScene": {
+    "sceneId": "architecture-rise",
+    "sceneSourceRevision": "architecture-rise-raw-rtt-v2",
+    "sourceCommit": "29947360228f761e6eacbb04e4095532f25086be",
+    "sourceInputs": [
+      "src/render/ArchitectureRiseSubjectFactory.tsx",
+      "src/render/sceneSubjectRegistry.tsx",
+      "src/scenes/illumination/sceneWorldIllumination.ts",
+      "src/render/webgpu/groundGlassRawWebGpuCompatibility.ts"
+    ],
+    "postSourceRasterInputDrift": []
+  },
+  "candidateStage": {
+    "status": "passed",
+    "baseCommit": "bbb60902e73ecdbc97628c3b604785a871ed0f50",
+    "candidateTree": "temporary local-only compatibility/test candidate; intentionally not committed or published",
+    "temporaryAuthorization": {
+      "sceneSourceRevision": "architecture-rise-raw-rtt-v2",
+      "rendererRevision": "r187",
+      "feature": "raw-rtt",
+      "evidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v2",
+      "otherScenes": false,
+      "otherFeatures": false,
+      "production": false
+    },
+    "command": "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true GROUND_GLASS_M3_SOURCE_PROFILE=v2 npm run test:e2e -- --project=chrome-native-webgpu --workers=1 --retries=0 src/tests/e2e/ground-glass-webgpu-r187-app-pilot.spec.ts",
+    "execution": {
+      "executed": true,
+      "passed": 1,
+      "skipped": 0,
+      "retries": 0,
+      "rendererFamily": "webgpu-renderer",
+      "executionApi": "webgpu",
+      "internalFallback": "none",
+      "applicationFallback": "not-observed",
+      "rawContentful": true
+    },
+    "provenanceLimit": "The provisional working-tree candidate has no commit SHA; only its base HEAD is recorded. It was not accepted evidence."
+  },
+  "finalStage": {
+    "status": "passed",
+    "sourceCommit": "887930d73315d9cc64cf37c66385a8a7ddfe4296",
+    "command": "npm run test:e2e -- --config=playwright.rq21.config.ts --project=chrome-native-webgpu --workers=1 --retries=0 scripts/render-quality/rq2.1-native-m3.spec.ts",
+    "execution": {
+      "executed": true,
+      "passed": 1,
+      "skipped": 0,
+      "retries": 0
+    },
+    "runtime": {
+      "sceneId": "architecture-rise",
+      "sceneSourceRevision": "architecture-rise-raw-rtt-v2",
+      "rendererFamily": "webgpu-renderer",
+      "executionApi": "webgpu",
+      "rendererRevision": "r187",
+      "feature": "raw-rtt",
+      "evidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v2",
+      "applicationFallback": "not-observed",
+      "internalFallback": "none",
+      "browser": "Chrome 157.0.8103.40",
+      "operatingSystem": "darwin 27.0.0 arm64",
+      "threeRevision": "187",
+      "rawContentful": true,
+      "focusUpdated": true,
+      "apertureUpdatedToF8": true,
+      "frontRiseMm": 20,
+      "frameStatus": "completed",
+      "requestAcceptedByHost": true,
+      "requestIdMatchesLastCompleted": true,
+      "cleanupAcknowledged": "confirmed",
+      "nextUnsupportedSceneRenderer": "webgl-renderer"
+    }
+  },
+  "captureRun": {
+    "captureRunId": "617cc26b-05c7-4281-b99e-ed835edab1d3",
+    "sourceCommit": "fcd995f04b19a6b434785653cc4833bf28a6e082",
+    "sourceTree": "clean and commit-reproducible",
+    "nativeStatus": "captured",
+    "captureIds": [
+      "architecture-rise-neutral-webgpu-raw",
+      "architecture-rise-front-rise-webgpu-raw"
+    ],
+    "captures": [
+      {
+        "stateId": "architecture-rise-neutral",
+        "path": "docs/render-quality/rq21-native-m3-v2/capture-run/ground-glass/neutral-webgpu-raw.png",
+        "width": 450,
+        "height": 360,
+        "sourceRevision": "architecture-rise-raw-rtt-v2",
+        "rendererFamily": "webgpu-renderer",
+        "executionApi": "webgpu",
+        "requestCompletedAndAccepted": true,
+        "contentful": true,
+        "sha256": "c0215d4854441eae19dbe9163d39267ae970ecea8304e13964f11f0fe14da308",
+        "cameraState": {
+          "focalLengthMm": 150,
+          "focusDistanceMm": 8900,
+          "apertureFNumber": 8,
+          "frontRiseMm": 0
+        }
+      },
+      {
+        "stateId": "architecture-rise-front-rise",
+        "path": "docs/render-quality/rq21-native-m3-v2/capture-run/ground-glass/front-rise-webgpu-raw.png",
+        "width": 450,
+        "height": 360,
+        "sourceRevision": "architecture-rise-raw-rtt-v2",
+        "rendererFamily": "webgpu-renderer",
+        "executionApi": "webgpu",
+        "requestCompletedAndAccepted": true,
+        "contentful": true,
+        "sha256": "12b1adeb3bf5720ec19d7d534251c3c4b1fe10d7d1abfba7ec296975230dd766",
+        "cameraState": {
+          "focalLengthMm": 150,
+          "focusDistanceMm": 8900,
+          "apertureFNumber": 8,
+          "frontRiseMm": 20
+        }
+      }
+    ],
+    "comparisonLimit": "WebGL Raw Debug and native M3 Raw use distinct display implementations; bounded Raw display comparison only, not pixel parity."
+  },
+  "compatibilityOutcome": {
+    "activeR187M3RawStatus": "verified",
+    "historicalV1RecordsPreserved": true,
+    "r186V1EligibleForV2": false,
+    "r187V1EligibleForV2": false,
+    "m4M5M6AuthorizationChanged": false,
+    "productionWebgpuEnabled": false
+  },
+  "hostedCI": "will be reported in the PR handoff after publication"
+}

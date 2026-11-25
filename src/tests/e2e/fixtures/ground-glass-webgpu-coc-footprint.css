@@ -1,0 +1,46 @@
+html,
+body,
+#ground-glass-webgpu-coc-footprint {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #101820;
+  color: #f4f6f8;
+  font: 14px/1.45 system-ui, sans-serif;
+}
+
+.coc-storage-fixture {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+}
+
+.coc-storage-nav,
+.coc-storage-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.coc-storage-fixture a {
+  color: #a8d8ff;
+}
+
+.coc-storage-fixture button {
+  padding: 6px 10px;
+}
+
+.coc-storage-fixture canvas {
+  width: 256px;
+  height: 64px;
+  outline: 1px solid #718096;
+}
+
+.coc-storage-fixture pre {
+  max-width: 100%;
+  overflow: auto;
+  white-space: pre-wrap;
+}

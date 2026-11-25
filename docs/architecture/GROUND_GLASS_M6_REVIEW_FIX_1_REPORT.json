@@ -1,0 +1,342 @@
+{
+  "schemaVersion": 1,
+  "reviewRound": "M6 Review-Fix Round 1",
+  "reviewedHead": "91d4f9330e250f0369236dad2a88733869002903",
+  "correctedSourceCommit": "bfa7b0348d37f9840a68097255de0e3a128dfc98",
+  "pullRequest": {
+    "number": 294,
+    "url": "https://github.com/chau-hm/view-camera-simulator/pull/294",
+    "base": "main",
+    "baseShaAtReview": "c89556f482c1b62ee32eba6817a5fd8007c087dc",
+    "headBranch": "feature/ground-glass-m6-presentation"
+  },
+  "findings": {
+    "P2-raw-first-resource-lifecycle": {
+      "status": "resolved",
+      "rootCause": [
+        "M4 and M5 resources were provisioned only when the adapter's initial request enabled their research passes.",
+        "An initial Raw Debug frame disabled those request-level conditions, leaving no M5 research composite target.",
+        "Raw and M6 requests select WebGPU, so the host retained the same renderer generation when Raw Debug was turned off.",
+        "The later M6 request attempted to display the absent M5 composite, causing runtime failure, application WebGL fallback, and retry-latch consumption."
+      ],
+      "correction": "Provision M4/M5 resources for an authorized M6-capable renderer session independently of its initial Raw/M6 request mode; keep pass execution tied to each current request.",
+      "regressionEvidence": "Native Raw-first test starts on M3 Raw, switches through M4/M5/M6, returns to Raw, resizes, and returns to M6 with one generation, one attempt, no failures, no application fallback, and retry status available at epoch 0."
+    },
+    "P3-two-flag-authorization": {
+      "status": "resolved",
+      "requiredPredicate": "import.meta.env.DEV && VITE_GROUND_GLASS_WEBGPU_RAW_PILOT === \"true\" && VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION === \"true\"",
+      "negativeControls": [
+        "Neither flag enabled in development: denied.",
+        "Raw pilot only: M3 Raw pilot remains available; M6 denied.",
+        "M6 flag only: denied.",
+        "Both flags in production: denied."
+      ],
+      "nativeConfiguration": "The M6 Native Playwright configuration enables both documented flags and explicitly leaves the independent M4/M5 research flags false."
+    }
+  },
+  "sessionAndRequestPolicy": {
+    "m6CapableSessionRequires": [
+      "trusted development build with both M6 authorization flags",
+      "exact Architecture Rise scene identity and bounds",
+      "policy-selected WebGPU backend",
+      "mounted WebGPURenderer with actual native WebGPU execution"
+    ],
+    "sessionProvisioningIndependentOfInitialRawMode": true,
+    "requestExecution": {
+      "rawDebug": "M3 scene-target diagnostic only; M4/M5 optical pass lists are empty and no completed M6 presentation is claimed.",
+      "m6DoF": "M4, M5, and M6 execute for the accepted request; diagnostics and publication match request, channel, scene, and renderer generation."
+    },
+    "resourceOwnership": "Existing adapter-generation cleanup disposes the M3 scene target, M4 targets and pass resources, M5 targets/scenes/materials/geometry, and M6 presentation material/geometry. No shared renderer manager or new lifecycle owner was introduced."
+  },
+  "nativeRawFirstRun": {
+    "project": "chrome-native-webgpu",
+    "platform": "darwin",
+    "browserRuntime": "Chrome native WebGPU",
+    "threeRevision": "r186",
+    "sceneId": "architecture-rise",
+    "renderQuality": "low",
+    "effectiveBuildConfiguration": {
+      "developmentBuild": true,
+      "rawPilotEnabled": true,
+      "m6PresentationEnabled": true,
+      "physicalCocResearchEnabled": false,
+      "apertureGatherResearchEnabled": false
+    },
+    "initialRawFrame": {
+      "requestId": "gg-mvsdjnkt-6c6xfk22ftq-default-request-3",
+      "completedRequestId": "gg-mvsdjnkt-6c6xfk22ftq-default-request-3",
+      "rawDebug": true,
+      "contentful": true,
+      "sourceTargetDimensionsPx": {
+        "width": 204,
+        "height": 163
+      },
+      "m4ResourcesReady": true,
+      "m5ResourcesReady": true,
+      "m5TargetCount": 9,
+      "m4Passes": [],
+      "m5Passes": [],
+      "completedM6Presentation": false
+    },
+    "requestTransitions": [
+      {
+        "requestId": "gg-mvsdjnkt-6c6xfk22ftq-default-request-3",
+        "mode": "raw",
+        "completed": true
+      },
+      {
+        "requestId": "gg-mvsdjnkt-6c6xfk22ftq-default-request-4",
+        "mode": "raw-with-focus-loupe",
+        "completed": true,
+        "croppedSource": true
+      },
+      {
+        "requestId": "gg-mvsdjnkt-6c6xfk22ftq-default-request-5",
+        "mode": "raw-after-viewport-change",
+        "completed": true
+      },
+      {
+        "requestId": "gg-mvsdjnkt-6c6xfk22ftq-default-request-6",
+        "mode": "m6-held-queue-request",
+        "published": false
+      },
+      {
+        "requestId": "gg-mvsdjnkt-6c6xfk22ftq-default-request-7",
+        "mode": "m6-latest-queue-request",
+        "m4M5M6Completed": true
+      },
+      {
+        "requestId": "gg-mvsdjnkt-6c6xfk22ftq-default-request-8",
+        "mode": "raw-after-m6",
+        "completed": true,
+        "m4M5Passes": []
+      },
+      {
+        "requestId": "gg-mvsdjnkt-6c6xfk22ftq-default-request-9",
+        "mode": "raw-after-second-viewport-change",
+        "completed": true,
+        "m4M5Passes": []
+      },
+      {
+        "requestId": "gg-mvsdjnkt-6c6xfk22ftq-default-request-10",
+        "mode": "m6-after-raw-resize",
+        "m4M5M6Completed": true
+      }
+    ],
+    "viewportChangeDimensions": {
+      "initialSourceAndCurrentM4M5SourcePx": {
+        "width": 204,
+        "height": 163
+      },
+      "afterViewportChangeSourcePx": {
+        "width": 204,
+        "height": 163
+      },
+      "farAndNearGatherPx": {
+        "width": 102,
+        "height": 82
+      },
+      "interpretation": "The low-quality split-view layout produced fresh accepted request identities on viewport change but retained these nominal target dimensions in this run; M4/M5 source dimensions were checked against the current M6 source dimensions."
+    },
+    "queueStaleness": {
+      "heldRequestId": "gg-mvsdjnkt-6c6xfk22ftq-default-request-6",
+      "latestRequestId": "gg-mvsdjnkt-6c6xfk22ftq-default-request-7",
+      "heldRequestPublished": false,
+      "latestRequestCompleted": true
+    },
+    "mountedRuntime": {
+      "rendererFamily": "webgpu-renderer",
+      "actualExecutionApi": "webgpu",
+      "internalFallback": "none",
+      "applicationFallback": "not-observed"
+    },
+    "identityAndRetry": {
+      "rendererGenerationId": "gg-mvsdjnkt-6c6xfk22ftq-default-generation-1",
+      "pilotSessionId": "ground-glass-m6-presentation:default",
+      "adapterAttempts": 1,
+      "retryStatus": "available",
+      "retryEpoch": 0,
+      "failures": []
+    },
+    "artifact": "test-results/ground-glass-webgpu-m6-pre-74b4e-M6-loupe-resize-transitions-chrome-native-webgpu/ground-glass-m6-raw-first-lifecycle-evidence.json"
+  },
+  "nominalColorAttachmentAccounting": {
+    "sourceDimensionsPx": {
+      "width": 204,
+      "height": 163,
+      "pixelCount": 33252
+    },
+    "gatherDimensionsPx": {
+      "width": 102,
+      "height": 82,
+      "pixelCount": 8364
+    },
+    "m4Targets": [
+      {
+        "name": "physicalCoC",
+        "format": "rgba16float",
+        "bytesPerSourcePixel": 8
+      },
+      {
+        "name": "validity",
+        "format": "rgba8unorm",
+        "bytesPerSourcePixel": 4
+      }
+    ],
+    "m5FullResolutionTargets": [
+      {
+        "name": "b1",
+        "format": "rgba16float",
+        "bytesPerSourcePixel": 8
+      },
+      {
+        "name": "researchComposite",
+        "format": "rgba16float",
+        "bytesPerSourcePixel": 8
+      },
+      {
+        "name": "sourceIdentity",
+        "format": "rgba32float",
+        "bytesPerSourcePixel": 16
+      },
+      {
+        "name": "selectedProvenance",
+        "format": "rgba32float",
+        "bytesPerSourcePixel": 16
+      },
+      {
+        "name": "b1Decision",
+        "format": "rgba8unorm",
+        "bytesPerSourcePixel": 4
+      }
+    ],
+    "m5GatherResolutionTargets": [
+      {
+        "name": "far",
+        "format": "rgba16float",
+        "bytesPerGatherPixel": 8
+      },
+      {
+        "name": "near",
+        "format": "rgba16float",
+        "bytesPerGatherPixel": 8
+      },
+      {
+        "name": "gatherIdentity",
+        "format": "rgba32float",
+        "bytesPerGatherPixel": 16
+      },
+      {
+        "name": "gatherCenterProvenance",
+        "format": "rgba32float",
+        "bytesPerGatherPixel": 16
+      }
+    ],
+    "counts": {
+      "m4TargetCount": 2,
+      "m5TargetCount": 9,
+      "m4PlusM5ColorTargetCount": 11
+    },
+    "nominalBytes": {
+      "m4": 399024,
+      "m5FullResolution": 1729104,
+      "m5GatherResolution": 401472,
+      "m5Total": 2130576,
+      "m4PlusM5SessionIncrementOverM3Raw": 2529600,
+      "m4PlusM5SessionIncrementMiB": 2.41241455078125
+    },
+    "excludes": [
+      "existing M3 scene color and depth attachment storage",
+      "driver row pitch, compression, padding, and backend allocation overhead"
+    ],
+    "m6PresentationIncrement": {
+      "renderTargetCount": 0,
+      "colorAttachmentBytes": 0,
+      "fullscreenPresentationDraw": "the existing single fused M6 presentation draw remains unchanged"
+    }
+  },
+  "failureAndSceneControls": {
+    "partialM4M5Initialization": {
+      "failureInjectedAfter": "actual M5 Far target initialization",
+      "applicationFallbackRenderer": "webgl-renderer",
+      "cleanupOutcome": "confirmed",
+      "webgpuFrameCompleted": false
+    },
+    "unsupportedMacroScene": {
+      "policySelectedBackend": "webgl",
+      "mountedRendererFamily": "webgl-renderer",
+      "webgpuAttemptCount": 0
+    }
+  },
+  "validation": {
+    "nativeM6": {
+      "command": "npx playwright test src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts --project=chrome-native-webgpu --reporter=line",
+      "requiredEnvironment": {
+        "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED": "1",
+        "GROUND_GLASS_WEBGPU_M6_PRESENTATION_REQUIRED": "1",
+        "VITE_GROUND_GLASS_WEBGPU_RAW_PILOT": "true",
+        "VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION": "true"
+      },
+      "result": "8 passed",
+      "runtime": "native WebGPU, Chrome, Three.js r186; Raw-first lifecycle source commit bfa7b0348d37f9840a68097255de0e3a128dfc98"
+    },
+    "nativeM4M5M5QRegression": {
+      "result": "4 passed, 1 intentionally skipped in the M5-enabled configuration; separate M3/M4-only baseline passed 1/1",
+      "scope": [
+        "M4 app adapter",
+        "M5 app adapter/B1",
+        "M5 R3 investigation",
+        "frozen M5Q confirmation",
+        "M5 stale capture recovery",
+        "M3/M4-only Raw baseline"
+      ]
+    },
+    "fullUnitIntegration": {
+      "command": "npm test",
+      "result": "295 files passed; 2930 tests passed",
+      "node": "24.22.1 bundled Codex runtime"
+    },
+    "typecheck": "npm run typecheck — passed",
+    "lint": "npm run lint — passed",
+    "css": "npm run check:css — passed",
+    "productionBuildWithBothM6Flags": "npm run build — passed",
+    "productionPreviewWithBothM6Flags": {
+      "result": "2 passed",
+      "productionGroundGlassBackend": "WebGL",
+      "webgpuAdapterRequests": 0
+    },
+    "diffCheck": "git diff --check — passed",
+    "broadLocalE2E": {
+      "command": "npm run ci:local:e2e",
+      "result": "stopped at the existing architecture-foreground-compound.spec.ts failure: expected Complete the Photograph heading is absent",
+      "baseline": "Same failure was reproduced on clean base c89556f482c1b62ee32eba6817a5fd8007c087dc; the failing spec and teaching UI are unchanged."
+    },
+    "hostedActions": "Current-head GitHub Actions status is tracked on PR #294; local and Native WebGPU results are reported separately."
+  },
+  "preservation": {
+    "m3Raw": "Raw remains M3 diagnostic output and does not execute M4/M5/M6 optical passes.",
+    "m4PhysicalCocEquations": "unchanged",
+    "m5FarNearAndB1Algorithms": "unchanged",
+    "canonicalOpticsAndCoordinateMapping": "unchanged",
+    "existingDataRttDiagnostics": "unchanged",
+    "publicWebGLGroundGlass": "unchanged",
+    "productionWebGPU": "disabled",
+    "m5qFrozenRevision": "m5q-architecture-rise-r186-v3",
+    "m5qResults": {
+      "Q1": "reference-not-converged",
+      "Q2": "insufficient-support",
+      "Q3": "bounded-qualified",
+      "Q4": "insufficient-support",
+      "Q5": "reference-not-converged",
+      "Q6": "reference-not-converged",
+      "Q7": "reference-not-converged"
+    }
+  },
+  "remainingLimitations": [
+    "M6 remains architecture-partially-implemented until a supported scene can verify physical grid and target raster alignment against the completed displayed frame.",
+    "A direct final-output M6 GPU pixel oracle remains open.",
+    "Photographic quality remains unqualified; no M5Q R3 promotion, broad B1 quality claim, or WebGL parity claim is made.",
+    "Multi-scene, material, adapter, browser, device, performance, and memory qualification remain future work.",
+    "The M7 lifecycle and device-loss matrix has not started; production WebGPU remains disabled."
+  ]
+}

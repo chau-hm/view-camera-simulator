@@ -1,0 +1,188 @@
+{
+  "schemaVersion": "rq2-architecture-rise-capacity-comparison-v1",
+  "benchmark": "scripts/run-scene-capacity-benchmark.mjs + src/tests/e2e/scene-capacity-benchmark.spec.ts",
+  "before": {
+    "sourceCommit": "fc01c023ab8621c8f0f796b000a3b82ad137b54c",
+    "benchmarkRecordCount": 1,
+    "environment": {
+      "browserName": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "devicePixelRatio": 1,
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)",
+      "profilingBackend": "cpu-fallback",
+      "timingUnit": "cpu-submit-ms",
+      "hardwareQualification": {
+        "required": false,
+        "softwareRendererDetected": true,
+        "hardwareRendererQualified": false,
+        "gpuTimingQualified": false
+      }
+    },
+    "architectureRise": {
+      "mode": "processed",
+      "viewportSubject": {
+        "objectCount": 369,
+        "meshCount": 335,
+        "renderableMeshCount": 335,
+        "instancedMeshCount": 0,
+        "lightCount": 0,
+        "lineCount": 0,
+        "pointsCount": 0,
+        "uniqueGeometryCount": 3,
+        "uniqueMaterialCount": 15,
+        "uniqueTextureCount": 12,
+        "triangleCount": 4478,
+        "instancedTriangleCount": 0,
+        "effectiveTriangleCount": 4478,
+        "renderableEffectiveTriangleCount": 4478
+      },
+      "rttSubject": {
+        "objectCount": 367,
+        "meshCount": 334,
+        "renderableMeshCount": 334,
+        "instancedMeshCount": 0,
+        "lightCount": 0,
+        "lineCount": 0,
+        "pointsCount": 0,
+        "uniqueGeometryCount": 2,
+        "uniqueMaterialCount": 14,
+        "uniqueTextureCount": 12,
+        "triangleCount": 3998,
+        "instancedTriangleCount": 0,
+        "effectiveTriangleCount": 3998,
+        "renderableEffectiveTriangleCount": 3998
+      },
+      "rendererResources": {
+        "geometries": 3,
+        "textures": 24
+      },
+      "frameCadence": {
+        "p50Ms": 396.09999990463257,
+        "p95Ms": 417.60000002384186,
+        "approxFps": 2.51513271516709,
+        "count": 60
+      },
+      "groundGlass": {
+        "renderQuality": "high",
+        "internalResolution": [
+          1028,
+          822
+        ],
+        "profilingBackend": "cpu-fallback",
+        "timingUnit": "cpu-submit-ms",
+        "cpuSubmit": {
+          "latestMs": 0.7000000476837158,
+          "averageMs": 0.6833333432674408,
+          "p50Ms": 0.7000000476837158,
+          "p95Ms": 0.8000000715255737,
+          "count": 60
+        },
+        "sceneRenderPass": {
+          "latestMs": 0.6000000238418579,
+          "averageMs": 0.6283333400885264,
+          "p50Ms": 0.6000000238418579,
+          "p95Ms": 0.7999999523162842,
+          "count": 60
+        }
+      }
+    }
+  },
+  "after": {
+    "sourceCommit": "29947360228f761e6eacbb04e4095532f25086be",
+    "benchmarkRecordCount": 15,
+    "environment": {
+      "browserName": "chromium",
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "devicePixelRatio": 1,
+      "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)",
+      "profilingBackend": "cpu-fallback",
+      "timingUnit": "cpu-submit-ms",
+      "hardwareQualification": {
+        "required": false,
+        "softwareRendererDetected": true,
+        "hardwareRendererQualified": false,
+        "gpuTimingQualified": false
+      }
+    },
+    "architectureRise": {
+      "mode": "processed",
+      "viewportSubject": {
+        "objectCount": 369,
+        "meshCount": 335,
+        "renderableMeshCount": 335,
+        "instancedMeshCount": 0,
+        "lightCount": 0,
+        "lineCount": 0,
+        "pointsCount": 0,
+        "uniqueGeometryCount": 3,
+        "uniqueMaterialCount": 15,
+        "uniqueTextureCount": 12,
+        "triangleCount": 4478,
+        "instancedTriangleCount": 0,
+        "effectiveTriangleCount": 4478,
+        "renderableEffectiveTriangleCount": 4478
+      },
+      "rttSubject": {
+        "objectCount": 367,
+        "meshCount": 334,
+        "renderableMeshCount": 334,
+        "instancedMeshCount": 0,
+        "lightCount": 0,
+        "lineCount": 0,
+        "pointsCount": 0,
+        "uniqueGeometryCount": 2,
+        "uniqueMaterialCount": 14,
+        "uniqueTextureCount": 12,
+        "triangleCount": 3998,
+        "instancedTriangleCount": 0,
+        "effectiveTriangleCount": 3998,
+        "renderableEffectiveTriangleCount": 3998
+      },
+      "rendererResources": {
+        "geometries": 3,
+        "textures": 24
+      },
+      "frameCadence": {
+        "p50Ms": 378.39999997615814,
+        "p95Ms": 401.2999999523163,
+        "approxFps": 2.6278216234654552,
+        "count": 60
+      },
+      "groundGlass": {
+        "renderQuality": "high",
+        "internalResolution": [
+          1028,
+          822
+        ],
+        "profilingBackend": "cpu-fallback",
+        "timingUnit": "cpu-submit-ms",
+        "cpuSubmit": {
+          "latestMs": 0.7000000476837158,
+          "averageMs": 0.703333338101705,
+          "p50Ms": 0.7000000476837158,
+          "p95Ms": 0.8000000715255737,
+          "count": 60
+        },
+        "sceneRenderPass": {
+          "latestMs": 0.6000000238418579,
+          "averageMs": 0.6399999976158142,
+          "p50Ms": 0.6000000238418579,
+          "p95Ms": 0.7000000476837158,
+          "count": 60
+        }
+      }
+    }
+  },
+  "comparisonNotes": [
+    "Both runs used Chromium under SwiftShader software rendering; no hardware GPU timing was available.",
+    "Frame cadence is active R3F cadence while simulator UI is mounted, not pure GPU render time.",
+    "Renderer resource counts are counts, not byte-accurate VRAM measurements.",
+    "Before selected only Architecture Rise via a temporary scene selector; the per-scene collection logic was unchanged. After used the repository benchmark matrix and retained its Architecture Rise row."
+  ]
+}

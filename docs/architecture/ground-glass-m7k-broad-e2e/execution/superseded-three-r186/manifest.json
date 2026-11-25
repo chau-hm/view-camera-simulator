@@ -1,0 +1,42 @@
+{
+  "status": "superseded-invalid-runtime",
+  "reason": "The first capture resolved the parent checkout Three.js 0.186.0; Playwright runtime evidence reports threeRevision 186. M7K requires the locked 0.187.0 runtime.",
+  "executionSourceCommitSha": "e6066a244510387c32995c1e973a771667b04d10",
+  "observedThreeJsRevision": "0.186.0",
+  "counts": {
+    "discovered": 278,
+    "expected": 120,
+    "unexpected": 83,
+    "skipped": 75,
+    "flaky": 0,
+    "incomplete": 0,
+    "retries": 0
+  },
+  "files": {
+    "ordinary-playwright.json": {
+      "sha256": "76889481360b863f8e2aff76ffc2a2d255243e598dbdf8e473d707c608071cbb",
+      "bytes": 8525181
+    },
+    "ordinary-console.log": {
+      "sha256": "d940d2e7904c7ab2f3c9b5f98aa2f863e73b4b048c253304f51e4ae4e92be241",
+      "bytes": 324970
+    },
+    "ordinary-exit-code.txt": {
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "bytes": 2
+    },
+    "renderer-serial-playwright.json": {
+      "sha256": "5ab980b515d0291629340372dc8645e79e974df2bb60f54098c804a4f56a95da",
+      "bytes": 13836
+    },
+    "renderer-serial-console.log": {
+      "sha256": "f2bf6f9403a608f95df2e3e46e0c12663d3bb02e7aa1966ea47b005db852045b",
+      "bytes": 2672
+    },
+    "renderer-serial-exit-code.txt": {
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2
+    }
+  },
+  "supersededBy": "a fresh sequential capture under the worktree-local npm ci installation locked at three@0.187.0"
+}

@@ -1,0 +1,385 @@
+{
+  "schema": "m7l-playwright-outcomes-v1",
+  "sourceCaptureSha256": "c3e310cfc0c2c11181403c6607285f22048465a18dee9abb2beb2a803bce6048",
+  "captureKind": "controlled",
+  "config": {
+    "version": "1.61.1",
+    "workers": 4,
+    "retries": 0,
+    "actualWorkerMetadata": 4,
+    "projectNames": [
+      "chromium",
+      "chromium-renderer-serial"
+    ],
+    "fullyParallel": false
+  },
+  "stats": {
+    "startTime": "2026-11-04T14:35:47.559Z",
+    "duration": 21084.453,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "suites": [
+    {
+      "title": "m7l-controlled-load-diagnostic.spec.ts",
+      "file": "m7l-controlled-load-diagnostic.spec.ts",
+      "specs": [
+        {
+          "file": "m7l-controlled-load-diagnostic.spec.ts",
+          "title": "M7L LOAD target drawer (heavy)",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 19441,
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "retry": 0,
+                  "startTime": "2026-11-04T14:35:48.574Z",
+                  "errors": [],
+                  "diagnostics": {
+                    "events": [
+                      {
+                        "sequence": 20,
+                        "reason": "state-mutation",
+                        "time": 15682.6,
+                        "route": "/simulator/free/interior-corner",
+                        "requestedOpen": true,
+                        "drawerState": "transient",
+                        "pinned": "false",
+                        "ariaHidden": "false",
+                        "mounted": true,
+                        "transform": "matrix(1, 0, 0, 1, -288, 0)",
+                        "visibility": "visible",
+                        "transitionDuration": "0.19s, 0.19s",
+                        "transitionDelay": "0s, 0s",
+                        "transitionProperty": "transform, visibility",
+                        "focusWithin": false,
+                        "documentVisibility": "visible",
+                        "eventTarget": null,
+                        "pointerType": null
+                      },
+                      {
+                        "sequence": 21,
+                        "reason": "requestAnimationFrame",
+                        "time": 15685.2,
+                        "route": "/simulator/free/interior-corner",
+                        "requestedOpen": true,
+                        "drawerState": "transient",
+                        "pinned": "false",
+                        "ariaHidden": "false",
+                        "mounted": true,
+                        "transform": "matrix(1, 0, 0, 1, -288, 0)",
+                        "visibility": "visible",
+                        "transitionDuration": "0.19s, 0.19s",
+                        "transitionDelay": "0s, 0s",
+                        "transitionProperty": "transform, visibility",
+                        "focusWithin": false,
+                        "documentVisibility": "visible",
+                        "eventTarget": null,
+                        "pointerType": null
+                      },
+                      {
+                        "sequence": 22,
+                        "reason": "requestAnimationFrame",
+                        "time": 16431.3,
+                        "route": "/simulator/free/interior-corner",
+                        "requestedOpen": true,
+                        "drawerState": "transient",
+                        "pinned": "false",
+                        "ariaHidden": "false",
+                        "mounted": true,
+                        "transform": "matrix(1, 0, 0, 1, -288, 0)",
+                        "visibility": "visible",
+                        "transitionDuration": "0.19s, 0.19s",
+                        "transitionDelay": "0s, 0s",
+                        "transitionProperty": "transform, visibility",
+                        "focusWithin": false,
+                        "documentVisibility": "visible",
+                        "eventTarget": null,
+                        "pointerType": null
+                      },
+                      {
+                        "sequence": 23,
+                        "reason": "transitionrun",
+                        "time": 17348.6,
+                        "route": "/simulator/free/interior-corner",
+                        "requestedOpen": true,
+                        "drawerState": "transient",
+                        "pinned": "false",
+                        "ariaHidden": "false",
+                        "mounted": true,
+                        "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                        "visibility": "visible",
+                        "transitionDuration": "0.19s, 0.19s",
+                        "transitionDelay": "0s, 0s",
+                        "transitionProperty": "transform, visibility",
+                        "focusWithin": false,
+                        "documentVisibility": "visible",
+                        "eventTarget": "learning-overlay-panel__drawer",
+                        "pointerType": null
+                      },
+                      {
+                        "sequence": 24,
+                        "reason": "transitionstart",
+                        "time": 17348.7,
+                        "route": "/simulator/free/interior-corner",
+                        "requestedOpen": true,
+                        "drawerState": "transient",
+                        "pinned": "false",
+                        "ariaHidden": "false",
+                        "mounted": true,
+                        "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                        "visibility": "visible",
+                        "transitionDuration": "0.19s, 0.19s",
+                        "transitionDelay": "0s, 0s",
+                        "transitionProperty": "transform, visibility",
+                        "focusWithin": false,
+                        "documentVisibility": "visible",
+                        "eventTarget": "learning-overlay-panel__drawer",
+                        "pointerType": null
+                      },
+                      {
+                        "sequence": 25,
+                        "reason": "transitionend",
+                        "time": 17348.7,
+                        "route": "/simulator/free/interior-corner",
+                        "requestedOpen": true,
+                        "drawerState": "transient",
+                        "pinned": "false",
+                        "ariaHidden": "false",
+                        "mounted": true,
+                        "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                        "visibility": "visible",
+                        "transitionDuration": "0.19s, 0.19s",
+                        "transitionDelay": "0s, 0s",
+                        "transitionProperty": "transform, visibility",
+                        "focusWithin": false,
+                        "documentVisibility": "visible",
+                        "eventTarget": "learning-overlay-panel__drawer",
+                        "pointerType": null
+                      },
+                      {
+                        "sequence": 26,
+                        "reason": "transitionrun",
+                        "time": 17348.8,
+                        "route": "/simulator/free/interior-corner",
+                        "requestedOpen": true,
+                        "drawerState": "transient",
+                        "pinned": "false",
+                        "ariaHidden": "false",
+                        "mounted": true,
+                        "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                        "visibility": "visible",
+                        "transitionDuration": "0.19s, 0.19s",
+                        "transitionDelay": "0s, 0s",
+                        "transitionProperty": "transform, visibility",
+                        "focusWithin": false,
+                        "documentVisibility": "visible",
+                        "eventTarget": "learning-overlay-panel__drawer",
+                        "pointerType": null
+                      },
+                      {
+                        "sequence": 27,
+                        "reason": "transitionstart",
+                        "time": 17348.8,
+                        "route": "/simulator/free/interior-corner",
+                        "requestedOpen": true,
+                        "drawerState": "transient",
+                        "pinned": "false",
+                        "ariaHidden": "false",
+                        "mounted": true,
+                        "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                        "visibility": "visible",
+                        "transitionDuration": "0.19s, 0.19s",
+                        "transitionDelay": "0s, 0s",
+                        "transitionProperty": "transform, visibility",
+                        "focusWithin": false,
+                        "documentVisibility": "visible",
+                        "eventTarget": "learning-overlay-panel__drawer",
+                        "pointerType": null
+                      },
+                      {
+                        "sequence": 28,
+                        "reason": "transitionend",
+                        "time": 17348.8,
+                        "route": "/simulator/free/interior-corner",
+                        "requestedOpen": true,
+                        "drawerState": "transient",
+                        "pinned": "false",
+                        "ariaHidden": "false",
+                        "mounted": true,
+                        "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                        "visibility": "visible",
+                        "transitionDuration": "0.19s, 0.19s",
+                        "transitionDelay": "0s, 0s",
+                        "transitionProperty": "transform, visibility",
+                        "focusWithin": false,
+                        "documentVisibility": "visible",
+                        "eventTarget": "learning-overlay-panel__drawer",
+                        "pointerType": null
+                      },
+                      {
+                        "sequence": 29,
+                        "reason": "requestAnimationFrame",
+                        "time": 17350.4,
+                        "route": "/simulator/free/interior-corner",
+                        "requestedOpen": true,
+                        "drawerState": "transient",
+                        "pinned": "false",
+                        "ariaHidden": "false",
+                        "mounted": true,
+                        "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                        "visibility": "visible",
+                        "transitionDuration": "0.19s, 0.19s",
+                        "transitionDelay": "0s, 0s",
+                        "transitionProperty": "transform, visibility",
+                        "focusWithin": false,
+                        "documentVisibility": "visible",
+                        "eventTarget": null,
+                        "pointerType": null
+                      },
+                      {
+                        "sequence": 30,
+                        "reason": "requestAnimationFrame",
+                        "time": 18287.4,
+                        "route": "/simulator/free/interior-corner",
+                        "requestedOpen": true,
+                        "drawerState": "transient",
+                        "pinned": "false",
+                        "ariaHidden": "false",
+                        "mounted": true,
+                        "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                        "visibility": "visible",
+                        "transitionDuration": "0.19s, 0.19s",
+                        "transitionDelay": "0s, 0s",
+                        "transitionProperty": "transform, visibility",
+                        "focusWithin": false,
+                        "documentVisibility": "visible",
+                        "eventTarget": null,
+                        "pointerType": null
+                      },
+                      {
+                        "sequence": 31,
+                        "reason": "requestAnimationFrame",
+                        "time": 19381.5,
+                        "route": "/simulator/free/interior-corner",
+                        "requestedOpen": true,
+                        "drawerState": "transient",
+                        "pinned": "false",
+                        "ariaHidden": "false",
+                        "mounted": true,
+                        "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                        "visibility": "visible",
+                        "transitionDuration": "0.19s, 0.19s",
+                        "transitionDelay": "0s, 0s",
+                        "transitionProperty": "transform, visibility",
+                        "focusWithin": false,
+                        "documentVisibility": "visible",
+                        "eventTarget": null,
+                        "pointerType": null
+                      }
+                    ],
+                    "final": {
+                      "route": "/simulator/free/interior-corner",
+                      "drawerState": "transient",
+                      "requestedOpen": "true",
+                      "ariaHidden": "false",
+                      "transform": "matrix(1, 0, 0, 1, 0, 0)",
+                      "documentVisibility": "visible"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "file": "m7l-controlled-load-diagnostic.spec.ts",
+          "title": "M7L LOAD peer-1 (heavy)",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 19770,
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "retry": 0,
+                  "startTime": "2026-11-04T14:35:48.574Z",
+                  "errors": [],
+                  "diagnostics": {
+                    "events": [],
+                    "final": null
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "file": "m7l-controlled-load-diagnostic.spec.ts",
+          "title": "M7L LOAD peer-2 (heavy)",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 19840,
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "retry": 0,
+                  "startTime": "2026-11-04T14:35:48.574Z",
+                  "errors": [],
+                  "diagnostics": {
+                    "events": [],
+                    "final": null
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "file": "m7l-controlled-load-diagnostic.spec.ts",
+          "title": "M7L LOAD peer-3 (heavy)",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 19842,
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "retry": 0,
+                  "startTime": "2026-11-04T14:35:48.578Z",
+                  "errors": [],
+                  "diagnostics": {
+                    "events": [],
+                    "final": null
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    }
+  ]
+}

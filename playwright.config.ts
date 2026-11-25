@@ -1,29 +1,107 @@
 import { defineConfig, devices } from "@playwright/test";
+import { productionPreviewSpecGlob } from "./scripts/e2e-spec-policy.mjs";
+
+const nativeWebGpuRequired = process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === "1";
+const groundGlassNativeWebGpuRequired = process.env.GROUND_GLASS_NATIVE_WEBGPU_REQUIRED === "1";
+const groundGlassFailureIntegration = process.env.GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION === "1";
+const groundGlassPhysicalCocResearch = process.env.GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH === "1";
+const groundGlassPhysicalCocR187Qualification =
+  process.env.GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION === "1";
+const groundGlassApertureGatherResearch = process.env.GROUND_GLASS_WEBGPU_APERTURE_GATHER_RESEARCH === "1";
+const groundGlassApertureGatherR187Qualification =
+  process.env.GROUND_GLASS_WEBGPU_APERTURE_GATHER_R187_QUALIFICATION === "1";
+const groundGlassM6PresentationRequired = process.env.GROUND_GLASS_WEBGPU_M6_PRESENTATION_REQUIRED === "1";
+const groundGlassM6R187Qualification =
+  process.env.GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION_REQUIRED === "1";
+const groundGlassM6NativeRequired = groundGlassM6PresentationRequired || groundGlassM6R187Qualification;
+const headedNativeWebGpuRequired = nativeWebGpuRequired || groundGlassNativeWebGpuRequired || groundGlassM6NativeRequired;
+const isolatedWebServerPort = process.env.PLAYWRIGHT_WEB_SERVER_PORT;
+const webServerPort = isolatedWebServerPort ?? (groundGlassM6NativeRequired ? "4175" : "4173");
+const m7jRendererContentionTag = /@m7j-renderer-contention/;
+const baselineWebServerPort = process.env.GROUND_GLASS_M6_WEBGL_BASELINE_PORT ?? String(Number(webServerPort) + 1);
+const webServerEnvironment = {
+  ...process.env,
+  VITE_BASE_PATH: "/",
+  VITE_GROUND_GLASS_WEBGPU_TEST_SEAM: groundGlassFailureIntegration || groundGlassPhysicalCocResearch || groundGlassApertureGatherResearch || groundGlassApertureGatherR187Qualification || groundGlassM6NativeRequired ? "true" : "false",
+  VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH: groundGlassPhysicalCocResearch ? "true" : groundGlassM6NativeRequired ? "false" : process.env.VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH ?? "false",
+  VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION:
+    groundGlassPhysicalCocR187Qualification ? "true" : "false",
+  VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH: groundGlassApertureGatherResearch ? "true" : groundGlassM6NativeRequired ? "false" : process.env.VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH ?? "false",
+  VITE_GROUND_GLASS_WEBGPU_APERTURE_GATHER_R187_QUALIFICATION:
+    groundGlassApertureGatherR187Qualification ? "true" : "false",
+  VITE_GROUND_GLASS_WEBGPU_RAW_PILOT: groundGlassM6NativeRequired ? "true" : process.env.VITE_GROUND_GLASS_WEBGPU_RAW_PILOT ?? "false",
+  VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION: groundGlassM6NativeRequired ? "true" : "false",
+  VITE_GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION: groundGlassM6R187Qualification ? "true" : "false",
+};
 
 export default defineConfig({
   testDir: "./src/tests/e2e",
+  testIgnore: [productionPreviewSpecGlob],
   timeout: 30_000,
 
   use: {
-    baseURL: "http://127.0.0.1:4173",
+    baseURL: `http://127.0.0.1:${webServerPort}`,
     trace: "on-first-retry",
   },
 
-  webServer: {
-    command: "npm run dev -- --host 127.0.0.1 --port 4173",
-    url: "http://127.0.0.1:4173",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-    env: {
-      ...process.env,
-      VITE_BASE_PATH: "/",
-    },
-  },
+  webServer: groundGlassM6NativeRequired
+    ? [
+        {
+          command: `npm run dev -- --host 127.0.0.1 --port ${webServerPort} --strictPort`,
+          url: `http://127.0.0.1:${webServerPort}`,
+          reuseExistingServer: false,
+          timeout: 120_000,
+          env: webServerEnvironment,
+        },
+        {
+          command: `npm run dev -- --host 127.0.0.1 --port ${baselineWebServerPort} --strictPort`,
+          url: `http://127.0.0.1:${baselineWebServerPort}`,
+          reuseExistingServer: false,
+          timeout: 120_000,
+          env: {
+            ...webServerEnvironment,
+            VITE_GROUND_GLASS_WEBGPU_RAW_PILOT: "false",
+            VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION: "false",
+            VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH: "false",
+            VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH: "false",
+            VITE_GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION: "false",
+          },
+        },
+      ]
+    : {
+        command: `npm run dev -- --host 127.0.0.1 --port ${webServerPort} --strictPort`,
+        url: `http://127.0.0.1:${webServerPort}`,
+        reuseExistingServer: !process.env.CI && isolatedWebServerPort === undefined,
+        timeout: 120_000,
+        env: webServerEnvironment,
+      },
 
-  projects: [
-    {
-      name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
-    },
-  ],
+  projects: headedNativeWebGpuRequired
+    ? [
+        {
+          name: "chrome-native-webgpu",
+          use: {
+            channel: "chrome",
+            headless: false,
+            launchOptions: {
+              ignoreDefaultArgs: ["--no-sandbox", "--enable-unsafe-swiftshader"],
+            },
+          },
+        },
+      ]
+    : [
+        {
+          name: "chromium",
+          grepInvert: m7jRendererContentionTag,
+          use: { ...devices["Desktop Chrome"] },
+        },
+        {
+          name: "chromium-renderer-serial",
+          dependencies: ["chromium"],
+          grep: m7jRendererContentionTag,
+          workers: 1,
+          fullyParallel: false,
+          use: { ...devices["Desktop Chrome"] },
+        },
+      ],
 });

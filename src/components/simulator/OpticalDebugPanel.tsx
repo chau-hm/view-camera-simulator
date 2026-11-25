@@ -378,6 +378,7 @@ export const OpticalDebugPanel: React.FC<OpticalDebugPanelProps> = ({
         viewportSubject: viewportSubjectCapacity,
         rttSubject: rttRuntimeInfo?.sceneCapacity?.rttSubject ?? null,
         rendererResources: rttRuntimeInfo?.sceneCapacity?.rendererResources ?? null,
+        visualPipeline: rttRuntimeInfo?.visualPipelineCapabilities ?? null,
         groundGlass: rttRuntimeInfo?.profilingSnapshot ?? null,
       })
     : null;

@@ -127,15 +127,20 @@ describe("Macro Scene 3 planar PCB subject contract", () => {
 
     const board = group.getObjectByName("macro-oblique-base-plate") as THREE.Mesh;
     const pad = group.getObjectByName("macro-oblique-pcb-connector-pad") as THREE.Mesh;
+    const copperTrace = group.getObjectByName("macro-oblique-pcb-near-bus") as THREE.Mesh;
     const silkscreen = group.getObjectByName("macro-oblique-pcb-board-outline-top") as THREE.Mesh;
     const boardMaterial = board.material as THREE.MeshStandardMaterial;
-    const padMaterial = pad.material as THREE.MeshStandardMaterial;
+    const goldMaterial = pad.material as THREE.MeshStandardMaterial;
+    const copperMaterial = copperTrace.material as THREE.MeshStandardMaterial;
     const silkscreenMaterial = silkscreen.material as THREE.MeshStandardMaterial;
 
     expect(boardMaterial.metalness).toBeLessThan(0.1);
-    expect(padMaterial.metalness).toBeGreaterThan(0.8);
+    expect(copperMaterial.metalness).toBeGreaterThan(0.5);
+    expect(copperMaterial.metalness).toBeLessThan(goldMaterial.metalness);
+    expect(goldMaterial.metalness).toBeGreaterThan(0.75);
     expect(silkscreenMaterial.metalness).toBe(0);
-    expect(padMaterial.roughness).toBeLessThan(boardMaterial.roughness);
+    expect(goldMaterial.roughness).toBeLessThan(copperMaterial.roughness);
+    expect(copperMaterial.roughness).toBeLessThan(boardMaterial.roughness);
 
     disposeMacroObliquePlaneGroup(group);
   });

@@ -2,6 +2,7 @@ import { describe, test, expect } from "vitest";
 import { groundGlassSharedGlsl, groundGlassUniformDecls } from "../../render/groundGlassDofShaders";
 import {
   groundGlassApertureGatherFragmentShader,
+  groundGlassApparentWorldPositionCocFragmentShader,
   groundGlassCompositeFragmentShader,
   groundGlassPhysicalCocFragmentShader,
   groundGlassVertexShader,
@@ -114,6 +115,7 @@ describe("GroundGlass DOF shader source", () => {
     expect(groundGlassVertexShader && groundGlassVertexShader.length).toBeGreaterThan(0);
     for (const shader of [
       groundGlassPhysicalCocFragmentShader,
+      groundGlassApparentWorldPositionCocFragmentShader,
       groundGlassApertureGatherFragmentShader,
       groundGlassCompositeFragmentShader,
     ]) {
@@ -133,6 +135,19 @@ describe("GroundGlass DOF shader source", () => {
       "encodeSignedPhysicalCoCDiameterMm(footprint.signedCocMm)",
     );
     expect(countDeclarationOccurrences(extractMainBody(groundGlassPhysicalCocFragmentShader), "depth")).toBe(1);
+  });
+
+  test("contribution CoC stage reads apparent positions and calls the shared physical footprint kernel", () => {
+    const main = extractMainBody(groundGlassApparentWorldPositionCocFragmentShader);
+
+    expect(groundGlassApparentWorldPositionCocFragmentShader).toContain(
+      "uniform sampler2D tApparentWorldPosition",
+    );
+    expect(main).toContain("texture2D(tApparentWorldPosition, vUv)");
+    expect(main).toContain("apparentPosition.a < 0.5");
+    expect(main).toContain("calculatePhysicalBlurFootprintFromWorldPosition(apparentPosition.xyz)");
+    expect(main).not.toContain("calculateSignedPhysicalCoCDiameterMmFromDepth");
+    expect(main).toContain("encodeGroundGlassFootprintOrientation");
   });
 
   test("aperture stage uses an oriented footprint gather with a sharp early-out", () => {
@@ -168,6 +183,8 @@ describe("GroundGlass DOF shader source", () => {
   });
 
   test("near/far visibility policy keeps occlusion asymmetric", () => {
+    const farTolerance = extractFunctionBody(groundGlassSharedGlsl, "farDepthToleranceMm");
+    const nearTolerance = extractFunctionBody(groundGlassSharedGlsl, "depthToleranceMm");
     const farPolicy = extractFunctionBody(groundGlassSharedGlsl, "calculateFarSampleWeight");
     const nearPolicy = extractFunctionBody(groundGlassSharedGlsl, "calculateNearSampleWeight");
     const unresolvedPolicy = extractFunctionBody(
@@ -177,6 +194,20 @@ describe("GroundGlass DOF shader source", () => {
 
     expect(farPolicy).toContain("sampleSignedCocMm < -0.00001");
     expect(farPolicy).toContain("sampleUmm < centerUmm - toleranceMm");
+    expect(farPolicy).toContain("!isFiniteFloat(toleranceMm) || toleranceMm < 0.0");
+    expect(groundGlassApertureGatherFragmentShader).toContain(
+      "farDepthToleranceMm(depthDistanceMm(centerDepth))",
+    );
+    expect(groundGlassApertureGatherFragmentShader).toContain(
+      "sampleSignedCocMm, centerFarDepthToleranceMm",
+    );
+    expect(nearPolicy).toContain("depthToleranceMm(centerUmm)");
+    expect(farTolerance).toContain("65535.0");
+    expect(farTolerance).toContain("farDistanceMm - nearDistanceMm");
+    expect(farTolerance).not.toContain("max(20.0");
+    expect(farTolerance).not.toContain("centerDistanceMm * 0.015");
+    expect(nearTolerance).toContain("max(20.0");
+    expect(nearTolerance).toContain("centerDistanceMm * 0.015");
     expect(nearPolicy).toContain("sampleSignedCocMm >= -0.00001");
     expect(nearPolicy).toContain("sampleUmm > centerUmm + toleranceMm");
     expect(unresolvedPolicy).toContain("return 0.0");

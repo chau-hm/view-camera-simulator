@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 import {
   expectLearningFeedbackCompleted,
   expectLearningFeedbackNotCompleted,
+  openPinnedLearningDrawer,
   openLearningFeedback,
 } from "./helpers/learningOverlay";
 
@@ -60,6 +61,7 @@ test("Architecture + Foreground DOF task starts solved through PR7C and complete
   await expect(page).toHaveURL(
     /\/simulator\/guided\/architecture-foreground\/architecture-foreground-dof-01\?rttDiagnostics=1$/,
   );
+  await openPinnedLearningDrawer(page);
   await expect(page.getByRole("heading", { name: "Extend the Depth of Field" })).toBeVisible();
   await expect(
     page.getByText(

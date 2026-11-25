@@ -1,0 +1,450 @@
+
+> view-camera-simulator@0.0.0 test
+> node ./scripts/test.mjs
+
+
+ RUN  v3.2.7 /Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability
+
+ ✓ src/tests/unit/dreamLoopGuard.test.ts (8 tests) 1173ms
+ ✓ src/tests/integration/simulator-route-availability.test.tsx (68 tests) 837ms
+   ✓ simulator route availability > opens the Macro free route without lesson or task metadata: macro-bellows-extension  320ms
+ ✓ src/tests/unit/proceduralSurfaceMaterials.test.ts (9 tests) 1373ms
+ ✓ src/tests/unit/groundGlassM5uQuadrature.test.ts (36 tests) 955ms
+   ✓ Ground Glass M5U texel-footprint quadrature > keeps M5T's original resolution sequence and cost accounting independent from M5U  438ms
+ ✓ src/tests/unit/groundGlassM5tReference.test.ts (31 tests) 3629ms
+   ✓ Ground Glass M5T independent aperture quadrature > A/B/C: uniform, affine, and offset planar boundaries match independent analytic expectations  892ms
+   ✓ Ground Glass M5T independent aperture quadrature > D/E/G/H: excludes nearer depth, respects ellipse orientation and radius cap  675ms
+   ✓ Ground Glass M5T independent aperture quadrature > N7/N9/N10: depth, cap, and asymmetric top-origin source evidence affect the actual integral  981ms
+ ✓ src/tests/integration/anatomyLesson.integration.test.tsx (2 tests) 1214ms
+   ✓ Lesson 0 integration > progresses through anatomy and lets the learner use the canonical controls  995ms
+ ✓ src/tests/integration/simulator-header.test.tsx (8 tests) 1341ms
+ ✓ src/tests/integration/macroCompoundMovementsTeaching.test.tsx (2 tests) 892ms
+   ✓ Macro Scene 4 teaching > keeps the teaching stages driven by the three physical regions  699ms
+ ✓ src/tests/unit/groundGlassM7hCompareCli.test.ts (29 tests) 3810ms
+ ✓ src/tests/integration/learnerReadouts.test.tsx (11 tests) 1591ms
+   ✓ scene-aware learner readouts > localizes Understanding Camera Movements vertical framing in its teaching controls  341ms
+ ✓ src/tests/integration/cameraMovementPublicControls.test.tsx (14 tests) 1934ms
+   ✓ public camera movement controls in the workspace > exposes all four finite simulator lens profiles with accessible selected state  478ms
+   ✓ public camera movement controls in the workspace > keeps the single Current Ground Glass renderer and its zoom state through case changes  319ms
+ ✓ src/tests/integration/simulator-integration.test.tsx (16 tests) 2273ms
+   ✓ phase 12 integration > keeps Shelf Swing task identity intact across guided and free routes  419ms
+ ✓ src/tests/unit/obliqueTabletopTilt.test.ts (8 tests) 4538ms
+   ✓ Oblique Tabletop Tilt limitation > proves no public Tilt + Focus state aligns the full subject board  4532ms
+ ✓ src/tests/unit/groundGlassM7gConsolidatedEvidence.test.ts (70 tests) 638ms
+ ✓ src/tests/integration/macroBellowsExtension.test.tsx (6 tests) 709ms
+ ✓ src/tests/integration/scene-publication-gate.test.tsx (15 tests) 638ms
+   ✓ scene publication gate > allows the published Macro free-practice route without guided metadata: macro-bellows-extension  312ms
+ ✓ src/tests/unit/geometryViewport.matrix.test.tsx (32 tests) 698ms
+ ✓ src/tests/integration/scenes-page.test.tsx (7 tests) 521ms
+ ✓ src/tests/unit/groundGlassM7fReplayCli.test.ts (10 tests) 5979ms
+   ✓ M7F persisted evidence replay command > returns success only for the complete valid persisted native inventory  466ms
+   ✓ M7F persisted evidence replay command > returns nonzero when required M6D evidence is missing  499ms
+   ✓ M7F persisted evidence replay command > returns nonzero when required M6C evidence is missing  540ms
+   ✓ M7F persisted evidence replay command > returns nonzero when required registered application evidence is missing  642ms
+   ✓ M7F persisted evidence replay command > returns nonzero when required final display lifecycle evidence is missing  821ms
+   ✓ M7F persisted evidence replay command > returns nonzero when required another lifecycle evidence is missing  879ms
+   ✓ M7F persisted evidence replay command > returns nonzero when required production isolation evidence is missing  693ms
+   ✓ M7F persisted evidence replay command > returns nonzero and records malformed required JSON  662ms
+   ✓ M7F persisted evidence replay command > returns nonzero when a required scenario fails its evidence contract  628ms
+ ✓ src/tests/integration/macroDepthOfField.test.tsx (4 tests) 804ms
+ ✓ src/tests/integration/macroObliquePlaneTeaching.test.tsx (2 tests) 788ms
+   ✓ Macro Scene 3 teaching > keeps the physical exploration dynamic as focus and tilt change  598ms
+ ✓ src/tests/integration/focusFundamentalsSelectableFocus.test.tsx (2 tests) 647ms
+   ✓ Focus Fundamentals selectable focus integration > routes focus-standard changes through the canonical optics state  573ms
+ ✓ src/tests/unit/groundGlassM7iBroadE2eRemediation.test.ts (55 tests) 549ms
+ ✓ src/tests/unit/sceneSubjectRegistry.test.tsx (30 tests) 636ms
+ ✓ src/tests/unit/groundGlassM5sReference.test.ts (30 tests) 515ms
+ ✓ src/tests/unit/sceneAssetMigration.test.ts (7 tests) 479ms
+ ✓ src/tests/unit/conceptualViewCamera.test.tsx (24 tests) 792ms
+ ✓ src/tests/unit/m7gReplayOrchestration.test.ts (15 tests) 457ms
+ ✓ src/tests/unit/GroundGlassRTT.test.ts (35 tests) 500ms
+ ✓ src/tests/unit/groundGlassStage.test.tsx (24 tests) 356ms
+ ✓ src/tests/integration/i18n.test.tsx (7 tests) 344ms
+ ✓ src/tests/integration/CameraMovementCalibrationWorkbench.test.tsx (6 tests) 235ms
+ ✓ src/tests/unit/LearningOverlayPanel.test.tsx (14 tests) 321ms
+ ✓ src/tests/unit/groundGlassRenderer.test.tsx (21 tests) 284ms
+ ✓ src/tests/unit/FocusDistributionPanel.test.tsx (11 tests) 283ms
+ ✓ src/tests/unit/interiorCornerSwingFocus.test.ts (11 tests) 226ms
+ ✓ src/tests/integration/completion-overlay.integration.test.tsx (1 test) 347ms
+   ✓ phase 12 completion overlay > TST-INT-013 shows completion overlay when task passes  346ms
+ ✓ src/tests/unit/macroCompoundMovements.test.ts (9 tests) 250ms
+ ✓ src/tests/unit/obliqueTabletopTeachingGeometry.test.ts (6 tests) 229ms
+ ✓ src/tests/unit/cameraMovementTeachingControls.test.tsx (12 tests) 413ms
+ ✓ src/tests/unit/geometryViewport.test.tsx (9 tests) 354ms
+ ✓ src/tests/integration/guidedTaskCopy.test.tsx (26 tests) 191ms
+ ✓ src/tests/unit/sceneOverlayControls.test.tsx (8 tests) 252ms
+ ✓ src/tests/integration/SimulatorWorkspace.test.tsx (23 tests) 6319ms
+   ✓ SimulatorWorkspace expanded Geometry accessibility > focuses Restore, restores with Escape, and returns focus to its trigger  467ms
+   ✓ SimulatorWorkspace expanded Geometry accessibility > cancels Geometry expansion when scene, mode, or task route identity changes  333ms
+   ✓ SimulatorWorkspace expanded Geometry accessibility > stages the five Interior Corner controls and preserves solved state between lesson stages  825ms
+   ✓ SimulatorWorkspace expanded Geometry accessibility > preserves a solved Refine state when navigating back to Swing and forward again  485ms
+   ✓ SimulatorWorkspace viewport expansion > removes every expanded sizing class after repeated restore cycles  353ms
+   ✓ SimulatorWorkspace viewport expansion > restores normal layout when scene, mode, or task route identity changes  439ms
+   ✓ SimulatorWorkspace viewport expansion > keeps one Ground Glass renderer and its interaction state through expansion  384ms
+   ✓ SimulatorWorkspace viewport expansion > closes nested expanded-view UI before restoring the active viewport  408ms
+ ✓ src/tests/integration/freePracticeCopy.test.tsx (6 tests) 197ms
+ ✓ src/tests/integration/landing-motion.test.tsx (4 tests) 205ms
+ ✓ src/tests/unit/focusControl.test.tsx (11 tests) 182ms
+ ✓ src/tests/integration/home-page.test.tsx (3 tests) 246ms
+ ✓ src/tests/unit/conceptualCameraAnatomyGeometry.test.ts (10 tests) 292ms
+ ✓ src/tests/unit/geometryViewport.focusFundamentals.test.tsx (7 tests) 249ms
+ ✓ src/tests/unit/geometryViewport.shelfSwing.test.tsx (3 tests) 245ms
+ ✓ src/tests/unit/groundGlassPhysicalOverlayConformance.test.ts (18 tests) 261ms
+ ✓ src/tests/unit/movementControls.test.tsx (4 tests) 190ms
+ ✓ src/tests/unit/GroundGlassRenderHost.test.tsx (32 tests) 135ms
+ ✓ src/tests/unit/anatomyLessonPanel.test.tsx (5 tests) 115ms
+ ✓ src/tests/integration/faq-page.test.tsx (2 tests) 201ms
+ ✓ src/tests/integration/site-nav.test.tsx (2 tests) 153ms
+ ✓ src/tests/unit/groundGlassPresentationPolicy.test.tsx (1 test) 82ms
+ ✓ src/tests/integration/mode-redirect.test.tsx (1 test) 111ms
+ ✓ src/tests/unit/teachingMaterials.test.ts (3 tests) 94ms
+ ✓ src/tests/unit/guidedLessonProgress.test.tsx (10 tests) 179ms
+ ✓ src/tests/unit/obliqueArchitectureSwingFocusTask.test.ts (4 tests) 146ms
+ ✓ src/tests/unit/groundGlassM6cAlphaConformance.test.ts (50 tests) 132ms
+ ✓ src/tests/unit/opticalDebugProfiling.test.tsx (7 tests) 125ms
+ ✓ src/tests/integration/marketing-warning.test.tsx (3 tests) 118ms
+ ✓ src/tests/unit/groundGlassM7jFourWorkerStability.test.ts (22 tests) 221ms
+ ✓ src/tests/unit/appErrorBoundary.test.tsx (1 test) 58ms
+ ✓ src/tests/unit/groundGlassM7cR187LifecycleEvidence.test.ts (59 tests) 58ms
+ ✓ src/tests/unit/proceduralWorldEnvironment.test.ts (17 tests) 89ms
+ ✓ src/tests/unit/groundGlassWebGpuTestSeam.test.ts (1 test) 97ms
+ ✓ src/tests/unit/apertureControl.test.tsx (2 tests) 98ms
+stdout | src/tests/unit/architectureRiseReflectedWorldContext.test.ts > Architecture Rise reflected-world context > adds the double-sided street sign through the shared street-context subject with shared resources
+{"supportSurfaceYmm":-1200,"postBottomYmm":-1200.0000000000002,"postTopYmm":1310}
+
+stdout | src/tests/unit/architectureRiseReflectedWorldContext.test.ts > Architecture Rise reflected-world context > provides a clear front-pane sample with an in-range optical-axis focus point
+{
+  "coarseFrontHits": 9,
+  "coarseFrontSamples": 144,
+  "coarseSideHits": 0,
+  "coarseSideSamples": 36,
+  "frontHitSamples": 20,
+  "frontSampleCount": 256,
+  "cluster2x2": 4,
+  "knownPaneSample": [
+    -1.14,
+    1.0140000000000002,
+    8.836
+  ],
+  "panePlane": {
+    "point": [
+      -1.14,
+      1.0140000000000002,
+      8.836
+    ],
+    "normal": [
+      0,
+      0,
+      -1
+    ]
+  },
+  "hitObject": "architecture-rise-street-sign-face-back",
+  "Q": [
+    -1.5233114531462202,
+    1.3549454504300593,
+    5.865
+  ],
+  "QVirtual": [
+    -1.5233114531462202,
+    1.3549454504300593,
+    11.807
+  ],
+  "virtualGeometricRangeMm": 11981.719574290142,
+  "virtualFocusAxisDistanceMm": 11807,
+  "reflectedFocusControlMm": 11810,
+  "focusRangeMm": {
+    "min": 3090,
+    "max": 13000
+  },
+  "focusDomainMarginMm": 1193,
+  "roundedControlMarginMm": 1190,
+  "paneFocusedCoCMm": 0.057819624408229534,
+  "paneFocusedFootprintRadiiMm": {
+    "major": 0.028909812204114767,
+    "minor": 0.028909812204114767
+  },
+  "reflectedFocusedCoCMm": -0.000044573113780224915,
+  "reflectedFocusedFootprintRadiiMm": {
+    "major": 0.000022286556890112457,
+    "minor": 0.000022286556890112457
+  },
+  "observerFocusChartOverlap": 0,
+  "observerFacadeOverlap": 0
+}
+
+ ✓ src/tests/unit/groundGlassApertureGatherQuality.test.ts (30 tests) 95ms
+ ✓ src/tests/unit/architectureRiseReflectedWorldContext.test.ts (3 tests) 88ms
+ ✓ src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts (44 tests) 100ms
+ ✓ src/tests/unit/singleMovementControl.test.tsx (9 tests) 104ms
+ ✓ src/tests/unit/sceneComplexityFoundation.test.ts (4 tests) 66ms
+ ✓ src/tests/unit/interiorCornerFoundation.test.ts (4 tests) 71ms
+ ✓ src/tests/unit/focusLegibilitySurfaceDetail.test.ts (4 tests) 49ms
+ ✓ src/tests/unit/cameraMovementsGeometryComparison.test.tsx (9 tests) 53ms
+ ✓ src/tests/unit/macroDepthOfFieldSubject.test.ts (3 tests) 45ms
+ ✓ src/tests/unit/cameraBodyRenderViews.test.tsx (8 tests) 67ms
+ ✓ src/tests/unit/opticalDebugComparison.test.tsx (2 tests) 48ms
+ ✓ src/tests/unit/materialAwareMaterialTracker.test.ts (22 tests) 40ms
+ ✓ src/tests/unit/cameraMovementsRenderer.test.tsx (23 tests) 54ms
+ ✓ src/tests/unit/macroCompoundMovementsSubject.test.ts (3 tests) 31ms
+ ✓ src/tests/unit/sceneRichnessCoreFoundation.test.ts (4 tests) 50ms
+ ✓ src/tests/unit/macroObliquePlaneSubject.test.ts (4 tests) 40ms
+ ✓ src/tests/unit/shelfSwingSubjectFactory.test.tsx (4 tests) 39ms
+ ✓ src/tests/unit/groundGlassSceneProfiles.test.ts (4 tests) 41ms
+ ✓ src/tests/unit/cameraMovementGroundGlassComparison.test.ts (15 tests) 15ms
+ ✓ src/tests/unit/groundGlassM7hBroadE2eTriage.test.ts (28 tests) 41ms
+ ✓ src/tests/unit/groundGlassWebGpuInteriorCoc.test.ts (21 tests) 51ms
+ ✓ src/tests/unit/groundGlassM7dPhysicalCocEvidence.test.ts (71 tests) 32ms
+ ✓ src/tests/unit/anatomyNativeWebGpuDrawBoundaryCapture.test.ts (15 tests) 29ms
+ ✓ src/tests/unit/cameraMovementTeachingCalibration.test.ts (18 tests) 34ms
+ ✓ src/tests/unit/groundGlassDofStability.test.ts (7 tests) 22ms
+ ✓ src/tests/unit/architectureRiseGlazingMaterial.test.ts (1 test) 35ms
+ ✓ src/tests/unit/useSimulatorSuitability.test.ts (6 tests) 28ms
+ ✓ src/tests/unit/macroSpecimenSubject.test.ts (4 tests) 46ms
+ ✓ src/tests/unit/cameraMovementDynamicRenderer.test.ts (8 tests) 27ms
+ ✓ src/tests/unit/groundGlassM7eLosslessEvidenceJson.test.ts (10 tests) 3ms
+ ✓ src/tests/unit/WorldEnvironmentLifecycle.test.tsx (7 tests) 29ms
+ ✓ src/tests/unit/shelfSwingOptics.test.ts (9 tests) 11ms
+ ✓ src/tests/unit/cameraMovementsRtt.test.ts (18 tests) 20ms
+ ✓ src/tests/unit/tableTiltGeometry.test.ts (11 tests) 63ms
+ ✓ src/tests/unit/mirrorShiftGeometry.test.ts (17 tests) 30ms
+ ✓ src/tests/unit/rearStandardRendererCompatibility.test.ts (44 tests) 16ms
+ ✓ src/tests/unit/opticalDebugScheimpflug.test.tsx (2 tests) 24ms
+ ✓ src/tests/unit/shelfSwingTaskContent.test.ts (24 tests) 12ms
+ ✓ src/tests/unit/sharedSceneResourceLifecycle.test.ts (5 tests) 21ms
+ ✓ src/tests/unit/opticalSectionProjection.test.ts (27 tests) 18ms
+ ✓ src/tests/unit/anatomyProjectedBounds.test.ts (7 tests) 6ms
+ ✓ src/tests/unit/architectureForegroundFocusPropagation.test.ts (3 tests) 13ms
+ ✓ src/tests/unit/anatomyLesson.test.ts (8 tests) 3ms
+ ✓ src/tests/unit/physicalTaskEvaluation.test.ts (8 tests) 27ms
+ ✓ src/tests/unit/groundGlassWebGpuApertureGatherReference.test.ts (16 tests) 20ms
+ ✓ src/tests/unit/interiorCornerRiseComposition.test.ts (4 tests) 20ms
+ ✓ src/tests/unit/physicalLensCoverageGeometry.test.ts (10 tests) 24ms
+ ✓ src/tests/unit/tableTiltOptics.test.ts (16 tests) 22ms
+ ✓ src/tests/unit/groundGlassCoverageConic.test.ts (13 tests) 9ms
+ ✓ src/tests/unit/interiorCornerGuidedLesson.test.ts (9 tests) 25ms
+ ✓ src/tests/unit/rearStandardFrame.test.ts (56 tests) 30ms
+ ✓ src/tests/unit/cameraMovementProjectionDiagnostics.test.ts (6 tests) 13ms
+ ✓ src/tests/unit/groundGlassPhysicalCocPolicy.test.ts (14 tests) 3ms
+ ✓ src/tests/unit/cameraMovementLessonState.test.ts (14 tests) 14ms
+ ✓ src/tests/unit/fringeClubRuntimeAsset.test.ts (8 tests) 19ms
+ ✓ src/tests/unit/groundGlassM5rFallbackAnalysis.test.ts (13 tests) 17ms
+ ✓ src/tests/unit/publicScenes.test.ts (30 tests) 12ms
+ ✓ src/tests/unit/groundGlassM7bLifecycleEvidence.test.ts (34 tests) 16ms
+ ✓ src/tests/unit/appShell.test.tsx (2 tests) 19ms
+ ✓ src/tests/unit/macroDepthOfField.test.ts (9 tests) 19ms
+ ✓ src/tests/unit/taskEngine.test.ts (13 tests) 9ms
+ ✓ src/tests/unit/conceptualBellowsGeometry.test.ts (12 tests) 17ms
+ ✓ src/tests/unit/SceneRenderer.test.tsx (8 tests) 22ms
+ ✓ src/tests/unit/observerRendererLifecycle.test.tsx (3 tests) 13ms
+ ✓ src/tests/unit/finiteFocusFilmDepthStrategy.test.ts (9 tests) 7ms
+ ✓ src/tests/unit/groundGlassM6Presentation.test.ts (30 tests) 14ms
+ ✓ src/tests/unit/cameraMovementLatticeGeometry.test.ts (15 tests) 15ms
+ ✓ src/tests/unit/architectureForegroundRiseTask.test.ts (6 tests) 8ms
+ ✓ src/tests/unit/understandingCameraMovementsPresentation.test.ts (3 tests) 14ms
+ ✓ src/tests/unit/cameraRigTransformOptics.test.ts (16 tests) 12ms
+ ✓ src/tests/unit/mirrorShiftFiniteFocus.test.ts (3 tests) 16ms
+ ✓ src/tests/unit/appStore.test.ts (37 tests) 14ms
+ ✓ src/tests/unit/sceneGeometryGuides.test.ts (42 tests) 8ms
+ ✓ src/tests/unit/lessonZeroGroundGlassSubject.test.ts (4 tests) 6ms
+ ✓ src/tests/unit/physicalFocusReadout.test.ts (12 tests) 11ms
+ ✓ src/tests/unit/cameraBodyPitchOptics.test.ts (5 tests) 12ms
+ ✓ src/tests/unit/architectureForegroundDofTask.test.ts (6 tests) 8ms
+ ✓ src/tests/unit/groundGlassRttOrientation.test.ts (6 tests) 7ms
+ ✓ src/tests/unit/imageCircleGeometry.test.ts (6 tests) 11ms
+ ✓ src/tests/unit/architectureForegroundTiltFocusTask.test.ts (7 tests) 10ms
+ ✓ src/tests/unit/understandingCameraMovements.test.ts (15 tests) 5ms
+ ✓ src/tests/unit/architectureForegroundCompoundTask.test.ts (8 tests) 12ms
+ ✓ src/tests/unit/shelfSwingGeometry.test.ts (13 tests) 13ms
+ ✓ src/tests/unit/obliqueArchitectureRiseTask.test.ts (6 tests) 10ms
+ ✓ src/tests/unit/obliqueTabletopGuidedLesson.test.ts (9 tests) 12ms
+ ✓ src/tests/unit/lensCoverage.test.ts (22 tests) 6ms
+ ✓ src/tests/unit/groundGlassInspectionWindow.test.ts (10 tests) 9ms
+ ✓ src/tests/unit/macroBellowsExtensionTeaching.test.ts (7 tests) 8ms
+ ✓ src/tests/unit/groundGlassProfiling.test.ts (25 tests) 13ms
+ ✓ src/tests/unit/sceneCapacityBenchmarkQualification.test.ts (10 tests) 2ms
+ ✓ src/tests/unit/obliqueArchitectureCompoundTask.test.ts (4 tests) 9ms
+ ✓ src/tests/unit/anatomyMaterialOutputAdapter.test.ts (2 tests) 14ms
+ ✓ src/tests/unit/deriveOpticsState.test.ts (18 tests) 9ms
+ ✓ src/tests/unit/groundGlassRenderSanityKey.test.ts (19 tests) 9ms
+ ✓ src/tests/unit/focusDistributionLayout.test.ts (6 tests) 8ms
+ ✓ src/tests/unit/obliqueTabletopCompoundFocus.test.ts (13 tests) 17ms
+ ✓ src/tests/unit/focusFundamentalsFocusing.test.ts (11 tests) 11ms
+ ✓ src/tests/unit/groundGlassM6bSpatialConformance.test.ts (44 tests) 27ms
+ ✓ src/tests/unit/groundGlassWebGpuOpticalStateAdapter.test.ts (4 tests) 11ms
+ ✓ src/tests/unit/GroundGlassWebGPUAdapterDiagnostics.test.ts (3 tests) 11ms
+ ✓ src/tests/unit/groundGlassM5qQualification.test.ts (24 tests) 15ms
+ ✓ src/tests/unit/groundGlassApertureGatherReference.test.ts (21 tests) 16ms
+ ✓ src/tests/unit/groundGlassCleanupEvidence.test.ts (8 tests) 6ms
+ ✓ src/tests/unit/worldIllumination.test.ts (8 tests) 5ms
+ ✓ src/tests/unit/sceneViewFraming.test.ts (22 tests) 8ms
+ ✓ src/tests/unit/macroDepthOfFieldTeaching.test.ts (6 tests) 11ms
+ ✓ src/tests/unit/groundGlassVisualSettings.test.ts (5 tests) 11ms
+ ✓ src/tests/unit/interiorCornerGuidedRouteInitialization.test.ts (2 tests) 12ms
+ ✓ src/tests/unit/groundGlassWebGpuB1Reference.test.ts (17 tests) 6ms
+ ✓ src/tests/unit/groundGlassBackendContracts.test.ts (23 tests) 5ms
+ ✓ src/tests/unit/understandingCameraMovements.fixes.test.ts (13 tests) 13ms
+ ✓ src/tests/unit/groundGlassM7eArtifactReplay.test.ts (26 tests) 10ms
+ ✓ src/tests/unit/macroObliquePlane.test.ts (6 tests) 17ms
+ ✓ src/tests/unit/cameraMovementPublicTeaching.test.ts (31 tests) 24ms
+ ✓ src/tests/unit/rearStandardState.test.ts (18 tests) 9ms
+ ✓ src/tests/unit/groundGlassWebGpuSurfaceAwareFarReference.test.ts (12 tests) 9ms
+ ✓ src/tests/unit/anatomyBellowsDrawMetadataCapture.test.ts (7 tests) 9ms
+ ✓ src/tests/unit/anatomyGpuBlendCalibration.test.ts (2 tests) 4ms
+ ✓ src/tests/unit/scheimpflugConstruction.test.ts (5 tests) 9ms
+ ✓ src/tests/unit/macroBellowsExtension.test.ts (13 tests) 13ms
+ ✓ src/tests/unit/groundGlassCoordinateContract.test.ts (3 tests) 7ms
+ ✓ src/tests/unit/understandingCameraMovementsGeometry.test.ts (16 tests) 8ms
+ ✓ src/tests/unit/architectureForegroundFoundation.test.ts (4 tests) 12ms
+ ✓ src/tests/unit/obliqueArchitectureScene.test.ts (5 tests) 7ms
+ ✓ src/tests/unit/groundGlassPhysicalGrid.test.ts (6 tests) 6ms
+ ✓ src/tests/unit/mirrorShiftTask.test.ts (8 tests) 11ms
+ ✓ src/tests/unit/sceneDefinitions.test.ts (22 tests) 8ms
+ ✓ src/tests/unit/macroObliquePlaneTeaching.test.ts (7 tests) 7ms
+ ✓ src/tests/unit/anatomyNativeFramebufferParity.test.ts (20 tests) 5ms
+ ✓ src/tests/unit/groundGlassFrameRequest.test.ts (5 tests) 9ms
+ ✓ src/tests/unit/scheimpflugPhysicalFocusPropagation.test.ts (3 tests) 6ms
+ ✓ src/tests/unit/groundGlassCoverage.test.ts (8 tests) 6ms
+ ✓ src/tests/unit/scenePlaneOverlayGeometry.test.ts (2 tests) 9ms
+ ✓ src/tests/unit/cameraMovementsStorePolicy.test.ts (11 tests) 5ms
+ ✓ src/tests/unit/sceneCapacityProfiling.test.ts (7 tests) 6ms
+ ✓ src/tests/unit/groundGlassRttResources.test.ts (6 tests) 7ms
+ ✓ src/tests/unit/groundGlassRttDimensions.test.ts (5 tests) 2ms
+ ✓ src/tests/unit/groundGlassApertureGatherPolicy.test.ts (13 tests) 8ms
+ ✓ src/tests/unit/i18nFallback.test.ts (1 test) 7ms
+ ✓ src/tests/unit/materialAwareObserverOutput.test.ts (6 tests) 10ms
+ ✓ src/tests/unit/cameraMovementCalibrationSession.test.ts (21 tests) 9ms
+ ✓ src/tests/unit/focusFundamentalsSubjectFactory.test.ts (1 test) 7ms
+ ✓ src/tests/unit/focusFundamentalsTeachingCues.test.ts (6 tests) 6ms
+ ✓ src/tests/unit/macroCompoundMovementsTeaching.test.ts (7 tests) 7ms
+ ✓ src/tests/unit/focalLengthCapability.test.ts (7 tests) 4ms
+ ✓ src/tests/unit/groundGlassM7fPresentationEvidence.test.ts (68 tests) 19363ms
+   ✓ M7F r187 presentation evidence replay > replays all persisted M6B spatial and visible RGB measurements as a positive control  1171ms
+   ✓ M7F r187 presentation evidence replay > reproduces F3: detects coordinated serialized source/output/measurement RGB forgery  550ms
+   ✓ M7F r187 presentation evidence replay > reconstructs the fixture source independently of serialized source RGB  559ms
+   ✓ M7F r187 presentation evidence replay > reconstructs the fixture source independently of source texel identity  836ms
+   ✓ M7F r187 presentation evidence replay > reconstructs the fixture source independently of display pixel identity  845ms
+   ✓ M7F r187 presentation evidence replay > reconstructs the fixture source independently of source dimensions  677ms
+   ✓ M7F r187 presentation evidence replay > reconstructs the fixture source independently of source texture fingerprint  762ms
+   ✓ M7F r187 presentation evidence replay > reconstructs the fixture source independently of nearest edge texel  854ms
+   ✓ M7F r187 presentation evidence replay > rejects Raw horizontal flip through the source/display coordinate contract  815ms
+   ✓ M7F r187 presentation evidence replay > rejects Upright vertical flip through the source/display coordinate contract  722ms
+   ✓ M7F r187 presentation evidence replay > rejects Focus Loupe crop-origin inversion through the source/display coordinate contract  750ms
+   ✓ M7F r187 presentation evidence replay > rejects a Focus Loupe pan offset that differs from its measured spatial crop  849ms
+   ✓ M7F r187 presentation evidence replay > rejects shifted Image Circle optical-axis sign when its independently replayed physical output changes  830ms
+   ✓ M7F r187 presentation evidence replay > rejects nonparallel conic image-side orientation when its independently replayed physical output changes  684ms
+   ✓ M7F r187 presentation evidence replay > rejects natural-illumination physical optical axis when its independently replayed physical output changes  678ms
+   ✓ M7F r187 presentation evidence replay > rejects RGB gain applied twice using the per-sample CPU presentation replay  751ms
+   ✓ M7F r187 presentation evidence replay > rejects incorrect linear-to-sRGB conversion using the per-sample CPU presentation replay  650ms
+   ✓ M7F r187 presentation evidence replay > rejects actual final RGB outside the frozen channel limit using the per-sample CPU presentation replay  690ms
+   ✓ M7F r187 presentation evidence replay > rejects missing RGB samples instead of trusting the nine-state summary  680ms
+   ✓ M7F r187 presentation evidence replay > rejects M6B stale request evidence without a matching accepted host frame  708ms
+   ✓ M7F r187 presentation evidence replay > rejects M6B stale renderer generation evidence without a matching accepted host frame  668ms
+   ✓ M7F r187 presentation evidence replay > rejects a missing capture in the replayed per-capture spatial gate  717ms
+   ✓ M7F r187 presentation evidence replay > rejects a duplicate capture in the replayed per-capture spatial gate  732ms
+   ✓ M7F r187 presentation evidence replay > rejects a visible landmark marked unsupported in the replayed per-capture spatial gate  728ms
+   ✓ M7F r187 presentation evidence replay > rejects a spatial error above two CSS pixels in the replayed per-capture spatial gate  732ms
+   ✓ M7F r187 presentation evidence replay > rejects a per-capture RMS above 1.25 CSS pixels in the replayed per-capture spatial gate  690ms
+ ✓ src/tests/unit/scheimpflugConstructionGeometry.test.ts (3 tests) 6ms
+ ✓ src/tests/unit/anatomyGpuBlendIntermediate.test.ts (7 tests) 5ms
+ ✓ src/tests/unit/physicalBlurFootprint.test.ts (9 tests) 3ms
+ ✓ src/tests/unit/mirrorShiftCalibration.test.ts (5 tests) 6ms
+ ✓ src/tests/unit/groundGlassPipeline.test.ts (10 tests) 6ms
+ ✓ src/tests/unit/groundGlassBackendPolicy.test.ts (29 tests) 6ms
+ ✓ src/tests/unit/fringeClubGroundGlassProfile.test.ts (2 tests) 10ms
+ ✓ src/tests/unit/groundGlassFrameExecution.test.ts (7 tests) 4ms
+ ✓ src/tests/unit/configureGroundGlassCamera.parallel.test.ts (5 tests) 6ms
+ ✓ src/tests/unit/groundGlassDofRenderState.test.ts (11 tests) 3ms
+ ✓ src/tests/unit/focusFundamentalsParallax.test.ts (3 tests) 7ms
+ ✓ src/tests/unit/observerSceneCompatibility.test.ts (6 tests) 5ms
+ ✓ src/tests/unit/cameraRigViewpointGeometry.test.ts (22 tests) 4ms
+ ✓ src/tests/unit/groundGlassM5rReferenceAnalysis.test.ts (20 tests) 5ms
+ ✓ src/tests/unit/observerOutputCompositingEvidence.test.ts (5 tests) 3ms
+ ✓ src/tests/unit/observerBackendBenchmark.test.ts (14 tests) 5ms
+ ✓ src/tests/unit/groundGlassWebGpuCorrespondenceLargeCoc.test.ts (12 tests) 5ms
+ ✓ src/tests/unit/focalLengthPropagation.test.ts (5 tests) 6ms
+ ✓ src/tests/unit/sceneAssetRegistry.test.ts (2 tests) 10ms
+ ✓ src/tests/unit/groundGlassBackendDiagnostics.test.ts (5 tests) 4ms
+ ✓ src/tests/unit/groundGlassRttScenes.test.ts (12 tests) 3ms
+ ✓ src/tests/unit/groundGlassCocTarget.test.ts (12 tests) 23ms
+ ✓ src/tests/unit/anatomyRenderableContribution.test.ts (18 tests) 6ms
+ ✓ src/tests/unit/focusFundamentalsPerspectiveMetric.test.ts (2 tests) 5ms
+ ✓ src/tests/unit/observerVisualParityDiagnostics.test.ts (13 tests) 4ms
+ ✓ src/tests/unit/groundGlassM5rNearAlphaAnalysis.test.ts (9 tests) 6ms
+ ✓ src/tests/unit/anatomyBellowsNativePipelineEvidence.test.ts (7 tests) 7ms
+ ✓ src/tests/unit/teachingLighting.test.ts (7 tests) 6ms
+ ✓ src/tests/unit/WorldIllumination.test.tsx (3 tests) 4ms
+ ✓ src/tests/unit/cameraRigViewpointStorePolicy.test.ts (5 tests) 7ms
+ ✓ src/tests/unit/cameraMovementsReset.test.ts (3 tests) 4ms
+ ✓ src/tests/unit/groundGlassNaturalIllumination.test.ts (9 tests) 9ms
+ ✓ src/tests/unit/anatomyBellowsCompositingIntervention.test.ts (6 tests) 5ms
+ ✓ src/tests/unit/observerBackend.test.ts (25 tests) 9ms
+ ✓ src/tests/unit/groundGlassWebGpuGatherQualityReference.test.ts (5 tests) 3ms
+ ✓ src/tests/unit/observerVisualPipelineCapabilities.test.ts (6 tests) 2ms
+ ✓ src/tests/unit/simulatorRouteValidation.test.ts (27 tests) 3ms
+ ✓ src/tests/unit/selectors.test.ts (2 tests) 4ms
+ ✓ src/tests/unit/cameraMovementEffectiveCalibration.test.ts (6 tests) 7ms
+ ✓ src/tests/unit/observerWebGpuDiagnostic.test.ts (7 tests) 7ms
+ ✓ src/tests/unit/groundGlassShaderBindings.test.ts (9 tests) 4ms
+ ✓ src/tests/unit/groundGlassNaturalIlluminationRendering.test.ts (4 tests) 2ms
+ ✓ src/tests/unit/groundGlassFilmPlaneProjection.test.ts (5 tests) 5ms
+ ✓ src/tests/unit/groundGlassCanvasDpr.test.tsx (1 test) 1ms
+ ✓ src/tests/unit/geometryPresentationProfiles.test.ts (11 tests) 3ms
+ ✓ src/tests/unit/anatomyBellowsCompositingQualification.test.ts (16 tests) 5ms
+ ✓ src/tests/unit/guidedLesson.test.ts (9 tests) 16ms
+ ✓ src/tests/unit/groundGlassWebGpuFarReconstructionReference.test.ts (5 tests) 3ms
+ ✓ src/tests/unit/groundGlassM6dOutputContract.test.ts (8 tests) 3ms
+ ✓ src/tests/unit/groundGlassRadianceContribution.test.ts (6 tests) 6ms
+ ✓ src/tests/unit/groundGlassShaders.test.ts (9 tests) 5ms
+ ✓ src/tests/unit/anatomyMaterialOutputIntervention.test.ts (4 tests) 4ms
+ ✓ src/tests/unit/groundGlassFootprintCoordinates.test.ts (4 tests) 3ms
+ ✓ src/tests/unit/anatomyBellowsDisposalWitness.test.ts (6 tests) 3ms
+ ✓ src/tests/unit/labelPlacement.test.tsx (11 tests) 3ms
+ ✓ src/tests/unit/localePreference.test.ts (10 tests) 3ms
+ ✓ src/tests/unit/interiorCornerFocusReachability.test.ts (1 test) 3ms
+ ✓ src/tests/unit/architectureRiseFocusChart.test.ts (3 tests) 3ms
+ ✓ src/tests/unit/groundGlassCoverageRendering.test.ts (7 tests) 5ms
+ ✓ src/tests/unit/thinLensModel.test.ts (31 tests) 3ms
+ ✓ src/tests/unit/sceneCapacityBenchmarkReadiness.test.ts (8 tests) 4ms
+ ✓ src/tests/unit/anatomyNativeWebGpuDrawBoundary.test.ts (5 tests) 3ms
+ ✓ src/tests/unit/groundGlassPhysicalCocContract.test.ts (7 tests) 4ms
+ ✓ src/tests/unit/rendererBackend.test.ts (3 tests) 6ms
+ ✓ src/tests/unit/calculateOffAxisProjection.test.ts (8 tests) 5ms
+ ✓ src/tests/unit/mathFoundation.test.ts (11 tests) 3ms
+ ✓ src/tests/unit/constants.test.ts (3 tests) 3ms
+ ✓ src/tests/unit/visualPipelineCapabilities.test.ts (4 tests) 4ms
+ ✓ src/tests/unit/observerOutputPolicy.test.ts (7 tests) 2ms
+ ✓ src/tests/unit/interiorCornerState.test.ts (1 test) 3ms
+ ✓ src/tests/unit/materialAwareReadinessTiming.test.ts (7 tests) 6ms
+ ✓ src/tests/unit/rangeInputKeyboard.test.ts (2 tests) 2ms
+ ✓ src/tests/unit/focusFundamentalsTargets.test.ts (1 test) 2ms
+ ✓ src/tests/unit/freePracticeKeys.test.ts (12 tests) 3ms
+ ✓ src/tests/unit/physicalBlurFootprintStorage.test.ts (8 tests) 5ms
+ ✓ src/tests/unit/groundGlassPhysicalScale.test.ts (6 tests) 2ms
+ ✓ src/tests/unit/groundGlassRadianceContributionOptics.test.ts (3 tests) 5ms
+ ✓ src/tests/unit/getPreferredSubjectGeometryView.test.ts (10 tests) 4ms
+ ✓ src/tests/unit/macroFocusMetrics.test.ts (9 tests) 2ms
+ ✓ src/tests/unit/groundGlassIlluminance.test.ts (10 tests) 5ms
+ ✓ src/tests/unit/roundToStep.test.ts (9 tests) 2ms
+ ✓ src/tests/unit/cameraControlTeaching.test.ts (2 tests) 11ms
+ ✓ src/tests/unit/anatomyBellowsOpacityQualification.test.ts (3 tests) 2ms
+ ✓ src/tests/unit/sceneLegendHelpers.test.ts (2 tests) 2ms
+ ✓ src/tests/unit/lensControlPresentation.test.ts (5 tests) 2ms
+ ✓ src/tests/unit/multiProbeRuntimeSelector.test.ts (3 tests) 2ms
+ ✓ src/tests/unit/sceneCapacityBenchmarkNavigation.test.ts (2 tests) 2ms
+ ✓ src/tests/unit/groundGlassWebGpuRuntime.test.ts (3 tests) 1ms
+ ✓ src/tests/unit/dreamLoopCaptureReadiness.test.ts (8 tests) 3ms
+ ✓ src/tests/unit/tableTiltTaskContent.test.ts (3 tests) 3ms
+ ✓ src/tests/unit/groundGlassDofCoverage.test.ts (5 tests) 3ms
+ ✓ src/tests/unit/compoundFocusPlaneCalibration.test.ts (1 test) 1ms
+ ✓ src/tests/unit/learnerReadoutPolicy.test.ts (2 tests) 1ms
+ ✓ src/tests/unit/sceneCapacityBenchmarkRuntime.test.ts (3 tests) 1ms
+ ✓ src/tests/unit/groundGlassFocusLabel.test.ts (4 tests) 1ms
+ ✓ src/tests/unit/e2eSpecPolicy.test.ts (2 tests) 1ms
+ ✓ src/tests/unit/threeCompatibilityConsole.test.ts (1 test) 1ms
+ ✓ src/tests/unit/publicAssetUrl.test.ts (1 test) 1ms
+ ✓ src/tests/unit/finiteFocusDomain.test.ts (2 tests) 1ms
+
+ Test Files  316 passed (316)
+      Tests  3635 passed (3635)
+   Start at  08:39:52
+   Duration  25.55s (transform 7.09s, setup 14.17s, collect 62.50s, tests 78.23s, environment 120.80s, prepare 10.86s)

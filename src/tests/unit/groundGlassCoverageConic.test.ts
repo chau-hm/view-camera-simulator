@@ -349,14 +349,11 @@ describe("non-parallel finite Ground Glass coverage conic", () => {
     expect(catalogUnbounded.groundGlassCoverage).toEqual({ kind: "unbounded" });
   });
 
-  it("keeps non-parallel finite coverage separate from natural illumination and 3D circle rendering", () => {
+  it("keeps finite coverage independent from geometric natural illumination and 3D circle rendering", () => {
     const macroOblique = deriveFor(macroObliquePlaneScene, { frontTiltDeg: 5 });
     expect(macroOblique.lensCoverage?.kind).toBe("angular");
     expect(macroOblique.groundGlassCoverage.kind).toBe("nonparallel-conic");
-    expect(macroOblique.groundGlassNaturalIllumination).toEqual({
-      kind: "neutral",
-      reason: "non-parallel-lens-film",
-    });
+    expect(macroOblique.groundGlassNaturalIllumination.kind).toBe("nonparallel-geometric");
     expect(resolvePhysicalImageCircleRenderGeometry({
       coverage: macroOblique.groundGlassCoverage,
       rearStandardFrame: macroOblique.rearStandardFrame,

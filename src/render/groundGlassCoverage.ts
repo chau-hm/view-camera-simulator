@@ -30,6 +30,54 @@ export type GroundGlassCoverageRenderState = Readonly<{
   filmWindow: GroundGlassFilmWindow;
 }>;
 
+const clamp01 = (value: number): number => Math.min(1, Math.max(0, value));
+
+const smoothstep = (edge0: number, edge1: number, value: number): number => {
+  if (edge0 === edge1) return value < edge0 ? 0 : 1;
+  const t = clamp01((value - edge0) / (edge1 - edge0));
+  return t * t * (3 - 2 * t);
+};
+
+/** Canonical physical-film coverage with the same one-pixel raster feather as the WebGL composite. */
+export const calculateGroundGlassCoverageRenderGain = (
+  state: GroundGlassCoverageRenderState,
+  filmPointXMm: number,
+  filmPointYMm: number,
+): number => {
+  if (!state.active || !state.geometry || !Number.isFinite(filmPointXMm) || !Number.isFinite(filmPointYMm)) {
+    return 1;
+  }
+  const halfFeatherMm = state.edgeFeatherMm * 0.5;
+  if (state.geometry.kind === "parallel-circle") {
+    const deltaX = filmPointXMm - state.geometry.opticalAxisOffsetXMm;
+    const deltaY = filmPointYMm - state.geometry.opticalAxisOffsetYMm;
+    const distanceMm = Math.hypot(deltaX, deltaY);
+    return state.edgeFeatherMm <= 0
+      ? Number(distanceMm <= state.geometry.radiusMm)
+      : 1 - smoothstep(
+          Math.max(0, state.geometry.radiusMm - halfFeatherMm),
+          state.geometry.radiusMm + halfFeatherMm,
+          distanceMm,
+        );
+  }
+
+  const { quadratic, axial } = state.geometry;
+  const imageSideDistanceMm = axial.x * filmPointXMm + axial.y * filmPointYMm + axial.constant;
+  if (imageSideDistanceMm <= 0) return 0;
+  const conicValue = quadratic.a * filmPointXMm * filmPointXMm +
+    quadratic.b * filmPointXMm * filmPointYMm +
+    quadratic.c * filmPointYMm * filmPointYMm +
+    quadratic.d * filmPointXMm +
+    quadratic.e * filmPointYMm +
+    quadratic.f;
+  const gradientX = 2 * quadratic.a * filmPointXMm + quadratic.b * filmPointYMm + quadratic.d;
+  const gradientY = quadratic.b * filmPointXMm + 2 * quadratic.c * filmPointYMm + quadratic.e;
+  const signedDistanceMm = conicValue / Math.max(Math.hypot(gradientX, gradientY), 1e-6);
+  return state.edgeFeatherMm <= 0
+    ? Number(conicValue <= 0)
+    : 1 - smoothstep(-halfFeatherMm, halfFeatherMm, signedDistanceMm);
+};
+
 const isFiniteQuadratic = (quadratic: GroundGlassCoverageQuadratic): boolean =>
   [quadratic.a, quadratic.b, quadratic.c, quadratic.d, quadratic.e, quadratic.f]
     .every(Number.isFinite);

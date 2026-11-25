@@ -3,14 +3,16 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { add, scale } from "../core/math/vec";
-import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { RefObject } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { ErrorInfo, RefObject } from "react";
 import { Camera, DoubleSide, Vector3 } from "three";
+import * as THREE from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { OrbitControls as OrbitControlsController } from "three-stdlib";
 import type { ApertureValue, CameraState } from "../types/camera";
 import type { DerivedOpticsState } from "../types/optics";
 import type { SceneAsset, SceneDefinition } from "../types/scene";
+import type { SceneVariationDescriptor } from "../types/sceneVariation";
 import type { RenderQualityProfile } from "../types/ui";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../utils/constants";
 import "../i18n";
@@ -51,6 +53,7 @@ import {
   type ConceptualCameraPresentation,
 } from "./ConceptualViewCamera";
 import {
+  CAMERA_MOVEMENT_BASELINE_PRESENTATION,
   resolveCameraMovementLatticePresentation,
   type CameraMovementLatticePresentation,
 } from "../scenes/presentation/understandingCameraMovements";
@@ -61,15 +64,63 @@ import {
   resolveFocusFundamentalsTeachingCue,
 } from "../scenes/focusFundamentalsPresentation";
 import {
-  TEACHING_LIGHTING_CONFIG,
-  resolveTeachingLightingPlacement,
-  TeachingLighting,
+  PresentationLighting,
   TeachingShadowParticipation,
 } from "./TeachingLighting";
+import { resolveScenePresentationLighting } from "./presentationLighting";
+import { PRESENTATION_SHADOW_MAP_TYPE } from "./presentationLightingContract";
+import { WorldIllumination } from "./WorldIllumination";
+import { resolveSceneWorldIllumination } from "../scenes/illumination/sceneWorldIllumination";
+import {
+  ObserverWorldEnvironmentStatusOwner,
+  type ObserverWorldEnvironmentRealizationToken,
+  type ObserverWorldEnvironmentStatus,
+} from "./observerWorldEnvironmentStatus";
 import type { SceneGraphCapacityMetrics } from "./sceneCapacityProfiling";
+import {
+  type SelectedObserverBackend,
+} from "./backend/observerBackend";
+import { resolveObserverCanvasInitialization } from "./backend/observerRendererInitialization";
+import type { ObserverSceneCompatibility } from "./backend/observerSceneCompatibility";
+import { AnatomyMaterialAuditProbe } from "./anatomyMaterialAuditProbe";
+import { AnatomyGpuBlendIntermediateProbe } from "./AnatomyGpuBlendIntermediateProbe";
+import { ObserverCanvasErrorBoundary } from "./backend/ObserverCanvasErrorBoundary";
+import {
+  resolveObserverVisualPipelineCapabilities,
+  resolveObserverRendererRuntime,
+  type ObserverVisualPipelineCapabilities,
+} from "./backend/observerVisualPipelineCapabilities";
+import {
+  recordRendererLifecycleEvent,
+  rendererLifecycleTraceEnabled,
+} from "./testing/m7nRendererLifecycleTrace";
+import type { ObserverWebGpuAdapterAvailability } from "./backend/observerWebGpuDiagnostic";
+import type { ObserverOutputPolicySelection } from "./backend/observerOutputPolicy";
+
+type MaterialAwareOutputModule = typeof import("./backend/materialAwareObserverOutput");
 
 type SceneRendererProps = {
+  backendSelection: SelectedObserverBackend;
+  sceneCompatibility: ObserverSceneCompatibility;
+  rendererMountGeneration: number;
+  rendererTraceMountIdentity: string;
+  observerCapabilities: ObserverVisualPipelineCapabilities | null;
+  onObserverCapabilitiesChange: (
+    generation: number,
+    capabilities: ObserverVisualPipelineCapabilities | null,
+  ) => void;
+  webgpuApiPresent: boolean;
+  webgpuAdapterAvailability: ObserverWebGpuAdapterAvailability;
+  webgpuInitializationAttempts: number;
+  rendererFailureStage: "initialization" | "output-policy" | null;
+  rendererFailureReason: string | null;
+  onWebGpuInitializationAttempt: () => void;
+  onWebGpuInitializationFailure: () => void;
+  onWebGpuOutputPolicyFailure: (reason: string) => void;
+  outputPolicySelection: ObserverOutputPolicySelection;
+  onObserverCanvasError: (error: Error, info: ErrorInfo) => void;
   scene: SceneDefinition;
+  variationDescriptor?: SceneVariationDescriptor;
   opticsState: DerivedOpticsState;
   attempt: number;
   showFocusPlaneOverlay: boolean;
@@ -88,7 +139,36 @@ type SceneRendererProps = {
   containerStyle?: React.CSSProperties;
   /** Presentation-only anatomy/rear-back/aperture overrides for Lesson 0. */
   cameraPresentation?: ConceptualCameraPresentation;
+  architectureRiseVerificationHarness?: boolean;
   onSubjectCapacityChange?: (metrics: SceneGraphCapacityMetrics | null) => void;
+};
+
+type ObserverRendererCapabilityReporterProps = {
+  mountGeneration: number;
+  onCapabilitiesChange: (
+    mountGeneration: number,
+    capabilities: ObserverVisualPipelineCapabilities | null,
+  ) => void;
+};
+
+const ObserverRendererCapabilityReporter = ({
+  mountGeneration,
+  onCapabilitiesChange,
+}: ObserverRendererCapabilityReporterProps) => {
+  const { gl } = useThree();
+  const capabilities = useMemo(
+    () => resolveObserverVisualPipelineCapabilities(gl),
+    [gl],
+  );
+
+  useEffect(() => {
+    onCapabilitiesChange(mountGeneration, capabilities);
+    return () => {
+      onCapabilitiesChange(mountGeneration, null);
+    };
+  }, [capabilities, gl, mountGeneration, onCapabilitiesChange]);
+
+  return null;
 };
 
 export const shouldRenderReferenceCamera = (
@@ -138,6 +218,11 @@ const captureObserverView = (
   position: camera.position.toArray() as [number, number, number],
   target: controls.target.toArray() as [number, number, number],
 });
+
+const OBSERVER_ANATOMY_VERIFICATION_VIEW_EVENT =
+  "vcs:observer-verification:anatomy-view";
+const OBSERVER_ARCHITECTURE_RISE_VERIFICATION_VIEW_EVENT =
+  "vcs:observer-verification:architecture-rise-view";
 
 const targetsMatch = (
   a: [number, number, number],
@@ -189,6 +274,64 @@ const OrbitControls = forwardRef<OrbitControlsImpl, OrbitControlsProps>(function
     controls.addEventListener("end", publish);
     return () => controls.removeEventListener("end", publish);
   }, [camera, controls, onViewStateChange]);
+
+  useEffect(() => {
+    if (!import.meta.env.DEV || sceneId !== "view-camera-anatomy") return;
+    const container = gl.domElement.closest<HTMLElement>(
+      '[data-testid="scene-canvas"]',
+    );
+    if (!container) return;
+
+    const applyVerificationView = (event: Event) => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      if (typeof detail !== "object" || detail === null) return;
+      const candidate = detail as {
+        position?: unknown;
+        target?: unknown;
+      };
+      const isVector = (value: unknown): value is [number, number, number] =>
+        Array.isArray(value) && value.length === 3 &&
+        value.every((component) => typeof component === "number" && Number.isFinite(component));
+      if (!isVector(candidate.position) || !isVector(candidate.target)) return;
+
+      applyObserverCameraReset(camera, controls, candidate.position, candidate.target);
+      onViewStateChange(captureObserverView(camera, controls));
+    };
+
+    container.addEventListener(OBSERVER_ANATOMY_VERIFICATION_VIEW_EVENT, applyVerificationView);
+    return () =>
+      container.removeEventListener(OBSERVER_ANATOMY_VERIFICATION_VIEW_EVENT, applyVerificationView);
+  }, [camera, controls, gl.domElement, onViewStateChange, sceneId]);
+
+  useEffect(() => {
+    if (
+      !import.meta.env.DEV ||
+      sceneId !== "architecture-rise" ||
+      typeof window === "undefined" ||
+      !(
+        window.location.pathname === "/simulator/free/architecture-rise" ||
+        window.location.pathname === "/src/tests/e2e/fixtures/architecture-rise-webgpu-validation.html"
+      )
+    ) return;
+    const container = gl.domElement.closest<HTMLElement>('[data-testid="scene-canvas"]');
+    if (!container) return;
+    const applyVerificationView = (event: Event) => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      if (typeof detail !== "object" || detail === null) return;
+      const candidate = detail as { position?: unknown; target?: unknown };
+      const isVector = (value: unknown): value is [number, number, number] =>
+        Array.isArray(value) && value.length === 3 &&
+        value.every((component) => typeof component === "number" && Number.isFinite(component));
+      if (!isVector(candidate.position) || !isVector(candidate.target)) return;
+      applyObserverCameraReset(camera, controls, candidate.position, candidate.target);
+      onViewStateChange(captureObserverView(camera, controls));
+    };
+    container.addEventListener(OBSERVER_ARCHITECTURE_RISE_VERIFICATION_VIEW_EVENT, applyVerificationView);
+    return () => container.removeEventListener(
+      OBSERVER_ARCHITECTURE_RISE_VERIFICATION_VIEW_EVENT,
+      applyVerificationView,
+    );
+  }, [camera, controls, gl.domElement, onViewStateChange, sceneId]);
 
   useLayoutEffect(() => {
     const applyView = (view: ObserverViewState) => {
@@ -894,8 +1037,331 @@ const OpticalGeometryOverlays = ({
   );
 };
 
+/** Test-only observation and fault-injection seam bound to the real Observer scene. */
+// Keep a valid neutral map attached: Three r186 can retain a WebGPU texture node
+// for a null map and fail during the next render instead of producing a control image.
+const createNeutralVerificationTexture = (
+  source: THREE.Texture,
+  rgba: readonly [number, number, number, number],
+): THREE.DataTexture => {
+  const texture = new THREE.DataTexture(
+    new Uint8Array(rgba),
+    1,
+    1,
+    THREE.RGBAFormat,
+    THREE.UnsignedByteType,
+  );
+  texture.mapping = source.mapping;
+  texture.channel = source.channel;
+  texture.colorSpace = source.colorSpace;
+  texture.wrapS = source.wrapS;
+  texture.wrapT = source.wrapT;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  texture.flipY = source.flipY;
+  texture.offset.copy(source.offset);
+  texture.repeat.copy(source.repeat);
+  texture.center.copy(source.center);
+  texture.rotation = source.rotation;
+  texture.matrixAutoUpdate = source.matrixAutoUpdate;
+  texture.needsUpdate = true;
+  return texture;
+};
+
+const ArchitectureRiseVerificationProbe = () => {
+  const { gl, scene, invalidate } = useThree();
+  const inventoryReported = useRef(false);
+  const verificationContainerRef = useRef<HTMLElement | null>(null);
+  const facadeMaterialEvidenceRef = useRef<Readonly<{
+    mesh: THREE.Mesh;
+    material: THREE.MeshStandardMaterial;
+    colorMap: THREE.Texture;
+    normalMap: THREE.Texture;
+    neutralColorMap: THREE.DataTexture;
+    neutralNormalMap: THREE.DataTexture;
+  }> | null>(null);
+
+  useLayoutEffect(() => {
+    if (!import.meta.env.DEV) return;
+    const container = gl.domElement.closest<HTMLElement>(
+      '[data-observer-verification-scene="architecture-rise"]',
+    );
+    if (!container) return;
+
+    // Shadow comparison uses a second verification mount so Three.js sees
+    // the alternate light configuration before it builds WebGPU shadow nodes.
+    const disablePresentationShadows =
+      window.location.pathname === "/src/tests/e2e/fixtures/architecture-rise-webgpu-validation.html" &&
+      new URLSearchParams(window.location.search).get("shadowMode") === "disabled";
+    const presentationKey = scene.getObjectByName("teaching-lighting-key") as THREE.Light | null;
+    const originalPresentationKeyCastsShadow = presentationKey?.castShadow ?? null;
+    if (disablePresentationShadows && presentationKey) {
+      presentationKey.castShadow = false;
+      container.setAttribute("data-observer-test-key-shadow-enabled", "false");
+    } else if (presentationKey) {
+      container.setAttribute("data-observer-test-key-shadow-enabled", String(presentationKey.castShadow));
+    }
+
+    verificationContainerRef.current = container;
+    const lightStates = new Map<string, { intensity: number }>();
+
+    const setFacadeMaterialMap = (event: Event) => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      if (typeof detail !== "object" || detail === null) return;
+      const candidate = detail as { kind?: unknown; enabled?: unknown };
+      if (
+        (candidate.kind !== "colorMap" && candidate.kind !== "normalMap") ||
+        typeof candidate.enabled !== "boolean"
+      ) return;
+      const evidence = facadeMaterialEvidenceRef.current;
+      if (
+        !evidence ||
+        scene.getObjectByName("architecture-rise-primary-facade") !== evidence.mesh ||
+        evidence.mesh.material !== evidence.material
+      ) return;
+      if (candidate.kind === "colorMap") {
+        evidence.material.map = candidate.enabled
+          ? evidence.colorMap
+          : evidence.neutralColorMap;
+      } else {
+        evidence.material.normalMap = candidate.enabled
+          ? evidence.normalMap
+          : evidence.neutralNormalMap;
+      }
+      evidence.material.needsUpdate = true;
+      container.setAttribute(
+        candidate.kind === "colorMap"
+          ? "data-observer-test-facade-color-map-enabled"
+          : "data-observer-test-facade-normal-map-enabled",
+        String(candidate.enabled),
+      );
+      invalidate();
+    };
+    const setLightState = (event: Event) => {
+      const detail = (event as CustomEvent<unknown>).detail;
+      if (typeof detail !== "object" || detail === null) return;
+      const candidate = detail as { name?: unknown; enabled?: unknown };
+      if (
+        (candidate.name !== "teaching-lighting-key" &&
+          candidate.name !== "architecture-rise-daylight") ||
+        typeof candidate.enabled !== "boolean"
+      ) return;
+      const light = scene.getObjectByName(candidate.name) as THREE.Light | null;
+      if (!light) return;
+      if (!lightStates.has(candidate.name)) {
+        lightStates.set(candidate.name, { intensity: light.intensity });
+      }
+      const original = lightStates.get(candidate.name);
+      if (!original) return;
+      light.intensity = candidate.enabled ? original.intensity : 0;
+      container.setAttribute(
+        candidate.name === "teaching-lighting-key"
+          ? "data-observer-test-presentation-key-enabled"
+          : "data-observer-test-daylight-enabled",
+        String(candidate.enabled),
+      );
+      invalidate();
+    };
+
+    container.addEventListener("vcs:observer-verification:architecture-rise-material-map", setFacadeMaterialMap);
+    container.addEventListener("vcs:observer-verification:architecture-rise-light", setLightState);
+    container.setAttribute("data-observer-test-architecture-rise-probe", "ready");
+
+    return () => {
+      const evidence = facadeMaterialEvidenceRef.current;
+      if (
+        evidence &&
+        scene.getObjectByName("architecture-rise-primary-facade") === evidence.mesh &&
+        evidence.mesh.material === evidence.material
+      ) {
+        evidence.material.map = evidence.colorMap;
+        evidence.material.normalMap = evidence.normalMap;
+        evidence.material.needsUpdate = true;
+      }
+      facadeMaterialEvidenceRef.current?.neutralColorMap.dispose();
+      facadeMaterialEvidenceRef.current?.neutralNormalMap.dispose();
+      facadeMaterialEvidenceRef.current = null;
+      verificationContainerRef.current = null;
+      for (const [name, state] of lightStates) {
+        const light = scene.getObjectByName(name) as THREE.Light | null;
+        if (light) {
+          light.intensity = state.intensity;
+        }
+      }
+      if (presentationKey && originalPresentationKeyCastsShadow !== null) {
+        presentationKey.castShadow = originalPresentationKeyCastsShadow;
+      }
+      container.removeEventListener("vcs:observer-verification:architecture-rise-material-map", setFacadeMaterialMap);
+      container.removeEventListener("vcs:observer-verification:architecture-rise-light", setLightState);
+      container.removeAttribute("data-observer-test-architecture-rise-probe");
+      container.removeAttribute("data-observer-test-facade-material-control");
+      container.removeAttribute("data-observer-test-facade-color-map-enabled");
+      container.removeAttribute("data-observer-test-facade-normal-map-enabled");
+      container.removeAttribute("data-observer-test-presentation-key-enabled");
+      container.removeAttribute("data-observer-test-daylight-enabled");
+      container.removeAttribute("data-observer-test-key-shadow-enabled");
+    };
+  }, [gl.domElement, invalidate, scene]);
+
+  useFrame(() => {
+    if (!facadeMaterialEvidenceRef.current) {
+      const facade = scene.getObjectByName("architecture-rise-primary-facade");
+      if (facade instanceof THREE.Mesh && facade.material instanceof THREE.MeshStandardMaterial) {
+        const { map, normalMap } = facade.material;
+        if (map && normalMap) {
+          facadeMaterialEvidenceRef.current = {
+            mesh: facade,
+            material: facade.material,
+            colorMap: map,
+            normalMap,
+            neutralColorMap: createNeutralVerificationTexture(map, [255, 255, 255, 255]),
+            neutralNormalMap: createNeutralVerificationTexture(normalMap, [128, 128, 255, 255]),
+          };
+          verificationContainerRef.current?.setAttribute(
+            "data-observer-test-facade-material-control",
+            "ready",
+          );
+          verificationContainerRef.current?.setAttribute(
+            "data-observer-test-facade-color-map-enabled",
+            "true",
+          );
+          verificationContainerRef.current?.setAttribute(
+            "data-observer-test-facade-normal-map-enabled",
+            "true",
+          );
+        }
+      }
+    }
+    if (inventoryReported.current) return;
+    const subject = scene.getObjectByName("architecture-rise-subject");
+    if (
+      !subject ||
+      !scene.environment ||
+      !scene.getObjectByName("architecture-rise-daylight") ||
+      !scene.getObjectByName("teaching-lighting-key")
+    ) return;
+    const meshNames = new Set<string>();
+    const materialTypes = new Set<string>();
+    let meshCount = 0;
+    let mappedMaterialCount = 0;
+    let normalMappedMaterialCount = 0;
+    subject.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      meshCount += 1;
+      if (object.name) meshNames.add(object.name);
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      for (const material of materials) {
+        materialTypes.add(material.type);
+        const mapped = material as THREE.Material & {
+          map?: THREE.Texture | null;
+          normalMap?: THREE.Texture | null;
+          roughnessMap?: THREE.Texture | null;
+        };
+        if (mapped.map || mapped.normalMap || mapped.roughnessMap) mappedMaterialCount += 1;
+        if (mapped.normalMap) normalMappedMaterialCount += 1;
+      }
+    });
+    const expectedMeshes = [
+      "architecture-rise-primary-facade",
+      "architecture-rise-roof-parapet",
+      "architecture-rise-side-return",
+      "architecture-rise-ground",
+      "architecture-rise-window-ground-right-glazing",
+      "architecture-rise-window-service-east-lower-glazing",
+    ];
+    const featureObjects = {
+      facade: "architecture-rise-primary-facade",
+      roofParapet: "architecture-rise-roof-parapet",
+      frontGlazing: "architecture-rise-window-ground-right-glazing",
+      sideGlazing: "architecture-rise-window-service-east-lower-glazing",
+      sideReturn: "architecture-rise-side-return",
+      ground: "architecture-rise-ground",
+      sidewalk: "architecture-rise-sidewalk-slab",
+      focusChart: "architecture-rise-focus-chart",
+      streetSign: "architecture-rise-street-sign",
+    } as const;
+    const featureEvidence = Object.fromEntries(Object.entries(featureObjects).map(([key, name]) => {
+      const object = scene.getObjectByName(name);
+      if (!object) return [key, null];
+      const bounds = new THREE.Box3().setFromObject(object);
+      const materialMeshes: THREE.Mesh[] = [];
+      object.traverse((candidate) => {
+        if (candidate instanceof THREE.Mesh) materialMeshes.push(candidate);
+      });
+      const materials = materialMeshes.flatMap((mesh) =>
+        Array.isArray(mesh.material) ? mesh.material : [mesh.material],
+      );
+      const textureInfo = (texture: THREE.Texture | null | undefined) => {
+        if (!texture) return null;
+        const image = texture.image as { width?: number; height?: number } | undefined;
+        return {
+          colorSpace: texture.colorSpace,
+          width: image?.width ?? null,
+          height: image?.height ?? null,
+          repeat: texture.repeat.toArray(),
+        };
+      };
+      return [key, {
+        objectName: object.name,
+        meshCount: materialMeshes.length,
+        bounds: { min: bounds.min.toArray(), max: bounds.max.toArray() },
+        materials: materials.map((material) => {
+          const candidate = material as THREE.Material & {
+            color?: THREE.Color;
+            roughness?: number;
+            metalness?: number;
+            map?: THREE.Texture | null;
+            normalMap?: THREE.Texture | null;
+            roughnessMap?: THREE.Texture | null;
+          };
+          return {
+            type: material.type,
+            uuid: material.uuid,
+            mapUuid: candidate.map?.uuid ?? null,
+            normalMapUuid: candidate.normalMap?.uuid ?? null,
+            roughnessMapUuid: candidate.roughnessMap?.uuid ?? null,
+            color: candidate.color ? `#${candidate.color.getHexString()}` : null,
+            roughness: candidate.roughness ?? null,
+            metalness: candidate.metalness ?? null,
+            map: textureInfo(candidate.map),
+            normalMap: textureInfo(candidate.normalMap),
+            roughnessMap: textureInfo(candidate.roughnessMap),
+          };
+        }),
+      }];
+    }));
+    const container = gl.domElement.closest<HTMLElement>(
+      '[data-observer-verification-scene="architecture-rise"]',
+    );
+    container?.setAttribute("data-observer-test-architecture-rise-inventory", JSON.stringify({
+      rootName: subject.name,
+      meshCount,
+      subjectBounds: (() => {
+        const bounds = new THREE.Box3().setFromObject(subject);
+        return { min: bounds.min.toArray(), max: bounds.max.toArray() };
+      })(),
+      materialTypes: [...materialTypes].sort(),
+      mappedMaterialCount,
+      normalMappedMaterialCount,
+      expectedMeshes: Object.fromEntries(expectedMeshes.map((name) => [name, meshNames.has(name)])),
+      features: featureEvidence,
+      environmentTextureAssigned: scene.environment !== null,
+      daylightLightPresent: scene.getObjectByName("architecture-rise-daylight") !== undefined,
+      daylightCastsShadow: scene.getObjectByName("architecture-rise-daylight")?.castShadow ?? null,
+      presentationKeyPresent: scene.getObjectByName("teaching-lighting-key") !== undefined,
+      presentationKeyCastsShadow: scene.getObjectByName("teaching-lighting-key")?.castShadow ?? null,
+    }));
+    container?.setAttribute("data-observer-test-architecture-rise-subject-mounted", "true");
+    inventoryReported.current = true;
+  });
+
+  return null;
+};
+
 const SceneContent = ({
   scene,
+  variationDescriptor,
   cameraMovementPresentation,
   opticsState,
   lensCoverageGeometry,
@@ -908,8 +1374,15 @@ const SceneContent = ({
   activeAperture,
   cameraPresentation,
   onSubjectCapacityChange,
+  rendererMountGeneration,
+  anatomyMaterialAuditEnabled,
+  anatomyMaterialAuditIncludeGhost,
+  createEnvironmentRealizationToken,
+  onEnvironmentStatusChange,
+  architectureRiseVerificationHarness,
 }: {
   scene: SceneDefinition;
+  variationDescriptor?: SceneVariationDescriptor;
   cameraMovementPresentation?: CameraMovementLatticePresentation;
   opticsState: DerivedOpticsState;
   lensCoverageGeometry: PhysicalLensCoverageRenderGeometry | null;
@@ -922,6 +1395,18 @@ const SceneContent = ({
   activeAperture: ApertureValue;
   cameraPresentation?: ConceptualCameraPresentation;
   onSubjectCapacityChange?: (metrics: SceneGraphCapacityMetrics | null) => void;
+  rendererMountGeneration: number;
+  anatomyMaterialAuditEnabled: boolean;
+  anatomyMaterialAuditIncludeGhost: boolean;
+  createEnvironmentRealizationToken: (
+    generation: number,
+  ) => ObserverWorldEnvironmentRealizationToken;
+  onEnvironmentStatusChange: (
+    generation: number,
+    realization: ObserverWorldEnvironmentRealizationToken | null,
+    status: ObserverWorldEnvironmentStatus,
+  ) => void;
+  architectureRiseVerificationHarness: boolean;
 }) => {
   const registration = getSceneSubjectRegistration(scene.id);
   const RegisteredSubject = registration?.SceneSubject;
@@ -936,20 +1421,43 @@ const SceneContent = ({
     scene,
     cameraMovementPresentation,
   );
-  const teachingLightingPlacement = useMemo(() => {
-    const lighting =
-      registration?.viewportLighting ??
-      registration?.resolveRttLighting?.({
-        cameraMovementPresentation,
+  const presentationLighting = useMemo(
+    () =>
+      resolveScenePresentationLighting(scene.id, {
+        surface: "observer",
+        cameraMovementPresentation:
+          cameraMovementPresentation ?? CAMERA_MOVEMENT_BASELINE_PRESENTATION,
         presentationRegion: "middle",
-      }) ?? registration?.rttLighting;
-    return resolveTeachingLightingPlacement(lighting);
-  }, [cameraMovementPresentation, registration]);
+      }),
+    [cameraMovementPresentation, scene.id],
+  );
 
   return (
     <>
     <color attach="background" args={["#f8fafc"]} />
-    <TeachingLighting placement={teachingLightingPlacement} />
+    <PresentationLighting lighting={presentationLighting} />
+    <WorldIllumination
+      sceneId={scene.id}
+      mountGeneration={rendererMountGeneration}
+      createRealizationToken={createEnvironmentRealizationToken}
+      onEnvironmentStatusChange={onEnvironmentStatusChange}
+      architectureRiseVerificationHarness={architectureRiseVerificationHarness}
+    />
+    {anatomyMaterialAuditEnabled && scene.id === "view-camera-anatomy"
+      ? <>
+          <AnatomyMaterialAuditProbe
+            generation={rendererMountGeneration}
+            anatomyPresentation={cameraPresentation?.anatomy ?? null}
+          />
+          <AnatomyGpuBlendIntermediateProbe
+            generation={rendererMountGeneration}
+            anatomyPresentation={cameraPresentation?.anatomy ?? null}
+          />
+        </>
+      : null}
+    {import.meta.env.DEV && architectureRiseVerificationHarness && scene.id === "architecture-rise"
+      ? <ArchitectureRiseVerificationProbe />
+      : null}
     <SceneAssets assets={scene.assets} />
     {scene.cameraBodyPitchCapability?.enabled ? (
       <CameraBodyAssembly
@@ -990,7 +1498,7 @@ const SceneContent = ({
       onCapacityChange={onSubjectCapacityChange}
     >
       {RegisteredSubject ? (
-        <RegisteredSubject scene={scene} />
+        <RegisteredSubject scene={scene} variationDescriptor={variationDescriptor} />
       ) : (
         scene.focusTargets.map((target) => (
           <mesh key={target.id} position={vecToWorld(target.worldPosition)}>
@@ -1000,7 +1508,9 @@ const SceneContent = ({
         ))
       )}
     </TeachingShadowParticipation>
-    {referenceCameraVisible ? <OriginalGhostCamera scene={scene} /> : null}
+    {referenceCameraVisible || anatomyMaterialAuditIncludeGhost
+      ? <OriginalGhostCamera scene={scene} />
+      : null}
     </>
   );
 };
@@ -1055,7 +1565,24 @@ const OriginalGhostCamera = ({
 };
 
 export const SceneRenderer = ({
+  backendSelection,
+  sceneCompatibility,
+  rendererMountGeneration,
+  rendererTraceMountIdentity,
+  observerCapabilities,
+  onObserverCapabilitiesChange,
+  webgpuApiPresent,
+  webgpuAdapterAvailability,
+  webgpuInitializationAttempts,
+  rendererFailureStage,
+  rendererFailureReason,
+  onWebGpuInitializationAttempt,
+  onWebGpuInitializationFailure,
+  onWebGpuOutputPolicyFailure,
+  outputPolicySelection,
+  onObserverCanvasError,
   scene,
+  variationDescriptor,
   opticsState,
   attempt,
   showFocusPlaneOverlay,
@@ -1072,8 +1599,50 @@ export const SceneRenderer = ({
   onAssetError,
   containerStyle,
   cameraPresentation,
+  architectureRiseVerificationHarness = false,
   onSubjectCapacityChange,
 }: SceneRendererProps) => {
+  const materialAwareOutputRequested =
+    import.meta.env.DEV &&
+    (scene.id === "architecture-rise" || scene.id === "view-camera-anatomy") &&
+    outputPolicySelection.selected === "material-aware" &&
+    backendSelection.rendererAttempt === "webgpu";
+  const anatomyMaterialAuditEnabled = import.meta.env.DEV &&
+    scene.id === "view-camera-anatomy" &&
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("observerMaterialAudit") === "1";
+  const anatomyMaterialAuditIncludeGhost = anatomyMaterialAuditEnabled &&
+    new URLSearchParams(window.location.search).get("observerMaterialAuditGhost") === "1";
+  const [materialAwareOutputModule, setMaterialAwareOutputModule] =
+    useState<MaterialAwareOutputModule | null>(null);
+  const [materialAwareOutputModuleFailure, setMaterialAwareOutputModuleFailure] =
+    useState<string | null>(null);
+  useEffect(() => {
+    if (!materialAwareOutputRequested) return;
+    let active = true;
+    setMaterialAwareOutputModule(null);
+    setMaterialAwareOutputModuleFailure(null);
+    void import("./backend/materialAwareObserverOutput").then(
+      (module) => {
+        if (active) setMaterialAwareOutputModule(module);
+      },
+      (error: unknown) => {
+        if (!active) return;
+        const reason = error instanceof Error ? error.message : String(error);
+        setMaterialAwareOutputModuleFailure(reason);
+        onWebGpuOutputPolicyFailure(`material-aware output module could not load: ${reason}`);
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [materialAwareOutputRequested, onWebGpuOutputPolicyFailure, rendererMountGeneration]);
+
+  const canRenderMaterialAwareScene =
+    !materialAwareOutputRequested || Boolean(materialAwareOutputModule && !materialAwareOutputModuleFailure);
+  const includeWebGpuRuntimeDiagnostics =
+    backendSelection.requestedRenderer === "webgpu-pilot" ||
+    (import.meta.env.DEV && backendSelection.requestedRenderer === "webgpu-verification");
   const { t } = useTranslation();
   const activeFocalLengthMm = useAppStore((state) => state.camera.focalLengthMm);
   const activeAperture = useAppStore((state) => state.camera.aperture);
@@ -1086,7 +1655,62 @@ export const SceneRenderer = ({
   );
   const controlsRef = useRef<OrbitControlsImpl | null>(null);
   const [loadLazyAssets, setLoadLazyAssets] = useState(false);
+  const [worldEnvironmentStatusOwner] = useState(
+    () => new ObserverWorldEnvironmentStatusOwner(),
+  );
+  const currentRendererGenerationRef = useRef(rendererMountGeneration);
+  currentRendererGenerationRef.current = rendererMountGeneration;
+  const createEnvironmentRealizationToken = useCallback(
+    (generation: number) => worldEnvironmentStatusOwner.createRealizationToken(generation),
+    [worldEnvironmentStatusOwner],
+  );
+  const [worldEnvironmentReport, setWorldEnvironmentReport] = useState<Readonly<{
+    generation: number;
+    realization: ObserverWorldEnvironmentRealizationToken | null;
+    status: ObserverWorldEnvironmentStatus;
+  }> | null>(null);
+  const onEnvironmentStatusChange = useCallback((
+    generation: number,
+    realization: ObserverWorldEnvironmentRealizationToken | null,
+    status: ObserverWorldEnvironmentStatus,
+  ) => {
+    if (!worldEnvironmentStatusOwner.accepts(
+      currentRendererGenerationRef.current,
+      generation,
+      realization,
+      status,
+    )) return;
+    setWorldEnvironmentReport({ generation, realization, status });
+  }, [worldEnvironmentStatusOwner]);
+  const hasConfiguredEnvironment = Boolean(
+    resolveSceneWorldIllumination(scene.id).environment,
+  );
+  const worldEnvironmentStatus = !hasConfiguredEnvironment
+    ? "not-configured"
+    : worldEnvironmentReport?.generation === rendererMountGeneration &&
+        worldEnvironmentReport.realization?.rendererGeneration === rendererMountGeneration
+      ? worldEnvironmentReport.status
+      : "pending";
+  const rendererMountIdentity = String(rendererMountGeneration);
+  const mountedObserverCapabilities = observerCapabilities;
   const qualityConfig = useMemo(() => getRenderQualitySettings(renderQuality), [renderQuality]);
+  const observerCanvasInitialization = useMemo(
+    () =>
+      resolveObserverCanvasInitialization(
+        backendSelection,
+        qualityConfig.antialias,
+        onWebGpuInitializationFailure,
+        onWebGpuInitializationAttempt,
+        outputPolicySelection.selected,
+      ),
+    [
+      backendSelection,
+      onWebGpuInitializationAttempt,
+      onWebGpuInitializationFailure,
+      outputPolicySelection.selected,
+      qualityConfig.antialias,
+    ],
+  );
   const cameraMovementPresentation = resolveCameraMovementLatticePresentation(
     effectiveCameraMovementCalibration,
   );
@@ -1101,8 +1725,26 @@ export const SceneRenderer = ({
     [cameraMovementPresentation, scene],
   );
   const observerCameraPosition = observerViews[viewFocus].position;
-  const [observerViewState, setObserverViewState] = useState<ObserverViewState>(
-    () => observerViews[viewFocus],
+  const [reportedObserverView, setReportedObserverView] = useState<Readonly<{
+    sceneId: string;
+    focus: SceneViewFocus;
+    view: ObserverViewState;
+  }>>(() => ({
+    sceneId: scene.id,
+    focus: viewFocus,
+    view: observerViews[viewFocus],
+  }));
+  const observerViewState =
+    reportedObserverView.sceneId === scene.id && reportedObserverView.focus === viewFocus
+      ? reportedObserverView.view
+      : observerViews[viewFocus];
+  const reportObserverView = useCallback(
+    (view: ObserverViewState) => setReportedObserverView({
+      sceneId: scene.id,
+      focus: viewFocus,
+      view,
+    }),
+    [scene.id, viewFocus],
   );
   const activeAssets = useMemo(
     () =>
@@ -1111,6 +1753,49 @@ export const SceneRenderer = ({
       ),
     [loadLazyAssets, scene.assets],
   );
+
+  useEffect(() => {
+    if (!rendererLifecycleTraceEnabled) return;
+    const routeId = typeof window === "undefined" ? null : window.location.pathname;
+    recordRendererLifecycleEvent({
+      surface: "scene",
+      event: "scene-renderer-component-committed",
+      routeId,
+      sceneId: scene.id,
+      mountGeneration: rendererTraceMountIdentity,
+      rendererGeneration: rendererMountGeneration,
+      status: "committed",
+    });
+    return () => {
+      recordRendererLifecycleEvent({
+        surface: "scene",
+        event: "scene-renderer-component-effect-cleanup",
+        routeId,
+        sceneId: scene.id,
+        mountGeneration: rendererTraceMountIdentity,
+        rendererGeneration: rendererMountGeneration,
+      });
+    };
+  }, [rendererTraceMountIdentity, rendererMountGeneration, scene.id]);
+
+  useEffect(() => {
+    if (!rendererLifecycleTraceEnabled) return;
+    const routeId = typeof window === "undefined" ? null : window.location.pathname;
+    recordRendererLifecycleEvent({
+      surface: "scene",
+      event: "scene-asset-configuration-committed",
+      routeId,
+      sceneId: scene.id,
+      mountGeneration: rendererTraceMountIdentity,
+      rendererGeneration: rendererMountGeneration,
+      status: "configured",
+      detail: {
+        declaredAssetCount: scene.assets.length,
+        selectedAssetCount: activeAssets.length,
+        lazyAssetsDeferred: !loadLazyAssets,
+      },
+    });
+  }, [activeAssets.length, loadLazyAssets, rendererTraceMountIdentity, rendererMountGeneration, scene.assets.length, scene.id]);
 
   useEffect(() => {
     setLoadLazyAssets(false);
@@ -1127,6 +1812,70 @@ export const SceneRenderer = ({
   const defaultContainerStyle: React.CSSProperties = { height: 320, border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" };
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!rendererLifecycleTraceEnabled) return;
+    const routeId = typeof window === "undefined" ? null : window.location.pathname;
+    const container = containerRef.current;
+    if (!container) {
+      recordRendererLifecycleEvent({
+        surface: "observer",
+        event: "observer-scene-container-absent-after-commit",
+        routeId,
+        sceneId: scene.id,
+        mountGeneration: rendererTraceMountIdentity,
+        rendererGeneration: rendererMountGeneration,
+        status: "absent",
+        detail: { assetFailureRequested: simulateAssetFailure },
+      });
+      return;
+    }
+
+    let lastCanvasCount: number | null = null;
+    const reportCanvasPresence = () => {
+      const canvases = container.querySelectorAll("canvas");
+      if (canvases.length === lastCanvasCount) return;
+      lastCanvasCount = canvases.length;
+      recordRendererLifecycleEvent({
+        surface: "observer",
+        event: canvases.length > 0
+          ? "observer-canvas-dom-attached"
+          : "observer-canvas-dom-absent-at-observation",
+        routeId,
+        sceneId: scene.id,
+        mountGeneration: rendererTraceMountIdentity,
+        rendererGeneration: rendererMountGeneration,
+        status: canvases.length > 0 ? "attached" : "absent",
+        detail: { canvasCount: canvases.length },
+      });
+    };
+
+    recordRendererLifecycleEvent({
+      surface: "observer",
+      event: "observer-scene-container-dom-attached",
+      routeId,
+      sceneId: scene.id,
+      mountGeneration: rendererTraceMountIdentity,
+      rendererGeneration: rendererMountGeneration,
+      status: "attached",
+    });
+    reportCanvasPresence();
+    const observer = typeof MutationObserver === "undefined"
+      ? null
+      : new MutationObserver(reportCanvasPresence);
+    observer?.observe(container, { childList: true, subtree: true });
+    return () => {
+      observer?.disconnect();
+      recordRendererLifecycleEvent({
+        surface: "observer",
+        event: "observer-scene-container-observation-stopped",
+        routeId,
+        sceneId: scene.id,
+        mountGeneration: rendererTraceMountIdentity,
+        rendererGeneration: rendererMountGeneration,
+        status: "observation-stopped",
+      });
+    };
+  }, [rendererMountGeneration, rendererTraceMountIdentity, scene.id, simulateAssetFailure]);
   const [legendPositions, setLegendPositions] = useState<Record<string, { left: number; top: number; visible: boolean; corner?: boolean }>>({});
   // legends and optical geometry controlled by parent (SceneViewport)
   // showLegends and showOpticalGeometry are received as props
@@ -1200,6 +1949,109 @@ export const SceneRenderer = ({
     <div
       ref={containerRef}
       data-testid="scene-canvas"
+      data-observer-renderer-surface="observer"
+      data-observer-three-revision={import.meta.env.DEV ? THREE.REVISION : undefined}
+      data-observer-verification-scene={
+        import.meta.env.DEV && architectureRiseVerificationHarness && scene.id === "architecture-rise"
+          ? "architecture-rise"
+          : anatomyMaterialAuditEnabled ? "view-camera-anatomy" : undefined
+      }
+      data-observer-renderer-generation={
+        import.meta.env.DEV ? String(rendererMountGeneration) : undefined
+      }
+      data-observer-renderer-status={mountedObserverCapabilities?.status ?? "pending"}
+      data-observer-renderer-request={backendSelection.requestedRenderer}
+      data-observer-renderer-attempt={backendSelection.rendererAttempt}
+      data-observer-selection-reason={backendSelection.selectionReason}
+      data-observer-renderer-family={mountedObserverCapabilities?.rendererFamily}
+      data-observer-execution-backend={mountedObserverCapabilities?.executionBackend}
+      data-observer-application-fallback={backendSelection.applicationFallback}
+      data-observer-webgpu-scene-compatibility={sceneCompatibility.webgpu.status}
+      data-observer-webgpu-pilot-eligibility={sceneCompatibility.developmentWebGpuPilot}
+      data-observer-scene-requirements-status={
+        sceneCompatibility.requirements === null ? "not-evaluated" : "declared"
+      }
+      data-observer-scene-rendering-requirements={
+        sceneCompatibility.requirements?.join(",")
+      }
+      data-observer-scene-known-backend-constraints={
+        sceneCompatibility.knownBackendConstraints.join(",") || "none"
+      }
+      data-observer-webgpu-api-present={String(webgpuApiPresent)}
+      data-observer-adapter-availability={webgpuAdapterAvailability}
+      data-observer-webgpu-initialization-attempts={
+        includeWebGpuRuntimeDiagnostics
+          ? String(webgpuInitializationAttempts)
+          : undefined
+      }
+      data-observer-hardware-acceleration={
+        includeWebGpuRuntimeDiagnostics
+          ? "unconfirmed"
+          : undefined
+      }
+      data-observer-renderer-failure-stage={rendererFailureStage ?? undefined}
+      data-observer-renderer-failure-reason={
+        import.meta.env.DEV ? rendererFailureReason ?? undefined : undefined
+      }
+      data-observer-output-policy-requested={
+        import.meta.env.DEV ? outputPolicySelection.requested : undefined
+      }
+      data-observer-output-policy-requested-param={
+        import.meta.env.DEV
+          ? outputPolicySelection.requestedParameter ?? "unspecified"
+          : undefined
+      }
+      data-observer-output-policy-selected={
+        import.meta.env.DEV ? outputPolicySelection.selected : undefined
+      }
+      data-observer-output-policy-selection-reason={
+        import.meta.env.DEV ? outputPolicySelection.reason : undefined
+      }
+      data-observer-output-policy-installed={
+        import.meta.env.DEV && !materialAwareOutputRequested &&
+        mountedObserverCapabilities?.status === "active"
+          ? "standard"
+          : undefined
+      }
+      data-observer-output-policy-failure={
+        import.meta.env.DEV && rendererFailureStage === "output-policy"
+          ? rendererFailureReason ?? "output-policy-installation-failed"
+          : undefined
+      }
+      data-observer-environment-status={
+        import.meta.env.DEV ? worldEnvironmentStatus : undefined
+      }
+      data-observer-shadow-map-status={
+        mountedObserverCapabilities?.status === "active"
+          ? mountedObserverCapabilities.shadowMaps.status
+          : undefined
+      }
+      data-observer-shadow-map-type={
+        mountedObserverCapabilities?.status === "active"
+          ? mountedObserverCapabilities.shadowMaps.type
+          : undefined
+      }
+      data-observer-tone-mapping-active={
+        mountedObserverCapabilities?.status === "active"
+          ? String(mountedObserverCapabilities.toneMapping.active)
+          : undefined
+      }
+      data-observer-tone-mapping={
+        mountedObserverCapabilities?.status === "active"
+          ? mountedObserverCapabilities.toneMapping.mode
+          : undefined
+      }
+      data-observer-tone-mapping-exposure={
+        mountedObserverCapabilities?.status === "active" &&
+        mountedObserverCapabilities.toneMapping.exposure !== null
+          ? serializeFiniteRenderNumber(mountedObserverCapabilities.toneMapping.exposure)
+          : undefined
+      }
+      data-observer-output-color-space={
+        mountedObserverCapabilities?.status === "active"
+          ? mountedObserverCapabilities.toneMapping.outputColorSpace ?? undefined
+          : undefined
+      }
       data-scene-subject-id={getRegisteredSceneSubject(scene.id) ? scene.id : "fallback"}
       data-lattice-edge-count={
         scene.id === "understanding-camera-movements"
@@ -1331,6 +2183,23 @@ export const SceneRenderer = ({
       data-camera-film-center-world={serializeFiniteRenderVector(
         opticsState.filmCenterWorld,
       )}
+      data-optical-axis-origin-world-mm={serializeFiniteRenderVector(
+        opticsState.opticalAxis.origin,
+      )}
+      data-optical-axis-forward-world={serializeFiniteRenderVector(
+        opticsState.opticalAxis.direction,
+      )}
+      data-film-plane-normal-world={serializeFiniteRenderVector(
+        opticsState.filmPlane.normal,
+      )}
+      data-film-plane-width-mm={CAMERA_CONSTANTS.filmWidthMm}
+      data-film-plane-height-mm={CAMERA_CONSTANTS.filmHeightMm}
+      data-film-plane-corners-world-mm={JSON.stringify({
+        topLeft: opticsState.filmPlaneCornersWorld.topLeft,
+        topRight: opticsState.filmPlaneCornersWorld.topRight,
+        bottomRight: opticsState.filmPlaneCornersWorld.bottomRight,
+        bottomLeft: opticsState.filmPlaneCornersWorld.bottomLeft,
+      })}
       data-focus-standard-selected={
         opticsState.diagnostics.requestedFocusStandard ?? opticsState.diagnostics.focusStandard
       }
@@ -1368,18 +2237,62 @@ export const SceneRenderer = ({
       data-observer-camera-position={observerViewState.position.map((value) => value.toFixed(6)).join(",")}
       style={wrapperStyle}
     >
+      <ObserverCanvasErrorBoundary
+        key={rendererMountIdentity}
+        onError={onObserverCanvasError}
+      >
       <Canvas
         style={{ width: "100%", height: "100%" }}
         dpr={qualityConfig.dpr}
         camera={{ position: observerCameraPosition, fov: 45, near: 0.01, far: 200 }}
-        gl={{ antialias: qualityConfig.antialias }}
-        shadows={{ type: TEACHING_LIGHTING_CONFIG.shadowMapType }}
+        onCreated={rendererLifecycleTraceEnabled ? ({ gl }) => {
+          const runtime = resolveObserverRendererRuntime(gl);
+          recordRendererLifecycleEvent({
+            surface: "observer",
+            event: "observer-r3f-renderer-created",
+            routeId: typeof window === "undefined" ? null : window.location.pathname,
+            sceneId: scene.id,
+            mountGeneration: rendererTraceMountIdentity,
+            rendererGeneration: rendererMountGeneration,
+            status: "created",
+            detail: {
+              rendererFamily: runtime.rendererFamily,
+              executionBackend: runtime.executionBackend,
+              canvasDomAttached: gl.domElement.isConnected,
+            },
+          });
+        } : undefined}
+        {...observerCanvasInitialization.canvasProps}
+        shadows={{ type: PRESENTATION_SHADOW_MAP_TYPE }}
       >
+        <ObserverRendererCapabilityReporter
+          mountGeneration={rendererMountGeneration}
+          onCapabilitiesChange={onObserverCapabilitiesChange}
+        />
+        {materialAwareOutputRequested && materialAwareOutputModule
+          ? scene.id === "view-camera-anatomy"
+            ? <materialAwareOutputModule.AnatomyMaterialAwareOutputPolicyController
+                rendererGeneration={rendererMountGeneration}
+                onFailure={onWebGpuOutputPolicyFailure}
+                onCapabilitiesChange={onObserverCapabilitiesChange}
+                anatomyPresentation={cameraPresentation?.anatomy ?? null}
+                allowAnatomyOutputIntervention={anatomyMaterialAuditEnabled}
+                allowFailureInjection={import.meta.env.DEV &&
+                  typeof window !== "undefined" &&
+                  new URLSearchParams(window.location.search).get("observerMaterialAudit") === "1"}
+              />
+            : <materialAwareOutputModule.MaterialAwareOutputPolicyController
+                rendererGeneration={rendererMountGeneration}
+                onFailure={onWebGpuOutputPolicyFailure}
+                onCapabilitiesChange={onObserverCapabilitiesChange}
+              />
+          : null}
         {/* LegendUpdater runs inside the r3f context so it can access camera and gl */}
         {/**/}
         <LegendUpdater containerRef={containerRef} opticsState={opticsState} lensCoverageGeometry={renderedLensCoverageGeometry} setLegendPositions={setLegendPositions} visibleKeys={visibleLegendKeys} showLegends={showLegends} />
-        <SceneContent
+        {canRenderMaterialAwareScene ? <SceneContent
           scene={{ ...renderScene, assets: activeAssets }}
+          variationDescriptor={variationDescriptor}
           cameraMovementPresentation={cameraMovementPresentation}
           opticsState={opticsState}
           showFocusPlaneOverlay={showFocusPlaneOverlay}
@@ -1394,7 +2307,15 @@ export const SceneRenderer = ({
           activeAperture={activeAperture}
           cameraPresentation={cameraPresentation}
           onSubjectCapacityChange={onSubjectCapacityChange}
-        />
+          rendererMountGeneration={rendererMountGeneration}
+          anatomyMaterialAuditEnabled={anatomyMaterialAuditEnabled}
+          anatomyMaterialAuditIncludeGhost={anatomyMaterialAuditIncludeGhost}
+          createEnvironmentRealizationToken={createEnvironmentRealizationToken}
+          onEnvironmentStatusChange={onEnvironmentStatusChange}
+          architectureRiseVerificationHarness={
+            import.meta.env.DEV && architectureRiseVerificationHarness && scene.id === "architecture-rise"
+          }
+        /> : null}
         <OrbitControls
           ref={controlsRef}
           enablePan={false}
@@ -1405,9 +2326,10 @@ export const SceneRenderer = ({
           sceneView={observerViews.scene}
           cameraView={observerViews.camera}
           viewResetNonce={viewResetNonce}
-          onViewStateChange={setObserverViewState}
+          onViewStateChange={reportObserverView}
         />
       </Canvas>
+      </ObserverCanvasErrorBoundary>
 
       {/* Legends overlay stuck to elements */}
       {showLegends && Object.entries(legendPositions).filter(([k]) => visibleLegendKeys.includes(k)).map(([key, pos]) =>

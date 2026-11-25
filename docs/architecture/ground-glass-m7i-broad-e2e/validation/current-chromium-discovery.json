@@ -1,0 +1,7 @@
+{
+  "command": "npm run test:e2e -- --project=chromium --list",
+  "discoveredTests": 278,
+  "specFiles": 80,
+  "sourceOutputPath": "docs/architecture/ground-glass-m7i-broad-e2e/validation/current-chromium-discovery.txt",
+  "sourceOutputSha256": "03eb15b1075ebc1cf78bef7f46e27d2f22322979253d001ef024337a1f8279fb"
+}

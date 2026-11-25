@@ -146,6 +146,18 @@ export type GroundGlassNaturalIlluminationState = Readonly<
       opticalAxisOffsetYMm: number;
     }
   | {
+      /** Thin-pupil geometric irradiance ratio for a non-parallel film. */
+      kind: "nonparallel-geometric";
+      referenceImageDistanceMm: number;
+      referenceFilmIncidenceCosine: number;
+      /** Lens-to-film-center vector in rear-standard right/up/normal mm. */
+      lensToFilmCenterLocalMm: readonly [number, number, number];
+      /** Unit image-side optical axis in the same rear-standard basis. */
+      imageSideAxisLocal: readonly [number, number, number];
+      /** Sign of the rear-standard normal pointing toward the lens. */
+      filmNormalTowardLensSign: -1 | 1;
+    }
+  | {
       kind: "neutral";
       reason: "non-parallel-lens-film" | "invalid-geometry";
   }

@@ -36,6 +36,17 @@ const readGridSpacing = async (grid: Locator) => grid.evaluate((element) =>
   Number.parseFloat(getComputedStyle(element).backgroundSize.split(" ")[0]),
 );
 
+const readGridPhase = async (grid: Locator) => grid.evaluate((element) => {
+  const rect = element.getBoundingClientRect();
+  const [x = "0px", y = "0px"] = getComputedStyle(element).backgroundPosition.split(" ");
+  return {
+    x: Number.parseFloat(x),
+    y: Number.parseFloat(y),
+    width: rect.width,
+    height: rect.height,
+  };
+});
+
 const expectMacroCoverageState = async (
   scene: Locator,
   rtt: Locator,
@@ -209,4 +220,39 @@ test("Macro 1 keeps Ground Glass and scene rendering stable through auxiliary in
   expect(await readFiniteAttribute(sceneCanvas, "data-image-circle-radius-mm")).toBeCloseTo(finalCircleRadiusMm, 5);
   expect(await readGain()).toBeLessThan(oneToOneWideOpenGain);
   expectNoBrowserErrors();
+});
+
+test("Macro 1 physical grid follows both Raw and Upright film-origin positions", async ({ page }, testInfo) => {
+  test.setTimeout(60_000);
+  await page.goto("/simulator/free/macro-bellows-extension");
+  const sceneCanvas = page.getByTestId("scene-canvas");
+  const rttCanvas = page.locator(".groundglass-renderer-host canvas");
+  const grid = page.getByTestId("ground-glass-grid");
+  await expect(sceneCanvas).toHaveAttribute("data-scene-subject-id", "macro-bellows-extension");
+  await expect(rttCanvas).toHaveCount(1);
+  await expect(grid).toHaveAttribute("data-grid-mode", "physical");
+
+  const rawPhase = await readGridPhase(grid);
+  // The raw film origin (physical upper-left) appears at display upper-right.
+  expect(rawPhase.x).toBeCloseTo(rawPhase.width, 0);
+  expect(rawPhase.y).toBeCloseTo(0, 0);
+  await testInfo.attach("macro-bellows-raw-grid-over-webgl", {
+    body: await page.screenshot(),
+    contentType: "image/png",
+  });
+
+  const uprightMode = page.getByRole("radio", { name: "Upright Assist" });
+  await uprightMode.check();
+  await expect(uprightMode).toBeChecked();
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
+  const uprightPhase = await readGridPhase(grid);
+  // Upright Assist places the same physical origin at display lower-left.
+  expect(uprightPhase.x).toBeCloseTo(0, 0);
+  expect(uprightPhase.y).toBeCloseTo(uprightPhase.height, 0);
+  await testInfo.attach("macro-bellows-upright-grid-over-webgl", {
+    body: await page.screenshot(),
+    contentType: "image/png",
+  });
 });

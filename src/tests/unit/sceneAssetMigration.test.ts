@@ -56,7 +56,7 @@ import {
   resolveMirrorShiftCameraAnchors,
 } from "../../scenes/mirrorShiftGeometry";
 import { resolveMirrorShiftTeachingState } from "../../scenes/mirrorShiftCalibration";
-import { resolveMirrorShiftLighting } from "../../render/mirrorShiftLighting";
+import { resolveMirrorShiftPresentationLighting } from "../../render/mirrorShiftLighting";
 import {
   ARCHITECTURE_RISE_ASSET_KEY,
   ARCHITECTURE_FOREGROUND_ASSET_KEY,
@@ -221,7 +221,7 @@ const semanticResults = () => ({
         filmCenterWorld: optics.filmCenterWorld,
         focusPlane: optics.focusPlane,
       },
-      lighting: resolveMirrorShiftLighting(),
+      lighting: resolveMirrorShiftPresentationLighting(),
     };
   })(),
 });
@@ -686,42 +686,36 @@ describe("static teaching scene asset migrations", () => {
     }
   });
 
-  it("keeps the Interior Corner practical light in its subject object graph", () => {
+  it("keeps the Interior Corner subject free of world illumination objects", () => {
     const group = createRegisteredSceneAsset(INTERIOR_CORNER_ASSET_KEY, {
       presentation: INTERIOR_CORNER_PRESENTATION,
     });
     let disposalStarted = false;
 
     try {
-      const light = group.getObjectByName("interior-corner-local-light");
-      expect(light).toBeInstanceOf(THREE.PointLight);
-      expect(light?.parent).toBe(group);
-      if (!(light instanceof THREE.PointLight)) return;
-      const lightDispose = vi.spyOn(light, "dispose");
-
-      expect(light.color.getHexString()).toBe(
-        new THREE.Color("#fff1d6").getHexString(),
-      );
-      expect(light.intensity).toBe(5);
-      expect(light.distance).toBe(7.5);
-      expect(light.decay).toBe(2);
-      expect(light.position.x).toBeCloseTo(0.42);
-      expect(light.position.y).toBeCloseTo(
-        (INTERIOR_CORNER_PRESENTATION.geometry.room.floorY + 1310) / 1000,
-      );
-      expect(light.position.z).toBeCloseTo(8.3);
-      expect(light.castShadow).toBe(false);
-      expect(light.shadow.map).toBeNull();
-
-      // This PointLight belongs to the object graph. With shadows disabled it
-      // has no allocated shadow target; the teaching-resource disposer handles
-      // mesh-owned geometries, materials, and textures without disposing it.
+      expect(group.getObjectsByProperty("type", "PointLight")).toHaveLength(0);
       disposalStarted = true;
       disposeRegisteredSceneAsset(INTERIOR_CORNER_ASSET_KEY, group);
-      expect(lightDispose).not.toHaveBeenCalled();
     } finally {
       if (!disposalStarted) {
         disposeRegisteredSceneAsset(INTERIOR_CORNER_ASSET_KEY, group);
+      }
+    }
+  });
+
+  it("keeps the Architecture Rise subject free of world directional lights", () => {
+    const group = createRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, {
+      presentation: ARCHITECTURE_RISE_PRESENTATION,
+    });
+    let disposalStarted = false;
+
+    try {
+      expect(group.getObjectsByProperty("type", "DirectionalLight")).toHaveLength(0);
+      disposalStarted = true;
+      disposeRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, group);
+    } finally {
+      if (!disposalStarted) {
+        disposeRegisteredSceneAsset(ARCHITECTURE_RISE_ASSET_KEY, group);
       }
     }
   });

@@ -2,6 +2,8 @@ import { expect, test } from "@playwright/test";
 import {
   expectLearningFeedbackCompleted,
   expectLearningFeedbackNotCompleted,
+  getLearningDrawer,
+  getLearningOverlay,
   openLearningFeedback,
 } from "./helpers/learningOverlay";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
@@ -23,6 +25,25 @@ test("TST-E2E-002: user can open Architecture Rise from the Scenes page", async 
 
 test("TST-E2E-003: rise task starts in failed state", async ({ page }) => {
   await page.goto("/simulator/guided/architecture-rise/rise-01");
+  await expect(page.getByRole("heading", { name: "3D Scene", exact: true })).toBeVisible({
+    timeout: 15_000,
+  });
+
+  const learning = getLearningOverlay(page);
+  const drawer = getLearningDrawer(page);
+  await expect(learning).toHaveAttribute("data-drawer-state", "pinned");
+  await expect(drawer).toBeVisible();
+  await expect(drawer.getByTestId("learning-overlay-task-view")).toBeVisible();
+  await expect(drawer.getByRole("button", { name: "Task", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+
+  const cameraControls = page.getByLabel("Camera Controls");
+  await expect(cameraControls.getByRole("slider", { name: "Rise", exact: true })).toBeEnabled();
+  await expect(cameraControls.getByRole("slider", { name: "Tilt", exact: true })).toBeDisabled();
+  await expect(cameraControls.getByRole("slider", { name: "Swing", exact: true })).toBeDisabled();
+
   await expectLearningFeedbackNotCompleted(page);
   const feedback = await openLearningFeedback(page);
   await expect(feedback).toContainText("Score:");

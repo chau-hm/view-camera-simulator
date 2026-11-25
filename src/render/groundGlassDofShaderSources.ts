@@ -45,6 +45,45 @@ void main(){
 `;
 
 /**
+ * Contribution-local physical CoC from an explicit apparent-world-position
+ * field. This reuses the same physical footprint kernel as the opaque depth
+ * path; it does not ask a contribution producer to encode an arbitrary CoC or
+ * to rasterize a depth texture. RGBA position values use renderer-world metres
+ * and alpha below 0.5 marks an invalid sample. Contribution producers must
+ * also zero their preweighted RGB radiance at invalid position samples.
+ */
+export const groundGlassApparentWorldPositionCocFragmentShader = `
+precision highp float;
+varying vec2 vUv;
+uniform sampler2D tApparentWorldPosition;
+${sharedIntro}
+
+void main(){
+  vec4 apparentPosition = texture2D(tApparentWorldPosition, vUv);
+  if(apparentPosition.a < 0.5 || !isFiniteVec3(apparentPosition.xyz)){
+    gl_FragColor = vec4(encodeSignedPhysicalCoCDiameterMm(0.0), 0.0, 0.0, 0.0);
+    return;
+  }
+  GroundGlassPhysicalBlurFootprint footprint =
+    calculatePhysicalBlurFootprintFromWorldPosition(apparentPosition.xyz);
+  if(footprint.valid < 0.5){
+    gl_FragColor = vec4(encodeSignedPhysicalCoCDiameterMm(0.0), 0.0, 0.0, 0.0);
+    return;
+  }
+  vec2 encodedFootprintAxes = encodeGroundGlassFootprintAxesMm(
+    footprint.majorRadiusMm,
+    footprint.minorRadiusMm
+  );
+  gl_FragColor = vec4(
+    encodeSignedPhysicalCoCDiameterMm(footprint.signedCocMm),
+    encodedFootprintAxes.x,
+    encodedFootprintAxes.y,
+    encodeGroundGlassFootprintOrientation(footprint.orientationRad)
+  );
+}
+`;
+
+/**
  * Local-affine oriented aperture gather. CoC and footprint data are generated
  * independently at full resolution; this pass may render to a scaled target
  * for quality tiers. This is intentionally a single-view color/depth
@@ -89,6 +128,9 @@ void main(){
     centerExtentPx = centerScalarRadiusPx;
   }
   bool nearLayer = gatherLayer > 0.5;
+  float centerFarDepthToleranceMm = nearLayer
+    ? 0.0
+    : farDepthToleranceMm(depthDistanceMm(centerDepth));
 
   // A near center surface is already represented by the near layer. Do not
   // let a far gather pull background through its opaque silhouette.
@@ -120,7 +162,7 @@ void main(){
 
   float centerWeight = nearLayer
     ? calculateNearSampleWeight(centerDepth, centerDepth, centerSignedCocMm, centerSignedCocMm)
-    : calculateFarSampleWeight(centerDepth, centerDepth, centerSignedCocMm);
+    : calculateFarSampleWeight(centerDepth, centerDepth, centerSignedCocMm, centerFarDepthToleranceMm);
   if(centerWeight > 1e-6){
     accum += sharpColor.rgb * centerWeight;
     total += centerWeight;
@@ -151,7 +193,7 @@ void main(){
     float sampleSignedCocMm = decodeStoredSignedCoCDiameterMm(sampleFootprint.r);
     float depthWeight = nearLayer
       ? calculateNearSampleWeight(centerDepth, sampleDepth, centerSignedCocMm, sampleSignedCocMm)
-      : calculateFarSampleWeight(centerDepth, sampleDepth, sampleSignedCocMm);
+      : calculateFarSampleWeight(centerDepth, sampleDepth, sampleSignedCocMm, centerFarDepthToleranceMm);
     float footprintWeight = 1.0;
     vec2 sampleMajorAxisPx = vec2(0.0);
     vec2 sampleMinorAxisPx = vec2(0.0);
@@ -224,9 +266,14 @@ uniform float flipDisplayX;
 uniform float flipDisplayY;
 uniform float groundGlassIlluminanceGain;
 uniform float groundGlassNaturalIlluminationEnabled;
+uniform float groundGlassNaturalIlluminationModel;
 uniform float groundGlassNaturalIlluminationImageDistanceMm;
 uniform float groundGlassNaturalIlluminationOffsetXMm;
 uniform float groundGlassNaturalIlluminationOffsetYMm;
+uniform vec3 groundGlassNaturalIlluminationLensToFilmCenterLocalMm;
+uniform vec3 groundGlassNaturalIlluminationImageSideAxisLocal;
+uniform float groundGlassNaturalIlluminationReferenceFilmIncidenceCosine;
+uniform float groundGlassNaturalIlluminationFilmNormalTowardLensSign;
 uniform float groundGlassCoverageEnabled;
 uniform float groundGlassCoverageMode;
 uniform float groundGlassCoverageRadiusMm;
@@ -247,6 +294,22 @@ float resolveGroundGlassNaturalIllumination(vec2 filmPointMm) {
   if (groundGlassNaturalIlluminationEnabled < 0.5) return 1.0;
 
   float imageDistanceMm = groundGlassNaturalIlluminationImageDistanceMm;
+  if (groundGlassNaturalIlluminationModel > 1.5) {
+    float referenceIncidence = groundGlassNaturalIlluminationReferenceFilmIncidenceCosine;
+    float normalSign = groundGlassNaturalIlluminationFilmNormalTowardLensSign;
+    vec3 lensToFilmPointLocalMm = groundGlassNaturalIlluminationLensToFilmCenterLocalMm +
+      vec3(filmPointMm, 0.0);
+    float distanceSquared = dot(lensToFilmPointLocalMm, lensToFilmPointLocalMm);
+    float projectedPupil = dot(groundGlassNaturalIlluminationImageSideAxisLocal, lensToFilmPointLocalMm);
+    float filmIncidence = -normalSign * lensToFilmPointLocalMm.z;
+    if (imageDistanceMm <= 0.0 || referenceIncidence <= 0.0 || distanceSquared <= 1e-18) return 1.0;
+    if (projectedPupil <= 0.0 || filmIncidence <= 0.0) return 0.0;
+    float gain = imageDistanceMm * imageDistanceMm * projectedPupil * filmIncidence /
+      (distanceSquared * distanceSquared * referenceIncidence);
+    if (!(gain >= 0.0) || gain > 1e20) return 1.0;
+    return gain;
+  }
+
   float imageDistanceSquared = imageDistanceMm * imageDistanceMm;
   vec2 offsetMm = vec2(
     groundGlassNaturalIlluminationOffsetXMm,

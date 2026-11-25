@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "ground-glass-m7g-r187-external-loss-observation-v1",
+  "scenarioId": "m7g-r187-spontaneous-external-device-loss",
+  "status": "blocked",
+  "evidenceClass": "unobserved-external-device-loss",
+  "externalLossObserved": false,
+  "testDestroyObserved": false,
+  "limitation": "The available r187 environment exposed the explicit callback-equivalent and adapter-owned GPUDevice.destroy() controls, but no independent external device-loss trigger. No spontaneous or driver-caused loss is inferred from either test-induced path."
+}

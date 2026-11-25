@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import React from "react";
 import { act, cleanup, render } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { deriveOpticsState } from "../../core/optics/deriveOpticsState";
 import { resolveGroundGlassRelativeIlluminance } from "../../core/optics/groundGlassIlluminance";
 import { ACCEPTABLE_COC_DIAMETER_MM } from "../../core/optics/physicalSharpness";
@@ -10,6 +10,7 @@ import {
   GroundGlassRTT as UnconnectedGroundGlassRTT,
   type GroundGlassRTTProps,
 } from "../../render/GroundGlassRTT";
+import type { GroundGlassSceneProfile } from "../../render/groundGlassSceneProfiles";
 import { synchronizeGroundGlassDofClipRange } from "../../render/groundGlassShaderBindings";
 import {
   decodeGroundGlassSignedCoC,
@@ -33,7 +34,10 @@ import { architectureRiseScene } from "../../scenes/definitions/architecture-ris
 import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
 import { macroBellowsExtensionScene } from "../../scenes/definitions/macro-bellows-extension";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
+import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
 import { understandingCameraMovementsScene } from "../../scenes/definitions/understanding-camera-movements";
+import { INTERIOR_CORNER_PRESENTATION } from "../../scenes/presentation/interiorCorner";
+import { resolveSceneWorldIllumination } from "../../scenes/illumination/sceneWorldIllumination";
 import geometry from "../../scenes/shelfSwingGeometry";
 import cameraMovementsGeometry from "../../scenes/understandingCameraMovementsGeometry";
 import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
@@ -43,15 +47,29 @@ import type {
   GroundGlassRttRuntimeInfoChangeHandler,
 } from "../../render/groundGlassRttDimensions";
 import { resolveGroundGlassInspectionWindow } from "../../render/groundGlassInspectionWindow";
+import type { GroundGlassFrameResult } from "../../render/backend/groundGlassBackendContracts";
 
 const fiberTestState = vi.hoisted(() => ({
   frameCallback: null as ((state?: unknown, delta?: number) => void) | null,
   renderedScenes: [] as unknown[],
   renderEvents: [] as Array<{ scene: unknown; target: unknown }>,
   cocFramebufferStatuses: [] as number[],
+  contextLost: false,
+  canvasListeners: new Map<string, Array<(event: Event) => void>>(),
+  canvasCreatedCallback: null as ((state: never) => void) | null,
   currentTarget: null as unknown,
+  clearColor: null as number | null,
+  clearAlpha: 1,
   gl: {
     isWebGLRenderer: true,
+    dispose: vi.fn(),
+    forceContextLoss: () => {
+      fiberTestState.contextLost = true;
+      const event = new Event("webglcontextlost", { cancelable: true });
+      for (const listener of fiberTestState.canvasListeners.get("webglcontextlost") ?? []) {
+        listener(event);
+      }
+    },
     getPixelRatio: () => 1,
     getRenderTarget: () => fiberTestState.currentTarget,
     setRenderTarget: (target: unknown) => {
@@ -60,10 +78,14 @@ const fiberTestState = vi.hoisted(() => ({
     getContext: () => ({
       FRAMEBUFFER: 0x8d40,
       FRAMEBUFFER_COMPLETE: 0x8cd5,
+      isContextLost: () => fiberTestState.contextLost,
       checkFramebufferStatus: () =>
         fiberTestState.cocFramebufferStatuses.shift() ?? 0x8cd5,
     }),
-    setClearColor: () => undefined,
+    setClearColor: (color?: number, alpha = 1) => {
+      fiberTestState.clearColor = color ?? null;
+      fiberTestState.clearAlpha = alpha;
+    },
     clear: () => undefined,
     render: (scene: unknown) => {
       fiberTestState.renderedScenes.push(scene);
@@ -76,17 +98,53 @@ const fiberTestState = vi.hoisted(() => ({
       width: 500,
       height: 400,
       getBoundingClientRect: () => ({ width: 500, height: 400 }),
+      addEventListener: (type: string, listener: EventListenerOrEventListenerObject) => {
+        const callback = typeof listener === "function"
+          ? listener
+          : (event: Event) => listener.handleEvent(event);
+        const listeners = fiberTestState.canvasListeners.get(type) ?? [];
+        listeners.push(callback);
+        fiberTestState.canvasListeners.set(type, listeners);
+      },
+      removeEventListener: (type: string, listener: EventListenerOrEventListenerObject) => {
+        const callback = typeof listener === "function"
+          ? listener
+          : (event: Event) => listener.handleEvent(event);
+        const listeners = fiberTestState.canvasListeners.get(type) ?? [];
+        fiberTestState.canvasListeners.set(type, listeners.filter((candidate) => candidate !== callback));
+      },
     },
   },
 }));
 
 vi.mock("@react-three/fiber", () => ({
-  Canvas: (props: { children?: unknown }) => props.children,
+  Canvas: (props: { children?: unknown; onCreated?: (state: unknown) => void }) => {
+    fiberTestState.canvasCreatedCallback = props.onCreated
+      ? props.onCreated as unknown as (state: never) => void
+      : null;
+    return props.children;
+  },
   useFrame: (callback: (state?: unknown, delta?: number) => void) => {
     fiberTestState.frameCallback = callback;
   },
   useThree: () => ({ gl: fiberTestState.gl }),
 }));
+
+const createTestPmremTarget = () => {
+  return new THREE.WebGLCubeRenderTarget(256, {
+    format: THREE.RGBAFormat,
+    type: THREE.HalfFloatType,
+    colorSpace: THREE.LinearSRGBColorSpace,
+    depthBuffer: false,
+  });
+};
+
+beforeEach(() => {
+  // GroundGlassRTT uses a deliberately lightweight fake WebGL renderer here.
+  // PMREM conversion itself is covered by the environment rig tests/browser capture.
+  vi.spyOn(THREE.PMREMGenerator.prototype, "fromEquirectangular")
+    .mockImplementation(createTestPmremTarget);
+});
 
 vi.mock("../../render/groundGlassPipeline", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../render/groundGlassPipeline")>();
@@ -114,11 +172,22 @@ afterEach(() => {
   fiberTestState.renderedScenes.length = 0;
   fiberTestState.renderEvents.length = 0;
   fiberTestState.cocFramebufferStatuses.length = 0;
+  fiberTestState.contextLost = false;
+  fiberTestState.canvasListeners.clear();
+  fiberTestState.canvasCreatedCallback = null;
   fiberTestState.currentTarget = null;
+  fiberTestState.clearColor = null;
+  fiberTestState.clearAlpha = 1;
   useAppStore.getState().setGroundGlassRttRuntimeInfo(null);
   useAppStore.getState().setGroundGlassRttRuntimeInfoForChannel("camera-movement-original", null);
   useAppStore.getState().setGroundGlassRttRuntimeInfoForChannel("camera-movement-current", null);
 });
+
+const dispatchCanvasEvent = (type: string): Event => {
+  const event = new Event(type, { cancelable: true });
+  for (const listener of fiberTestState.canvasListeners.get(type) ?? []) listener(event);
+  return event;
+};
 
 const ConnectedGroundGlassRTT = (props: GroundGlassRTTProps) => {
   const onRuntimeInfoChange: GroundGlassRttRuntimeInfoChangeHandler = (
@@ -166,6 +235,236 @@ function renderedShaderMaterials() {
 }
 
 describe("GroundGlassRTT ownership and lifecycle", () => {
+  it("waits for actual RTT owners and Canvas retirement before reporting failed cleanup", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureRiseScene.cameraPreset,
+      activeSceneId: architectureRiseScene.id,
+    };
+    const generation = { generationId: "rtt-generation-cleanup-owner", channelId: "default" } as const;
+    const request = {
+      requestId: "rtt-request-cleanup-owner",
+      channelId: "default",
+      sceneId: architectureRiseScene.id,
+    } as const;
+    const subject = new THREE.Group();
+    subject.name = "cleanup-evidence-subject";
+    const disposeFailure = new Error("injected subject cleanup failure");
+    const disposeSubject = vi.fn(() => {
+      subject.removeFromParent();
+      throw disposeFailure;
+    });
+    const developmentProfile: GroundGlassSceneProfile = {
+      configureRttShadowParticipation: vi.fn(),
+      mountSubject: vi.fn((scene: THREE.Scene) => {
+        scene.add(subject);
+        return { group: subject, dispose: disposeSubject };
+      }),
+      resolveRenderBounds: vi.fn(() => architectureRiseScene.bounds),
+    };
+    const onAdapterDisposed = vi.fn();
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureRiseScene),
+        focalLengthMm: camera.focalLengthMm,
+        scene: architectureRiseScene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+        rendererGeneration: generation,
+        acceptedRequestIdentity: request,
+        onAdapterDisposed,
+        developmentSceneProfileOverride: developmentProfile,
+      }),
+    );
+
+    expect(fiberTestState.canvasCreatedCallback).not.toBeNull();
+    act(() => fiberTestState.canvasCreatedCallback?.({ gl: fiberTestState.gl } as never));
+    expect(onAdapterDisposed).not.toHaveBeenCalled();
+
+    view.unmount();
+
+    expect(disposeSubject).toHaveBeenCalledTimes(1);
+    expect(onAdapterDisposed).not.toHaveBeenCalled();
+    act(() => {
+      fiberTestState.gl.dispose();
+      fiberTestState.gl.forceContextLoss();
+    });
+
+    expect(onAdapterDisposed).toHaveBeenCalledTimes(1);
+    expect(onAdapterDisposed).toHaveBeenLastCalledWith(
+      generation,
+      "failed",
+      disposeFailure.message,
+    );
+    expect(subject.parent).toBeNull();
+  });
+
+  it("uses and disposes the development-only scene profile through the RTT lifecycle", () => {
+    const subject = new THREE.Group();
+    subject.name = "development-profile-test-subject";
+    const disposeSubject = vi.fn(() => subject.removeFromParent());
+    const mountSubject = vi.fn((scene: THREE.Scene) => {
+      scene.add(subject);
+      return { group: subject, dispose: disposeSubject };
+    });
+    const developmentProfile: GroundGlassSceneProfile = {
+      configureRttShadowParticipation: vi.fn(),
+      mountSubject,
+      resolveRenderBounds: vi.fn(() => architectureRiseScene.bounds),
+    };
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureRiseScene.cameraPreset,
+      activeSceneId: architectureRiseScene.id,
+    };
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureRiseScene),
+        focalLengthMm: camera.focalLengthMm,
+        scene: architectureRiseScene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+        developmentSceneProfileOverride: developmentProfile,
+      }),
+    );
+
+    act(() => fiberTestState.frameCallback?.());
+
+    const sourceScene = fiberTestState.renderedScenes.find(
+      (candidate): candidate is THREE.Scene =>
+        candidate instanceof THREE.Scene &&
+        candidate.getObjectByName(subject.name) === subject,
+    );
+    expect(mountSubject).toHaveBeenCalledTimes(1);
+    expect(developmentProfile.configureRttShadowParticipation).toHaveBeenCalledWith(subject);
+    expect(sourceScene).toBe(subject.parent);
+
+    view.unmount();
+
+    expect(disposeSubject).toHaveBeenCalledTimes(1);
+    expect(subject.parent).toBeNull();
+  });
+
+  it("mounts the resolved Interior Corner practical in the RTT scene outside the subject", () => {
+    const scene = interiorCornerScene;
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...scene.cameraPreset,
+      activeSceneId: scene.id,
+    };
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, scene),
+        focalLengthMm: camera.focalLengthMm,
+        scene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+      }),
+    );
+
+    act(() => fiberTestState.frameCallback?.());
+
+    const sourceScene = fiberTestState.renderedScenes.find(
+      (candidate): candidate is THREE.Scene =>
+        candidate instanceof THREE.Scene &&
+        candidate.getObjectByName("interior-corner-subject") !== undefined,
+    );
+    if (!sourceScene) throw new Error("Expected the mounted Ground Glass source scene");
+    expect(sourceScene.environment).toBeNull();
+    const subject = sourceScene.getObjectByName("interior-corner-subject");
+    if (!subject) throw new Error("Expected the registered Interior Corner subject");
+    const pointLights: THREE.PointLight[] = [];
+    sourceScene.traverse((object) => {
+      if (object instanceof THREE.PointLight) pointLights.push(object);
+    });
+
+    expect(subject.getObjectsByProperty("type", "PointLight")).toHaveLength(0);
+    expect(pointLights).toHaveLength(1);
+    const practical = pointLights[0];
+    expect(practical.parent).toBe(sourceScene);
+    expect(practical.name).toBe("interior-corner-local-light");
+    expect(practical.color.equals(new THREE.Color("#fff1d6"))).toBe(true);
+    expect(practical.intensity).toBe(5);
+    expect(practical.distance).toBe(7.5);
+    expect(practical.decay).toBe(2);
+    expect(practical.position.toArray()).toEqual([
+      0.42,
+      (INTERIOR_CORNER_PRESENTATION.geometry.room.floorY + 1310) / 1000,
+      8.3,
+    ]);
+    expect(practical.castShadow).toBe(false);
+    const dispose = vi.spyOn(practical, "dispose");
+
+    view.unmount();
+
+    expect(practical.parent).toBeNull();
+    expect(dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it("mounts the resolved Architecture Rise daylight outside the registered RTT subject", () => {
+    const scene = architectureRiseScene;
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...scene.cameraPreset,
+      activeSceneId: scene.id,
+    };
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, scene),
+        focalLengthMm: camera.focalLengthMm,
+        scene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+      }),
+    );
+
+    act(() => fiberTestState.frameCallback?.());
+
+    const sourceScene = fiberTestState.renderedScenes.find(
+      (candidate): candidate is THREE.Scene =>
+        candidate instanceof THREE.Scene &&
+        candidate.getObjectByName("architecture-rise-subject") !== undefined,
+    );
+    if (!sourceScene) throw new Error("Expected the mounted Ground Glass source scene");
+    expect(sourceScene.environment).toBeInstanceOf(THREE.Texture);
+    expect(sourceScene.environmentIntensity).toBe(
+      resolveSceneWorldIllumination(scene.id).environment?.intensity,
+    );
+    expect((sourceScene.background as THREE.Color).equals(new THREE.Color("#dfe5ec"))).toBe(true);
+    const subject = sourceScene.getObjectByName("architecture-rise-subject");
+    if (!subject) throw new Error("Expected the registered Architecture Rise subject");
+
+    const naturalLights: THREE.DirectionalLight[] = [];
+    sourceScene.traverse((object) => {
+      if (
+        object instanceof THREE.DirectionalLight &&
+        object.name === "architecture-rise-daylight"
+      ) {
+        naturalLights.push(object);
+      }
+    });
+
+    expect(subject.getObjectsByProperty("type", "DirectionalLight")).toHaveLength(0);
+    expect(naturalLights).toHaveLength(1);
+    const daylight = naturalLights[0];
+    expect(daylight.parent).toBe(sourceScene);
+    expect(daylight.target.parent).toBe(sourceScene);
+    expect(daylight.color.equals(new THREE.Color("#fff8ee"))).toBe(true);
+    expect(daylight.intensity).toBe(1);
+    expect(daylight.castShadow).toBe(false);
+    const dispose = vi.spyOn(daylight, "dispose");
+
+    view.unmount();
+
+    expect(daylight.parent).toBeNull();
+    expect(daylight.target.parent).toBeNull();
+    expect(dispose).toHaveBeenCalledTimes(1);
+  });
+
   it("passes Architecture Rise physical CoC inputs without a display blur gain", () => {
     const camera = {
       ...DEFAULT_CAMERA_STATE,
@@ -685,8 +984,16 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(diagnostics.get()?.groundGlassCoverageKind).toBe("nonparallel-conic");
     expect(diagnostics.get()?.groundGlassCoverageConicQuadratic?.split(",")).toHaveLength(6);
     expect(diagnostics.get()?.groundGlassCoverageConicAxial?.split(",")).toHaveLength(3);
-    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationEnabled.value).toBe(0);
-    expect(diagnostics.get()?.groundGlassNaturalIlluminationKind).toBe("neutral");
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationEnabled.value).toBe(1);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationModel.value).toBe(2);
+    expect(diagnostics.get()?.groundGlassNaturalIlluminationKind).toBe("nonparallel-geometric");
+    expect(diagnostics.get()?.groundGlassNaturalIlluminationEnabled).toBe(true);
+    expect(diagnostics.get()?.groundGlassNaturalIlluminationStateJson)
+      .toBe(JSON.stringify(optics.groundGlassNaturalIllumination));
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationReferenceFilmIncidenceCosine.value)
+      .toBeCloseTo(optics.groundGlassNaturalIllumination.kind === "nonparallel-geometric"
+        ? optics.groundGlassNaturalIllumination.referenceFilmIncidenceCosine
+        : 0, 12);
 
     const canonicalDiagnostic = diagnostics.get()?.groundGlassCoverageConicQuadratic;
     view.rerender(React.createElement(UnconnectedGroundGlassRTT, { ...props, rawDebug: true }));
@@ -696,6 +1003,8 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(diagnostics.get()?.groundGlassCoverageEnabled).toBe(false);
     expect(diagnostics.get()?.groundGlassCoverageKind).toBe("nonparallel-conic");
     expect(diagnostics.get()?.groundGlassCoverageConicQuadratic).toBe(canonicalDiagnostic);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationEnabled.value).toBe(0);
+    expect(compositeMaterial?.uniforms.groundGlassNaturalIlluminationModel.value).toBe(0);
 
     view.unmount();
   });
@@ -784,6 +1093,257 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
       runtimeInfo?.gatherTargetWidthPx,
       runtimeInfo?.gatherTargetHeightPx,
     ]);
+
+    view.unmount();
+  });
+
+  it("restores renderer state and invalidates profiling when a Ground Glass pass fails", () => {
+    window.history.replaceState({}, "", "/?dofProfiling=1");
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureForegroundScene.cameraPreset,
+      activeSceneId: architectureForegroundScene.id,
+    };
+    const diagnostics = createRuntimeInfoCollector();
+    const frameResults: Array<{ status: string; failedStage?: string | null }> = [];
+    const generation = { generationId: "rtt-generation-failure", channelId: "default" } as const;
+    const request = {
+      requestId: "rtt-request-failure",
+      channelId: "default",
+      sceneId: architectureForegroundScene.id,
+    } as const;
+    const previousTarget = new THREE.WebGLRenderTarget(32, 24);
+    const disposePreviousTarget = vi.spyOn(previousTarget, "dispose");
+    fiberTestState.currentTarget = previousTarget;
+    const injectedFailure = new Error("injected near-gather renderer failure");
+    let targetAtFailure: unknown;
+    let clearColorAtFailure: number | null = null;
+    const setClearColor = vi
+      .spyOn(fiberTestState.gl, "setClearColor")
+      .mockImplementation((color, alpha = 1) => {
+        fiberTestState.clearColor = color ?? null;
+        fiberTestState.clearAlpha = alpha;
+        if (alpha === 0) {
+          targetAtFailure = fiberTestState.currentTarget;
+          clearColorAtFailure = color ?? null;
+          throw injectedFailure;
+        }
+      });
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureForegroundScene),
+        focalLengthMm: camera.focalLengthMm,
+        scene: architectureForegroundScene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+        previewMode: "upright",
+        rendererGeneration: generation,
+        acceptedRequestIdentity: request,
+        onFrameResult: (result) => frameResults.push(result),
+        onRuntimeInfoChange: diagnostics.onRuntimeInfoChange,
+      }),
+    );
+
+    expect(fiberTestState.frameCallback).not.toBeNull();
+    let observedFailure: unknown;
+    try {
+      act(() => fiberTestState.frameCallback?.({}, 1 / 60));
+    } catch (error) {
+      observedFailure = error;
+    }
+
+    expect(observedFailure).toBe(injectedFailure);
+    expect(frameResults).toHaveLength(1);
+    expect(frameResults[0]).toMatchObject({
+      status: "failed",
+      failedStage: "nearGather",
+      generation,
+      request,
+      failureReason: injectedFailure.message,
+    });
+    expect(targetAtFailure).toBeInstanceOf(THREE.WebGLRenderTarget);
+    expect(targetAtFailure).not.toBe(previousTarget);
+    expect(fiberTestState.currentTarget).toBe(previousTarget);
+    // Near gather deliberately clears transparent black; failed-frame cleanup
+    // restores the renderer's persistent Ground Glass sky clear state.
+    expect(fiberTestState.clearColor).toBe(clearColorAtFailure);
+    expect(fiberTestState.clearAlpha).toBe(1);
+
+    const failedInfo = diagnostics.get();
+    const failedProfile = failedInfo?.profilingSnapshot;
+    expect(failedInfo?.frameExecutionError).toBe(injectedFailure.message);
+    expect(failedInfo?.failedPass).toBe("nearGather");
+    expect(failedProfile?.profilingDiagnostics.framesAttempted).toBe(1);
+    expect(failedProfile?.profilingDiagnostics.framesInvalidated).toBe(1);
+    expect(failedProfile?.profilingDiagnostics.pendingFrames).toBe(0);
+    expect(failedProfile?.groundGlassCpuSubmit?.count).toBe(0);
+    expect(failedProfile?.physicalDofCpuSubmit?.count).toBe(0);
+    expect(failedProfile?.passes.sceneRenderMs?.count).toBe(0);
+    expect(failedProfile?.passes.cocFootprintMs?.count).toBe(0);
+    expect(failedProfile?.passes.farGatherMs?.count).toBe(0);
+    expect(failedProfile?.passes.nearGatherMs?.count).toBe(0);
+    expect(failedProfile?.passes.compositeMs?.count).toBe(0);
+
+    setClearColor.mockRestore();
+    view.unmount();
+    expect(diagnostics.get()).toBeNull();
+    expect(disposePreviousTarget).not.toHaveBeenCalled();
+    previousTarget.dispose();
+  });
+
+  it("reports completion only after the final display output and renderer-state restoration", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureForegroundScene.cameraPreset,
+      activeSceneId: architectureForegroundScene.id,
+    };
+    const previousTarget = new THREE.WebGLRenderTarget(20, 16);
+    fiberTestState.currentTarget = previousTarget;
+    const generation = { generationId: "rtt-generation-success", channelId: "default" } as const;
+    const request = {
+      requestId: "rtt-request-success",
+      channelId: "default",
+      sceneId: architectureForegroundScene.id,
+    } as const;
+    const results: GroundGlassFrameResult[] = [];
+    let targetAtCompletion: unknown;
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureForegroundScene),
+        focalLengthMm: camera.focalLengthMm,
+        scene: architectureForegroundScene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+        rendererGeneration: generation,
+        acceptedRequestIdentity: request,
+        onRendererMounted: vi.fn(),
+        onFrameResult: (result) => {
+          targetAtCompletion = fiberTestState.currentTarget;
+          results.push(result);
+        },
+      }),
+    );
+
+    act(() => fiberTestState.frameCallback?.({}, 1 / 60));
+
+    expect(fiberTestState.renderEvents).toHaveLength(6);
+    expect(results).toEqual([expect.objectContaining({
+      status: "completed",
+      generation,
+      request,
+      requiredOperations: "all-completed",
+    })]);
+    expect(targetAtCompletion).toBe(previousTarget);
+    expect(fiberTestState.currentTarget).toBe(previousTarget);
+
+    view.unmount();
+    previousTarget.dispose();
+  });
+
+  it("does not report a completed frame while WebGL context is lost", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureForegroundScene.cameraPreset,
+      activeSceneId: architectureForegroundScene.id,
+    };
+    const generation = { generationId: "rtt-generation-context-loss", channelId: "default" } as const;
+    const request = {
+      requestId: "rtt-request-context-loss",
+      channelId: "default",
+      sceneId: architectureForegroundScene.id,
+    } as const;
+    const results: GroundGlassFrameResult[] = [];
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureForegroundScene),
+        focalLengthMm: camera.focalLengthMm,
+        scene: architectureForegroundScene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+        rendererGeneration: generation,
+        acceptedRequestIdentity: request,
+        onRendererMounted: vi.fn(),
+        onFrameResult: (result) => results.push(result),
+      }),
+    );
+
+    act(() => fiberTestState.frameCallback?.({}, 1 / 60));
+    expect(results.at(-1)).toMatchObject({ status: "completed", generation, request });
+
+    fiberTestState.contextLost = true;
+    let lossEvent: Event;
+    act(() => {
+      lossEvent = dispatchCanvasEvent("webglcontextlost");
+    });
+    expect(lossEvent!.defaultPrevented).toBe(true);
+    expect(results.at(-1)).toMatchObject({
+      status: "failed",
+      generation,
+      request,
+      failureReason: "WebGL context lost",
+    });
+
+    const resultCountWhileLost = results.length;
+    act(() => fiberTestState.frameCallback?.({}, 1 / 60));
+    expect(results).toHaveLength(resultCountWhileLost);
+    expect(results.at(-1)).toMatchObject({ status: "failed", generation, request });
+
+    fiberTestState.contextLost = false;
+    act(() => dispatchCanvasEvent("webglcontextrestored"));
+    act(() => fiberTestState.frameCallback?.({}, 1 / 60));
+    expect(results.at(-1)).toMatchObject({ status: "completed", generation, request });
+
+    view.unmount();
+  });
+
+  it("does not publish a completed frame if context loss occurs during display submission", () => {
+    const camera = {
+      ...DEFAULT_CAMERA_STATE,
+      ...architectureForegroundScene.cameraPreset,
+      activeSceneId: architectureForegroundScene.id,
+    };
+    const generation = { generationId: "rtt-generation-mid-frame-loss", channelId: "default" } as const;
+    const request = {
+      requestId: "rtt-request-mid-frame-loss",
+      channelId: "default",
+      sceneId: architectureForegroundScene.id,
+    } as const;
+    const results: GroundGlassFrameResult[] = [];
+    const renderBeforeLoss = fiberTestState.gl.render;
+    vi.spyOn(fiberTestState.gl, "render").mockImplementation((scene) => {
+      renderBeforeLoss(scene);
+      if (fiberTestState.renderEvents.length === 6) {
+        fiberTestState.contextLost = true;
+        dispatchCanvasEvent("webglcontextlost");
+      }
+    });
+    const view = render(
+      React.createElement(UnconnectedGroundGlassRTT, {
+        opticsState: deriveOpticsState(camera, architectureForegroundScene),
+        focalLengthMm: camera.focalLengthMm,
+        scene: architectureForegroundScene,
+        widthPx: 500,
+        heightPx: 400,
+        renderQuality: "standard",
+        rendererGeneration: generation,
+        acceptedRequestIdentity: request,
+        onRendererMounted: vi.fn(),
+        onFrameResult: (result) => results.push(result),
+      }),
+    );
+
+    act(() => fiberTestState.frameCallback?.({}, 1 / 60));
+
+    expect(fiberTestState.renderEvents).toHaveLength(6);
+    expect(results).toEqual([expect.objectContaining({
+      status: "failed",
+      generation,
+      request,
+      failureReason: "WebGL context lost",
+    })]);
 
     view.unmount();
   });

@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "rq3a-rendered-pixel-evidence-v1",
+  "sourceCommit": "132515260a0051742bde883fb077788ab360ebb9",
+  "test": "src/tests/e2e/ground-glass-dof-edge.spec.ts",
+  "result": { "executed": 1, "passed": 1, "skipped": 0, "retries": 0 },
+  "environment": {
+    "browser": "Playwright Chromium 149.0.7827.55",
+    "api": "WebGL2",
+    "rendererString": "WebKit WebGL",
+    "sourceDepthFormat": "DEPTH_COMPONENT16 via THREE.UnsignedShortType",
+    "hardwareAcceleration": "not established; the paired application capture reports ANGLE/Vulkan SwiftShader software rendering"
+  },
+  "comparison": {
+    "candidate": "production Far-depth tolerance derived from two 16-bit depth-code steps",
+    "negativeControl": "same production gather shader with Far tolerance replaced by the former max(20 mm, center distance * 0.015) rule",
+    "sameInputsAndSamples": true,
+    "roiDefinition": {
+      "focusDistanceMm": 400,
+      "apertureFNumber": 2.8,
+      "foregroundDistanceMm": 400,
+      "backgroundDistanceMm": 410,
+      "edgePixelX": 256,
+      "edgeRoi": { "x": 255, "yStartInclusive": 144, "yEndExclusive": 240, "width": 1 },
+      "foregroundContrastRoi": { "xStartInclusive": 300, "xEndExclusive": 420, "yStartInclusive": 150, "yEndExclusive": 234 },
+      "backgroundContrastRoi": { "xStartInclusive": 84, "xEndExclusive": 212, "yStartInclusive": 150, "yEndExclusive": 234 }
+    }
+  },
+  "cases": [
+    {
+      "caseId": "focus-foreground-400-f2_8",
+      "foregroundCoCDiameterMm": 0,
+      "backgroundCoCDiameterMm": 0.7559055118,
+      "backgroundBlurMajorRadiusPx": 1.6125984252,
+      "edgeRedIncreaseLevels": { "candidate": 0, "negativeControl": 82, "reduction": 82 },
+      "foregroundContrast": { "source": 62.5795065907, "candidate": 62.5795065907, "negativeControl": 62.5795065907 },
+      "backgroundContrast": { "source": 59.2829320373, "candidate": 55.4134716767, "negativeControl": 55.4134716767 },
+      "interpretation": "The focused foreground retains source contrast; far blur remains present; the legacy rule adds foreground red at the adjacent background edge."
+    },
+    {
+      "caseId": "focus-near-far-390-f2_8",
+      "foregroundCoCDiameterMm": 0.8503937008,
+      "backgroundCoCDiameterMm": 1.6062992126,
+      "foregroundBlurMajorRadiusPx": 1.7074571561,
+      "backgroundBlurMajorRadiusPx": 3.3200555813,
+      "edgeRedIncreaseLevels": { "candidate": 0, "negativeControl": 33.5, "reduction": 33.5 }
+    },
+    {
+      "caseId": "focus-background-410-f1_4",
+      "foregroundCoCDiameterMm": -1.5,
+      "backgroundCoCDiameterMm": 0,
+      "candidateNearLayerAlpha": 1,
+      "foregroundContrast": { "source": 62.5795065907, "candidate": 36.1651615022 },
+      "backgroundContrast": { "source": 59.2829320373, "candidate": 59.2829320373 },
+      "interpretation": "The unchanged Near gather still blurs the defocused foreground and preserves the focused background."
+    },
+    {
+      "caseId": "stopped-down-400-f32",
+      "backgroundCoCDiameterMm": 0.09448818898,
+      "backgroundBlurMajorRadiusPx": 0.09485873089,
+      "candidateZeroBlurRoiMeanAbsRgbDifference": 0
+    }
+  ],
+  "visualArtifact": "At the one-pixel adjacent background ROI, the former Far depth window admits the 400 mm foreground color into the 410 mm background gather. The new tolerance rejects it while retaining the background's measured blur."
+}

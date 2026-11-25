@@ -139,6 +139,15 @@ export type SceneMacroTeachingCapability =
       kind: "compound-movements";
     };
 
+/** Opt-in contract for seeded Free Mode scene presentation variation. */
+export type SceneVariationCapability = {
+  enabled: true;
+  /** Current contract selected for new implicit variants. */
+  schemaVersion: number;
+  /** Historical contracts this scene still resolves explicitly. Omitted means current only. */
+  supportedSchemaVersions?: readonly number[];
+};
+
 export type SceneDefinition = {
   id: string;
   name: string;
@@ -179,6 +188,8 @@ export type SceneDefinition = {
   macroFocusMetricsCapability?: { enabled: true };
   /** Optional macro teaching copy and scale references. */
   macroTeachingCapability?: SceneMacroTeachingCapability;
+  /** Optional seeded presentation capability. Canonical teaching contracts remain authoritative. */
+  sceneVariation?: SceneVariationCapability;
   /** Optional per-scene movement capability contract. When absent, existing default behaviour applies. */
   movementCapabilities?: SceneMovementCapabilities;
   /** Optional semantic side for the generic camera-inspection body anchor; rear is the default. */

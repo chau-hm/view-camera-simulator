@@ -1,0 +1,126 @@
+{
+  "schema": "m7n-playwright-outcomes-v1",
+  "captureId": "target-renderer-heavy-peers-w4",
+  "executionSourceCommitSha": "5034edf1551466649623a920024057b57f8dddbf",
+  "toolingSourceCommitSha": "3ec85599c3cd28019126ce00cff6115c1bcdf059",
+  "normalizerSourceCommitSha": "efdd29ddcea206b07a2dbd197ff813ccfb2479b1",
+  "rawCapture": {
+    "sha256": "44f4182b3fff5bb13af4e525583659a91133e77433eb8b4475f4bfd8f9d1fe7c",
+    "bytes": 198416,
+    "retention": "private-local-only",
+    "offlineReplayAvailable": false
+  },
+  "normalizedTrace": {
+    "artifactPath": "docs/architecture/ground-glass-m7n-renderer-lifecycle/capture/final/target-renderer-heavy-peers-w4.diagnostics.json",
+    "sha256": "480f0067c47787347607876714a331ae2972be158d796c971ecc0d248ec35458",
+    "eventSchemaVersion": 1,
+    "eventCount": 46,
+    "droppedEventCount": 0,
+    "unavailable": false
+  },
+  "config": {
+    "projectName": "chromium",
+    "configuredWorkers": 4,
+    "configuredRetries": 0,
+    "traceEnabled": true
+  },
+  "experiment": {
+    "workload": "canvas-target-plus-three-renderer-heavy-peers",
+    "selectedIdentities": [
+      "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "macro-bellows-extension.spec.ts::Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions",
+      "macro-compound-movements.spec.ts::Macro 4 teaches compound Tilt + Swing + Focus through the public route",
+      "mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed"
+    ],
+    "maxConcurrentTests": 4,
+    "actualWorkerIndices": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "durationMs": 121172.046
+  },
+  "outcomes": {
+    "discovered": 4,
+    "passed": 1,
+    "unexpected": 3,
+    "skipped": 0,
+    "flaky": 0,
+    "incomplete": 0,
+    "retries": 0
+  },
+  "diagnosticSnapshotPhase": "canvas-count-assertion-failure",
+  "tests": [
+    {
+      "identity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "outcome": "unexpected",
+      "expectedStatus": "passed",
+      "attempts": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "workerIndex": 0,
+          "startTime": "2026-11-05T15:58:51.813Z",
+          "durationMs": 11408,
+          "failureSignature": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed"
+        }
+      ],
+      "sourceSpecFile": "architecture-rise-focus-range.spec.ts"
+    },
+    {
+      "identity": "macro-bellows-extension.spec.ts::Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions",
+      "outcome": "unexpected",
+      "expectedStatus": "passed",
+      "attempts": [
+        {
+          "status": "timedOut",
+          "retry": 0,
+          "workerIndex": 1,
+          "startTime": "2026-11-05T15:58:51.819Z",
+          "durationMs": 75469,
+          "failureSignature": "test-timeout"
+        }
+      ],
+      "sourceSpecFile": "macro-bellows-extension.spec.ts"
+    },
+    {
+      "identity": "macro-compound-movements.spec.ts::Macro 4 teaches compound Tilt + Swing + Focus through the public route",
+      "outcome": "unexpected",
+      "expectedStatus": "passed",
+      "attempts": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "workerIndex": 2,
+          "startTime": "2026-11-05T15:58:51.813Z",
+          "durationMs": 120369,
+          "failureSignature": "test-timeout"
+        }
+      ],
+      "sourceSpecFile": "macro-compound-movements.spec.ts"
+    },
+    {
+      "identity": "mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed",
+      "outcome": "passed",
+      "expectedStatus": "passed",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 3,
+          "startTime": "2026-11-05T15:58:51.812Z",
+          "durationMs": 76109,
+          "failureSignature": null
+        }
+      ],
+      "sourceSpecFile": "mirror-shift-rig-lateral.spec.ts"
+    }
+  ],
+  "environment": {
+    "nodeVersion": "v26.12.1",
+    "platform": "darwin",
+    "browserName": "Chromium",
+    "browserVersion": "149.0.7827.55"
+  }
+}

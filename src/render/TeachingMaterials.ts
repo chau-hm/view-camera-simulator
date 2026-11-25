@@ -3,6 +3,7 @@ import {
   createTeachingTexture,
   type TeachingTexturePattern,
 } from "./TeachingTextures";
+import { observerOutputSourceMaterial } from "./backend/observerMaterialOutputIdentity";
 
 export type FocusFriendlyMaterialOptions = {
   pattern: TeachingTexturePattern;
@@ -65,7 +66,10 @@ const textureSlots: readonly TextureSlot[] = [
 ];
 
 /** Dispose one factory-owned subject tree, including maps not released by Material.dispose(). */
-export const disposeTeachingSubjectResources = (root: THREE.Object3D): void => {
+export const disposeTeachingSubjectResources = (
+  root: THREE.Object3D,
+  additionalOwnedMaterials: Iterable<THREE.Material> = [],
+): void => {
   const geometries = new Set<THREE.BufferGeometry>();
   const materials = new Set<THREE.Material>();
   const textures = new Set<THREE.Texture>();
@@ -78,12 +82,36 @@ export const disposeTeachingSubjectResources = (root: THREE.Object3D): void => {
       : [object.material];
     meshMaterials.forEach((material) => {
       materials.add(material);
+      const sourceMaterial = (material as THREE.Material & {
+        [observerOutputSourceMaterial]?: THREE.Material;
+      })[observerOutputSourceMaterial];
+      if (sourceMaterial) materials.add(sourceMaterial);
       const materialWithTextures = material as THREE.Material &
         Partial<Record<TextureSlot, THREE.Texture | null>>;
       textureSlots.forEach((slot) => {
         const texture = materialWithTextures[slot];
         if (texture instanceof THREE.Texture) textures.add(texture);
       });
+    });
+  });
+
+  // Architecture Rise owns its material factory resources on the root. Keep
+  // source materials in that owner even when the Observer output adapter has
+  // replaced the attached material instance with a NodeMaterial.
+  const resources = root.userData.resources;
+  if (resources && typeof resources === "object") {
+    Object.values(resources as Record<string, unknown>).forEach((resource) => {
+      if (resource instanceof THREE.Material) materials.add(resource);
+    });
+  }
+  for (const material of additionalOwnedMaterials) materials.add(material);
+
+  materials.forEach((material) => {
+    const materialWithTextures = material as THREE.Material &
+      Partial<Record<TextureSlot, THREE.Texture | null>>;
+    textureSlots.forEach((slot) => {
+      const texture = materialWithTextures[slot];
+      if (texture instanceof THREE.Texture) textures.add(texture);
     });
   });
 

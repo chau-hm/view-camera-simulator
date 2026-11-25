@@ -3,13 +3,19 @@ import { expect, test, type Page } from "@playwright/test";
 import {
   expectLearningFeedbackCompleted,
   expectLearningFeedbackNotCompleted,
+  getLearningDrawer,
   getLearningOverlay,
+  openPinnedLearningDrawer,
   openLearningFeedback,
 } from "./helpers/learningOverlay";
 import { setRangeDirect } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const expectLessonStage = async (page: Page, step: string, label: string) => {
+  await expect(getLearningOverlay(page)).toBeVisible({ timeout: 15_000 });
+  const drawer = getLearningDrawer(page);
+  await expect(drawer).toContainText(step);
+  await openPinnedLearningDrawer(page);
   const progress = page.getByRole("region", { name: "Guided lesson progress" });
   await expect(progress).toBeVisible();
   await expect(progress).toContainText(step);
@@ -73,18 +79,46 @@ test("Interior Corner completes the public Compose → Swing → Refine → Aper
   await page.goto("/simulator/free/interior-corner?lesson=1&rttDiagnostics=1");
 
   await expect(page).toHaveURL(/\/simulator\/free\/interior-corner\?lesson=1&rttDiagnostics=1$/);
-  await expectLessonStage(page, "Step 1 of 5", "Observe");
+  const overlay = getLearningOverlay(page);
+  const drawer = getLearningDrawer(page);
+  await expect(overlay).toHaveAttribute("data-drawer-state", "pinned");
+  await expect(overlay).toHaveAttribute("data-pinned", "true");
+  await expect(drawer).toBeVisible();
+  await expect(drawer).toHaveAttribute("aria-hidden", "false");
+  await expect(drawer.getByRole("button", { name: "Task", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  const observeProgress = drawer.getByRole("region", { name: "Guided lesson progress" });
+  await expect(observeProgress).toBeVisible();
+  await expect(observeProgress).toHaveAttribute("data-guided-lesson-stage", "observe");
+  await expect(observeProgress.getByRole("link", { name: "Continue", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Observe the Problem" })).toBeVisible();
+  await expect(page.getByRole("slider", { name: "Rise" })).toBeDisabled();
+  await expect(page.getByRole("slider", { name: "Swing" })).toBeDisabled();
+  await expect(page.getByLabel("Focus distance")).toBeDisabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
   await expect(page.getByRole("slider", { name: "Rise" })).toHaveValue("0");
   await expect(page.getByRole("slider", { name: "Swing" })).toHaveValue("0");
   await expect(page.getByLabel("Focus distance")).toHaveValue("8000");
   await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "5.6");
   await expectGroundGlassReady(page);
 
-  await page.getByRole("link", { name: "Continue" }).click();
+  await observeProgress.getByRole("link", { name: "Continue", exact: true }).click();
   await expect(page).toHaveURL(
     /\/simulator\/guided\/interior-corner\/interior-corner-compose-01\?lesson=1$/,
   );
+  await expect(overlay).toHaveAttribute("data-drawer-state", "pinned");
+  await expect(drawer).toBeVisible();
+  await expect(drawer).toHaveAttribute("aria-hidden", "false");
+  await expect(drawer.getByRole("button", { name: "Task", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(page.getByRole("slider", { name: "Rise" })).toBeEnabled();
+  await expect(page.getByRole("slider", { name: "Swing" })).toBeDisabled();
+  await expect(page.getByLabel("Focus distance")).toBeDisabled();
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toBeDisabled();
   await expectLessonStage(page, "Step 2 of 5", "Compose");
   await expect(page.getByRole("heading", { name: "Compose the Interior Corner with Rise" })).toBeVisible();
   await expect(page.getByRole("slider", { name: "Rise" })).toBeEnabled();

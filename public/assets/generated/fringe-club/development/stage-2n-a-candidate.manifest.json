@@ -1,0 +1,21 @@
+{
+  "candidateId": "stage2n-a",
+  "status": "CANDIDATE_RUNTIME_AUTHORITY",
+  "sourceStage": "STAGE_2N_A_CANDIDATE",
+  "sourceFile": "generated-assets/fringe-club-blockout/stage-2n-a/runtime/optimized/fringe-club-stage-2n-a-candidate.glb",
+  "file": "stage-2n-a-candidate.glb",
+  "sha256": "7a505f6c2d25ecb93943a6770356cdaffa529c3b86324a4da9ee819984eb9301",
+  "units": "metres",
+  "up": "+Y",
+  "rootTransform": "identity",
+  "selfContained": true,
+  "embeddedCameras": 0,
+  "embeddedLights": 0,
+  "meshCount": 61,
+  "nodeCount": 91,
+  "instancedTriangles": 91914,
+  "materialCount": 17,
+  "textureCount": 14,
+  "transmissiveGlassPrimitives": 49,
+  "validationScope": "development-only VCS runtime candidate; not promoted"
+}

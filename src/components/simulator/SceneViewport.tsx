@@ -1,11 +1,24 @@
-import { useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import { useTranslation } from "react-i18next";
 import { SceneRenderer } from "../../render/SceneRenderer";
 import type { ConceptualCameraPresentation } from "../../render/ConceptualViewCamera";
 import { SceneOverlayControls } from "./SceneOverlayControls";
 import { detectAvailableWebGLBackend } from "../../render/backend/rendererBackend";
+import {
+  getObserverWebGpuAdapterAvailability,
+  type ObserverWebGpuAdapterAvailability,
+} from "../../render/backend/observerWebGpuDiagnostic";
+import {
+  selectArchitectureRiseWebGpuVerificationBackend,
+  selectObserverBackend,
+  type ObserverBackendSelection,
+} from "../../render/backend/observerBackend";
+import { resolveObserverOutputPolicy } from "../../render/backend/observerOutputPolicy";
+import { resolveObserverSceneCompatibility } from "../../render/backend/observerSceneCompatibility";
+import { useObserverRendererLifecycle } from "./useObserverRendererLifecycle";
 import type { UiErrorState } from "../../types/ui";
 import type { SceneDefinition } from "../../types/scene";
+import type { SceneVariationDescriptor } from "../../types/sceneVariation";
 import type { DerivedOpticsState } from "../../types/optics";
 import type { RenderQualityProfile } from "../../types/ui";
 import "../../i18n";
@@ -20,9 +33,17 @@ import {
 } from "../../render/sceneViewFraming";
 import { useAppStore } from "../../state/appStore";
 import type { SceneGraphCapacityMetrics } from "../../render/sceneCapacityProfiling";
+import {
+  allocateRendererLifecycleMountIdentity,
+  recordRendererLifecycleEvent,
+  rendererLifecycleTraceEnabled,
+} from "../../render/testing/m7nRendererLifecycleTrace";
 
 type SceneViewportProps = {
   scene: SceneDefinition;
+  variationDescriptor?: SceneVariationDescriptor;
+  routeSceneId?: string;
+  developmentArchitectureRiseWebGpuVerification?: boolean;
   opticsState: DerivedOpticsState;
   renderQuality: RenderQualityProfile;
   setRenderQuality: Dispatch<SetStateAction<RenderQualityProfile>>;
@@ -54,6 +75,9 @@ return "high";
 
 export const SceneViewport = ({
   scene,
+  variationDescriptor,
+  routeSceneId = scene.id,
+  developmentArchitectureRiseWebGpuVerification = false,
   opticsState,
   renderQuality,
   setRenderQuality,
@@ -75,6 +99,11 @@ export const SceneViewport = ({
   viewResetKey,
   onSubjectCapacityChange,
 }: SceneViewportProps) => {
+  const viewportMountIdRef = useRef<string | null>(null);
+  if (rendererLifecycleTraceEnabled && viewportMountIdRef.current === null) {
+    viewportMountIdRef.current = allocateRendererLifecycleMountIdentity("observer-viewport");
+  }
+  const viewportMountId = viewportMountIdRef.current ?? "trace-disabled";
   const { t } = useTranslation();
   const [attempt, setAttempt] = useState(0);
   const [assetError, setAssetError] = useState<UiErrorState | null>(null);
@@ -106,7 +135,223 @@ export const SceneViewport = ({
       }),
     [activeFocalLengthMm, cameraInspectionTarget, opticsState, scene],
   );
-  const availableWebGLBackend = useMemo(() => detectAvailableWebGLBackend(), []);
+  const webglAvailable = useMemo(
+    () => detectAvailableWebGLBackend() === "webgl",
+    [],
+  );
+  const requestedRendererParam = typeof window === "undefined"
+    ? null
+    : new URLSearchParams(window.location.search).get("observerRenderer");
+  const requestedOutputParam = typeof window === "undefined"
+    ? null
+    : new URLSearchParams(window.location.search).get("observerOutput");
+  // SimulatorWorkspace applies route presets in an effect. Until the store's
+  // active scene matches the route, do not let the previous scene's identity
+  // authorize a lazy WebGPU/output-policy import for the destination request.
+  const routeSceneMatchesActiveScene = routeSceneId === scene.id;
+  const sceneRequestedRendererParam = routeSceneMatchesActiveScene
+    ? requestedRendererParam
+    : null;
+  const architectureRiseVerificationHarness =
+    import.meta.env.DEV &&
+    developmentArchitectureRiseWebGpuVerification &&
+    scene.id === "architecture-rise" &&
+    typeof window !== "undefined" &&
+    window.location.pathname ===
+      "/src/tests/e2e/fixtures/architecture-rise-webgpu-validation.html";
+  const sceneCompatibility = useMemo(
+    () => resolveObserverSceneCompatibility(scene.id),
+    [scene.id],
+  );
+  const requestedBackendSelection = useMemo(
+    () =>
+      selectObserverBackend({
+        webglAvailable,
+        requestedRendererParam: sceneRequestedRendererParam,
+        sceneCompatibility,
+        developmentPilotEnabled: import.meta.env.DEV,
+      }),
+    [sceneRequestedRendererParam, sceneCompatibility, webglAvailable],
+  );
+  const selectionForRequest = architectureRiseVerificationHarness
+    ? selectArchitectureRiseWebGpuVerificationBackend(webglAvailable)
+    : requestedBackendSelection;
+  const requestedOutputPolicy = resolveObserverOutputPolicy({
+    sceneId: scene.id,
+    requestedRendererParam: sceneRequestedRendererParam,
+    requestedOutputParam,
+    backendSelection: selectionForRequest,
+    developmentBuild: import.meta.env.DEV,
+  });
+  const outputPolicyRequestKey = requestedOutputPolicy.selected === "material-aware"
+    ? "material-aware"
+    : "standard";
+  const [rendererSelectionOverride, setRendererSelectionOverride] = useState<{
+    requestIdentity: string;
+    selection: ObserverBackendSelection;
+  } | null>(null);
+  const [rendererMountKey, setRendererMountKey] = useState(0);
+  const requestIdentity = `${scene.id}:${sceneRequestedRendererParam ?? "default"}:${architectureRiseVerificationHarness ? "architecture-rise-verification" : "public"}:${outputPolicyRequestKey}`;
+  const backendSelection = rendererSelectionOverride?.requestIdentity === requestIdentity
+    ? rendererSelectionOverride.selection
+    : selectionForRequest;
+  const outputPolicySelection = resolveObserverOutputPolicy({
+    sceneId: scene.id,
+    requestedRendererParam: sceneRequestedRendererParam,
+    requestedOutputParam,
+    backendSelection,
+    developmentBuild: import.meta.env.DEV,
+  });
+  const previousRequestIdentityRef = useRef(requestIdentity);
+  useLayoutEffect(() => {
+    if (previousRequestIdentityRef.current === requestIdentity) return;
+    previousRequestIdentityRef.current = requestIdentity;
+    setRendererSelectionOverride((current) =>
+      current && current.requestIdentity !== requestIdentity
+        ? null
+        : current,
+    );
+  }, [requestIdentity]);
+  const webgpuApiPresent =
+    typeof navigator !== "undefined" &&
+    typeof (navigator as Navigator & { gpu?: unknown }).gpu !== "undefined";
+  const developmentWebGpuAttemptRequested =
+    import.meta.env.DEV && (
+      (backendSelection.requestedRenderer === "webgpu-pilot" &&
+        backendSelection.selectionReason === "webgpu-pilot-approved") ||
+      (architectureRiseVerificationHarness &&
+        backendSelection.requestedRenderer === "webgpu-verification" &&
+        backendSelection.selectionReason === "test-only-architecture-rise-verification")
+    );
+  const adapterProbeIdentity = requestIdentity;
+  const [adapterAvailabilityState, setAdapterAvailabilityState] = useState<{
+    identity: string;
+    availability: ObserverWebGpuAdapterAvailability;
+  }>({ identity: "", availability: "not-requested" });
+  const webgpuAdapterAvailability = developmentWebGpuAttemptRequested
+    ? adapterAvailabilityState.identity === adapterProbeIdentity
+      ? adapterAvailabilityState.availability
+      : "pending"
+    : "not-requested";
+
+  useEffect(() => {
+    if (!developmentWebGpuAttemptRequested) {
+      return;
+    }
+
+    let active = true;
+    setAdapterAvailabilityState({
+      identity: adapterProbeIdentity,
+      availability: "pending",
+    });
+    void getObserverWebGpuAdapterAvailability().then(
+      (availability) => {
+        if (active) {
+          setAdapterAvailabilityState({ identity: adapterProbeIdentity, availability });
+        }
+      },
+      () => {
+        if (active) {
+          setAdapterAvailabilityState({
+            identity: adapterProbeIdentity,
+            availability: "request-rejected",
+          });
+        }
+      },
+    );
+
+    return () => {
+      active = false;
+    };
+  }, [adapterProbeIdentity, developmentWebGpuAttemptRequested]);
+
+  const onApplicationFallback = useCallback(
+    (selection: ObserverBackendSelection) => {
+      setRendererSelectionOverride({
+        requestIdentity,
+        selection,
+      });
+    },
+    [requestIdentity],
+  );
+  const onFallbackRemount = useCallback(() => {
+    setRendererMountKey((value) => value + 1);
+  }, []);
+  const onCanvasFailure = useCallback(() => {
+    setAssetError({
+      title: t(simulatorMessageKeys.viewport.sceneLoadFailed),
+      message: `${t(simulatorMessageKeys.viewport.sceneAssetLoadFailedPrefix)} ${scene.id}.`,
+    });
+  }, [scene.id, t]);
+  const routeId = rendererLifecycleTraceEnabled && typeof window !== "undefined"
+    ? window.location.pathname
+    : null;
+  const rendererLifecycle = useObserverRendererLifecycle({
+    sceneId: scene.id,
+    routeId: routeId ?? `/simulator/${scene.id}`,
+    viewportMountId,
+    requestIdentity,
+    backendSelection,
+    rendererMountKey,
+    onApplicationFallback,
+    onFallbackRemount,
+    onCanvasFailure,
+  });
+  const rendererMountIdentity = rendererLifecycleTraceEnabled
+    ? `${viewportMountId}:renderer-${rendererLifecycle.mountGeneration}`
+    : "trace-disabled";
+
+  useEffect(() => {
+    if (!rendererLifecycleTraceEnabled) return;
+    recordRendererLifecycleEvent({
+      surface: "scene",
+      event: "scene-viewport-effect-setup",
+      routeId,
+      sceneId: scene.id,
+      mountGeneration: viewportMountId,
+    });
+    recordRendererLifecycleEvent({
+      surface: "observer",
+      event: "observer-backend-selected",
+      routeId,
+      sceneId: scene.id,
+      mountGeneration: viewportMountId,
+      rendererGeneration: rendererLifecycle.mountGeneration,
+      status: backendSelection.status,
+      detail: {
+        requestedRenderer: backendSelection.requestedRenderer,
+        rendererAttempt: backendSelection.rendererAttempt,
+        selectionReason: backendSelection.selectionReason,
+        applicationFallback: backendSelection.applicationFallback,
+      },
+    });
+    recordRendererLifecycleEvent({
+      surface: "observer",
+      event: "observer-renderer-requested",
+      routeId,
+      sceneId: scene.id,
+      mountGeneration: viewportMountId,
+      rendererGeneration: rendererLifecycle.mountGeneration,
+      status: backendSelection.rendererAttempt ?? backendSelection.status,
+      detail: { requestIdentity },
+    });
+    return () => {
+      recordRendererLifecycleEvent({
+        surface: "scene",
+        event: "scene-viewport-effect-cleanup",
+        routeId,
+        sceneId: scene.id,
+        mountGeneration: viewportMountId,
+      });
+    };
+  }, [
+    backendSelection,
+    rendererLifecycle.mountGeneration,
+    requestIdentity,
+    routeId,
+    scene.id,
+    viewportMountId,
+  ]);
   const scheimpflugConstruction = useMemo(
     () =>
       deriveScheimpflugConstruction({
@@ -162,7 +407,7 @@ export const SceneViewport = ({
     return () => window.cancelAnimationFrame(frame);
   }, [expanded, restoreFocusOnCollapse]);
 
-  if (availableWebGLBackend === null) {
+  if (backendSelection.status === "unavailable") {
     return (
       <section>
         <h2>{t(simulatorMessageKeys.viewport.sceneTitle)}</h2>
@@ -234,7 +479,25 @@ export const SceneViewport = ({
         <div className={`scene-viewport-stage${expanded ? " scene-viewport-stage--expanded" : ""}`}>
           <div className={`scene-viewport-host${expanded ? " scene-viewport-host--expanded" : ""}`}>
           <SceneRenderer
+            backendSelection={backendSelection}
+            architectureRiseVerificationHarness={architectureRiseVerificationHarness}
+            sceneCompatibility={sceneCompatibility}
+            rendererMountGeneration={rendererLifecycle.mountGeneration}
+            rendererTraceMountIdentity={rendererMountIdentity}
+            observerCapabilities={rendererLifecycle.observerCapabilities}
+            onObserverCapabilitiesChange={rendererLifecycle.onObserverCapabilitiesChange}
+            webgpuApiPresent={webgpuApiPresent}
+            webgpuAdapterAvailability={webgpuAdapterAvailability}
+            webgpuInitializationAttempts={rendererLifecycle.initializationAttempts}
+            rendererFailureStage={rendererLifecycle.rendererFailureStage}
+            rendererFailureReason={rendererLifecycle.rendererFailureReason}
+            onWebGpuInitializationAttempt={rendererLifecycle.onWebGpuInitializationAttempt}
+            onWebGpuInitializationFailure={rendererLifecycle.onWebGpuInitializationFailure}
+            onWebGpuOutputPolicyFailure={rendererLifecycle.onWebGpuOutputPolicyFailure}
+            onObserverCanvasError={rendererLifecycle.onObserverCanvasError}
+            outputPolicySelection={outputPolicySelection}
             scene={scene}
+            variationDescriptor={variationDescriptor}
             opticsState={opticsState}
             attempt={attempt}
             showFocusPlaneOverlay={suppressOpticalOverlays ? false : showFocusPlaneOverlay}
@@ -253,7 +516,18 @@ export const SceneViewport = ({
             viewFocus={viewFocus}
             observerViews={observerViews}
             simulateAssetFailure={simulateAssetFailure}
-            onAssetError={(message) => setAssetError({ title: t(simulatorMessageKeys.viewport.sceneLoadFailed), message })}
+            onAssetError={(message) => {
+              recordRendererLifecycleEvent({
+                surface: "scene",
+                event: "scene-asset-failure-reported",
+                routeId,
+                sceneId: scene.id,
+                mountGeneration: viewportMountId,
+                rendererGeneration: rendererLifecycle.mountGeneration,
+                status: "failed",
+              });
+              setAssetError({ title: t(simulatorMessageKeys.viewport.sceneLoadFailed), message });
+            }}
             containerStyle={{ width: "100%", height: "100%", border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden" }}
             onSubjectCapacityChange={onSubjectCapacityChange}
           />

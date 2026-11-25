@@ -23,6 +23,8 @@ export const resolveGroundGlassNaturalIlluminationRenderState = (input: {
   filmHeightMm: number;
   /** Top-origin RTT-source crop, converted to canonical physical film mm here. */
   inspectionWindow: GroundGlassInspectionWindow;
+  /** Non-parallel illumination is currently authorized in the WebGL composite only. */
+  allowNonparallelGeometric?: boolean;
 }): GroundGlassNaturalIlluminationRenderState => {
   const filmWindow = resolveGroundGlassFilmWindow({
     filmWidthMm: input.filmWidthMm,
@@ -30,7 +32,10 @@ export const resolveGroundGlassNaturalIlluminationRenderState = (input: {
     inspectionWindow: input.inspectionWindow,
   });
   return {
-    enabled: !input.rawDebug && input.state.kind === "parallel-cos4",
+    enabled: !input.rawDebug && (
+      input.state.kind === "parallel-cos4" ||
+      (input.allowNonparallelGeometric === true && input.state.kind === "nonparallel-geometric")
+    ),
     geometry: input.state,
     filmWindow,
   };

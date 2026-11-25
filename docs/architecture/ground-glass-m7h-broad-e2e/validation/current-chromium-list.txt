@@ -1,0 +1,284 @@
+
+> view-camera-simulator@0.0.0 test:e2e
+> playwright test --project=chromium --list
+
+Listing tests:
+  [chromium] › architecture-foreground-compound.spec.ts:15:1 › Architecture + Foreground compound task solves the photograph from neutral
+  [chromium] › architecture-foreground-dof.spec.ts:13:1 › Architecture + Foreground Free Practice exposes Aperture after Rise, Tilt, and Focus
+  [chromium] › architecture-foreground-dof.spec.ts:43:1 › Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only
+  [chromium] › architecture-foreground-guided-lesson.spec.ts:52:1 › Architecture + Foreground completes its five-stage Guided Lesson from the Scenes page
+  [chromium] › architecture-foreground-guided-lesson.spec.ts:179:1 › Architecture + Foreground lesson entry resets after Free Practice and direct task routes stay standalone
+  [chromium] › architecture-foreground-rise.spec.ts:15:1 › Architecture + Foreground Free Practice exposes cumulative Rise, Tilt, Focus, and Aperture controls
+  [chromium] › architecture-foreground-rise.spec.ts:60:1 › Architecture + Foreground Rise guided task is observable, reachable, and restartable
+  [chromium] › architecture-foreground-tilt-focus.spec.ts:15:1 › Architecture + Foreground is discoverable from the Scenes page
+  [chromium] › architecture-foreground-tilt-focus.spec.ts:45:1 › Architecture + Foreground Free Practice exposes Rise, Tilt, Focus, and Aperture
+  [chromium] › architecture-foreground-tilt-focus.spec.ts:95:1 › Architecture + Foreground Tilt + Focus guided task starts composed and is restartable
+  [chromium] › architecture-foreground.spec.ts:10:1 › Architecture + Foreground exposes the cumulative photographic problem in Free Practice
+  [chromium] › architecture-foreground.spec.ts:85:1 › Architecture + Foreground focus propagates to the physical film plane and processed RTT
+  [chromium] › architecture-rise-focus-range.spec.ts:20:1 › Architecture Rise focus control stays within scene depth and preserves thin-lens extension
+  [chromium] › architecture-rise-focus-range.spec.ts:49:1 › Architecture Rise exposes visible blur for the reported strong-defocus state
+  [chromium] › architecture-rise-multiprobe-coverage.spec.ts:190:1 › Architecture Rise bounded multi-Probe CPU study protects the placement and holdout conclusion
+  [chromium] › architecture-rise-observer-reflection-pilot.spec.ts:140:1 › Architecture Rise corrected Probe appearance is measured at Observer scale
+  [chromium] › architecture-rise-planar-focus-reference.spec.ts:32:1 › Architecture Rise planar reflection follows independent Ground Glass focus
+  [chromium] › architecture-rise-probe-distance-correction-cpu.spec.ts:4:1 › measures bounded ideal distance-cube Probe parallax correction
+  [chromium] › architecture-rise-probe-distance-correction-cpu.spec.ts:94:1 › validates the one-step distance-cube correction against frozen Planar and Probe evidence
+  [chromium] › architecture-rise-probe-vs-planar.spec.ts:4:1 › Architecture Rise local Probe is compared with the planar Ground Glass reference
+  [chromium] › architecture-rise-webgpu-validation.spec.ts:355:1 › normal Architecture Rise route keeps WebGL as default and runs an explicit interactive WebGPU pilot
+  [chromium] › architecture-rise-webgpu-validation.spec.ts:620:1 › r187 native public Architecture Rise Observer pilot preserves WebGL Ground Glass
+  [chromium] › architecture-rise-webgpu-validation.spec.ts:668:1 › full Architecture Rise scene has measurable subject, material, environment, lighting, interaction and lifecycle evidence
+  [chromium] › camera-controls-compact.spec.ts:3:1 › compact common camera controls stay usable at desktop and narrow widths
+  [chromium] › camera-controls-compact.spec.ts:70:1 › responsive workspace keeps the primary simulator wider than the controls rail
+  [chromium] › camera-controls-compact.spec.ts:103:1 › camera control rows keep useful rendered tracks across rail widths
+  [chromium] › camera-controls-compact.spec.ts:185:1 › Focus slider and Infinity Reset stay usable across rail widths
+  [chromium] › camera-controls-compact.spec.ts:247:1 › Macro Focus stays in the lower controls rail at landscape widths
+  [chromium] › camera-movement-calibration-workbench.spec.ts:38:1 › calibration workbench is hidden on the production route
+  [chromium] › camera-movement-calibration-workbench.spec.ts:46:1 › session calibration separates geometry, optics, rig, reset, and SPA lifecycle
+  [chromium] › camera-movement-ground-glass-comparison.spec.ts:16:1 › public camera-movement Ground Glass renders one live Current view through the default RTT channel
+  [chromium] › camera-movement-ground-glass-comparison.spec.ts:156:1 › calibration workbench keeps the existing single Ground Glass path
+  [chromium] › camera-movement-public-controls.spec.ts:24:1 › public camera movement controls on the normal route
+  [chromium] › camera-movement-public-controls.spec.ts:149:1 › 3D Scene layout stays stable across continuous movement sliders
+  [chromium] › camera-movement-public-controls.spec.ts:191:1 › calibration route preserves workbench and hides public controls
+  [chromium] › camera-movement-public-controls.spec.ts:207:1 › teaching controls stay usable and non-overflowing at 1024px and narrow widths
+  [chromium] › dream-loop-capture.spec.ts:41:1 › Dream Loop pilot captures teaching and clean observer views
+  [chromium] › focus-fundamentals-selectable-focus.spec.ts:94:1 › Focus Fundamentals proves front/rear viewpoint behavior without replacing RTT resources
+  [chromium] › focus-fundamentals-selectable-focus.spec.ts:325:1 › Focus Fundamentals rear reference station keeps physical blur and lens position
+  [chromium] › focus-fundamentals-selectable-focus.spec.ts:359:1 › Focus Fundamentals controls remain usable at responsive viewports
+  [chromium] › fringe-club-dev-integration.spec.ts:287:1 › development Fringe fixture keeps Stage 2H default, activation-gated, and releases its source through SPA navigation
+  [chromium] › fringe-club-dev-integration.spec.ts:382:1 › Stage 2H and Stage 2N-A render through all VCS modes and candidate/probe diagnostics remain current
+  [chromium] › fringe-club-dev-integration.spec.ts:647:1 › Stage 2N-A Observer and RTT instances survive independent sibling removal
+  [chromium] › fringe-club-dev-integration.spec.ts:752:1 › Stage 2N-A join probes retain fresh RTT identity through bounded motion
+  [chromium] › fringe-club-dev-integration.spec.ts:863:1 › rapid H/N-A selection aborts delayed stale fetches and only the final candidate attaches
+  [chromium] › fringe-club-dev-integration.spec.ts:940:1 › navigation away aborts a delayed development load without a stale mount
+  [chromium] › ground-glass-dof-profiling.spec.ts:202:1 › Ground Glass profiling populates finite snapshots across representative scenes
+  [chromium] › ground-glass-dof-profiling.spec.ts:211:1 › profiling preserves Raw RTT bypass and can be disabled
+  [chromium] › ground-glass-dof-stability.spec.ts:32:1 › Architecture + Foreground DOF regression stays finite across Raw RTT toggles
+  [chromium] › ground-glass-dof-stability.spec.ts:92:1 › Architecture + Foreground DOF remains finite through a transition sequence
+  [chromium] › ground-glass-radiance-contributions.spec.ts:36:1 › Ground Glass contributions retain independent focus and unclamped linear-radiance addition
+  [chromium] › ground-glass-webgpu-aperture-gather-app.spec.ts:1504:1 › native M5Q explores a bounded Architecture Rise optical-state catalog before confirmation
+  [chromium] › ground-glass-webgpu-aperture-gather-app.spec.ts:1672:1 › native M5Q applies frozen per-dimension R3 gates to independent optical states
+  [chromium] › ground-glass-webgpu-aperture-gather-app.spec.ts:1854:1 › M7E native r187 requalifies the bounded M5 Far/Near/B1 matrices
+  [chromium] › ground-glass-webgpu-aperture-gather-app.spec.ts:2057:1 › M7E r187 isolates optional M5 failures from the completed M3 Raw frame
+  [chromium] › ground-glass-webgpu-aperture-gather-app.spec.ts:2164:1 › native M6D confirms the actual M5 composite completes Near coverage as opaque RGB
+  [chromium] › ground-glass-webgpu-aperture-gather-app.spec.ts:2291:1 › native M5 app adapter captures B1 provenance, source fallback, and near coverage for matched quality modes
+  [chromium] › ground-glass-webgpu-aperture-gather-app.spec.ts:2426:1 › native M5 app adapter applies frozen R3 thresholds to an independent matched capture
+  [chromium] › ground-glass-webgpu-aperture-gather-app.spec.ts:2494:1 › native M5R diagnoses reference convergence, B1 fallback, and Near coverage without changing M5Q
+  [chromium] › ground-glass-webgpu-aperture-gather-app.spec.ts:3753:1 › native M5T validates adaptive Far quadrature and spatial blur without changing M5 or M5Q
+  [chromium] › ground-glass-webgpu-aperture-gather-app.spec.ts:4323:1 › native M5U measures M5T cost and confirms geometry-aware quadrature
+  [chromium] › ground-glass-webgpu-aperture-gather-app.spec.ts:4907:1 › native M3/M4 Raw baseline records frame and physical pass timing with M5 disabled
+  [chromium] › ground-glass-webgpu-aperture-gather-app.spec.ts:4952:1 › native M5 rejects stale captures and recovers from a local gather failure
+  [chromium] › ground-glass-webgpu-aperture-gather.spec.ts:294:1 › ordinary Chromium can execute the isolated aperture-gather fixture without claiming native WebGPU
+  [chromium] › ground-glass-webgpu-aperture-gather.spec.ts:310:1 › native r186 WebGPU performs scene depth, physical CoC, far/near gathers, composite, and readback
+  [chromium] › ground-glass-webgpu-aperture-gather.spec.ts:440:1 › native quality, aperture, film tilt, and off-center crop preserve physical units
+  [chromium] › ground-glass-webgpu-aperture-gather.spec.ts:604:1 › native SPA navigation retires a held readback and remounts an independent renderer
+  [chromium] › ground-glass-webgpu-aperture-gather.spec.ts:653:1 › native pass failures remain observable and release the exact owning handle
+  [chromium] › ground-glass-webgpu-b1-optical-validation.spec.ts:269:1 › ordinary Chromium can execute the canonical Macro fixture without claiming native WebGPU
+  [chromium] › ground-glass-webgpu-b1-optical-validation.spec.ts:282:1 › native Macro focus/aperture matrix preserves canonical state and compares B1 with full references
+  [chromium] › ground-glass-webgpu-b1-optical-validation.spec.ts:489:1 › native Interior and Architecture focus/movement states preserve canonical camera/film state
+  [chromium] › ground-glass-webgpu-coc-footprint.spec.ts:468:1 › GPU CoC/footprint writers and TSL consumers match the CPU codec contract
+  [chromium] › ground-glass-webgpu-coc-footprint.spec.ts:529:1 › native binary16 range probe records finite and saturated storage separately
+  [chromium] › ground-glass-webgpu-coc-footprint.spec.ts:648:1 › successful readback retirement and handle-owned resource cleanup survive SPA remount
+  [chromium] › ground-glass-webgpu-coc-footprint.spec.ts:729:1 › a rejected accepted readback remains a failure while SPA cleanup succeeds
+  [chromium] › ground-glass-webgpu-coc-footprint.spec.ts:794:1 › post-writer failure is explicit and does not prevent resource cleanup
+  [chromium] › ground-glass-webgpu-correspondence-large-coc.spec.ts:292:1 › ordinary Chromium executes Phase K controls without claiming native WebGPU
+  [chromium] › ground-glass-webgpu-correspondence-large-coc.spec.ts:304:1 › native point projection, fixed readback orientation, and visible-surface audit cover all seven states
+  [chromium] › ground-glass-webgpu-correspondence-large-coc.spec.ts:355:1 › native large-CoC crop activates and measures the real 12 px cap against matched references
+  [chromium] › ground-glass-webgpu-failure-host.spec.ts:455:3 › native M3 WebGPU adapter-to-host controlled failure recovery › D1 initialization failure cleans acquired resources before WebGL fallback and remains sticky
+  [chromium] › ground-glass-webgpu-failure-host.spec.ts:507:5 › native M3 WebGPU adapter-to-host controlled failure recovery › D2 controlled scene render submission rejection fails the whole frame and falls back only after confirmed cleanup
+  [chromium] › ground-glass-webgpu-failure-host.spec.ts:507:5 › native M3 WebGPU adapter-to-host controlled failure recovery › D3 controlled queue completion rejection fails the whole frame and falls back only after confirmed cleanup
+  [chromium] › ground-glass-webgpu-failure-host.spec.ts:507:5 › native M3 WebGPU adapter-to-host controlled failure recovery › D4 texture display submission fails the whole frame and falls back only after confirmed cleanup
+  [chromium] › ground-glass-webgpu-failure-host.spec.ts:524:3 › native M3 WebGPU adapter-to-host controlled failure recovery › D4 failed disposal keeps the host unavailable and prevents a replacement generation
+  [chromium] › ground-glass-webgpu-failure-host.spec.ts:544:3 › native M3 WebGPU adapter-to-host controlled failure recovery › D5 pending queue work blocks replacement until the actual adapter operation settles
+  [chromium] › ground-glass-webgpu-failure-host.spec.ts:647:3 › native M3 WebGPU adapter-to-host controlled failure recovery › M7C scene navigation during pending cleanup does not publish retired output or retry on remount
+  [chromium] › ground-glass-webgpu-failure-host.spec.ts:713:3 › native M3 WebGPU adapter-to-host controlled failure recovery › D8 WebGPURenderer on its WebGL2 compatibility backend is not reported as native and falls back safely
+  [chromium] › ground-glass-webgpu-failure-host.spec.ts:770:3 › native M3 WebGPU adapter-to-host controlled failure recovery › M7A explicit retry and new session are developer actions, preserve history, and never loop
+  [chromium] › ground-glass-webgpu-failure-host.spec.ts:861:3 › native M3 WebGPU adapter-to-host controlled failure recovery › M7A injected device loss uses the native runtime failure and cleanup path
+  [chromium] › ground-glass-webgpu-failure-host.spec.ts:890:3 › native M3 WebGPU adapter-to-host controlled failure recovery › M7B test-destroyed GPUDevice resolves its actual lost promise through the owned failure path
+  [chromium] › ground-glass-webgpu-failure-host.spec.ts:927:3 › native M3 WebGPU adapter-to-host controlled failure recovery › M7B current WebGL context loss is terminal across client-side remount
+  [chromium] › ground-glass-webgpu-failure-host.spec.ts:1029:5 › native M3 WebGPU adapter-to-host controlled failure recovery › M4 physical writer failure stays local while Raw completes and the next request recovers
+  [chromium] › ground-glass-webgpu-failure-host.spec.ts:1029:5 › native M3 WebGPU adapter-to-host controlled failure recovery › M4 physical validity writer failure stays local while Raw completes and the next request recovers
+  [chromium] › ground-glass-webgpu-failure-host.spec.ts:1120:3 › native M3 WebGPU adapter-to-host controlled failure recovery › M4 unsupported physical storage reports unsupported while native Raw remains available
+  [chromium] › ground-glass-webgpu-failure-host.spec.ts:1178:3 › native M3 WebGPU adapter-to-host controlled failure recovery › D6 latest request wins after a held adapter failure and an out-of-order fallback completion
+  [chromium] › ground-glass-webgpu-far-reconstruction-i.spec.ts:274:1 › ordinary Chromium Phase I fixture remains a fallback-only control
+  [chromium] › ground-glass-webgpu-far-reconstruction-i.spec.ts:284:1 › native Phase I benchmark state is isolated after a tilted 4× crop
+  [chromium] › ground-glass-webgpu-far-reconstruction-i.spec.ts:330:1 › native Phase I measures matched references, B0/B1/C1 quality, coverage, performance and lifecycle
+  [chromium] › ground-glass-webgpu-far-reconstruction.spec.ts:208:1 › ordinary Chromium Phase H control records fallback-compatible behavior only
+  [chromium] › ground-glass-webgpu-far-reconstruction.spec.ts:219:1 › native Phase H verifies gather coordinates, leakage provenance, CPU reconstruction, and bounded candidate
+  [chromium] › ground-glass-webgpu-gather-quality.spec.ts:300:1 › Phase G ordinary Chromium compatibility control does not claim native execution
+  [chromium] › ground-glass-webgpu-gather-quality.spec.ts:314:1 › native Phase G factorial gather-quality study, scaling, caps, scene proxies, and lifecycle
+  [chromium] › ground-glass-webgpu-host.spec.ts:434:1 › development Raw request defaults to WebGL and URL parameters cannot authorize the adapter
+  [chromium] › ground-glass-webgpu-host.spec.ts:451:1 › native-required app-host pilot renders Architecture Rise Raw RTT and cleans up across SPA remount
+  [chromium] › ground-glass-webgpu-interior-coc-quality.spec.ts:187:1 › native Phase L crop search and matched B1 large-CoC quality matrix
+  [chromium] › ground-glass-webgpu-interior-coc-quality.spec.ts:622:1 › ordinary Chromium Phase L route remains an isolated research fixture
+  [chromium] › ground-glass-webgpu-m6-presentation.spec.ts:304:1 › native M6 displays the M5 composite with shared crop and presentation behavior
+  [chromium] › ground-glass-webgpu-m6-presentation.spec.ts:709:1 › native M6 provisions once from initial Raw Debug and completes Raw/M6/loupe/resize transitions
+  [chromium] › ground-glass-webgpu-m6-presentation.spec.ts:1013:1 › native M6 optical-resource initialization failure cleans up the Raw-first adapter and falls back
+  [chromium] › ground-glass-webgpu-m6-presentation.spec.ts:1048:1 › native M6 flags leave an unsupported Ground Glass scene on WebGL without attempting WebGPU
+  [chromium] › ground-glass-webgpu-m6-presentation.spec.ts:1134:1 › native M6 presentation node initialization failure selects the existing WebGL host
+  [chromium] › ground-glass-webgpu-m6-presentation.spec.ts:1164:1 › native M6 presentation-pass failure never publishes a completed M6 frame
+  [chromium] › ground-glass-webgpu-m6-presentation.spec.ts:1175:1 › native M6 rejects an incomplete M5 composite before WebGL fallback
+  [chromium] › ground-glass-webgpu-m6-presentation.spec.ts:1191:1 › native M6 final-display failure never publishes a completed M6 frame
+  [chromium] › ground-glass-webgpu-m6-presentation.spec.ts:1202:1 › native M6 rejects presentation work made stale by resize before queue completion
+  [chromium] › ground-glass-webgpu-m6b-conformance.spec.ts:606:1 › native M6B measures physical overlay alignment and final canvas output
+  [chromium] › ground-glass-webgpu-m6c-alpha.spec.ts:94:1 › native M6C captures actual presentation alpha across effects, orientation, crop and resize
+  [chromium] › ground-glass-webgpu-m6c-alpha.spec.ts:374:1 › native M6C rejects a held alpha result after the accepted request changes
+  [chromium] › ground-glass-webgpu-m6c-alpha.spec.ts:436:1 › native M6C discards held alpha readback when SPA navigation retires its renderer generation
+  [chromium] › ground-glass-webgpu-m7g-lifecycle.spec.ts:26:1 › M7G holds a submitted M5 composite, rejects its stale request, and publishes the latest M4/M5/M6 result
+  [chromium] › ground-glass-webgpu-physical-coc-app.spec.ts:612:1 › native M4 app adapter reconstructs Architecture Rise depth and writes physical CoC data
+  [chromium] › ground-glass-webgpu-physical-coc-app.spec.ts:1398:1 › M4 probe readback is stale after resize and cannot publish the superseded request
+  [chromium] › ground-glass-webgpu-physical-coc-app.spec.ts:1485:1 › M4 unmount during a held probe prevents publication and confirms cleanup after the readback settles
+  [chromium] › ground-glass-webgpu-physical-coc.spec.ts:190:1 › native scene depth and TSL physical footprints match independent geometry and CPU optics
+  [chromium] › ground-glass-webgpu-physical-coc.spec.ts:501:1 › native focal-length boundary preserves finite virtual, exact-limit, and finite real branches
+  [chromium] › ground-glass-webgpu-physical-coc.spec.ts:683:1 › native SPA retirement waits for held readbacks, rejects stale publication, and remounts independently
+  [chromium] › ground-glass-webgpu-physical-coc.spec.ts:765:1 › a post-physical TSL failure remains visible and still cleans the exact native handle
+  [chromium] › ground-glass-webgpu-physical-coc.spec.ts:793:1 › a failure after native depth rendering releases the allocated depth and renderer resources
+  [chromium] › ground-glass-webgpu-r187-app-pilot.spec.ts:17:1 › r187 native M3 Raw RTT runs in the application and disposes on scene transition
+  [chromium] › ground-glass-webgpu-raw-rtt.spec.ts:713:1 › raster and screenshot gates reject wrong-axis, incomplete, stale, failed, and retired evidence
+  [chromium] › ground-glass-webgpu-raw-rtt.spec.ts:840:1 › Ground Glass WebGL control renders the registered subject through an offscreen texture
+  [chromium] › ground-glass-webgpu-raw-rtt.spec.ts:904:1 › native-required WebGPU Ground Glass RTT samples and presents an offscreen target
+  [chromium] › ground-glass-webgpu-raw-rtt.spec.ts:1141:1 › native-required WebGPU display failure stays observable and remounts cleanly
+  [chromium] › ground-glass-webgpu-raw-rtt.spec.ts:1175:1 › native-required WebGPU SPA navigation drains the exact retired handle and remounts independently
+  [chromium] › ground-glass-webgpu-raw-rtt.spec.ts:1331:1 › native-required WebGPU readback rejection remains a failure while cleanup completes
+  [chromium] › ground-glass-webgpu-raw-rtt.spec.ts:1427:1 › fixture failure after target allocation disposes the registered subject and renderer
+  [chromium] › ground-glass-webgpu-raw-rtt.spec.ts:1444:1 › display failure remains visible and does not prevent a clean remount
+  [chromium] › groundglass-interaction.spec.ts:22:3 › Ground Glass interaction › Architecture Rise: Reset view preserves the contentful RTT resource graph
+  [chromium] › groundglass-interaction.spec.ts:169:3 › Ground Glass interaction › Architecture Rise: off-center anchor, drag pan, short-click preservation, and immediate re-zoom
+  [chromium] › groundglass-interaction.spec.ts:312:3 › Ground Glass interaction › Focus Fundamentals: image zoom and explicit reset smoke test
+  [chromium] › home.spec.ts:41:1 › home can navigate to Scenes page
+  [chromium] › home.spec.ts:56:1 › home hero uses the approved artwork, semantic copy, and one catalog CTA
+  [chromium] › home.spec.ts:72:1 › tablet menu is keyboard accessible and mobile hero remains catalog-oriented
+  [chromium] › home.spec.ts:106:1 › Hero locale switching keeps the two-line composition and mobile catalog action
+  [chromium] › home.spec.ts:124:1 › concept learning sections keep their responsive grids without overflow
+  [chromium] › home.spec.ts:176:1 › compact-menu navigation restores toggle focus after a route change
+  [chromium] › home.spec.ts:188:1 › FAQ disclosures are keyboard accessible from the public page
+  [chromium] › interior-corner-guided-lesson.spec.ts:47:1 › Interior Corner completes the public Compose → Swing → Refine → Aperture lesson
+  [chromium] › interior-corner-guided-lesson.spec.ts:161:1 › Interior Corner keeps the solved focus state when returning to Swing
+  [chromium] › interior-corner-rise-composition.spec.ts:9:1 › Interior Corner free mode exposes reachable Rise composition feedback
+  [chromium] › interior-corner-swing-focus.spec.ts:44:1 › Interior Corner free mode exposes public Swing + Focus wall alignment
+  [chromium] › landing-motion.spec.ts:6:3 › Landing motion progressive enhancement › reveals once, keeps revealed content visible, and updates the header scroll state
+  [chromium] › landing-motion.spec.ts:49:3 › Landing motion progressive enhancement › keeps all landing content visible when IntersectionObserver is unavailable
+  [chromium] › landing-motion.spec.ts:69:3 › Landing motion progressive enhancement › enables motion before the first landing-root mutation is observed
+  [chromium] › landing-motion.spec.ts:105:3 › Landing motion progressive enhancement › shows the static landing immediately and disables motion under reduced motion
+  [chromium] › landing-motion.spec.ts:127:3 › Landing motion progressive enhancement › initializes correctly after direct navigation and browser back
+  [chromium] › landing-motion.spec.ts:142:3 › Landing motion progressive enhancement › settles Why elements to their static position on mobile
+  [chromium] › lens-catalog-ui.spec.ts:20:1 › lens catalog selection keeps finite coverage across published simulator profiles
+  [chromium] › lens-catalog-ui.spec.ts:140:1 › lens catalog presentation stays readable and localized at desktop and tablet widths
+  [chromium] › lesson-zero-anatomy.spec.ts:3:1 › Lesson 0 presents the anatomy sequence and isolates its presentation state
+  [chromium] › lesson-zero-image-circle-coverage.spec.ts:3:1 › Lesson 0 shows the same film-relative coverage model for Image Circle, Rise, and Shift
+  [chromium] › macro-bellows-extension.spec.ts:72:1 › Macro 1 tracks canonical Image Circle growth and bellows exposure across focus
+  [chromium] › macro-bellows-extension.spec.ts:160:1 › Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions
+  [chromium] › macro-bellows-extension.spec.ts:225:1 › Macro 1 physical grid follows both Raw and Upright film-origin positions
+  [chromium] › macro-compound-movements.spec.ts:11:1 › Macro 4 teaches compound Tilt + Swing + Focus through the public route
+  [chromium] › macro-depth-of-field-orientation.spec.ts:156:1 › Macro depth targets, Focus Distribution, and Raw/Upright raster stay aligned
+  [chromium] › macro-depth-of-field-orientation.spec.ts:237:1 › Architecture Rise WebGL raster distinguishes the Raw/Upright X and Y mapping
+  [chromium] › macro-depth-of-field.spec.ts:11:1 › Macro 2 teaches shallow physical depth of field across a 3D subject
+  [chromium] › macro-oblique-plane.spec.ts:11:1 › Macro 3 aligns the oblique planar subject with Front Tilt and Focus
+  [chromium] › macro-series-release-sweep.spec.ts:131:1 › Macro Photography cards, route initialization, and state isolation survive ordered SPA navigation
+  [chromium] › marketing-responsive.spec.ts:4:3 › Marketing responsive › Desktop Home and Scenes (1280x800) show no warning
+  [chromium] › marketing-responsive.spec.ts:22:3 › Marketing responsive › Narrow Home (390x844) keeps the landing flow without overflow
+  [chromium] › marketing-responsive.spec.ts:39:3 › Marketing responsive › Narrow FAQ (390x844) does not overflow
+  [chromium] › marketing-responsive.spec.ts:53:3 › Marketing responsive › Narrow Scenes (390x844) shows warning and scene cards without overflow
+  [chromium] › mirror-shift-guided-lesson.spec.ts:10:1 › Mirror Shift guided task teaches camera movement followed by opposite Front Shift
+  [chromium] › mirror-shift-rig-lateral.spec.ts:72:1 › Mirror Shift moves the canonical rig while keeping its RTT mounted
+  [chromium] › mirror-shift-rig-lateral.spec.ts:137:1 › Mirror Shift Camera focus follows the rig while Scene focus stays fixed
+  [chromium] › mirror-shift-teaching-geometry.spec.ts:5:1 › Mirror Shift top-view geometry follows canonical A/B/C state relationships
+  [chromium] › mirror-shift-teaching-geometry.spec.ts:87:1 › Mirror Shift presents Top without leaking Geometry View into Architecture Rise
+  [chromium] › nonparallel-coverage.spec.ts:4:1 › Oblique Architecture transitions between the parallel circle and non-parallel conic
+  [chromium] › nonparallel-coverage.spec.ts:86:1 › Macro Oblique Plane renders the finite non-parallel coverage conic
+  [chromium] › nonparallel-coverage.spec.ts:109:1 › Macro Compound Movements renders a rotated conic for compound Tilt and Swing
+  [chromium] › oblique-architecture.spec.ts:95:1 › Oblique Architecture free practice exposes Rise, Swing, and Focus
+  [chromium] › oblique-architecture.spec.ts:144:1 › Oblique Architecture guided Rise task solves observable framing and restarts to neutral
+  [chromium] › oblique-architecture.spec.ts:182:1 › Oblique Architecture guided Swing + Focus task starts from solved Rise and restarts deterministically
+  [chromium] › oblique-architecture.spec.ts:232:1 › Oblique Architecture compound task solves Rise, Swing, and Focus from neutral
+  [chromium] › oblique-architecture.spec.ts:292:1 › Oblique Architecture guided lesson progresses through the four stages
+  [chromium] › oblique-tabletop-guided-lesson.spec.ts:41:1 › Oblique Tabletop completes the public Focus → Tilt → Swing → Focus → Aperture lesson
+  [chromium] › oblique-tabletop-teaching-geometry.spec.ts:18:1 › Oblique Tabletop exposes live Side, Top, and 3D compound teaching geometry
+  [chromium] › observer-environment-compatibility.spec.ts:132:1 › Architecture Rise keeps its normal WebGL environment and Ground Glass path
+  [chromium] › observer-environment-compatibility.spec.ts:156:3 › webgl Observer PMREM changes only the reflective subject region
+  [chromium] › observer-environment-compatibility.spec.ts:156:3 › webgpu Observer PMREM changes only the reflective subject region
+  [chromium] › observer-webgpu-pilot.spec.ts:1220:1 › View Camera Anatomy keeps its default mounted Observer on WebGL
+  [chromium] › observer-webgpu-pilot.spec.ts:1304:1 › development WebGPU pilot keeps View Camera Anatomy interactive beside WebGL Ground Glass
+  [chromium] › observer-webgpu-pilot.spec.ts:1435:1 › application fallback remounts once and clears when the scene changes
+  [chromium] › observer-webgpu-pilot.spec.ts:1574:1 › Architecture Rise uses one application fallback after a controlled WebGPU initialization failure
+  [chromium] › observer-webgpu-pilot.spec.ts:1709:1 › an unevaluated scene refuses the WebGPU pilot
+  [chromium] › observer-webgpu-pilot.spec.ts:1758:1 › Architecture Rise restores standard output after a controlled material-aware module failure
+  [chromium] › observer-webgpu-pilot.spec.ts:1843:1 › material-aware output adapts the Architecture Rise Observer and stays scene-scoped across navigation
+  [chromium] › observer-webgpu-pilot.spec.ts:2246:1 › Observer backend state follows eligible and ineligible SPA scene/request transitions
+  [chromium] › observer-webgpu-pilot.spec.ts:2541:1 › explicit Anatomy material-aware output keeps source ownership and rendered teaching parts intact
+  [chromium] › observer-webgpu-pilot.spec.ts:2714:1 › Anatomy material-aware readiness remains stable after a long active Lesson 0 transition
+  [chromium] › observer-webgpu-pilot.spec.ts:2880:1 › persistent Anatomy material-aware readiness loss times out through one-shot WebGL fallback
+  [chromium] › observer-webgpu-pilot.spec.ts:2971:1 › unsupported Anatomy material fails immediately without a readiness grace period
+  [chromium] › observer-webgpu-pilot.spec.ts:3024:1 › Anatomy material-aware output failure uses the existing one-shot standard WebGL fallback
+  [chromium] › phase13-guided-tasks.spec.ts:9:1 › TST-E2E-002: user can open Architecture Rise from the Scenes page
+  [chromium] › phase13-guided-tasks.spec.ts:24:1 › TST-E2E-003: rise task starts in failed state
+  [chromium] › phase13-guided-tasks.spec.ts:32:1 › TST-E2E-004: rise task can be completed with valid rise
+  [chromium] › phase13-guided-tasks.spec.ts:40:1 › TST-E2E-005: restart resets Architecture Rise guided task
+  [chromium] › phase13-guided-tasks.spec.ts:59:1 › TST-E2E-006: free mode can return to All Scenes and open Focus Fundamentals
+  [chromium] › phase13-guided-tasks.spec.ts:74:1 › TST-E2E-007: shows webgl fallback when WebGL is unavailable
+  [chromium] › physical-image-circle.spec.ts:34:1 › 3D Image Circle consumes the Ground Glass finite coverage state
+  [chromium] › scene-capacity-benchmark.spec.ts:590:3 › scene capacity benchmark › captures static scene capacity and Ground Glass timing matrix
+  [chromium] › scene-switching.spec.ts:57:1 › public SPA scene switching keeps one current scene and its RTT renderer channels without reloads
+  [chromium] › scene-view-focus.spec.ts:98:1 › View Focus preserves independent Scene and Camera views and resets the active preset
+  [chromium] › scene-view-focus.spec.ts:204:1 › Understanding Camera Movements Camera focus follows continuous viewpoint changes
+  [chromium] › scene-view-focus.spec.ts:347:1 › Architecture + Foreground Camera focus uses the physical camera anchor
+  [chromium] › scene-view-focus.spec.ts:368:1 › guided task restart restores task Optical Geometry preset
+  [chromium] › scene-view-focus.spec.ts:390:1 › SPA scene switching discards the previous Camera target and returns to Scene focus
+  [chromium] › scene-viewport-expansion.spec.ts:97:1 › simulator viewports expand in main without replacing their active canvases
+  [chromium] › scene-viewport-expansion.spec.ts:360:1 › Ground Glass RTT follows expanded and live browser sizes without reallocating
+  [chromium] › scene-viewport-expansion.spec.ts:483:1 › Ground Glass reset restores RTT framing after zoomed expand and restore
+  [chromium] › scene-viewport-expansion.spec.ts:539:1 › Ground Glass RTT quality changes resize targets in place
+  [chromium] › secondary-workspace-pairing.spec.ts:24:1 › normal desktop pairs Geometry with Scene and Focus Distribution with Ground Glass
+  [chromium] › secondary-workspace-pairing.spec.ts:67:1 › a scene without Focus Distribution keeps Geometry in the left secondary slot
+  [chromium] › secondary-workspace-pairing.spec.ts:85:1 › Geometry owns expansion and restores focus to its normal-workspace trigger
+  [chromium] › secondary-workspace-pairing.spec.ts:118:1 › normal Geometry uses a compact diagram height while expanded Geometry remains full-size
+  [chromium] › secondary-workspace-pairing.spec.ts:200:1 › narrow normal workspace flows Scene, Ground Glass, Geometry, and Focus Distribution in one column
+  [chromium] › shelf-swing.spec.ts:92:1 › Shelf Swing card exposes free and guided modes
+  [chromium] › shelf-swing.spec.ts:113:1 › Shelf Swing routes reject mismatched and free-mode task IDs
+  [chromium] › shelf-swing.spec.ts:128:1 › Shelf Swing free and guided workflows stay accessible without console errors
+  [chromium] › shelf-swing.spec.ts:165:1 › Shelf Swing free scene uses canonical R3F and contentful RTT rendering
+  [chromium] › shelf-swing.spec.ts:180:1 › Shelf Swing physical focus becomes near-sharp and approaches the Raw RTT control
+  [chromium] › shelf-swing.spec.ts:229:1 › Shelf Swing Ground Glass zoom, pan, reset, orientation, and quality stay live
+  [chromium] › shelf-swing.spec.ts:281:1 › Shelf Swing guided task teaches negative swing and restores its initial state
+  [chromium] › shelf-swing.spec.ts:335:1 › Shelf Swing geometry limits projected depth planes to the movement-relevant Top view
+  [chromium] › shelf-swing.spec.ts:380:1 › Shelf Swing solved geometry and RTT remain coherent at the public solution
+  [chromium] › shelf-swing.spec.ts:436:1 › Shelf Swing expanded Geometry keeps controls interactive and restores the normal layout
+  [chromium] › simulator-header.spec.ts:6:1 › keeps the active lesson context between the brand and desktop actions
+  [chromium] › simulator-header.spec.ts:27:1 › keeps the lesson context and global actions reachable in the narrow header
+  [chromium] › simulator-header.spec.ts:42:1 › wraps the lesson context before it becomes unusably narrow
+  [chromium] › smoke.spec.ts:3:1 › smoke: app boots at home
+  [chromium] › smoke.spec.ts:11:1 › smoke: Architecture Rise navigates to contentful WebGL Ground Glass controls
+  [chromium] › table-tilt.spec.ts:72:1 › Table Tilt card exposes free and guided navigation
+  [chromium] › table-tilt.spec.ts:91:1 › Table Tilt Ground Glass uses one RTT surface
+  [chromium] › table-tilt.spec.ts:102:1 › Table Tilt Focus Distribution follows the displayed Raw/Upright orientation
+  [chromium] › table-tilt.spec.ts:143:1 › Table Tilt Focus Distribution keeps a same-cell target stack co-equal
+  [chromium] › table-tilt.spec.ts:159:1 › Table Tilt Focus Distribution stays compact when its panel is constrained
+  [chromium] › table-tilt.spec.ts:203:1 › Table Tilt Focus Loupe maps displayed centers to the pre-composite RTT crop
+  [chromium] › table-tilt.spec.ts:250:1 › Table Tilt zero-tilt point focus moves from near to middle to far
+  [chromium] › table-tilt.spec.ts:286:1 › Table Tilt raw and final RTT diagnostics contain scene pixels before and after refocus
+  [chromium] › table-tilt.spec.ts:321:1 › Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress
+  [chromium] › table-tilt.spec.ts:381:1 › Table Tilt calibrated controls complete the guided task
+  [chromium] › table-tilt.spec.ts:405:1 › Table Tilt focus and DOF overlays stay renderable at 9 degrees and 5780 mm
+  [chromium] › table-tilt.spec.ts:422:1 › Table Tilt calibrated side geometry keeps the table, targets, focus, and DOF readable
+  [chromium] › table-tilt.spec.ts:467:1 › Table Tilt preserves the requested Scheimpflug construction after Geometry restore
+  [chromium] › table-tilt.spec.ts:494:1 › Table Tilt exposes the 3D and perpendicular Scheimpflug construction
+  [chromium] › table-tilt.spec.ts:616:1 › Expanded Geometry reflows Scheimpflug construction while controls stay usable
+  [chromium] › table-tilt.spec.ts:696:1 › 2D Geometry keeps projected camera orientation and fit/view state coherent
+  [chromium] › table-tilt.spec.ts:812:1 › 3D overlay controls switch responsively without wrapping or blocking the scene
+  [chromium] › table-tilt.spec.ts:904:1 › Table Tilt Ground Glass zoom, pan, jitter, and reset stay deterministic
+  [chromium] › table-tilt.spec.ts:974:1 › Table Tilt Ground Glass recovers from interrupted pointer gestures
+  [chromium] › table-tilt.spec.ts:1005:1 › Table Tilt Ground Glass survives optics, preview, and quality changes
+  [chromium] › table-tilt.spec.ts:1040:1 › Table Tilt Ground Glass responsive overlays remain separate and centered
+  [chromium] › table-tilt.spec.ts:1076:1 › Ground Glass zoom state resets across free/guided and scene navigation
+  [chromium] › understanding-camera-movements.spec.ts:74:1 › camera movements scene loads and renders valid Ground Glass content
+  [chromium] › understanding-camera-movements.spec.ts:119:1 › continuous viewpoint, tilt, and vertical framing change Ground Glass without breaking
+  [chromium] › understanding-camera-movements.spec.ts:154:1 › Reset Movements restores zero state and keeps Ground Glass valid
+  [chromium] › understanding-camera-movements.spec.ts:191:1 › canonical lattice remains stable across controls and SPA routes
+  [chromium] › viewport-learning-overlay.spec.ts:28:1 › Scene-local learning drawer leaves the paired workspace layout intact
+  [chromium] › viewport-learning-overlay.spec.ts:108:1 › learning drawer supports keyboard focus and internal scrolling without changing Task/Feedback content
+  [chromium] › viewport-learning-overlay.spec.ts:143:1 › keyboard focus remains visible on the rail while the drawer opens transiently
+  [chromium] › viewport-learning-overlay.spec.ts:202:1 › guided completion updates the peek rail without auto-opening or leaving Task
+  [chromium] › viewport-learning-overlay.spec.ts:223:1 › narrow layouts keep the learning surface in flow without horizontal overflow
+  [chromium] › viewport-learning-overlay.spec.ts:257:1 › desktop learning rail and Scene overlay controls keep separate visual anchors
+  [chromium] › viewport-learning-overlay.spec.ts:328:1 › constrained desktop Scenes move overlay controls below the host without menu clipping
+  [chromium] › viewport-learning-overlay.spec.ts:414:1 › Ground Glass expansion keeps one bounded learning rail and drawer
+  [chromium] › viewport-learning-overlay.spec.ts:498:1 › narrow Ground Glass expansion keeps the learning flow outside the clipped frame
+Total: 278 tests in 80 files

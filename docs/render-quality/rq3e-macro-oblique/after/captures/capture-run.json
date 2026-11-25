@@ -1,0 +1,856 @@
+{
+  "schemaVersion": "rq3e-macro-oblique-capture-v1",
+  "captureRunId": "14071243-21e6-4666-b052-fb7ea1ef3554",
+  "capturePhase": "after",
+  "sourceCommit": "72faf9b44f73820583cfd9544430821118348492",
+  "sourceTreeStatus": "clean",
+  "sceneId": "macro-oblique-plane",
+  "viewport": {
+    "width": 1280,
+    "height": 900,
+    "devicePixelRatio": 1
+  },
+  "renderQuality": "standard",
+  "previewMode": "Raw",
+  "rawDebug": false,
+  "browser": {
+    "name": "Chromium (Playwright)",
+    "version": "149.0.7827.55"
+  },
+  "operatingSystem": {
+    "platform": "darwin",
+    "release": "27.0.0",
+    "architecture": "arm64"
+  },
+  "captureMethod": "Playwright screenshots of public Observer and actual WebGL Ground Glass canvases",
+  "subjectEvidence": {
+    "sceneId": "macro-oblique-plane",
+    "viewportSubject": {
+      "objectCount": 173,
+      "meshCount": 157,
+      "renderableMeshCount": 157,
+      "instancedMeshCount": 0,
+      "lightCount": 0,
+      "lineCount": 0,
+      "pointsCount": 0,
+      "uniqueGeometryCount": 88,
+      "uniqueMaterialCount": 7,
+      "uniqueTextureCount": 7,
+      "triangleCount": 3324,
+      "instancedTriangleCount": 0,
+      "effectiveTriangleCount": 3324,
+      "renderableEffectiveTriangleCount": 3324
+    },
+    "rttSubject": {
+      "objectCount": 172,
+      "meshCount": 157,
+      "renderableMeshCount": 157,
+      "instancedMeshCount": 0,
+      "lightCount": 0,
+      "lineCount": 0,
+      "pointsCount": 0,
+      "uniqueGeometryCount": 88,
+      "uniqueMaterialCount": 7,
+      "uniqueTextureCount": 7,
+      "triangleCount": 3324,
+      "instancedTriangleCount": 0,
+      "effectiveTriangleCount": 3324,
+      "renderableEffectiveTriangleCount": 3324
+    },
+    "rendererResources": {
+      "geometries": 0,
+      "textures": 1
+    },
+    "visualPipeline": {
+      "renderer": {
+        "surface": "ground-glass",
+        "activeBackend": "webgl",
+        "colorRenderTarget": {
+          "status": "available",
+          "backend": "webgl",
+          "evidence": "ground-glass-framebuffer-probe"
+        },
+        "shadowMaps": {
+          "status": "active",
+          "type": "pcf"
+        },
+        "toneMapping": {
+          "active": true,
+          "mode": "aces-filmic",
+          "exposure": 1,
+          "outputColorSpace": "srgb"
+        }
+      },
+      "groundGlassPipeline": {
+        "rtt": {
+          "status": "active",
+          "implementation": "webgl-render-target-bundle",
+          "backendCoupling": "webgl"
+        },
+        "dof": {
+          "status": "available",
+          "activeOnProcessedPath": true,
+          "implementation": "custom-glsl-multipass",
+          "backendCoupling": "webgl"
+        }
+      }
+    },
+    "frameCadence": {
+      "p50Ms": null,
+      "p95Ms": null,
+      "approxFps": null,
+      "count": 0
+    },
+    "groundGlass": null
+  },
+  "captures": [
+    {
+      "captureId": "rq3e-14071243-21e6-4666-b052-fb7ea1ef3554-observer",
+      "stateId": "macro-oblique-observer-default-pose",
+      "captureRole": "fixed-observer-reference",
+      "cameraPose": {
+        "cameraPosition": "-0.280000,0.150000,-0.220000",
+        "orbitTarget": "0.000000,0.000000,0.300000",
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "rendererRevision": "187"
+      },
+      "disabledOverlays": [
+        "\u2713Focus plane",
+        "\u2713DOF region",
+        "\u2713Optical geometry"
+      ],
+      "hiddenDomControls": [
+        "Expand 3D Scene",
+        "layersView overlays\u25be",
+        "Open Task and Feedback",
+        "Ground glass preview400.0 mm focus / CoC 0.552 mm (0%)",
+        "ground-glass-focus-label"
+      ],
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "rendererRevision": "187",
+        "applicationFallback": "none"
+      },
+      "image": {
+        "imagePath": "docs/render-quality/rq3e-macro-oblique/after/observer/observer-default-pose.png",
+        "imageWidth": 450,
+        "imageHeight": 359,
+        "sha256": "e58ffedf5d4a5807cebac7a808002cdd4ce560147bec57cff102d7c759bcda25"
+      }
+    },
+    {
+      "captureId": "rq3e-14071243-21e6-4666-b052-fb7ea1ef3554-o1-neutral",
+      "stateId": "o1-neutral",
+      "sceneId": "macro-oblique-plane",
+      "route": "/simulator/free/macro-oblique-plane?rttDiagnostics=1&sceneCapacityProfiling=1",
+      "captureRole": "photographic-ground-glass-reference",
+      "cameraState": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 400,
+        "apertureFNumber": 5.6,
+        "movements": [
+          {
+            "label": "Front Tilt",
+            "value": 0,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          },
+          {
+            "label": "Focus distance",
+            "value": 400,
+            "min": 360,
+            "max": 440,
+            "step": 10
+          }
+        ]
+      },
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "gridEnabled": false,
+      "pipelineStage": "photographic-composite-displayed-in-raw-orientation",
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "rendererRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwdlgkrm-xm7q0r0s1o-default-request-3",
+        "lastCompletedRequestId": "gg-mwdlgkrm-xm7q0r0s1o-default-request-3",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "display": {
+        "widthCssPx": 450,
+        "heightCssPx": 360,
+        "dpr": 1,
+        "rttWidth": "574",
+        "rttHeight": "459"
+      },
+      "hiddenDomControls": [
+        "Ground glass preview400.0 mm focus / CoC 0.552 mm (0%)",
+        "ground-glass-focus-label",
+        "Focus loupe \u00b7 4\u00d7 Ground Glass view",
+        "Expand Ground Glass",
+        "ground-glass-center-guide-1",
+        "ground-glass-center-guide-2"
+      ],
+      "runtime": {
+        "data-testid": "ground-glass-rtt",
+        "data-three-revision": "187",
+        "data-rtt-channel": "default",
+        "data-rtt-scene-id": "macro-oblique-plane",
+        "data-policy-requested-backend": "default",
+        "data-policy-selected-backend": "webgl",
+        "data-pilot-retry-status": "none",
+        "data-application-fallback": "not-observed",
+        "data-renderer-generation": "gg-mwdlgkrm-xm7q0r0s1o-default-generation-1",
+        "data-frame-request-id": "gg-mwdlgkrm-xm7q0r0s1o-default-request-3",
+        "data-frame-channel-id": "default",
+        "data-frame-scene-id": "macro-oblique-plane",
+        "data-attempted-backend": "webgl",
+        "data-backend-attempt-status": "mounted",
+        "data-render-host-lifecycle": "ready",
+        "data-frame-result-status": "completed",
+        "data-render-cleanup-status": "not-required",
+        "data-rtt-depth-available": "true",
+        "data-rtt-resource-generation": "1",
+        "data-rtt-owner-id": "ground-glass-rtt-owner-_r_0_",
+        "data-rtt-physical-boundary-blur-radius-px": "0.17716535433070865",
+        "data-rtt-logical-width": "450",
+        "data-rtt-logical-height": "360",
+        "data-rtt-resolution-scale": "0.85",
+        "data-rtt-effective-device-pixel-ratio": "1.5",
+        "data-rtt-internal-width": "574",
+        "data-rtt-internal-height": "459",
+        "data-rtt-canvas-css-width": "450",
+        "data-rtt-canvas-css-height": "360",
+        "data-rtt-color-target-width": "574",
+        "data-rtt-color-target-height": "459",
+        "data-rtt-depth-target-width": "574",
+        "data-rtt-depth-target-height": "459",
+        "data-rtt-blur-target-width": "574",
+        "data-rtt-blur-target-height": "459",
+        "data-rtt-gather-scale": "1",
+        "data-rtt-final-target-width": "574",
+        "data-rtt-final-target-height": "459",
+        "data-rtt-horizontal-shader-width": "574",
+        "data-rtt-horizontal-shader-height": "459",
+        "data-rtt-vertical-shader-width": "574",
+        "data-rtt-vertical-shader-height": "459",
+        "data-rtt-was-clamped": "false",
+        "data-rtt-inspection-window-active": "false",
+        "data-rtt-inspection-center-u": "0.5",
+        "data-rtt-inspection-center-v": "0.5",
+        "data-rtt-sampled-film-width-mm": "127",
+        "data-rtt-sampled-film-height-mm": "101.6",
+        "data-rtt-profiling-enabled": "false",
+        "data-rtt-profiling-backend": "disabled",
+        "data-mounted-renderer-family": "webgl-renderer",
+        "data-actual-execution-api": "webgl2",
+        "data-internal-fallback": "none",
+        "data-rtt-camera-ok": "true",
+        "data-rtt-uniforms-finite": "true",
+        "data-rtt-dof-mode": "parallel-thin-lens",
+        "data-rtt-raw-contentful": "true",
+        "data-rtt-final-contentful": "true",
+        "data-rtt-raw-variance": "6507.231663404946",
+        "data-rtt-final-variance": "10131.52746856194",
+        "data-rtt-raw-non-background": "1024",
+        "data-rtt-final-non-background": "1024",
+        "data-rtt-focal-length-mm": "150",
+        "data-rtt-ground-glass-illuminance-gain": "1.5071946747448983",
+        "data-rtt-natural-illumination-enabled": "true",
+        "data-rtt-natural-illumination-kind": "parallel-cos4",
+        "data-rtt-natural-illumination-state": "{\"kind\":\"parallel-cos4\",\"imageDistanceMm\":240,\"opticalAxisOffsetXMm\":0,\"opticalAxisOffsetYMm\":0}",
+        "data-rtt-natural-illumination-image-distance-mm": "240",
+        "data-rtt-natural-illumination-offset-x-mm": "0",
+        "data-rtt-natural-illumination-offset-y-mm": "0",
+        "data-rtt-coverage-enabled": "true",
+        "data-rtt-coverage-kind": "parallel-circle",
+        "data-rtt-coverage-radius-mm": "174.3702067212866",
+        "data-rtt-coverage-offset-x-mm": "0",
+        "data-rtt-coverage-offset-y-mm": "0",
+        "data-rtt-camera-position": "0,0,0",
+        "data-rtt-camera-up": "0,1,0",
+        "data-rtt-camera-forward": "0,0,1",
+        "data-rtt-sanity-state": "1|macro-oblique-plane|raw|no-subject-identity|0|0|0.500000|0.500000|1.000000|1.000000|5.6|574|459|0.000000:0.000000:0.000000|0.000000|0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:1.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:-240.000000|0.000000:0.000000:1.000000|0.000000:0.000000:-240.000000|0.000000:0.000000:1.000000|-63.500000:50.800000:-240.000000|63.500000:50.800000:-240.000000|-63.500000:-50.800000:-240.000000|63.500000:-50.800000:-240.000000|0.000000:0.000000:0.000000|0.000000:0.000000:1.000000|parallel-circle|174.370207|0.000000|0.000000|null|null|0.000000:0.000000:400.000000|0.000000:0.000000:1.000000|0.000000:0.000000:397.535645|0.000000:0.000000:1.000000|0.000000:0.000000:402.495099|0.000000:0.000000:1.000000|3.779528,0.000000,0.000000,0.000000,0.000000,4.724409,0.000000,0.000000,0.000000,0.000000,-1.000400,-1.000000,0.000000,0.000000,-20.004001,0.000000|subject-generation:1",
+        "data-last-completed-request-id": "gg-mwdlgkrm-xm7q0r0s1o-default-request-3"
+      },
+      "image": {
+        "imagePath": "docs/render-quality/rq3e-macro-oblique/after/ground-glass/o1-neutral.png",
+        "imageWidth": 450,
+        "imageHeight": 360,
+        "sha256": "c4c54d245df4a8237428c4b04497ad46d5838e6ed68dff9dcf7d75373fbbeccb"
+      }
+    },
+    {
+      "captureId": "rq3e-14071243-21e6-4666-b052-fb7ea1ef3554-o2-focus-near-no-tilt",
+      "stateId": "o2-focus-near-no-tilt",
+      "sceneId": "macro-oblique-plane",
+      "route": "/simulator/free/macro-oblique-plane?rttDiagnostics=1&sceneCapacityProfiling=1",
+      "captureRole": "photographic-ground-glass-reference",
+      "cameraState": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 390,
+        "apertureFNumber": 5.6,
+        "movements": [
+          {
+            "label": "Front Tilt",
+            "value": 0,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          },
+          {
+            "label": "Focus distance",
+            "value": 390,
+            "min": 360,
+            "max": 440,
+            "step": 10
+          }
+        ]
+      },
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "gridEnabled": false,
+      "pipelineStage": "photographic-composite-displayed-in-raw-orientation",
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "rendererRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwdlgkrm-xm7q0r0s1o-default-request-4",
+        "lastCompletedRequestId": "gg-mwdlgkrm-xm7q0r0s1o-default-request-4",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "display": {
+        "widthCssPx": 450,
+        "heightCssPx": 360,
+        "dpr": 1,
+        "rttWidth": "574",
+        "rttHeight": "459"
+      },
+      "hiddenDomControls": [
+        "Ground glass preview390.0 mm focus / CoC 0.143 mm (0%)",
+        "ground-glass-focus-label",
+        "Focus loupe \u00b7 4\u00d7 Ground Glass view",
+        "Expand Ground Glass",
+        "ground-glass-center-guide-1",
+        "ground-glass-center-guide-2"
+      ],
+      "runtime": {
+        "data-testid": "ground-glass-rtt",
+        "data-three-revision": "187",
+        "data-rtt-channel": "default",
+        "data-rtt-scene-id": "macro-oblique-plane",
+        "data-policy-requested-backend": "default",
+        "data-policy-selected-backend": "webgl",
+        "data-pilot-retry-status": "none",
+        "data-application-fallback": "not-observed",
+        "data-renderer-generation": "gg-mwdlgkrm-xm7q0r0s1o-default-generation-1",
+        "data-frame-request-id": "gg-mwdlgkrm-xm7q0r0s1o-default-request-4",
+        "data-frame-channel-id": "default",
+        "data-frame-scene-id": "macro-oblique-plane",
+        "data-attempted-backend": "webgl",
+        "data-backend-attempt-status": "mounted",
+        "data-render-host-lifecycle": "ready",
+        "data-frame-result-status": "completed",
+        "data-render-cleanup-status": "not-required",
+        "data-rtt-depth-available": "true",
+        "data-rtt-resource-generation": "1",
+        "data-rtt-owner-id": "ground-glass-rtt-owner-_r_0_",
+        "data-rtt-physical-boundary-blur-radius-px": "0.17716535433070865",
+        "data-rtt-logical-width": "450",
+        "data-rtt-logical-height": "360",
+        "data-rtt-resolution-scale": "0.85",
+        "data-rtt-effective-device-pixel-ratio": "1.5",
+        "data-rtt-internal-width": "574",
+        "data-rtt-internal-height": "459",
+        "data-rtt-canvas-css-width": "450",
+        "data-rtt-canvas-css-height": "360",
+        "data-rtt-color-target-width": "574",
+        "data-rtt-color-target-height": "459",
+        "data-rtt-depth-target-width": "574",
+        "data-rtt-depth-target-height": "459",
+        "data-rtt-blur-target-width": "574",
+        "data-rtt-blur-target-height": "459",
+        "data-rtt-gather-scale": "1",
+        "data-rtt-final-target-width": "574",
+        "data-rtt-final-target-height": "459",
+        "data-rtt-horizontal-shader-width": "574",
+        "data-rtt-horizontal-shader-height": "459",
+        "data-rtt-vertical-shader-width": "574",
+        "data-rtt-vertical-shader-height": "459",
+        "data-rtt-was-clamped": "false",
+        "data-rtt-inspection-window-active": "false",
+        "data-rtt-inspection-center-u": "0.5",
+        "data-rtt-inspection-center-v": "0.5",
+        "data-rtt-sampled-film-width-mm": "127",
+        "data-rtt-sampled-film-height-mm": "101.6",
+        "data-rtt-profiling-enabled": "false",
+        "data-rtt-profiling-backend": "disabled",
+        "data-mounted-renderer-family": "webgl-renderer",
+        "data-actual-execution-api": "webgl2",
+        "data-internal-fallback": "none",
+        "data-rtt-camera-ok": "true",
+        "data-rtt-uniforms-finite": "true",
+        "data-rtt-dof-mode": "parallel-thin-lens",
+        "data-rtt-raw-contentful": "true",
+        "data-rtt-final-contentful": "true",
+        "data-rtt-raw-variance": "6590.647507048125",
+        "data-rtt-final-variance": "10085.279535698635",
+        "data-rtt-raw-non-background": "1024",
+        "data-rtt-final-non-background": "1024",
+        "data-rtt-focal-length-mm": "150",
+        "data-rtt-ground-glass-illuminance-gain": "1.461176186450912",
+        "data-rtt-natural-illumination-enabled": "true",
+        "data-rtt-natural-illumination-kind": "parallel-cos4",
+        "data-rtt-natural-illumination-state": "{\"kind\":\"parallel-cos4\",\"imageDistanceMm\":243.75,\"opticalAxisOffsetXMm\":0,\"opticalAxisOffsetYMm\":0}",
+        "data-rtt-natural-illumination-image-distance-mm": "243.75",
+        "data-rtt-natural-illumination-offset-x-mm": "0",
+        "data-rtt-natural-illumination-offset-y-mm": "0",
+        "data-rtt-coverage-enabled": "true",
+        "data-rtt-coverage-kind": "parallel-circle",
+        "data-rtt-coverage-radius-mm": "177.0947412013067",
+        "data-rtt-coverage-offset-x-mm": "0",
+        "data-rtt-coverage-offset-y-mm": "0",
+        "data-rtt-camera-position": "0,0,0",
+        "data-rtt-camera-up": "0,1,0",
+        "data-rtt-camera-forward": "0,0,1",
+        "data-rtt-sanity-state": "1|macro-oblique-plane|raw|no-subject-identity|0|0|0.500000|0.500000|1.000000|1.000000|5.6|574|459|0.000000:0.000000:0.000000|0.000000|0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:1.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:-243.750000|0.000000:0.000000:1.000000|0.000000:0.000000:-243.750000|0.000000:0.000000:1.000000|-63.500000:50.800000:-243.750000|63.500000:50.800000:-243.750000|-63.500000:-50.800000:-243.750000|63.500000:-50.800000:-243.750000|0.000000:0.000000:0.000000|0.000000:0.000000:1.000000|parallel-circle|177.094741|0.000000|0.000000|null|null|0.000000:0.000000:390.000000|0.000000:0.000000:1.000000|0.000000:0.000000:387.692795|0.000000:0.000000:1.000000|0.000000:0.000000:392.334830|0.000000:0.000000:1.000000|3.838583,0.000000,0.000000,0.000000,0.000000,4.798228,0.000000,0.000000,0.000000,0.000000,-1.000400,-1.000000,0.000000,0.000000,-20.004001,0.000000|subject-generation:1",
+        "data-last-completed-request-id": "gg-mwdlgkrm-xm7q0r0s1o-default-request-4"
+      },
+      "image": {
+        "imagePath": "docs/render-quality/rq3e-macro-oblique/after/ground-glass/o2-focus-near-no-tilt.png",
+        "imageWidth": 450,
+        "imageHeight": 360,
+        "sha256": "2dec69a0e10d66bfd4a88e95b08e7541353f68efba5d7273bcba869796d0bbe7"
+      }
+    },
+    {
+      "captureId": "rq3e-14071243-21e6-4666-b052-fb7ea1ef3554-o3-partial-alignment",
+      "stateId": "o3-partial-alignment",
+      "sceneId": "macro-oblique-plane",
+      "route": "/simulator/free/macro-oblique-plane?rttDiagnostics=1&sceneCapacityProfiling=1",
+      "captureRole": "photographic-ground-glass-reference",
+      "cameraState": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 390,
+        "apertureFNumber": 5.6,
+        "movements": [
+          {
+            "label": "Front Tilt",
+            "value": 6.2,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          },
+          {
+            "label": "Focus distance",
+            "value": 390,
+            "min": 360,
+            "max": 440,
+            "step": 10
+          }
+        ]
+      },
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "gridEnabled": false,
+      "pipelineStage": "photographic-composite-displayed-in-raw-orientation",
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "rendererRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwdlgkrm-xm7q0r0s1o-default-request-12",
+        "lastCompletedRequestId": "gg-mwdlgkrm-xm7q0r0s1o-default-request-12",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "display": {
+        "widthCssPx": 450,
+        "heightCssPx": 360,
+        "dpr": 1,
+        "rttWidth": "574",
+        "rttHeight": "459"
+      },
+      "hiddenDomControls": [
+        "Ground glass preview390.0 mm focus / CoC 0.005 mm (95%)",
+        "ground-glass-focus-label",
+        "Focus loupe \u00b7 4\u00d7 Ground Glass view",
+        "Expand Ground Glass",
+        "ground-glass-center-guide-1",
+        "ground-glass-center-guide-2"
+      ],
+      "runtime": {
+        "data-testid": "ground-glass-rtt",
+        "data-three-revision": "187",
+        "data-rtt-channel": "default",
+        "data-rtt-scene-id": "macro-oblique-plane",
+        "data-policy-requested-backend": "default",
+        "data-policy-selected-backend": "webgl",
+        "data-pilot-retry-status": "none",
+        "data-application-fallback": "not-observed",
+        "data-renderer-generation": "gg-mwdlgkrm-xm7q0r0s1o-default-generation-1",
+        "data-frame-request-id": "gg-mwdlgkrm-xm7q0r0s1o-default-request-12",
+        "data-frame-channel-id": "default",
+        "data-frame-scene-id": "macro-oblique-plane",
+        "data-attempted-backend": "webgl",
+        "data-backend-attempt-status": "mounted",
+        "data-render-host-lifecycle": "ready",
+        "data-frame-result-status": "completed",
+        "data-render-cleanup-status": "not-required",
+        "data-rtt-depth-available": "true",
+        "data-rtt-resource-generation": "1",
+        "data-rtt-owner-id": "ground-glass-rtt-owner-_r_0_",
+        "data-rtt-physical-boundary-blur-radius-px": "0.17716535433070865",
+        "data-rtt-logical-width": "450",
+        "data-rtt-logical-height": "360",
+        "data-rtt-resolution-scale": "0.85",
+        "data-rtt-effective-device-pixel-ratio": "1.5",
+        "data-rtt-internal-width": "574",
+        "data-rtt-internal-height": "459",
+        "data-rtt-canvas-css-width": "450",
+        "data-rtt-canvas-css-height": "360",
+        "data-rtt-color-target-width": "574",
+        "data-rtt-color-target-height": "459",
+        "data-rtt-depth-target-width": "574",
+        "data-rtt-depth-target-height": "459",
+        "data-rtt-blur-target-width": "574",
+        "data-rtt-blur-target-height": "459",
+        "data-rtt-gather-scale": "1",
+        "data-rtt-final-target-width": "574",
+        "data-rtt-final-target-height": "459",
+        "data-rtt-horizontal-shader-width": "574",
+        "data-rtt-horizontal-shader-height": "459",
+        "data-rtt-vertical-shader-width": "574",
+        "data-rtt-vertical-shader-height": "459",
+        "data-rtt-was-clamped": "false",
+        "data-rtt-inspection-window-active": "false",
+        "data-rtt-inspection-center-u": "0.5",
+        "data-rtt-inspection-center-v": "0.5",
+        "data-rtt-sampled-film-width-mm": "127",
+        "data-rtt-sampled-film-height-mm": "101.6",
+        "data-rtt-profiling-enabled": "false",
+        "data-rtt-profiling-backend": "disabled",
+        "data-mounted-renderer-family": "webgl-renderer",
+        "data-actual-execution-api": "webgl2",
+        "data-internal-fallback": "none",
+        "data-rtt-camera-ok": "true",
+        "data-rtt-uniforms-finite": "true",
+        "data-rtt-dof-mode": "derived-planes",
+        "data-rtt-raw-contentful": "true",
+        "data-rtt-final-contentful": "true",
+        "data-rtt-raw-variance": "6561.440323363357",
+        "data-rtt-final-variance": "10219.173211945705",
+        "data-rtt-raw-non-background": "1024",
+        "data-rtt-final-non-background": "1024",
+        "data-rtt-focal-length-mm": "150",
+        "data-rtt-ground-glass-illuminance-gain": "1.4958678694422127",
+        "data-rtt-natural-illumination-enabled": "true",
+        "data-rtt-natural-illumination-kind": "nonparallel-geometric",
+        "data-rtt-natural-illumination-state": "{\"kind\":\"nonparallel-geometric\",\"referenceImageDistanceMm\":243.75,\"referenceFilmIncidenceCosine\":0.9941509639723154,\"lensToFilmCenterLocalMm\":[0,0,-242.32429746825187],\"imageSideAxisLocal\":[0,0.10799935570602284,-0.9941509639723154],\"filmNormalTowardLensSign\":1}",
+        "data-rtt-natural-illumination-image-distance-mm": "243.75",
+        "data-rtt-coverage-enabled": "true",
+        "data-rtt-coverage-kind": "nonparallel-conic",
+        "data-rtt-camera-position": "0,0,0",
+        "data-rtt-camera-up": "0,1,0",
+        "data-rtt-camera-forward": "0,0,1",
+        "data-rtt-sanity-state": "1|macro-oblique-plane|raw|no-subject-identity|0|0|0.500000|0.500000|1.000000|1.000000|5.6|574|459|0.000000:0.000000:0.000000|0.000000|0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:1.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:0.000000|0.000000:-0.107999:0.994151|0.000000:0.000000:-242.324297|0.000000:0.000000:1.000000|0.000000:0.000000:-242.324297|0.000000:0.000000:1.000000|-63.500000:50.800000:-242.324297|63.500000:50.800000:-242.324297|-63.500000:-50.800000:-242.324297|63.500000:-50.800000:-242.324297|0.000000:0.000000:0.000000|0.000000:-0.107999:0.994151|nonparallel-conic|null|null|null|0.654508:0.000000:0.642845:0.000000:-52.035587:-19602.714711|0.000000:0.107999:240.906934|0.000000:-42.119749:387.718876|0.000000:0.276650:-0.960971|0.000000:-41.870572:385.425166|0.000000:0.275087:-0.961419|0.000000:-42.371909:390.040049|0.000000:0.278230:-0.960514|3.816131,0.000000,0.000000,0.000000,0.000000,4.770163,0.000000,0.000000,0.000000,0.000000,-1.000400,-1.000000,0.000000,0.000000,-20.004001,0.000000|subject-generation:1",
+        "data-last-completed-request-id": "gg-mwdlgkrm-xm7q0r0s1o-default-request-12",
+        "data-rtt-natural-illumination-reference-film-incidence-cosine": "0.9941509639723154",
+        "data-rtt-coverage-conic-quadratic": "0.654508497187,0.00000000000,0.642844636355,0.00000000000,-52.0355872974,-19602.7147114",
+        "data-rtt-coverage-conic-axial": "0.00000000000,0.107999355706,240.906933922"
+      },
+      "image": {
+        "imagePath": "docs/render-quality/rq3e-macro-oblique/after/ground-glass/o3-partial-alignment.png",
+        "imageWidth": 450,
+        "imageHeight": 360,
+        "sha256": "6b38f8016374b5e9f79a9c4edf752d51f617c4dab4a33e0f9542ac3bdf2216c6"
+      }
+    },
+    {
+      "captureId": "rq3e-14071243-21e6-4666-b052-fb7ea1ef3554-o4-aligned",
+      "stateId": "o4-aligned",
+      "sceneId": "macro-oblique-plane",
+      "route": "/simulator/free/macro-oblique-plane?rttDiagnostics=1&sceneCapacityProfiling=1",
+      "captureRole": "photographic-ground-glass-reference",
+      "cameraState": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 390,
+        "apertureFNumber": 5.6,
+        "movements": [
+          {
+            "label": "Front Tilt",
+            "value": 6.3,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          },
+          {
+            "label": "Focus distance",
+            "value": 390,
+            "min": 360,
+            "max": 440,
+            "step": 10
+          }
+        ]
+      },
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "gridEnabled": false,
+      "pipelineStage": "photographic-composite-displayed-in-raw-orientation",
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "rendererRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwdlgkrm-xm7q0r0s1o-default-request-13",
+        "lastCompletedRequestId": "gg-mwdlgkrm-xm7q0r0s1o-default-request-13",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "display": {
+        "widthCssPx": 450,
+        "heightCssPx": 360,
+        "dpr": 1,
+        "rttWidth": "574",
+        "rttHeight": "459"
+      },
+      "hiddenDomControls": [
+        "Ground glass preview390.0 mm focus / CoC 0.000 mm (100%)",
+        "ground-glass-focus-label",
+        "Focus loupe \u00b7 4\u00d7 Ground Glass view",
+        "Expand Ground Glass",
+        "ground-glass-center-guide-1",
+        "ground-glass-center-guide-2"
+      ],
+      "runtime": {
+        "data-testid": "ground-glass-rtt",
+        "data-three-revision": "187",
+        "data-rtt-channel": "default",
+        "data-rtt-scene-id": "macro-oblique-plane",
+        "data-policy-requested-backend": "default",
+        "data-policy-selected-backend": "webgl",
+        "data-pilot-retry-status": "none",
+        "data-application-fallback": "not-observed",
+        "data-renderer-generation": "gg-mwdlgkrm-xm7q0r0s1o-default-generation-1",
+        "data-frame-request-id": "gg-mwdlgkrm-xm7q0r0s1o-default-request-13",
+        "data-frame-channel-id": "default",
+        "data-frame-scene-id": "macro-oblique-plane",
+        "data-attempted-backend": "webgl",
+        "data-backend-attempt-status": "mounted",
+        "data-render-host-lifecycle": "ready",
+        "data-frame-result-status": "completed",
+        "data-render-cleanup-status": "not-required",
+        "data-rtt-depth-available": "true",
+        "data-rtt-resource-generation": "1",
+        "data-rtt-owner-id": "ground-glass-rtt-owner-_r_0_",
+        "data-rtt-physical-boundary-blur-radius-px": "0.17716535433070865",
+        "data-rtt-logical-width": "450",
+        "data-rtt-logical-height": "360",
+        "data-rtt-resolution-scale": "0.85",
+        "data-rtt-effective-device-pixel-ratio": "1.5",
+        "data-rtt-internal-width": "574",
+        "data-rtt-internal-height": "459",
+        "data-rtt-canvas-css-width": "450",
+        "data-rtt-canvas-css-height": "360",
+        "data-rtt-color-target-width": "574",
+        "data-rtt-color-target-height": "459",
+        "data-rtt-depth-target-width": "574",
+        "data-rtt-depth-target-height": "459",
+        "data-rtt-blur-target-width": "574",
+        "data-rtt-blur-target-height": "459",
+        "data-rtt-gather-scale": "1",
+        "data-rtt-final-target-width": "574",
+        "data-rtt-final-target-height": "459",
+        "data-rtt-horizontal-shader-width": "574",
+        "data-rtt-horizontal-shader-height": "459",
+        "data-rtt-vertical-shader-width": "574",
+        "data-rtt-vertical-shader-height": "459",
+        "data-rtt-was-clamped": "false",
+        "data-rtt-inspection-window-active": "false",
+        "data-rtt-inspection-center-u": "0.5",
+        "data-rtt-inspection-center-v": "0.5",
+        "data-rtt-sampled-film-width-mm": "127",
+        "data-rtt-sampled-film-height-mm": "101.6",
+        "data-rtt-profiling-enabled": "false",
+        "data-rtt-profiling-backend": "disabled",
+        "data-mounted-renderer-family": "webgl-renderer",
+        "data-actual-execution-api": "webgl2",
+        "data-internal-fallback": "none",
+        "data-rtt-camera-ok": "true",
+        "data-rtt-uniforms-finite": "true",
+        "data-rtt-dof-mode": "derived-planes",
+        "data-rtt-raw-contentful": "true",
+        "data-rtt-final-contentful": "true",
+        "data-rtt-raw-variance": "6563.357453428824",
+        "data-rtt-final-variance": "10221.844288990596",
+        "data-rtt-raw-non-background": "1024",
+        "data-rtt-final-non-background": "1024",
+        "data-rtt-focal-length-mm": "150",
+        "data-rtt-ground-glass-illuminance-gain": "1.4970120155788351",
+        "data-rtt-natural-illumination-enabled": "true",
+        "data-rtt-natural-illumination-kind": "nonparallel-geometric",
+        "data-rtt-natural-illumination-state": "{\"kind\":\"nonparallel-geometric\",\"referenceImageDistanceMm\":243.75,\"referenceFilmIncidenceCosine\":0.9939609554551797,\"lensToFilmCenterLocalMm\":[0,0,-242.27798289220004],\"imageSideAxisLocal\":[0,0.10973431109104526,-0.9939609554551797],\"filmNormalTowardLensSign\":1}",
+        "data-rtt-natural-illumination-image-distance-mm": "243.75",
+        "data-rtt-coverage-enabled": "true",
+        "data-rtt-coverage-kind": "nonparallel-conic",
+        "data-rtt-camera-position": "0,0,0",
+        "data-rtt-camera-up": "0,1,0",
+        "data-rtt-camera-forward": "0,0,1",
+        "data-rtt-sanity-state": "1|macro-oblique-plane|raw|no-subject-identity|0|0|0.500000|0.500000|1.000000|1.000000|5.6|574|459|0.000000:0.000000:0.000000|0.000000|0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:1.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:0.000000|0.000000:-0.109734:0.993961|0.000000:0.000000:-242.277983|0.000000:0.000000:1.000000|0.000000:0.000000:-242.277983|0.000000:0.000000:1.000000|-63.500000:50.800000:-242.277983|63.500000:50.800000:-242.277983|-63.500000:-50.800000:-242.277983|63.500000:-50.800000:-242.277983|0.000000:0.000000:0.000000|0.000000:-0.109734:0.993961|nonparallel-conic|null|null|null|0.654508:0.000000:0.642467:0.000000:-52.851305:-19573.048349|0.000000:0.109734:240.814855|0.000000:-42.796381:387.644773|0.000000:0.280960:-0.959720|0.000000:-42.543202:385.351501|0.000000:0.279375:-0.960182|0.000000:-43.052592:389.965503|0.000000:0.282562:-0.959249|3.815401,0.000000,0.000000,0.000000,0.000000,4.769252,0.000000,0.000000,0.000000,0.000000,-1.000400,-1.000000,0.000000,0.000000,-20.004001,0.000000|subject-generation:1",
+        "data-last-completed-request-id": "gg-mwdlgkrm-xm7q0r0s1o-default-request-13",
+        "data-rtt-natural-illumination-reference-film-incidence-cosine": "0.9939609554551797",
+        "data-rtt-coverage-conic-quadratic": "0.654508497187,0.00000000000,0.642466878157,0.00000000000,-52.8513045071,-19573.0483487",
+        "data-rtt-coverage-conic-axial": "0.00000000000,0.109734311091,240.814855361"
+      },
+      "image": {
+        "imagePath": "docs/render-quality/rq3e-macro-oblique/after/ground-glass/o4-aligned.png",
+        "imageWidth": 450,
+        "imageHeight": 360,
+        "sha256": "917ec2b213e68558c3fd85955afe67aa4af3b5ae8687954654105e121745870c"
+      }
+    },
+    {
+      "captureId": "rq3e-14071243-21e6-4666-b052-fb7ea1ef3554-o4-focus-loupe-4x",
+      "stateId": "o4-aligned-focus-loupe-4x",
+      "sceneId": "macro-oblique-plane",
+      "captureRole": "ground-glass-inspection-reference",
+      "cameraState": {
+        "focusDistanceMm": 390,
+        "frontTiltDeg": 6.3,
+        "apertureFNumber": 5.6
+      },
+      "focusLoupe": {
+        "active": true,
+        "scale": 4,
+        "centerU": 0.5,
+        "centerV": 0.5
+      },
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "rendererRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwdlgkrm-xm7q0r0s1o-default-request-14",
+        "lastCompletedRequestId": "gg-mwdlgkrm-xm7q0r0s1o-default-request-14",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "hiddenDomControls": [
+        "Ground glass preview390.0 mm focus / CoC 0.000 mm (100%)",
+        "ground-glass-focus-label",
+        "Reset Ground Glass view",
+        "Expand Ground Glass",
+        "ground-glass-center-guide-1",
+        "ground-glass-center-guide-2"
+      ],
+      "image": {
+        "imagePath": "docs/render-quality/rq3e-macro-oblique/after/inspection/o4-aligned-focus-loupe-4x.png",
+        "imageWidth": 450,
+        "imageHeight": 360,
+        "sha256": "edc70d14cf01255e7063fc0e401a4be5d9e67de9a8c8950c86da838b5d0a3366"
+      }
+    },
+    {
+      "captureId": "rq3e-14071243-21e6-4666-b052-fb7ea1ef3554-macro-depth-of-field-regression",
+      "stateId": "macro-depth-of-field-canonical-regression",
+      "sceneId": "macro-depth-of-field",
+      "captureRole": "secondary-macro-regression-reference",
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "rendererRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwdlid3c-num1e0qax4j-default-request-3",
+        "lastCompletedRequestId": "gg-mwdlid3c-num1e0qax4j-default-request-3",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "hiddenDomControls": [
+        "Ground glass preview400.0 mm focus / CoC 0.412 mm (0%)",
+        "ground-glass-focus-label",
+        "Focus loupe \u00b7 4\u00d7 Ground Glass view",
+        "Expand Ground Glass",
+        "ground-glass-center-guide-1",
+        "ground-glass-center-guide-2"
+      ],
+      "image": {
+        "imagePath": "docs/render-quality/rq3e-macro-oblique/after/controls/macro-depth-of-field-regression.png",
+        "imageWidth": 450,
+        "imageHeight": 360,
+        "sha256": "5ca722ff39830ab42bc916144add32e1b763cb4d4ed475a06c59ca47a7f75c3d"
+      }
+    },
+    {
+      "captureId": "rq3e-14071243-21e6-4666-b052-fb7ea1ef3554-macro-bellows-extension-regression",
+      "stateId": "macro-bellows-extension-canonical-regression",
+      "sceneId": "macro-bellows-extension",
+      "captureRole": "secondary-macro-regression-reference",
+      "renderQuality": "standard",
+      "previewMode": "Raw",
+      "rawDebug": false,
+      "rendererIdentity": {
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "rendererRevision": "187",
+        "applicationFallback": "not-observed",
+        "internalFallback": "none"
+      },
+      "frame": {
+        "requestId": "gg-mwdlik4a-yt9ujbj536-default-request-3",
+        "lastCompletedRequestId": "gg-mwdlik4a-yt9ujbj536-default-request-3",
+        "acceptedByHost": true
+      },
+      "contentful": true,
+      "hiddenDomControls": [
+        "Ground glass preview900.0 mm focus / CoC 10.746 mm (0%)",
+        "ground-glass-focus-label",
+        "Focus loupe \u00b7 4\u00d7 Ground Glass view",
+        "Expand Ground Glass",
+        "ground-glass-center-guide-1",
+        "ground-glass-center-guide-2"
+      ],
+      "image": {
+        "imagePath": "docs/render-quality/rq3e-macro-oblique/after/controls/macro-bellows-extension-regression.png",
+        "imageWidth": 450,
+        "imageHeight": 360,
+        "sha256": "7a0a621ae8b7fc47756fcd914774f1902c611b54888c84eaad72ba5fa334439c"
+      }
+    }
+  ],
+  "pageErrors": [],
+  "consoleErrors": []
+}

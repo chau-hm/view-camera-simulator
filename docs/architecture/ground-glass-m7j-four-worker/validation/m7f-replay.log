@@ -1,0 +1,31 @@
+
+> view-camera-simulator@0.0.0 evidence:replay:m7f
+> node ./scripts/run-m7f-presentation-evidence-replay.mjs --report-output=/tmp/m7j-final-m7f-replay.json
+
+{
+  "reportId": "ground-glass-m7f-r187-presentation",
+  "evaluatorRevision": "m7f-r187-presentation-evaluator-v2",
+  "qualificationStatus": "passed",
+  "qualificationPass": true,
+  "scenarioCounts": {
+    "declared": {
+      "passed": 17,
+      "failed": 0,
+      "blocked": 0,
+      "not-run": 0
+    },
+    "computed": {
+      "passed": 17,
+      "failed": 0,
+      "blocked": 0,
+      "not-run": 0
+    },
+    "inventoryConsistent": true
+  },
+  "sourceCommitVerification": {
+    "verified": true,
+    "error": null
+  },
+  "evidenceReadIssues": [],
+  "reportOutput": "/tmp/m7j-final-m7f-replay.json"
+}

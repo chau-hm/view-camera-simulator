@@ -1,0 +1,277 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "m7o-canvas-assertion-timing-evaluator-v1",
+  "attemptsPerCondition": 3,
+  "source": {
+    "executionSourceCommitSha": "e5150fdaa6d9660c99ac3c36086cfaa1439e4bcb",
+    "toolingSourceCommitSha": "c1135c8f7be9c3530eaeaad030a98079457ff8c0",
+    "matrixNormalizerSourceCommitSha": "817f534dc0e61068cf20c586947ea3d6b4b5b481",
+    "evidenceNormalizerSourceCommitSha": "817f534dc0e61068cf20c586947ea3d6b4b5b481"
+  },
+  "artifacts": [
+    {
+      "captureId": "m7o-a-r1",
+      "condition": "A",
+      "configuredWorkers": 1,
+      "runnerExitCode": 0,
+      "artifactPath": "docs/architecture/ground-glass-m7o-canvas-timing/capture/final/m7o-a-r1.json",
+      "artifactSha256": "074507aad1c4e67058a0bba5a1332ad8400fecb59e5b79b5ae4c6ce749ef1781",
+      "artifactBytes": 2651,
+      "rawCaptureSha256": "68b9dd8a7432a2754667cc95f47713017e82e6158632f2e2e564c8f14d4186c2",
+      "rawCaptureBytes": 7609,
+      "rawRetention": "private-local-only",
+      "observedConcurrency": 1,
+      "targetAssertionOutcome": "passed",
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timedOut": 0,
+        "skipped": 0,
+        "incomplete": 0
+      },
+      "clockMappingStatus": "unavailable"
+    },
+    {
+      "captureId": "m7o-a-r2",
+      "condition": "A",
+      "configuredWorkers": 1,
+      "runnerExitCode": 0,
+      "artifactPath": "docs/architecture/ground-glass-m7o-canvas-timing/capture/final/m7o-a-r2.json",
+      "artifactSha256": "91242382e0989a754ddead6a0524c3f427f0bffb3b5e6e5a3bd0156682b708ef",
+      "artifactBytes": 2651,
+      "rawCaptureSha256": "8dc160ebe5e61598e4d6d87a21fa3a85f516e138ba583127753aa5aaa52416d6",
+      "rawCaptureBytes": 7609,
+      "rawRetention": "private-local-only",
+      "observedConcurrency": 1,
+      "targetAssertionOutcome": "passed",
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timedOut": 0,
+        "skipped": 0,
+        "incomplete": 0
+      },
+      "clockMappingStatus": "unavailable"
+    },
+    {
+      "captureId": "m7o-a-r3",
+      "condition": "A",
+      "configuredWorkers": 1,
+      "runnerExitCode": 0,
+      "artifactPath": "docs/architecture/ground-glass-m7o-canvas-timing/capture/final/m7o-a-r3.json",
+      "artifactSha256": "4cd0b8d906cdb2078fe430fd02b6d1d47f4c356b21190263a40cd9121bb159d1",
+      "artifactBytes": 2651,
+      "rawCaptureSha256": "f6f09a865e7012d31f083558c8691b9c26957f1de54398e5307748f429ba9091",
+      "rawCaptureBytes": 7618,
+      "rawRetention": "private-local-only",
+      "observedConcurrency": 1,
+      "targetAssertionOutcome": "passed",
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timedOut": 0,
+        "skipped": 0,
+        "incomplete": 0
+      },
+      "clockMappingStatus": "unavailable"
+    },
+    {
+      "captureId": "m7o-b-r1",
+      "condition": "B",
+      "configuredWorkers": 1,
+      "runnerExitCode": 0,
+      "artifactPath": "docs/architecture/ground-glass-m7o-canvas-timing/capture/final/m7o-b-r1.json",
+      "artifactSha256": "9dca0c90f670b368c89f3f3f7b65476a53098311979bff0e62ec768a39222569",
+      "artifactBytes": 43434,
+      "rawCaptureSha256": "d276642059fd78bc8b9a3045f88b2d21c5dc5f4c6efa79aaedc347a0dd6a7d11",
+      "rawCaptureBytes": 58274,
+      "rawRetention": "private-local-only",
+      "observedConcurrency": 1,
+      "targetAssertionOutcome": "passed",
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timedOut": 0,
+        "skipped": 0,
+        "incomplete": 0
+      },
+      "clockMappingStatus": "bounded-by-overlapping-request-response-anchors"
+    },
+    {
+      "captureId": "m7o-b-r2",
+      "condition": "B",
+      "configuredWorkers": 1,
+      "runnerExitCode": 0,
+      "artifactPath": "docs/architecture/ground-glass-m7o-canvas-timing/capture/final/m7o-b-r2.json",
+      "artifactSha256": "45fed6937604c3168fd2e990572385a0e8325fe9d4c1fd4cc24fc9303adfce19",
+      "artifactBytes": 44029,
+      "rawCaptureSha256": "7cd4e08e5bf4830577da371934397c6893603bed542704c671d226453a25f56e",
+      "rawCaptureBytes": 59021,
+      "rawRetention": "private-local-only",
+      "observedConcurrency": 1,
+      "targetAssertionOutcome": "passed",
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timedOut": 0,
+        "skipped": 0,
+        "incomplete": 0
+      },
+      "clockMappingStatus": "bounded-by-overlapping-request-response-anchors"
+    },
+    {
+      "captureId": "m7o-b-r3",
+      "condition": "B",
+      "configuredWorkers": 1,
+      "runnerExitCode": 0,
+      "artifactPath": "docs/architecture/ground-glass-m7o-canvas-timing/capture/final/m7o-b-r3.json",
+      "artifactSha256": "b9358f3cd19b54e9a2663afa9005b11e96678a44db49f2eaac9d16fa98566904",
+      "artifactBytes": 42336,
+      "rawCaptureSha256": "9e8b87190ef2d1b2fd4476da430c173b7f4914fda506a6588a2ce94d1ec14152",
+      "rawCaptureBytes": 56957,
+      "rawRetention": "private-local-only",
+      "observedConcurrency": 1,
+      "targetAssertionOutcome": "passed",
+      "statusCounts": {
+        "passed": 1,
+        "failed": 0,
+        "timedOut": 0,
+        "skipped": 0,
+        "incomplete": 0
+      },
+      "clockMappingStatus": "bounded-by-overlapping-request-response-anchors"
+    },
+    {
+      "captureId": "m7o-c-r1",
+      "condition": "C",
+      "configuredWorkers": 4,
+      "runnerExitCode": 0,
+      "artifactPath": "docs/architecture/ground-glass-m7o-canvas-timing/capture/final/m7o-c-r1.json",
+      "artifactSha256": "af5b0d2b212c880d628cfb1db190b174dc39e13a778a25fd3721cddabce6a8b9",
+      "artifactBytes": 45107,
+      "rawCaptureSha256": "350268803080461141b24cb62b4290c20a60bb574316b808e49f858155e07998",
+      "rawCaptureBytes": 62522,
+      "rawRetention": "private-local-only",
+      "observedConcurrency": 4,
+      "targetAssertionOutcome": "passed",
+      "statusCounts": {
+        "passed": 4,
+        "failed": 0,
+        "timedOut": 0,
+        "skipped": 0,
+        "incomplete": 0
+      },
+      "clockMappingStatus": "bounded-by-overlapping-request-response-anchors"
+    },
+    {
+      "captureId": "m7o-c-r2",
+      "condition": "C",
+      "configuredWorkers": 4,
+      "runnerExitCode": 0,
+      "artifactPath": "docs/architecture/ground-glass-m7o-canvas-timing/capture/final/m7o-c-r2.json",
+      "artifactSha256": "5a011800cd808eddb59e8878da53b5a95f55ca4e3e862c5926effa86df78615a",
+      "artifactBytes": 43590,
+      "rawCaptureSha256": "2b61d2f3dd8ba7e24d12403cedff72b3604350e77569690da91e0b206f401697",
+      "rawCaptureBytes": 60634,
+      "rawRetention": "private-local-only",
+      "observedConcurrency": 4,
+      "targetAssertionOutcome": "passed",
+      "statusCounts": {
+        "passed": 4,
+        "failed": 0,
+        "timedOut": 0,
+        "skipped": 0,
+        "incomplete": 0
+      },
+      "clockMappingStatus": "bounded-by-overlapping-request-response-anchors"
+    },
+    {
+      "captureId": "m7o-c-r3",
+      "condition": "C",
+      "configuredWorkers": 4,
+      "runnerExitCode": 0,
+      "artifactPath": "docs/architecture/ground-glass-m7o-canvas-timing/capture/final/m7o-c-r3.json",
+      "artifactSha256": "dd4ca38c2f85a551a98fd5384ad02560a0bf946e295ef1f1353a5a0b2e51e87a",
+      "artifactBytes": 43927,
+      "rawCaptureSha256": "1b95a59abdfe7c88f0146d34c9e690ff30e1dcd3199a83bae3215aed71af0ac3",
+      "rawCaptureBytes": 61078,
+      "rawRetention": "private-local-only",
+      "observedConcurrency": 4,
+      "targetAssertionOutcome": "passed",
+      "statusCounts": {
+        "passed": 4,
+        "failed": 0,
+        "timedOut": 0,
+        "skipped": 0,
+        "incomplete": 0
+      },
+      "clockMappingStatus": "bounded-by-overlapping-request-response-anchors"
+    },
+    {
+      "captureId": "m7o-d-r1",
+      "condition": "D",
+      "configuredWorkers": 4,
+      "runnerExitCode": 1,
+      "artifactPath": "docs/architecture/ground-glass-m7o-canvas-timing/capture/final/m7o-d-r1.json",
+      "artifactSha256": "0deadb1df178c5166c8354e1d8dfba5d04b3f8b3f0347035a67c4c7102f71c2c",
+      "artifactBytes": 53269,
+      "rawCaptureSha256": "5a5c5d39c387e06e854b773743d78d402f9893c3a583be2c7d076285b9757e83",
+      "rawCaptureBytes": 78369,
+      "rawRetention": "private-local-only",
+      "observedConcurrency": 4,
+      "targetAssertionOutcome": "failed",
+      "statusCounts": {
+        "passed": 2,
+        "failed": 1,
+        "timedOut": 1,
+        "skipped": 0,
+        "incomplete": 0
+      },
+      "clockMappingStatus": "bounded-by-overlapping-request-response-anchors"
+    },
+    {
+      "captureId": "m7o-d-r2",
+      "condition": "D",
+      "configuredWorkers": 4,
+      "runnerExitCode": 1,
+      "artifactPath": "docs/architecture/ground-glass-m7o-canvas-timing/capture/final/m7o-d-r2.json",
+      "artifactSha256": "1e3a571f2cdf4e5f90fe4d6c86ca6ab7492031f69134e35270bbba058a0a7d7f",
+      "artifactBytes": 52784,
+      "rawCaptureSha256": "bef5dae10b32994fbeae10823d6ea2085394e6869f674b6fefeb2834f7ece879",
+      "rawCaptureBytes": 79653,
+      "rawRetention": "private-local-only",
+      "observedConcurrency": 4,
+      "targetAssertionOutcome": "failed",
+      "statusCounts": {
+        "passed": 1,
+        "failed": 1,
+        "timedOut": 2,
+        "skipped": 0,
+        "incomplete": 0
+      },
+      "clockMappingStatus": "bounded-by-overlapping-request-response-anchors"
+    },
+    {
+      "captureId": "m7o-d-r3",
+      "condition": "D",
+      "configuredWorkers": 4,
+      "runnerExitCode": 1,
+      "artifactPath": "docs/architecture/ground-glass-m7o-canvas-timing/capture/final/m7o-d-r3.json",
+      "artifactSha256": "bba7a245984c53664b0caf89e3f93e4550db8f0b03e4b27e39a1560c15ee54a5",
+      "artifactBytes": 53298,
+      "rawCaptureSha256": "849addd9f2017e8639803fa3bbbefc29550c154626105cd4c735e79099d22516",
+      "rawCaptureBytes": 80441,
+      "rawRetention": "private-local-only",
+      "observedConcurrency": 4,
+      "targetAssertionOutcome": "failed",
+      "statusCounts": {
+        "passed": 1,
+        "failed": 1,
+        "timedOut": 2,
+        "skipped": 0,
+        "incomplete": 0
+      },
+      "clockMappingStatus": "bounded-by-overlapping-request-response-anchors"
+    }
+  ]
+}

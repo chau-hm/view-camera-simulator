@@ -1,0 +1,783 @@
+{
+  "source": "Chromium production Vite preview captures; contact sheets add labels and layout only",
+  "captureViewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "devicePixelRatio": 1,
+  "sources": [
+    {
+      "name": "guided-canonical",
+      "label": "Guided canonical materials",
+      "sourceSha256": "54a8b641cb77107525a6865437b4bd0b39d61f1ac075604c3d41bc516d179473",
+      "metadata": {
+        "mode": "guided",
+        "sceneId": "architecture-rise",
+        "taskId": "rise-01",
+        "appearance": "canonical materials; no variation descriptor",
+        "capture": "guided-canonical",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "54a8b641cb77107525a6865437b4bd0b39d61f1ac075604c3d41bc516d179473",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "observer-seed-0",
+      "label": "Free · seed 0 · weathered brown brick",
+      "sourceSha256": "e1b2b7df9d23341e192d18c891dffc077c30b1218ba6b877b4ca2b2bdca29773",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 0,
+        "schemaVersion": 1,
+        "family": "weathered-brown-brick",
+        "view": "canonical front three-quarter",
+        "canvasCssPixels": {
+          "width": 514,
+          "height": 410.390625
+        },
+        "overlays": "disabled through public View overlays controls",
+        "capture": "observer-seed-0",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "e1b2b7df9d23341e192d18c891dffc077c30b1218ba6b877b4ca2b2bdca29773",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "observer-seed-284719",
+      "label": "Free · seed 284719 · traditional red brick",
+      "sourceSha256": "a903583d939b78b832bfb5945c8f003128f2e0ee5e84ef7e606a81cf5e785892",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 284719,
+        "schemaVersion": 1,
+        "family": "traditional-red-brick",
+        "view": "canonical front three-quarter",
+        "canvasCssPixels": {
+          "width": 514,
+          "height": 410.390625
+        },
+        "overlays": "disabled through public View overlays controls",
+        "capture": "observer-seed-284719",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "a903583d939b78b832bfb5945c8f003128f2e0ee5e84ef7e606a81cf5e785892",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "observer-seed-2130322642",
+      "label": "Free · seed 2130322642 · dark fired brick",
+      "sourceSha256": "beeed2f3ccd49ae603a0f22e33a325719a0fcc61621fca983f01fa57cec5b9da",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 2130322642,
+        "schemaVersion": 1,
+        "family": "dark-fired-brick",
+        "view": "canonical front three-quarter",
+        "canvasCssPixels": {
+          "width": 514,
+          "height": 410.390625
+        },
+        "overlays": "disabled through public View overlays controls",
+        "capture": "observer-seed-2130322642",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "beeed2f3ccd49ae603a0f22e33a325719a0fcc61621fca983f01fa57cec5b9da",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "observer-seed-3079748268",
+      "label": "Free · seed 3079748268 · light clay brick",
+      "sourceSha256": "8b4b7e96bfc1f52d532cb27d0b355d4dfcb9addd853043a8f65bbe0c1a6eec0b",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 3079748268,
+        "schemaVersion": 1,
+        "family": "light-clay-brick",
+        "view": "canonical front three-quarter",
+        "canvasCssPixels": {
+          "width": 514,
+          "height": 410.390625
+        },
+        "overlays": "disabled through public View overlays controls",
+        "capture": "observer-seed-3079748268",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "8b4b7e96bfc1f52d532cb27d0b355d4dfcb9addd853043a8f65bbe0c1a6eec0b",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "observer-seed-0",
+      "label": "Seed 0 · weathered brown brick",
+      "sourceSha256": "e1b2b7df9d23341e192d18c891dffc077c30b1218ba6b877b4ca2b2bdca29773",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 0,
+        "schemaVersion": 1,
+        "family": "weathered-brown-brick",
+        "view": "canonical front three-quarter",
+        "canvasCssPixels": {
+          "width": 514,
+          "height": 410.390625
+        },
+        "overlays": "disabled through public View overlays controls",
+        "capture": "observer-seed-0",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "e1b2b7df9d23341e192d18c891dffc077c30b1218ba6b877b4ca2b2bdca29773",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "observer-seed-284719",
+      "label": "Seed 284719 · traditional red brick",
+      "sourceSha256": "a903583d939b78b832bfb5945c8f003128f2e0ee5e84ef7e606a81cf5e785892",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 284719,
+        "schemaVersion": 1,
+        "family": "traditional-red-brick",
+        "view": "canonical front three-quarter",
+        "canvasCssPixels": {
+          "width": 514,
+          "height": 410.390625
+        },
+        "overlays": "disabled through public View overlays controls",
+        "capture": "observer-seed-284719",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "a903583d939b78b832bfb5945c8f003128f2e0ee5e84ef7e606a81cf5e785892",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "observer-seed-654013979",
+      "label": "Seed 654013979 · light clay brick",
+      "sourceSha256": "da6df7afcf1eb7a926bd1c45d116f2390ac75492f0d4507ba6e5a27e3b0f9803",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 654013979,
+        "schemaVersion": 1,
+        "family": "light-clay-brick",
+        "view": "canonical front three-quarter",
+        "canvasCssPixels": {
+          "width": 514,
+          "height": 410.390625
+        },
+        "overlays": "disabled through public View overlays controls",
+        "capture": "observer-seed-654013979",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "da6df7afcf1eb7a926bd1c45d116f2390ac75492f0d4507ba6e5a27e3b0f9803",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "observer-seed-1",
+      "label": "Seed 1 · weathered brown brick",
+      "sourceSha256": "5bb06fc2535b9eeeb1f38fc5f4f74e5f1dd3d43e1fe552bfd4dedb4180c55048",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 1,
+        "schemaVersion": 1,
+        "family": "weathered-brown-brick",
+        "view": "canonical front three-quarter",
+        "canvasCssPixels": {
+          "width": 514,
+          "height": 410.390625
+        },
+        "overlays": "disabled through public View overlays controls",
+        "capture": "observer-seed-1",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "5bb06fc2535b9eeeb1f38fc5f4f74e5f1dd3d43e1fe552bfd4dedb4180c55048",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "observer-seed-3079748268",
+      "label": "Seed 3079748268 · light clay brick",
+      "sourceSha256": "8b4b7e96bfc1f52d532cb27d0b355d4dfcb9addd853043a8f65bbe0c1a6eec0b",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 3079748268,
+        "schemaVersion": 1,
+        "family": "light-clay-brick",
+        "view": "canonical front three-quarter",
+        "canvasCssPixels": {
+          "width": 514,
+          "height": 410.390625
+        },
+        "overlays": "disabled through public View overlays controls",
+        "capture": "observer-seed-3079748268",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "8b4b7e96bfc1f52d532cb27d0b355d4dfcb9addd853043a8f65bbe0c1a6eec0b",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "observer-seed-4041585854",
+      "label": "Seed 4041585854 · weathered brown brick",
+      "sourceSha256": "b6db8f04907a9352a6dd52d29f8d0a4da16f81f295a57002f440be44fe64f46c",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 4041585854,
+        "schemaVersion": 1,
+        "family": "weathered-brown-brick",
+        "view": "canonical front three-quarter",
+        "canvasCssPixels": {
+          "width": 514,
+          "height": 410.390625
+        },
+        "overlays": "disabled through public View overlays controls",
+        "capture": "observer-seed-4041585854",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "b6db8f04907a9352a6dd52d29f8d0a4da16f81f295a57002f440be44fe64f46c",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "observer-seed-2762659077",
+      "label": "Seed 2762659077 · traditional red brick",
+      "sourceSha256": "548c8612c30eac5aa77bed45d4233f93fa5dc1bf16805637547838a80d5a6819",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 2762659077,
+        "schemaVersion": 1,
+        "family": "traditional-red-brick",
+        "view": "canonical front three-quarter",
+        "canvasCssPixels": {
+          "width": 514,
+          "height": 410.390625
+        },
+        "overlays": "disabled through public View overlays controls",
+        "capture": "observer-seed-2762659077",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "548c8612c30eac5aa77bed45d4233f93fa5dc1bf16805637547838a80d5a6819",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "observer-seed-4294967295",
+      "label": "Seed 4294967295 · weathered brown brick",
+      "sourceSha256": "1dcfac78ad587a317574baa3482b8d90b8010d755cbcb4ed8549225868d9eace",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 4294967295,
+        "schemaVersion": 1,
+        "family": "weathered-brown-brick",
+        "view": "canonical front three-quarter",
+        "canvasCssPixels": {
+          "width": 514,
+          "height": 410.390625
+        },
+        "overlays": "disabled through public View overlays controls",
+        "capture": "observer-seed-4294967295",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "1dcfac78ad587a317574baa3482b8d90b8010d755cbcb4ed8549225868d9eace",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "observer-seed-2130322642",
+      "label": "Seed 2130322642 · dark fired brick",
+      "sourceSha256": "beeed2f3ccd49ae603a0f22e33a325719a0fcc61621fca983f01fa57cec5b9da",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 2130322642,
+        "schemaVersion": 1,
+        "family": "dark-fired-brick",
+        "view": "canonical front three-quarter",
+        "canvasCssPixels": {
+          "width": 514,
+          "height": 410.390625
+        },
+        "overlays": "disabled through public View overlays controls",
+        "capture": "observer-seed-2130322642",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "beeed2f3ccd49ae603a0f22e33a325719a0fcc61621fca983f01fa57cec5b9da",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "observer-seed-2004402848",
+      "label": "Seed 2004402848 · light clay brick",
+      "sourceSha256": "5e397bf6a7c45d78aea98351d9ae9e3fdcc17fa9224fe0c1ebf70b66ca91c9b0",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 2004402848,
+        "schemaVersion": 1,
+        "family": "light-clay-brick",
+        "view": "canonical front three-quarter",
+        "canvasCssPixels": {
+          "width": 514,
+          "height": 410.390625
+        },
+        "overlays": "disabled through public View overlays controls",
+        "capture": "observer-seed-2004402848",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "5e397bf6a7c45d78aea98351d9ae9e3fdcc17fa9224fe0c1ebf70b66ca91c9b0",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "observer-seed-1824298367",
+      "label": "Seed 1824298367 · light clay brick",
+      "sourceSha256": "ad2b0c3e53413d5fcacddc64eba213f6dda1b7c2a0b49a0175cbe0b53f9ec63e",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 1824298367,
+        "schemaVersion": 1,
+        "family": "light-clay-brick",
+        "view": "canonical front three-quarter",
+        "canvasCssPixels": {
+          "width": 514,
+          "height": 410.390625
+        },
+        "overlays": "disabled through public View overlays controls",
+        "capture": "observer-seed-1824298367",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "ad2b0c3e53413d5fcacddc64eba213f6dda1b7c2a0b49a0175cbe0b53f9ec63e",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "observer-seed-4065361417",
+      "label": "Seed 4065361417 · dark fired brick",
+      "sourceSha256": "acc9051bb55dba2e05a251838214fd7675bde488fca8f321a564829b5997453b",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 4065361417,
+        "schemaVersion": 1,
+        "family": "dark-fired-brick",
+        "view": "canonical front three-quarter",
+        "canvasCssPixels": {
+          "width": 514,
+          "height": 410.390625
+        },
+        "overlays": "disabled through public View overlays controls",
+        "capture": "observer-seed-4065361417",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "acc9051bb55dba2e05a251838214fd7675bde488fca8f321a564829b5997453b",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "observer-east-return",
+      "label": "East service-return elevation · seed 284719",
+      "sourceSha256": "6b59ef63a06245c675d145e89d91f2662a6e0629fe776b1e1b6eab6c02c8a5de",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 284719,
+        "schemaVersion": 1,
+        "family": "traditional-red-brick",
+        "view": "east service-return elevation orbit diagnostic",
+        "orbitDeltaXCssPixels": 90,
+        "cameraPosition": "13.116212,3.000000,9.677375",
+        "orbitTarget": "0.000000,0.900000,5.600000",
+        "frontRiseMm": 0,
+        "focusDistanceMm": 8890,
+        "aperture": 11,
+        "capture": "observer-east-return",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "6b59ef63a06245c675d145e89d91f2662a6e0629fe776b1e1b6eab6c02c8a5de",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "observer-rear-side",
+      "label": "Rear elevation · seed 284719 · modeled windows and service door",
+      "sourceSha256": "23cc03a5b7318efb785cac4b67bcf89f5305ca1a9420b462d77fe391333093d1",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 284719,
+        "schemaVersion": 1,
+        "family": "traditional-red-brick",
+        "view": "rear elevation orbit diagnostic",
+        "orbitDeltaXCssPixels": 174,
+        "cameraPosition": "-0.245648,3.000000,19.333159",
+        "orbitTarget": "0.000000,0.900000,5.600000",
+        "frontRiseMm": 0,
+        "focusDistanceMm": 8890,
+        "aperture": 11,
+        "capture": "observer-rear-side",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "23cc03a5b7318efb785cac4b67bcf89f5305ca1a9420b462d77fe391333093d1",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "ground-glass-seed-284719-f11-raw",
+      "label": "Seed 284719 · traditional red · f/11 · Raw",
+      "sourceSha256": "cfd17fda1afe524cbb62de71cc81732d8478441f73a18e34b0c9deedef23d73b",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 284719,
+        "schemaVersion": 1,
+        "family": "traditional-red-brick",
+        "focusDistanceMm": 8890,
+        "aperture": 11,
+        "frontRiseMm": 0,
+        "previewOrientation": "raw",
+        "dofBypass": false,
+        "gridEnabled": false,
+        "rttRequestId": "gg-mwra2jq3-s4z5o1um6yc-default-request-3",
+        "rttCompletedRequestId": "gg-mwra2jq3-s4z5o1um6yc-default-request-3",
+        "rendererGeneration": "gg-mwra2jq3-s4z5o1um6yc-default-generation-1",
+        "capture": "ground-glass-seed-284719-f11-raw",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "cfd17fda1afe524cbb62de71cc81732d8478441f73a18e34b0c9deedef23d73b",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "ground-glass-seed-284719-f11-upright",
+      "label": "Seed 284719 · traditional red · f/11 · Upright Assist",
+      "sourceSha256": "6f2b86ed1bedbaddee3484e7135ef5df4202e5677a72bcf2899312b18fba4431",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 284719,
+        "schemaVersion": 1,
+        "family": "traditional-red-brick",
+        "focusDistanceMm": 8890,
+        "aperture": 11,
+        "frontRiseMm": 0,
+        "previewOrientation": "upright",
+        "dofBypass": false,
+        "gridEnabled": false,
+        "rttRequestId": "gg-mwra2jq3-s4z5o1um6yc-default-request-4",
+        "rttCompletedRequestId": "gg-mwra2jq3-s4z5o1um6yc-default-request-4",
+        "rendererGeneration": "gg-mwra2jq3-s4z5o1um6yc-default-generation-1",
+        "capture": "ground-glass-seed-284719-f11-upright",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "6f2b86ed1bedbaddee3484e7135ef5df4202e5677a72bcf2899312b18fba4431",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "ground-glass-seed-2130322642-f11-raw",
+      "label": "Seed 2130322642 · dark fired · f/11 · Raw",
+      "sourceSha256": "5adf47e6fa6beb866104cd95847dfae09630d77942b939e4e304fabb197e2837",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 2130322642,
+        "schemaVersion": 1,
+        "family": "dark-fired-brick",
+        "focusDistanceMm": 8890,
+        "aperture": 11,
+        "frontRiseMm": 0,
+        "previewOrientation": "raw",
+        "dofBypass": false,
+        "gridEnabled": false,
+        "rttRequestId": "gg-mwra4vgx-dww80vr6ihp-default-request-3",
+        "rttCompletedRequestId": "gg-mwra4vgx-dww80vr6ihp-default-request-3",
+        "rendererGeneration": "gg-mwra4vgx-dww80vr6ihp-default-generation-1",
+        "capture": "ground-glass-seed-2130322642-f11-raw",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "5adf47e6fa6beb866104cd95847dfae09630d77942b939e4e304fabb197e2837",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "ground-glass-seed-284719-f5_6-raw",
+      "label": "Seed 284719 · f/5.6 support view · Raw · DOF enabled",
+      "sourceSha256": "a90ea321453a42852b28d8721d43951917cc4a9532f48c2a3fe57496d2bef433",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 284719,
+        "schemaVersion": 1,
+        "family": "traditional-red-brick",
+        "focusDistanceMm": 8890,
+        "aperture": 5.6,
+        "frontRiseMm": 0,
+        "previewOrientation": "raw",
+        "dofBypass": false,
+        "gridEnabled": false,
+        "rttRequestId": "gg-mwra2jq3-s4z5o1um6yc-default-request-6",
+        "rttCompletedRequestId": "gg-mwra2jq3-s4z5o1um6yc-default-request-6",
+        "capture": "ground-glass-seed-284719-f5_6-raw",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "a90ea321453a42852b28d8721d43951917cc4a9532f48c2a3fe57496d2bef433",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "ground-glass-seed-2130322642-f11-upright",
+      "label": "Seed 2130322642 · dark fired · f/11 · Upright Assist",
+      "sourceSha256": "df4637a4cc9106a05ffca0f4c243786c656cc857d0c2879d5fe790200b98030d",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 2130322642,
+        "schemaVersion": 1,
+        "family": "dark-fired-brick",
+        "focusDistanceMm": 8890,
+        "aperture": 11,
+        "frontRiseMm": 0,
+        "previewOrientation": "upright",
+        "dofBypass": false,
+        "gridEnabled": false,
+        "rttRequestId": "gg-mwra4vgx-dww80vr6ihp-default-request-4",
+        "rttCompletedRequestId": "gg-mwra4vgx-dww80vr6ihp-default-request-4",
+        "rendererGeneration": "gg-mwra4vgx-dww80vr6ihp-default-generation-1",
+        "capture": "ground-glass-seed-2130322642-f11-upright",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "df4637a4cc9106a05ffca0f4c243786c656cc857d0c2879d5fe790200b98030d",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "ground-glass-seed-284719-f11-rise20-raw",
+      "label": "Seed 284719 · Front Rise 20 mm support view · f/11 · Raw",
+      "sourceSha256": "e9740023d7d9f06f4b3d86b63c5af07aa8daf29ce040167d9445c2eaa65f17ab",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 284719,
+        "schemaVersion": 1,
+        "family": "traditional-red-brick",
+        "focusDistanceMm": 8890,
+        "aperture": 11,
+        "frontRiseMm": 20,
+        "previewOrientation": "raw",
+        "dofBypass": false,
+        "gridEnabled": false,
+        "rttRequestId": "gg-mwra2jq3-s4z5o1um6yc-default-request-9",
+        "rttCompletedRequestId": "gg-mwra2jq3-s4z5o1um6yc-default-request-9",
+        "capture": "ground-glass-seed-284719-f11-rise20-raw",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "e9740023d7d9f06f4b3d86b63c5af07aa8daf29ce040167d9445c2eaa65f17ab",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "ground-glass-seed-3079748268-f11-raw",
+      "label": "Seed 3079748268 · light clay · f/11 · Raw",
+      "sourceSha256": "9c9eec6a751bd0ce2133def57539830a2cd8ab35f245615e871fe6f4293cb902",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 3079748268,
+        "schemaVersion": 1,
+        "family": "light-clay-brick",
+        "focusDistanceMm": 8890,
+        "aperture": 11,
+        "frontRiseMm": 0,
+        "previewOrientation": "raw",
+        "dofBypass": false,
+        "gridEnabled": false,
+        "rttRequestId": "gg-mwra3zr5-40dcrpb9ujv-default-request-3",
+        "rttCompletedRequestId": "gg-mwra3zr5-40dcrpb9ujv-default-request-3",
+        "rendererGeneration": "gg-mwra3zr5-40dcrpb9ujv-default-generation-1",
+        "capture": "ground-glass-seed-3079748268-f11-raw",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "9c9eec6a751bd0ce2133def57539830a2cd8ab35f245615e871fe6f4293cb902",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "ground-glass-seed-3079748268-f11-upright",
+      "label": "Seed 3079748268 · light clay · f/11 · Upright Assist",
+      "sourceSha256": "769e0f7514627debb075d74a6ff3cfa282bd5907723db45557ccc54aa596e54d",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 3079748268,
+        "schemaVersion": 1,
+        "family": "light-clay-brick",
+        "focusDistanceMm": 8890,
+        "aperture": 11,
+        "frontRiseMm": 0,
+        "previewOrientation": "upright",
+        "dofBypass": false,
+        "gridEnabled": false,
+        "rttRequestId": "gg-mwra3zr5-40dcrpb9ujv-default-request-4",
+        "rttCompletedRequestId": "gg-mwra3zr5-40dcrpb9ujv-default-request-4",
+        "rendererGeneration": "gg-mwra3zr5-40dcrpb9ujv-default-generation-1",
+        "capture": "ground-glass-seed-3079748268-f11-upright",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "769e0f7514627debb075d74a6ff3cfa282bd5907723db45557ccc54aa596e54d",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    },
+    {
+      "name": "observer-seed-284719",
+      "label": "Seed 284719 · canonical front three-quarter · replay canvas bytes matched",
+      "sourceSha256": "a903583d939b78b832bfb5945c8f003128f2e0ee5e84ef7e606a81cf5e785892",
+      "metadata": {
+        "mode": "free",
+        "sceneId": "architecture-rise",
+        "seed": 284719,
+        "schemaVersion": 1,
+        "family": "traditional-red-brick",
+        "view": "canonical front three-quarter",
+        "canvasCssPixels": {
+          "width": 514,
+          "height": 410.390625
+        },
+        "overlays": "disabled through public View overlays controls",
+        "capture": "observer-seed-284719",
+        "viewport": {
+          "width": 1440,
+          "height": 1000,
+          "devicePixelRatio": 1
+        },
+        "sha256": "a903583d939b78b832bfb5945c8f003128f2e0ee5e84ef7e606a81cf5e785892",
+        "source": "Chromium production Vite preview · WebGL2",
+        "captureDomOverlays": "temporarily hidden and restored after native canvas capture"
+      }
+    }
+  ]
+}

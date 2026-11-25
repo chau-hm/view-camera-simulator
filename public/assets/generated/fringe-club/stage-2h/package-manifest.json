@@ -1,0 +1,84 @@
+{
+  "assetId": "fringe-club-stable-zones",
+  "version": "stage-2h.1",
+  "stageVerdict": "READY_STAGE_2I_INTEGRATION_CANDIDATE",
+  "packagingVerdict": "OPTIMIZED_PACKAGE_SELECTED",
+  "architecture": "HYBRID_SELECTED",
+  "productionMatureStableZones": [
+    "PROW",
+    "LOWER_ALBERT_OBLIQUE"
+  ],
+  "heldZones": {
+    "WYNDHAM_LONG": "FROZEN_STAGE_2B1_NEUTRAL",
+    "LOWER_ALBERT_LONG": "FROZEN_STAGE_2B1_NEUTRAL",
+    "ENTRANCE_REGION": "FROZEN_STAGE_2B1_NEUTRAL",
+    "SOUTH_TERMINATION": "UNSUPPORTED / FROZEN / NEUTRAL"
+  },
+  "units": "metres",
+  "up": "+Y",
+  "rootTransform": "identity",
+  "GLB": "preferred-runtime-candidate.glb",
+  "GLBSha256": "1f15e04fa6161e327d6f4f89f9b011f3b8f41bcf305e7ee2e3a1a127fef93b8e",
+  "encodedBytes": 3379292,
+  "triangles": 20203,
+  "meshes": 32,
+  "primitives": 32,
+  "materials": 15,
+  "activeSemanticMaterialFamilies": 8,
+  "textures": 7,
+  "decodedTextureCPUBytesEstimate": 77594624,
+  "GPUTextureWithMipBytesEstimate": 103459500,
+  "textureDensityPPM": 128,
+  "extensionsUsed": [
+    "KHR_materials_transmission",
+    "KHR_materials_ior"
+  ],
+  "extensionsRequired": [],
+  "semanticMaterials": [
+    "RED_PROW",
+    "RED_OBLIQUE",
+    "WHITE_BAND",
+    "LIGHT_TRIM",
+    "DARK_FRAME",
+    "GLASS",
+    "OPAQUE_COVER",
+    "DARK_DOOR"
+  ],
+  "sampler": {
+    "minFilter": "LINEAR_MIPMAP_LINEAR",
+    "magFilter": "LINEAR",
+    "generateMipmaps": true,
+    "wrap": "CLAMP_TO_EDGE",
+    "anisotropy": 4,
+    "capabilityClamp": true
+  },
+  "ownership": "Local SourceAsset owner+instance leases; geometry/maps immutable shared within one parse; instance-cloned materials/root/metadata",
+  "disposer": "Detach, dispose instance materials, release source lease; final lease disposes source geometry/templates/textures and closes ImageBitmaps. Renderer/environment separate.",
+  "packagePayload": [
+    "preferred-runtime-candidate.glb",
+    "package-manifest.json",
+    "merge-manifest.json",
+    "runtime-ownership-contract.md",
+    "asset-lifecycle.js"
+  ],
+  "provenance": {
+    "Stage2GGLBSha256": "5e1f02db710881d546cff9b27744530e318f99c45598722b66da1eb4403e73cc",
+    "ranges": "merge-manifest.json",
+    "UV": "Stage2G U1 Prow arc-length / Oblique tangent-distance exact",
+    "upstreamGeometry": "../stage-2g/runtime/geometry-export-manifest.json"
+  },
+  "knownLimitations": [
+    "Held zones not mature",
+    "98.67MiB texture GPU estimate; no compression",
+    "Union bounds increase some submitted triangles",
+    "Tiny draw-order pixel differences",
+    "Cycles GI/area-shadow/reflection differs from Three",
+    "Coarse glass placeholder",
+    "One Apple desktop tested; mobile/WebGPU/application integration untested",
+    "Validated self-contained static package only"
+  ],
+  "applicationIntegration": false,
+  "weathering": false,
+  "assetCamerasLights": 0,
+  "FCC": false
+}

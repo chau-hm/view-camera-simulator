@@ -1,0 +1,72 @@
+{
+  "schema": "m7n-playwright-outcomes-v1",
+  "captureId": "target-solo-w1-trace-off",
+  "executionSourceCommitSha": "5034edf1551466649623a920024057b57f8dddbf",
+  "toolingSourceCommitSha": "3ec85599c3cd28019126ce00cff6115c1bcdf059",
+  "normalizerSourceCommitSha": "efdd29ddcea206b07a2dbd197ff813ccfb2479b1",
+  "rawCapture": {
+    "sha256": "851743920735971b53a682407c6f3d5e8ffee4694311a227c58d48bcddb39fe8",
+    "bytes": 48078,
+    "retention": "private-local-only",
+    "offlineReplayAvailable": false
+  },
+  "normalizedTrace": {
+    "artifactPath": "docs/architecture/ground-glass-m7n-renderer-lifecycle/capture/final/target-solo-w1-trace-off.diagnostics.json",
+    "sha256": "65f04958de2a6b4a08e1a751d97eec6df66c03dbcb02ff92d2bf425c40c67e1c",
+    "eventSchemaVersion": null,
+    "eventCount": 0,
+    "droppedEventCount": 0,
+    "unavailable": true
+  },
+  "config": {
+    "projectName": "chromium",
+    "configuredWorkers": 1,
+    "configuredRetries": 0,
+    "traceEnabled": false
+  },
+  "experiment": {
+    "workload": "canvas-target-alone",
+    "selectedIdentities": [
+      "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension"
+    ],
+    "maxConcurrentTests": 1,
+    "actualWorkerIndices": [
+      0
+    ],
+    "durationMs": 15215.310000000001
+  },
+  "outcomes": {
+    "discovered": 1,
+    "passed": 1,
+    "unexpected": 0,
+    "skipped": 0,
+    "flaky": 0,
+    "incomplete": 0,
+    "retries": 0
+  },
+  "diagnosticSnapshotPhase": "after-test",
+  "tests": [
+    {
+      "identity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "outcome": "passed",
+      "expectedStatus": "passed",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 0,
+          "startTime": "2026-11-05T15:57:59.512Z",
+          "durationMs": 14504,
+          "failureSignature": null
+        }
+      ],
+      "sourceSpecFile": "architecture-rise-focus-range.spec.ts"
+    }
+  ],
+  "environment": {
+    "nodeVersion": "v26.12.1",
+    "platform": "darwin",
+    "browserName": "Chromium",
+    "browserVersion": "149.0.7827.55"
+  }
+}

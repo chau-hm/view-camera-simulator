@@ -1,0 +1,352 @@
+{
+  "schema": "m7l-playwright-outcomes-v1",
+  "sourceCaptureSha256": "ed628e6fa7d96771ea461bacbc2bb3587d85a9e98acd5648fa2d3c43633bec99",
+  "captureKind": "ordinary",
+  "config": {
+    "version": "1.61.1",
+    "workers": 4,
+    "retries": 0,
+    "actualWorkerMetadata": 4,
+    "projectNames": [
+      "chromium",
+      "chromium-renderer-serial"
+    ],
+    "fullyParallel": false
+  },
+  "stats": {
+    "startTime": "2026-11-04T14:28:52.842Z",
+    "duration": 108835.544,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 7,
+    "flaky": 0
+  },
+  "suites": [
+    {
+      "title": "architecture-foreground-dof.spec.ts",
+      "file": "architecture-foreground-dof.spec.ts",
+      "specs": [
+        {
+          "file": "architecture-foreground-dof.spec.ts",
+          "title": "Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 89660,
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "retry": 0,
+                  "startTime": "2026-11-04T14:28:54.013Z",
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    },
+    {
+      "title": "architecture-foreground-guided-lesson.spec.ts",
+      "file": "architecture-foreground-guided-lesson.spec.ts",
+      "specs": [
+        {
+          "file": "architecture-foreground-guided-lesson.spec.ts",
+          "title": "Architecture + Foreground lesson entry resets after Free Practice and direct task routes stay standalone",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 85408,
+                  "workerIndex": 1,
+                  "parallelIndex": 1,
+                  "retry": 0,
+                  "startTime": "2026-11-04T14:28:54.012Z",
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    },
+    {
+      "title": "interior-corner-guided-lesson.spec.ts",
+      "file": "interior-corner-guided-lesson.spec.ts",
+      "specs": [
+        {
+          "file": "interior-corner-guided-lesson.spec.ts",
+          "title": "Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "unexpected",
+              "results": [
+                {
+                  "status": "failed",
+                  "duration": 6529,
+                  "workerIndex": 2,
+                  "parallelIndex": 2,
+                  "retry": 0,
+                  "startTime": "2026-11-04T14:28:54.016Z",
+                  "errors": [
+                    {
+                      "message": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\nExpected pattern: /^matrix\\(1, 0, 0, 1, 0, 0\\)$/\nReceived string:  \"matrix(1, 0, 0, 1, -148.472, 0)\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -276.477, 0)\"\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -220.792, 0)\"\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -148.472, 0)\"\n\n\n   at helpers/learningOverlay.ts:36\n\n  34 |     await getLearningRail(page).focus();\n  35 |     await expect(drawer).toBeVisible();\n> 36 |     await expect(drawer).toHaveCSS(\"transform\", /^matrix\\(1, 0, 0, 1, 0, 0\\)$/);\n     |                          ^\n  37 |     await page.getByRole(\"button\", { name: \"Keep Task and Feedback open\" }).click();\n  38 |   }\n  39 |   await expect(overlay).toHaveAttribute(\"data-drawer-state\", \"pinned\");\n    at openPinnedLearningDrawer (<worktree>/src/tests/e2e/helpers/learningOverlay.ts:36:26)\n    at expectLessonStage (<worktree>/src/tests/e2e/interior-corner-guided-lesson.spec.ts:17:3)\n    at <worktree>/src/tests/e2e/interior-corner-guided-lesson.spec.ts:81:3"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "file": "interior-corner-guided-lesson.spec.ts",
+          "title": "Interior Corner keeps the solved focus state when returning to Swing",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "unexpected",
+              "results": [
+                {
+                  "status": "failed",
+                  "duration": 5902,
+                  "workerIndex": 4,
+                  "parallelIndex": 2,
+                  "retry": 0,
+                  "startTime": "2026-11-04T14:29:01.268Z",
+                  "errors": [
+                    {
+                      "message": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\nExpected pattern: /^matrix\\(1, 0, 0, 1, 0, 0\\)$/\nReceived string:  \"matrix(1, 0, 0, 1, -204.021, 0)\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -269.66, 0)\"\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -204.021, 0)\"\n\n\n   at helpers/learningOverlay.ts:36\n\n  34 |     await getLearningRail(page).focus();\n  35 |     await expect(drawer).toBeVisible();\n> 36 |     await expect(drawer).toHaveCSS(\"transform\", /^matrix\\(1, 0, 0, 1, 0, 0\\)$/);\n     |                          ^\n  37 |     await page.getByRole(\"button\", { name: \"Keep Task and Feedback open\" }).click();\n  38 |   }\n  39 |   await expect(overlay).toHaveAttribute(\"data-drawer-state\", \"pinned\");\n    at openPinnedLearningDrawer (<worktree>/src/tests/e2e/helpers/learningOverlay.ts:36:26)\n    at expectLessonStage (<worktree>/src/tests/e2e/interior-corner-guided-lesson.spec.ts:17:3)\n    at <worktree>/src/tests/e2e/interior-corner-guided-lesson.spec.ts:165:3"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    },
+    {
+      "title": "interior-corner-rise-composition.spec.ts",
+      "file": "interior-corner-rise-composition.spec.ts",
+      "specs": [
+        {
+          "file": "interior-corner-rise-composition.spec.ts",
+          "title": "Interior Corner free mode exposes reachable Rise composition feedback",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 56425,
+                  "workerIndex": 3,
+                  "parallelIndex": 3,
+                  "retry": 0,
+                  "startTime": "2026-11-04T14:28:54.013Z",
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    },
+    {
+      "title": "mirror-shift-guided-lesson.spec.ts",
+      "file": "mirror-shift-guided-lesson.spec.ts",
+      "specs": [
+        {
+          "file": "mirror-shift-guided-lesson.spec.ts",
+          "title": "Mirror Shift guided task teaches camera movement followed by opposite Front Shift",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "unexpected",
+              "results": [
+                {
+                  "status": "failed",
+                  "duration": 5798,
+                  "workerIndex": 5,
+                  "parallelIndex": 2,
+                  "retry": 0,
+                  "startTime": "2026-11-04T14:29:08.045Z",
+                  "errors": [
+                    {
+                      "message": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\nExpected pattern: /^matrix\\(1, 0, 0, 1, 0, 0\\)$/\nReceived string:  \"matrix(1, 0, 0, 1, -288, 0)\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\n\n\n   at helpers/learningOverlay.ts:20\n\n  18 |   await expect(drawer).toBeVisible();\n  19 |   if (await overlay.getAttribute(\"data-drawer-state\") === \"transient\") {\n> 20 |     await expect(drawer).toHaveCSS(\"transform\", /^matrix\\(1, 0, 0, 1, 0, 0\\)$/);\n     |                          ^\n  21 |   }\n  22 |   return drawer;\n  23 | };\n    at openLearningDrawer (<worktree>/src/tests/e2e/helpers/learningOverlay.ts:20:26)\n    at <worktree>/src/tests/e2e/mirror-shift-guided-lesson.spec.ts:20:22"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    },
+    {
+      "title": "oblique-architecture.spec.ts",
+      "file": "oblique-architecture.spec.ts",
+      "specs": [
+        {
+          "file": "oblique-architecture.spec.ts",
+          "title": "Oblique Architecture guided Rise task solves observable framing and restarts to neutral",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "unexpected",
+              "results": [
+                {
+                  "status": "failed",
+                  "duration": 5766,
+                  "workerIndex": 6,
+                  "parallelIndex": 2,
+                  "retry": 0,
+                  "startTime": "2026-11-04T14:29:14.610Z",
+                  "errors": [
+                    {
+                      "message": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\nExpected pattern: /^matrix\\(1, 0, 0, 1, 0, 0\\)$/\nReceived string:  \"matrix(1, 0, 0, 1, -249.843, 0)\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -275.342, 0)\"\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -249.843, 0)\"\n\n\n   at helpers/learningOverlay.ts:36\n\n  34 |     await getLearningRail(page).focus();\n  35 |     await expect(drawer).toBeVisible();\n> 36 |     await expect(drawer).toHaveCSS(\"transform\", /^matrix\\(1, 0, 0, 1, 0, 0\\)$/);\n     |                          ^\n  37 |     await page.getByRole(\"button\", { name: \"Keep Task and Feedback open\" }).click();\n  38 |   }\n  39 |   await expect(overlay).toHaveAttribute(\"data-drawer-state\", \"pinned\");\n    at openPinnedLearningDrawer (<worktree>/src/tests/e2e/helpers/learningOverlay.ts:36:26)\n    at <worktree>/src/tests/e2e/oblique-architecture.spec.ts:148:3"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "file": "oblique-architecture.spec.ts",
+          "title": "Oblique Architecture compound task solves Rise, Swing, and Focus from neutral",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "unexpected",
+              "results": [
+                {
+                  "status": "failed",
+                  "duration": 5787,
+                  "workerIndex": 7,
+                  "parallelIndex": 2,
+                  "retry": 0,
+                  "startTime": "2026-11-04T14:29:20.947Z",
+                  "errors": [
+                    {
+                      "message": "Error: expect(locator).toHaveCSS(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\nExpected pattern: /^matrix\\(1, 0, 0, 1, 0, 0\\)$/\nReceived string:  \"matrix(1, 0, 0, 1, -275.174, 0)\"\nTimeout: 5000ms\n\nCall log:\n  - Expect \"toHaveCSS\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -288, 0)\"\n    - locator resolved to <div id=\"_r_6_-drawer\" aria-hidden=\"false\" data-testid=\"learning-overlay-drawer\" class=\"learning-overlay-panel__drawer\">…</div>\n    - unexpected value \"matrix(1, 0, 0, 1, -275.174, 0)\"\n\n\n   at helpers/learningOverlay.ts:36\n\n  34 |     await getLearningRail(page).focus();\n  35 |     await expect(drawer).toBeVisible();\n> 36 |     await expect(drawer).toHaveCSS(\"transform\", /^matrix\\(1, 0, 0, 1, 0, 0\\)$/);\n     |                          ^\n  37 |     await page.getByRole(\"button\", { name: \"Keep Task and Feedback open\" }).click();\n  38 |   }\n  39 |   await expect(overlay).toHaveAttribute(\"data-drawer-state\", \"pinned\");\n    at openPinnedLearningDrawer (<worktree>/src/tests/e2e/helpers/learningOverlay.ts:36:26)\n    at <worktree>/src/tests/e2e/oblique-architecture.spec.ts:236:3"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "file": "oblique-architecture.spec.ts",
+          "title": "Oblique Architecture guided lesson progresses through the four stages",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "unexpected",
+              "results": [
+                {
+                  "status": "failed",
+                  "duration": 5601,
+                  "workerIndex": 8,
+                  "parallelIndex": 2,
+                  "retry": 0,
+                  "startTime": "2026-11-04T14:29:27.612Z",
+                  "errors": [
+                    {
+                      "message": "Error: expect(locator).toHaveText(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer').locator('[aria-current=\"step\"]')\nExpected pattern: /Observe/\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toHaveText\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer').locator('[aria-current=\"step\"]')\n\n\n  25 | const openLessonProgress = async (page: Page, label: string) => {\n  26 |   const currentStep = page.locator('[aria-current=\"step\"]');\n> 27 |   await expect(getLearningDrawer(page).locator('[aria-current=\"step\"]')).toHaveText(new RegExp(label));\n     |                                                                          ^\n  28 |   await openPinnedLearningDrawer(page);\n  29 |   await expect(currentStep).toHaveText(new RegExp(label));\n  30 | };\n    at openLessonProgress (<worktree>/src/tests/e2e/oblique-architecture.spec.ts:27:74)\n    at <worktree>/src/tests/e2e/oblique-architecture.spec.ts:305:9"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    },
+    {
+      "title": "oblique-tabletop-guided-lesson.spec.ts",
+      "file": "oblique-tabletop-guided-lesson.spec.ts",
+      "specs": [
+        {
+          "file": "oblique-tabletop-guided-lesson.spec.ts",
+          "title": "Oblique Tabletop completes the public Focus → Tilt → Swing → Focus → Aperture lesson",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "unexpected",
+              "results": [
+                {
+                  "status": "failed",
+                  "duration": 5536,
+                  "workerIndex": 9,
+                  "parallelIndex": 2,
+                  "retry": 0,
+                  "startTime": "2026-11-04T14:29:33.975Z",
+                  "errors": [
+                    {
+                      "message": "Error: expect(locator).toContainText(expected) failed\n\nLocator: getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\nExpected substring: \"Step 1 of 6\"\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toContainText\" with timeout 5000ms\n  - waiting for getByTestId('learning-overlay-panel').getByTestId('learning-overlay-drawer')\n\n\n  13 | const expectLessonStage = async (page: Page, step: string, label: string) => {\n  14 |   const drawer = getLearningDrawer(page);\n> 15 |   await expect(drawer).toContainText(step);\n     |                        ^\n  16 |   await openPinnedLearningDrawer(page);\n  17 |   const progress = page.getByRole(\"region\", { name: \"Guided lesson progress\" });\n  18 |   await expect(progress).toBeVisible();\n    at expectLessonStage (<worktree>/src/tests/e2e/oblique-tabletop-guided-lesson.spec.ts:15:24)\n    at <worktree>/src/tests/e2e/oblique-tabletop-guided-lesson.spec.ts:72:9"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    },
+    {
+      "title": "table-tilt.spec.ts",
+      "file": "table-tilt.spec.ts",
+      "specs": [
+        {
+          "file": "table-tilt.spec.ts",
+          "title": "Table Tilt zero-tilt point focus moves from near to middle to far",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 61216,
+                  "workerIndex": 10,
+                  "parallelIndex": 2,
+                  "retry": 0,
+                  "startTime": "2026-11-04T14:29:40.283Z",
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    }
+  ]
+}

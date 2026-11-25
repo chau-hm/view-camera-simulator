@@ -6,6 +6,9 @@ export type GroundGlassPassId =
   | "nearGather"
   | "composite";
 
+/** Renderer operations that may fail; M6 adds an explicit final-presentation operation. */
+export type GroundGlassRenderOperationId = GroundGlassPassId | "presentation" | "textureDisplay";
+
 /** The normal physical-DOF path, in its current execution order. */
 export const GROUND_GLASS_PASS_ORDER = [
   "sceneRender",

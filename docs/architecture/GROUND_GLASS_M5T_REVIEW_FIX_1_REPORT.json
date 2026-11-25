@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "reportRevision": "ground-glass-m5t-review-fix-1",
+  "evaluatorRevision": "ground-glass-m5t-spatial-lsf-v2",
+  "quadratureEvaluatorRevision": "ground-glass-m5t-adaptive-quadtree-v1",
+  "sourceHeadSha": "5848c3651c88538e6af6f80beab939cdcbe7fc13",
+  "correctedSourceCommit": "5848c3651c88538e6af6f80beab939cdcbe7fc13",
+  "previouslyReviewedHead": "647a0b29c75e1142fa62a343a00526e94bd52dd4",
+  "nativeEvidence": {
+    "generatedAtUtc": "2026-10-27T14:51:03.597Z",
+    "command": "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_APERTURE_GATHER_RESEARCH=1 npm run test:e2e -- src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts --project=chrome-native-webgpu --workers=1 --grep 'native M5T'",
+    "result": "1 passed in 56.5 seconds",
+    "runtime": {
+      "browserProject": "chrome-native-webgpu",
+      "browserVersion": "156.0.8078.48",
+      "platform": "darwin",
+      "rendererRevision": "r186",
+      "rendererFamily": "webgpu-renderer",
+      "actualExecutionApi": "webgpu",
+      "internalFallback": "none",
+      "applicationFallback": false
+    },
+    "scene": {
+      "sceneId": "architecture-rise",
+      "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+      "opticalStateIds": [
+        "ar-f3200-f5p6-loupe4-rise0",
+        "ar-f3200-f5p6-full-rise0",
+        "ar-f5200-f5p6-full-rise0"
+      ],
+      "sourceAndGatherDimensions": [474, 379]
+    },
+    "captureIds": [
+      {
+        "role": "primary-4x-control-cap60",
+        "full32": "m5t-primary-4x-control-cap60-full32-1793112611201",
+        "full64": "m5t-primary-4x-control-cap60-full64-1793112613877",
+        "pairInputProvenanceMatches": true,
+        "inputFingerprints": {
+          "sourceColor": "4c6374b1",
+          "depth": "89c670bb",
+          "physical": "e37fced7",
+          "validity": "bde57a05"
+        }
+      },
+      {
+        "role": "full-frame-control-cap60",
+        "full32": "m5t-full-frame-control-cap60-full32-1793112627874",
+        "full64": "m5t-full-frame-control-cap60-full64-1793112630217",
+        "pairInputProvenanceMatches": true,
+        "inputFingerprints": {
+          "sourceColor": "2376a6ec",
+          "depth": "88205d0e",
+          "physical": "92736c61",
+          "validity": "c3d94854"
+        }
+      },
+      {
+        "role": "focus-distance-control-cap60",
+        "full32": "m5t-focus-distance-control-cap60-full32-1793112639488",
+        "full64": "m5t-focus-distance-control-cap60-full64-1793112641860",
+        "pairInputProvenanceMatches": true,
+        "inputFingerprints": {
+          "sourceColor": "32445fc8",
+          "depth": "3d561cf3",
+          "physical": "c739ac93",
+          "validity": "3f3eb294"
+        }
+      },
+      {
+        "role": "stressed-cap2",
+        "full32": "m5t-stressed-cap2-full32-1793112652198",
+        "full64": "m5t-stressed-cap2-full64-1793112654684",
+        "pairInputProvenanceMatches": true,
+        "inputFingerprints": {
+          "sourceColor": "4c6374b1",
+          "depth": "89c670bb",
+          "physical": "e37fced7",
+          "validity": "bde57a05"
+        }
+      }
+    ],
+    "numericalReferenceClassification": {
+      "adaptiveResolutions": [32, 64, 128, 256],
+      "evaluationBudgetPerPixel": 250000,
+      "selectedPixelsPerStudy": 10,
+      "everyPixelLevelExhaustedBudget": true,
+      "budgetExceededPixelLevelResultsPerStudy": 40,
+      "independentFixedGridResolution": 512,
+      "crossMethodConvergenceComparisons": "withheld because the adaptive reference did not converge",
+      "primary-4x-control-cap60/S1-smooth-valid-far-interior": "budget-limited-unresolved",
+      "primary-4x-control-cap60/S3-high-source-gradient-valid-far": "budget-limited-unresolved",
+      "full-frame-control-cap60/S5-signed-coc-boundary-neighborhood": "budget-limited-unresolved",
+      "focus-distance-control-cap60/S4-depth-discontinuity-valid-far": "budget-limited-unresolved",
+      "stressed-cap2/S6-cap-activated-valid-far": "budget-limited-unresolved"
+    },
+    "registeredAppSpatialClassification": {
+      "primary-4x-control-cap60": "spatial-profile-insufficient-support",
+      "focus-distance-control-cap60": "spatial-profile-insufficient-support"
+    },
+    "referenceAuthority": "bounded-research-only; no M5Q promotion"
+  },
+  "metricCorrections": {
+    "revision": "ground-glass-m5t-spatial-lsf-v2",
+    "lsfIntegral": {
+      "previousComparisonTarget": 1,
+      "directionCorrectedRawEndpointChange": "direction * (last sample - first sample)",
+      "comparison": "raw finite-interval signed LSF integral compared with the direction-corrected first-to-last signal change"
+    },
+    "midpointAsymmetry": "positive derivative density is integrated by the geometric overlap width of each derivative sample interval on either side of the ESF 50 percent crossing",
+    "controlledFixture": {
+      "esfWidth10To90Px": 4.000000000000001,
+      "esfWidth20To80Px": 2.5,
+      "lsfFwhmPx": 2.9999999999999987,
+      "positiveIntegral": 1,
+      "leftPositiveIntegral": 0.5,
+      "rightPositiveIntegral": 0.5,
+      "asymmetry": 0,
+      "integratedDirectionalSignal": 1,
+      "expectedDirectionalSignal": 1,
+      "integralConsistencyError": 0
+    },
+    "registeredScene": "No scene LSF result was promoted: the selected native spatial lines still lacked a meaningful endpoint transition."
+  },
+  "ciTimeoutCorrection": {
+    "previousFailure": "The combined D/E/F/H/K unit case exceeded the hosted Vitest timeout.",
+    "change": "Split it into focused D, E, F, H, and K tests. D/E/F/K use a test-only 25,000 evaluation budget and explicitly assert evaluation-budget-exceeded; H remains a bounded resolution-32/depth-5 edge-clamp estimate.",
+    "HFixtureEvaluationPoints": 87580,
+    "convergenceClaim": "Budget-exhausted diagnostic estimates are not convergence evidence.",
+    "focusedSuite": "src/tests/unit/groundGlassM5tReference.test.ts: 31 passed"
+  },
+  "m5qBoundary": {
+    "thresholdRevision": "m5q-architecture-rise-r186-v3",
+    "q1": "reference-not-converged",
+    "q2": "insufficient-support",
+    "q3": "bounded-qualified",
+    "q4": "insufficient-support",
+    "q5": "reference-not-converged",
+    "q6": "reference-not-converged",
+    "q7": "reference-not-converged",
+    "thresholdsChanged": false,
+    "qualificationRewritten": false
+  },
+  "validation": {
+    "npmTest": "293 files, 2871 tests passed",
+    "focusedM5tUnit": "31 tests passed",
+    "typecheck": "passed",
+    "lint": "passed",
+    "checkCss": "passed",
+    "build": "passed using a temporary output directory",
+    "nativeM5t": "passed with native WebGPU identity above",
+    "nativeM5qAndM5AdapterRegressions": "2 tests passed on the corrected working tree before commit; neither implementation changed in this review-fix round",
+    "productionPreviewIsolation": "2 tests passed; default/public Ground Glass remained WebGL and URL-shaped requests did not activate the adapter",
+    "ciLocalE2e": "CSS, lint, typecheck, unit, and build stages passed; development E2E stopped at the known baseline architecture-foreground-compound.spec.ts missing-heading failure, reproduced on clean origin/main 04701ae1d9b225d50668dbd6d57c515fe5f33a85; later development E2E specs did not run",
+    "gitDiffCheck": "passed"
+  },
+  "historicalComparison": {
+    "originalNativeNumericalClassification": "The reviewed report's five numerical strata were budget-limited-unresolved and its two registered-app spatial profiles were insufficient-support.",
+    "correctedNativeNumericalClassification": "The post-commit rerun reports the same bounded classifications; no quadrature method or M5/B1 algorithm changed.",
+    "syntheticLsf": {
+      "previousAsymmetry": 0.30000000000000004,
+      "correctedAsymmetry": 0,
+      "interpretation": "The previous asymmetry was an analysis-metric artifact. Geometric midpoint splitting corrects the symmetric controlled fixture; original native captured pixel data is unchanged."
+    }
+  },
+  "remainingLimitations": [
+    "No converged independent aperture reference or certified error bound is established.",
+    "Registered-app spatial edge support remains insufficient; no native halo or B1 defect is claimed.",
+    "M5Q Q1-Q7, M6 quality-dependent presentation, and production WebGPU authorization remain unchanged and blocked as previously recorded."
+  ]
+}

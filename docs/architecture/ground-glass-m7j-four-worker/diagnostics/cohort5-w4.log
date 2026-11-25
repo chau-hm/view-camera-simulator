@@ -1,0 +1,104 @@
+
+> view-camera-simulator@0.0.0 test:e2e
+> playwright test --project=chromium --workers=4 --retries=0 --reporter=list,json --grep=(camera control rows keep useful rendered tracks across rail widths|Stage 2N-A Observer and RTT instances survive independent sibling removal|View Focus preserves independent Scene and Camera views and resets the active preset|Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress|Scene-local learning drawer leaves the paired workspace layout intact) src/tests/e2e/camera-controls-compact.spec.ts src/tests/e2e/fringe-club-dev-integration.spec.ts src/tests/e2e/scene-view-focus.spec.ts src/tests/e2e/table-tilt.spec.ts src/tests/e2e/viewport-learning-overlay.spec.ts
+
+[WebServer] (node:28922) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 5 tests using 4 workers
+
+(node:28927) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:28925) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:28924) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:28926) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 8:10:26 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 8:10:26 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 8:10:26 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 8:10:26 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 8:10:26 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 8:10:26 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 8:10:26 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 8:10:32 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+  ✘  2 [chromium] › src/tests/e2e/scene-view-focus.spec.ts:101:1 › View Focus preserves independent Scene and Camera views and resets the active preset (1.5m)
+(node:29969) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 8:11:58 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 8:11:58 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+  ✘  1 [chromium] › src/tests/e2e/fringe-club-dev-integration.spec.ts:647:1 › Stage 2N-A Observer and RTT instances survive independent sibling removal (1.6m)
+  ✘  3 [chromium] › src/tests/e2e/camera-controls-compact.spec.ts:106:1 › camera control rows keep useful rendered tracks across rail widths (2.0m)
+  ✘  4 [chromium] › src/tests/e2e/table-tilt.spec.ts:324:1 › Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress (2.0m)
+  ✓  5 [chromium] › src/tests/e2e/viewport-learning-overlay.spec.ts:28:1 › Scene-local learning drawer leaves the paired workspace layout intact (57.6s)
+
+
+  1) [chromium] › src/tests/e2e/camera-controls-compact.spec.ts:106:1 › camera control rows keep useful rendered tracks across rail widths
+
+    Test timeout of 120000ms exceeded.
+
+    Error: locator.evaluate: Test timeout of 120000ms exceeded.
+    Call log:
+      - waiting for locator('.simulator-aside__scroll')
+        - locator resolved to visible <div class="simulator-aside__scroll">…</div>
+
+
+      129 |     await expect(controls.getByRole("slider", { name: "Swing" })).toBeVisible();
+      130 |
+    > 131 |     const railBounds = await rail.evaluate((element) => {
+          |                                   ^
+      132 |       const rect = element.getBoundingClientRect();
+      133 |       return {
+      134 |         left: rect.left,
+        at /Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/src/tests/e2e/camera-controls-compact.spec.ts:131:35
+
+    Error Context: test-results/camera-controls-compact-ca-40688-d-tracks-across-rail-widths-chromium/error-context.md
+
+  2) [chromium] › src/tests/e2e/fringe-club-dev-integration.spec.ts:647:1 › Stage 2N-A Observer and RTT instances survive independent sibling removal
+
+    Error: Timeout 5000ms exceeded while waiting on the predicate
+
+      711 |   await expect
+      712 |     .poll(async () => (await readObserverMetrics(page)).sampledAtMs)
+    > 713 |     .not.toBe(observerSampleBeforeRttRemoval);
+          |          ^
+      714 |
+      715 |   await modeSelect.selectOption("both");
+      716 |   await waitForGroundGlass(page, "stage2n-a", PROBE_IDS[0]);
+        at /Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/src/tests/e2e/fringe-club-dev-integration.spec.ts:713:10
+
+    Error Context: test-results/fringe-club-dev-integratio-782d3-independent-sibling-removal-chromium/error-context.md
+
+  3) [chromium] › src/tests/e2e/scene-view-focus.spec.ts:101:1 › View Focus preserves independent Scene and Camera views and resets the active preset
+
+    Test timeout of 90000ms exceeded.
+
+    Error: locator.press: Test timeout of 90000ms exceeded.
+    Call log:
+      - waiting for getByLabel('Rise')
+
+
+      167 |   const beforeRise = await readStableViewState(sceneCanvas);
+      168 |   const beforeRiseGeometry = await page.getByTestId("optical-debug-front-y-mm").textContent();
+    > 169 |   await page.getByLabel("Rise").press("ArrowRight");
+          |                                 ^
+      170 |   await expect(page.getByTestId("optical-debug-front-y-mm")).not.toHaveText(beforeRiseGeometry ?? "");
+      171 |   await expect.poll(async () => (await readViewState(sceneCanvas)).target).toEqual(beforeRise.target);
+      172 |
+        at /Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/src/tests/e2e/scene-view-focus.spec.ts:169:33
+
+    Error Context: test-results/scene-view-focus-View-Focu-01f56-nd-resets-the-active-preset-chromium/error-context.md
+
+  4) [chromium] › src/tests/e2e/table-tilt.spec.ts:324:1 › Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress
+
+    Test timeout of 120000ms exceeded.
+
+    Error Context: test-results/table-tilt-Table-Tilt-RTT--fa2a5-ty-and-tilt-resource-stress-chromium/error-context.md
+
+  4 failed
+    [chromium] › src/tests/e2e/camera-controls-compact.spec.ts:106:1 › camera control rows keep useful rendered tracks across rail widths
+    [chromium] › src/tests/e2e/fringe-club-dev-integration.spec.ts:647:1 › Stage 2N-A Observer and RTT instances survive independent sibling removal
+    [chromium] › src/tests/e2e/scene-view-focus.spec.ts:101:1 › View Focus preserves independent Scene and Camera views and resets the active preset
+    [chromium] › src/tests/e2e/table-tilt.spec.ts:324:1 › Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress
+  1 passed (2.5m)

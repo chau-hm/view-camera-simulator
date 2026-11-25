@@ -2,7 +2,7 @@ import * as THREE from "three";
 import type { GroundGlassDofRenderState } from "./groundGlassDofRenderState";
 import type { GroundGlassPhysicalRenderState } from "./groundGlassPhysicalRenderState";
 
-type GroundGlassDofShaderStage = "CoC" | "gather";
+type GroundGlassDofShaderStage = "CoC" | "apparent-position CoC" | "gather";
 
 const dofStateUniformNames = [
   "dofMode",
@@ -38,6 +38,7 @@ const stageUniformNames: Record<GroundGlassDofShaderStage, readonly string[]> = 
   // Stage textures and gatherLayer are routed by the RTT executor; validate
   // their current GLSL declarations here without taking over their values.
   CoC: ["tDepth"],
+  "apparent-position CoC": ["tApparentWorldPosition"],
   gather: ["tColor", "tDepth", "tCoC", "gatherLayer"],
 };
 
@@ -159,6 +160,16 @@ export const bindGroundGlassDofStateToCocMaterial = (
   state: GroundGlassDofRenderState,
 ): void => bindGroundGlassDofState(material, state, "CoC");
 
+/** Bind the same physical state to a per-contribution apparent-position CoC stage. */
+export const bindGroundGlassDofStateToApparentWorldPositionCocMaterial = (
+  material: THREE.ShaderMaterial,
+  state: GroundGlassDofRenderState,
+  apparentWorldPosition: THREE.Texture,
+): void => {
+  bindGroundGlassDofState(material, state, "apparent-position CoC");
+  material.uniforms.tApparentWorldPosition.value = apparentWorldPosition;
+};
+
 /** Apply semantic DOF state to the current GLSL gather material contract. */
 export const bindGroundGlassDofStateToGatherMaterial = (
   material: THREE.ShaderMaterial,
@@ -181,12 +192,27 @@ export const bindGroundGlassPhysicalStateToComposite = (
   const cos4 = illumination.enabled && illumination.geometry?.kind === "parallel-cos4"
     ? illumination.geometry
     : null;
+  const nonparallel = illumination.enabled && illumination.geometry?.kind === "nonparallel-geometric"
+    ? illumination.geometry
+    : null;
 
   material.uniforms.groundGlassIlluminanceGain.value = state.relativeIlluminanceGain;
-  material.uniforms.groundGlassNaturalIlluminationEnabled.value = cos4 ? 1 : 0;
-  material.uniforms.groundGlassNaturalIlluminationImageDistanceMm.value = cos4?.imageDistanceMm ?? 0;
+  material.uniforms.groundGlassNaturalIlluminationEnabled.value = cos4 || nonparallel ? 1 : 0;
+  material.uniforms.groundGlassNaturalIlluminationModel.value = cos4 ? 1 : nonparallel ? 2 : 0;
+  material.uniforms.groundGlassNaturalIlluminationImageDistanceMm.value =
+    cos4?.imageDistanceMm ?? nonparallel?.referenceImageDistanceMm ?? 0;
   material.uniforms.groundGlassNaturalIlluminationOffsetXMm.value = cos4?.opticalAxisOffsetXMm ?? 0;
   material.uniforms.groundGlassNaturalIlluminationOffsetYMm.value = cos4?.opticalAxisOffsetYMm ?? 0;
+  material.uniforms.groundGlassNaturalIlluminationLensToFilmCenterLocalMm.value.set(
+    ...(nonparallel?.lensToFilmCenterLocalMm ?? [0, 0, 0]),
+  );
+  material.uniforms.groundGlassNaturalIlluminationImageSideAxisLocal.value.set(
+    ...(nonparallel?.imageSideAxisLocal ?? [0, 0, 0]),
+  );
+  material.uniforms.groundGlassNaturalIlluminationReferenceFilmIncidenceCosine.value =
+    nonparallel?.referenceFilmIncidenceCosine ?? 0;
+  material.uniforms.groundGlassNaturalIlluminationFilmNormalTowardLensSign.value =
+    nonparallel?.filmNormalTowardLensSign ?? 0;
 
   material.uniforms.groundGlassCoverageEnabled.value = coverage.active ? 1 : 0;
   material.uniforms.groundGlassCoverageMode.value = circle ? 1 : conic ? 2 : 0;

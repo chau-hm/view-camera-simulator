@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { cleanup, render } from "@testing-library/react";
 import { StrictMode } from "react";
 import type { ComponentType } from "react";
@@ -30,6 +31,7 @@ import geometry from "../../scenes/shelfSwingGeometry";
 import obliqueTabletopGeometry from "../../scenes/obliqueTabletopGeometry";
 import { CAMERA_MOVEMENT_LATTICE } from "../../scenes/cameraMovementLatticeGeometry";
 import { CAMERA_MOVEMENT_SCENE_CALIBRATION } from "../../scenes/cameraMovementSceneCalibration";
+import { CAMERA_MOVEMENT_BASELINE_PRESENTATION } from "../../scenes/presentation/understandingCameraMovements";
 import { CAMERA_MOVEMENT_LATTICE_GEOMETRY_ID } from "../../render/assets/CameraMovementLatticeAsset";
 import { isGroundGlassRttScene, RTT_SCENES } from "../../render/groundGlassRttScenes";
 import {
@@ -40,7 +42,23 @@ import {
   lessonZeroGroundGlassSubjectBoundsMm,
   lessonZeroGroundGlassSubjectGeometry,
 } from "../../scenes/lessonZeroGroundGlassSubject";
-import { TEACHING_LIGHTING_CONFIG } from "../../render/TeachingLighting";
+import {
+  resolvePresentationLightingPlacement,
+  resolveScenePresentationLighting,
+} from "../../render/presentationLighting";
+import {
+  createPresentationLightingRig,
+  disposePresentationLightingRig,
+} from "../../render/TeachingLighting";
+import {
+  createWorldIlluminationRig,
+  disposeWorldIlluminationRig,
+} from "../../render/worldIlluminationRig";
+import { resolveSceneWorldIllumination } from "../../scenes/illumination/sceneWorldIllumination";
+import {
+  DEFAULT_PRESENTATION_LIGHTING_PLACEMENT,
+  TEACHING_PRESENTATION_LIGHTING_PROFILE,
+} from "../../render/presentationLightingContract";
 import { WORLD_SCALE } from "../../render/rttUtils";
 import * as architectureRiseAsset from "../../render/ArchitectureRiseSubjectFactory";
 import * as obliqueArchitectureAsset from "../../render/ObliqueArchitectureSubjectFactory";
@@ -55,6 +73,7 @@ import {
   ARCHITECTURE_FOREGROUND_ASSET_KEY,
   ARCHITECTURE_RISE_ASSET_KEY,
   INTERIOR_CORNER_ASSET_KEY,
+  STILL_LIFE_STUDIO_ASSET_KEY,
   OBLIQUE_TABLETOP_ASSET_KEY,
   OBLIQUE_ARCHITECTURE_ASSET_KEY,
   TABLE_TILT_ASSET_KEY,
@@ -66,6 +85,9 @@ import {
   MACRO_DEPTH_OF_FIELD_ASSET_KEY,
   MACRO_OBLIQUE_PLANE_ASSET_KEY,
   MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+  FRINGE_CLUB_RUNTIME_ASSET_KEY,
+  createRegisteredSceneAsset,
+  disposeRegisteredSceneAsset,
   resolveSceneAsset,
   sceneAssetRegistry,
   type SceneAssetKey,
@@ -84,6 +106,7 @@ import { MACRO_COMPOUND_MOVEMENTS_PRESENTATION } from "../../scenes/presentation
 import { obliqueArchitectureScene } from "../../scenes/definitions/oblique-architecture";
 import { tableTiltScene } from "../../scenes/definitions/table-tilt";
 import { shelfSwingScene } from "../../scenes/definitions/shelf-swing";
+import { createSceneVariantIdentity, resolveSceneVariationDescriptor } from "../../scenes/sceneVariation";
 import { architectureForegroundScene } from "../../scenes/definitions/architecture-foreground";
 import { interiorCornerScene } from "../../scenes/definitions/interior-corner";
 import { obliqueTabletopScene } from "../../scenes/definitions/oblique-tabletop";
@@ -108,6 +131,7 @@ const publicSceneAssetSlots = {
   "oblique-architecture": OBLIQUE_ARCHITECTURE_ASSET_KEY,
   "architecture-foreground": ARCHITECTURE_FOREGROUND_ASSET_KEY,
   "interior-corner": INTERIOR_CORNER_ASSET_KEY,
+  "still-life-studio": STILL_LIFE_STUDIO_ASSET_KEY,
   "macro-bellows-extension": MACRO_BELLOWS_EXTENSION_ASSET_KEY,
   "macro-depth-of-field": MACRO_DEPTH_OF_FIELD_ASSET_KEY,
   "macro-oblique-plane": MACRO_OBLIQUE_PLANE_ASSET_KEY,
@@ -132,6 +156,57 @@ const collectDisposableSpies = (group: THREE.Group) => {
     ...[...geometries].map((resource) => vi.spyOn(resource, "dispose")),
     ...[...materials].map((resource) => vi.spyOn(resource, "dispose")),
   ];
+};
+
+const architectureRiseMaterialSignature = (group: THREE.Group) => {
+  const resources = group.userData.resources as Record<string, unknown>;
+  const textureSignature = (texture: THREE.Texture | null) => {
+    if (!texture) return null;
+    const image = texture.image as { data?: ArrayBufferView; width?: number; height?: number };
+    const bytes = image.data
+      ? createHash("sha256")
+        .update(Buffer.from(image.data.buffer, image.data.byteOffset, image.data.byteLength))
+        .digest("hex")
+      : null;
+    return {
+      width: image.width,
+      height: image.height,
+      bytes,
+      colorSpace: texture.colorSpace,
+      repeat: texture.repeat.toArray(),
+    };
+  };
+  return Object.fromEntries(Object.entries(resources)
+    .filter(([, resource]) => resource instanceof THREE.Material)
+    .map(([name, rawMaterial]) => {
+      const material = rawMaterial as THREE.Material;
+      const standard = material as THREE.MeshStandardMaterial;
+      return [name, {
+        type: material.type,
+        color: "color" in material && material.color instanceof THREE.Color
+          ? material.color.getHexString(THREE.SRGBColorSpace)
+          : undefined,
+        roughness: "roughness" in material ? standard.roughness : undefined,
+        normalScale: "normalScale" in material ? standard.normalScale.toArray() : undefined,
+        map: textureSignature(standard.map ?? null),
+        roughnessMap: textureSignature(standard.roughnessMap ?? null),
+        normalMap: textureSignature(standard.normalMap ?? null),
+      }];
+    })
+    .sort(([left], [right]) => String(left).localeCompare(String(right))));
+};
+
+const collectTextureDisposalSpies = (group: THREE.Group) => {
+  const resources = group.userData.resources as Record<string, unknown>;
+  const textures = new Set<THREE.Texture>();
+  Object.values(resources)
+    .filter((resource): resource is THREE.Material => resource instanceof THREE.Material)
+    .forEach((material) => {
+      const standard = material as THREE.MeshStandardMaterial;
+      [standard.map, standard.roughnessMap, standard.normalMap]
+        .forEach((texture) => { if (texture) textures.add(texture); });
+    });
+  return [...textures].map((texture) => vi.spyOn(texture, "dispose"));
 };
 
 type BoardFootprint = {
@@ -171,9 +246,23 @@ describe("scene subject registry", () => {
     expect([...RTT_SCENES].sort()).toEqual(publicIds);
     expect(Object.keys(sceneSubjectRegistry).sort()).toEqual(publicIds);
     expect(Object.keys(publicSceneAssetSlots).sort()).toEqual(publicIds);
-    expect(Object.values(publicSceneAssetSlots).sort()).toEqual(
-      Object.keys(sceneAssetRegistry).sort(),
+    const publicAssetKeys = Object.values(publicSceneAssetSlots).sort();
+    const unboundAssetKeys = Object.keys(sceneAssetRegistry)
+      .filter(
+        (assetKey) =>
+          !Object.values(publicSceneAssetSlots).some(
+            (publicAssetKey) => publicAssetKey === assetKey,
+          ),
+      )
+      .sort();
+    expect(publicAssetKeys).toEqual(
+      Object.keys(sceneAssetRegistry)
+        .filter((assetKey) => assetKey !== FRINGE_CLUB_RUNTIME_ASSET_KEY)
+        .sort(),
     );
+    expect(unboundAssetKeys).toEqual([FRINGE_CLUB_RUNTIME_ASSET_KEY]);
+    expect(publicIds).not.toContain(FRINGE_CLUB_RUNTIME_ASSET_KEY);
+    expect(getSceneSubjectRegistration(FRINGE_CLUB_RUNTIME_ASSET_KEY)).toBeUndefined();
     publicIds.forEach((sceneId) => expect(definedSceneIds.has(sceneId)).toBe(true));
 
     const implementationIds: string[] = [];
@@ -199,6 +288,7 @@ describe("scene subject registry", () => {
     const hiddenSceneId: PublicSceneId = "macro-compound-movements";
     const isolatedPublication = {
       ...scenePublication,
+      "still-life-studio": true,
       [hiddenSceneId]: false,
     };
     const publishedIds = getPublishedPublicSceneEntries(isolatedPublication).map(
@@ -242,6 +332,7 @@ describe("scene subject registry", () => {
       "oblique-tabletop",
       "mirror-shift",
       "interior-corner",
+      "still-life-studio",
     ]);
     Object.keys(sceneSubjectRegistry).forEach((sceneId) => {
       expect(getSceneSubjectRegistration(sceneId)).toBeDefined();
@@ -276,6 +367,59 @@ describe("scene subject registry", () => {
       expect(disposedGroups.filter((disposedGroup) => disposedGroup === group)).toHaveLength(1);
     });
   });
+
+  it("routes the same seeded Architecture Rise plan to independently owned Observer and RTT subjects", () => {
+    const descriptor = resolveSceneVariationDescriptor(
+      architectureRiseScene,
+      createSceneVariantIdentity("architecture-rise", 284719, 1),
+    )!;
+    const factory = vi.spyOn(architectureRiseAsset, "createArchitectureRiseGroup");
+    const disposer = vi.spyOn(architectureRiseAsset, "disposeArchitectureRiseGroup");
+    const view = render(<ArchitectureRiseSubject variationDescriptor={descriptor} />);
+    const observer = factory.mock.results[0]?.value as THREE.Group;
+    view.rerender(<ArchitectureRiseSubject variationDescriptor={descriptor} />);
+    expect(factory).toHaveBeenCalledTimes(1);
+    const rtt = createRegisteredRttSubject("architecture-rise", {
+      variationDescriptor: descriptor,
+    })!;
+
+    try {
+      expect(factory).toHaveBeenCalledTimes(2);
+      expect(factory.mock.calls[0]?.[0].variationDescriptor?.identity)
+        .toEqual(factory.mock.calls[1]?.[0].variationDescriptor?.identity);
+      expect(architectureRiseMaterialSignature(observer)).toEqual(architectureRiseMaterialSignature(rtt));
+
+      const observerResources = observer.userData.resources as Record<string, unknown>;
+      const rttResources = rtt.userData.resources as Record<string, unknown>;
+      expect(observerResources.facade).not.toBe(rttResources.facade);
+      expect((observerResources.facade as THREE.MeshStandardMaterial).map)
+        .not.toBe((rttResources.facade as THREE.MeshStandardMaterial).map);
+      const brickMeshes: THREE.Mesh[] = [];
+      observer.traverse((object) => {
+        if (object instanceof THREE.Mesh && object.userData.architectureRole === "brick-facade") {
+          brickMeshes.push(object);
+        }
+      });
+      expect(brickMeshes.length).toBeGreaterThan(1);
+      brickMeshes.forEach((mesh) => expect(mesh.material).toBe(observerResources.facade));
+
+      const observerDisposal = collectDisposableSpies(observer);
+      const rttDisposal = collectDisposableSpies(rtt);
+      const observerTextureDisposal = collectTextureDisposalSpies(observer);
+      const rttTextureDisposal = collectTextureDisposalSpies(rtt);
+      view.unmount();
+      disposeRegisteredRttSubject("architecture-rise", rtt);
+      [...observerDisposal, ...rttDisposal, ...observerTextureDisposal, ...rttTextureDisposal]
+        .forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+      expect(disposer).toHaveBeenCalledTimes(2);
+    } finally {
+      view.unmount();
+      // Ensure cleanup if an assertion fails before the explicit lifecycle assertions.
+      if (!disposer.mock.calls.some(([group]) => group === rtt)) {
+        disposeRegisteredRttSubject("architecture-rise", rtt);
+      }
+    }
+  }, 60_000);
 
   it("registers the Lesson 0 subject with canonical RTT bounds", () => {
     const registration = getSceneSubjectRegistration("view-camera-anatomy");
@@ -324,6 +468,105 @@ describe("scene subject registry", () => {
     });
     disposeRegisteredRttSubject("shelf-swing", group!);
   });
+
+  it.each([1, 2])(
+    "routes Shelf Swing schema v%s to equivalent independent Observer and RTT resources",
+    (schemaVersion) => {
+    const descriptorA = resolveSceneVariationDescriptor(
+      shelfSwingScene,
+      createSceneVariantIdentity("shelf-swing", 284719, schemaVersion),
+    )!;
+    const descriptorB = resolveSceneVariationDescriptor(
+      shelfSwingScene,
+      createSceneVariantIdentity("shelf-swing", 4294967295, schemaVersion),
+    )!;
+    const factory = vi.spyOn(shelfSwingAsset, "createShelfSwingGroup");
+    const disposer = vi.spyOn(shelfSwingAsset, "disposeShelfSwingGroup");
+    const collectVariation = (group: THREE.Group) => {
+      const variation: Array<Record<string, unknown>> = [];
+      group.updateMatrixWorld(true);
+      group.traverse((object) => {
+        if (!(object instanceof THREE.Mesh) || !object.userData.variationPropId) return;
+        const material = Array.isArray(object.material) ? object.material[0]! : object.material;
+        object.geometry.computeBoundingBox();
+        const bounds = object.geometry.boundingBox;
+        const stationName = object.parent?.name;
+        const shelf = stationName
+          ? group.getObjectByName(`${stationName}-shelf-lower`)
+          : undefined;
+        expect(shelf).toBeInstanceOf(THREE.Mesh);
+        const shelfBounds = new THREE.Box3().setFromObject(shelf!);
+        const worldBounds = new THREE.Box3().setFromObject(object);
+        const supportDelta = worldBounds.min.y - shelfBounds.max.y;
+        expect(Number.isFinite(supportDelta)).toBe(true);
+        expect(Math.abs(supportDelta)).toBeLessThanOrEqual(1e-7);
+        variation.push({
+          id: object.userData.variationPropId,
+          family: object.userData.family,
+          position: object.position.toArray(),
+          worldPosition: object.getWorldPosition(new THREE.Vector3()).toArray(),
+          worldBounds: {
+            min: worldBounds.min.toArray(),
+            max: worldBounds.max.toArray(),
+          },
+          shelfTopY: shelfBounds.max.y,
+          supportDelta,
+          color: (material as THREE.MeshStandardMaterial).color.getHexString(),
+          dimensionsMm: object.userData.dimensionsMm,
+          geometry: {
+            type: object.geometry.type,
+            parameters: object.geometry.parameters,
+            min: bounds?.min.toArray(),
+            max: bounds?.max.toArray(),
+          },
+          roughness: (material as THREE.MeshStandardMaterial).roughness,
+          flatShading: (material as THREE.MeshStandardMaterial).flatShading,
+        });
+      });
+      return variation;
+    };
+
+    const view = render(<ShelfSwingSubject variationDescriptor={descriptorA} />);
+    const observerA = factory.mock.results[0]?.value as THREE.Group;
+    view.rerender(<ShelfSwingSubject variationDescriptor={descriptorA} />);
+    expect(factory).toHaveBeenCalledTimes(1);
+    const rttA = createRegisteredRttSubject("shelf-swing", {
+      variationDescriptor: descriptorA,
+    })!;
+    expect(factory).toHaveBeenCalledTimes(2);
+    expect(factory.mock.calls[0]?.[0].variationDescriptor?.identity)
+      .toEqual(factory.mock.calls[1]?.[0].variationDescriptor?.identity);
+    expect(collectVariation(observerA)).toEqual(collectVariation(rttA));
+
+    const observerMeshesA: THREE.Mesh[] = [];
+    const rttMeshesA: THREE.Mesh[] = [];
+    observerA.traverse((object) => {
+      if (object instanceof THREE.Mesh && object.userData.variationPropId) observerMeshesA.push(object);
+    });
+    rttA.traverse((object) => {
+      if (object instanceof THREE.Mesh && object.userData.variationPropId) rttMeshesA.push(object);
+    });
+    expect(observerMeshesA).toHaveLength(rttMeshesA.length);
+    observerMeshesA.forEach((mesh, index) => {
+      expect(mesh.geometry).not.toBe(rttMeshesA[index]?.geometry);
+      expect(mesh.material).not.toBe(rttMeshesA[index]?.material);
+    });
+
+    disposeRegisteredRttSubject("shelf-swing", rttA);
+    view.rerender(<ShelfSwingSubject variationDescriptor={descriptorB} />);
+    const observerB = factory.mock.results[2]?.value as THREE.Group;
+    const rttB = createRegisteredRttSubject("shelf-swing", {
+      variationDescriptor: descriptorB,
+    })!;
+    expect(collectVariation(observerB)).toEqual(collectVariation(rttB));
+    expect(collectVariation(observerB)).not.toEqual(collectVariation(observerA));
+    expect(disposer.mock.calls.some(([group]) => group === observerA)).toBe(true);
+    view.unmount();
+    disposeRegisteredRttSubject("shelf-swing", rttB);
+    expect(disposer.mock.calls.some(([group]) => group === observerB)).toBe(true);
+    expect(disposer.mock.calls.some(([group]) => group === rttB)).toBe(true);
+    },
+  );
 
   it("routes each migrated interactive subject and RTT through the same registered presentation factory", () => {
     const candidates = [
@@ -503,6 +746,97 @@ describe("scene subject registry", () => {
     const spies = collectDisposableSpies(group!);
     disposeRegisteredRttSubject("interior-corner", group!);
     spies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+  });
+
+  it("composes one world-owned Interior Corner practical with the shared presentation rig on both surfaces", () => {
+    const observerScene = new THREE.Scene();
+    const groundGlassScene = new THREE.Scene();
+    const observerSubject = createRegisteredSceneAsset(
+      INTERIOR_CORNER_ASSET_KEY,
+      { presentation: INTERIOR_CORNER_PRESENTATION },
+    );
+    const groundGlassSubject = createRegisteredRttSubject("interior-corner");
+    if (!groundGlassSubject) throw new Error("Expected the registered Ground Glass subject");
+
+    const lightingContext = {
+      cameraMovementPresentation: CAMERA_MOVEMENT_BASELINE_PRESENTATION,
+      presentationRegion: "middle" as const,
+    };
+    const observerRig = createPresentationLightingRig(
+      observerScene,
+      resolveScenePresentationLighting("interior-corner", {
+        ...lightingContext,
+        surface: "observer",
+      }),
+    );
+    const groundGlassRig = createPresentationLightingRig(
+      groundGlassScene,
+      resolveScenePresentationLighting("interior-corner", {
+        ...lightingContext,
+        surface: "ground-glass",
+      }),
+    );
+    const observerWorldRig = createWorldIlluminationRig(
+      observerScene,
+      resolveSceneWorldIllumination("interior-corner"),
+    );
+    const groundGlassWorldRig = createWorldIlluminationRig(
+      groundGlassScene,
+      resolveSceneWorldIllumination("interior-corner"),
+    );
+    observerScene.add(observerSubject);
+    groundGlassScene.add(groundGlassSubject);
+
+    const collectLights = (scene: THREE.Scene) => {
+      const lights: THREE.Light[] = [];
+      scene.traverse((object) => {
+        if (object instanceof THREE.Light) lights.push(object);
+      });
+      return lights;
+    };
+
+    try {
+      expect(observerSubject.userData.assetImplementationId).toBe(
+        groundGlassSubject.userData.assetImplementationId,
+      );
+      expect(observerSubject.getObjectsByProperty("type", "PointLight")).toHaveLength(0);
+      expect(groundGlassSubject.getObjectsByProperty("type", "PointLight")).toHaveLength(0);
+      for (const [scene, rig] of [
+        [observerScene, observerRig],
+        [groundGlassScene, groundGlassRig],
+      ] as const) {
+        const lights = collectLights(scene);
+        const practicalLights = lights.filter(
+          (light): light is THREE.PointLight => light instanceof THREE.PointLight,
+        );
+        const shadowCastingLights = lights.filter((light) => light.castShadow);
+
+        expect(lights).toHaveLength(3);
+        expect(lights).toContain(rig.fillLight);
+        expect(lights).toContain(rig.keyLight);
+        expect(practicalLights).toHaveLength(1);
+        expect(practicalLights[0].name).toBe("interior-corner-local-light");
+        expect(practicalLights[0].color.equals(new THREE.Color("#fff1d6"))).toBe(true);
+        expect(practicalLights[0].intensity).toBe(5);
+        expect(practicalLights[0].distance).toBe(7.5);
+        expect(practicalLights[0].decay).toBe(2);
+        expect(practicalLights[0].position.toArray()).toEqual([
+          0.42,
+          (INTERIOR_CORNER_PRESENTATION.geometry.room.floorY + 1310) / 1000,
+          8.3,
+        ]);
+        expect(shadowCastingLights).toEqual([rig.keyLight]);
+      }
+    } finally {
+      observerScene.remove(observerSubject);
+      groundGlassScene.remove(groundGlassSubject);
+      disposeRegisteredSceneAsset(INTERIOR_CORNER_ASSET_KEY, observerSubject);
+      disposeRegisteredRttSubject("interior-corner", groundGlassSubject);
+      disposePresentationLightingRig(observerScene, observerRig);
+      disposePresentationLightingRig(groundGlassScene, groundGlassRig);
+      disposeWorldIlluminationRig(observerScene, observerWorldRig);
+      disposeWorldIlluminationRig(groundGlassScene, groundGlassWorldRig);
+    }
   });
 
   it("resolves Oblique Architecture to one shared static subject for 3D and RTT", () => {
@@ -774,39 +1108,100 @@ describe("scene subject registry", () => {
     });
   });
 
-  it("derives Shelf Swing RTT lighting from the middle canonical focus chart", () => {
-    const lighting = getSceneSubjectRegistration("shelf-swing")?.rttLighting;
-    expect(lighting?.targetMm).toEqual(geometry.middleSubject.focusDetailProbeWorld);
-    expect(lighting?.keyOffsetWorld).toEqual({ x: -2.5, y: 3.5, z: -2.5 });
-    expect(lighting?.fillOffsetWorld).toEqual({ x: 2.5, y: 1.5, z: -1.5 });
+  it("aligns Architecture Rise presentation shadows with the scene daylight direction", () => {
+    const lighting = getSceneSubjectRegistration("architecture-rise")?.presentationLighting;
+    expect(lighting?.keyOffsetWorld).toEqual({ x: -3, y: 4, z: -4.5 });
   });
 
-  it("derives Mirror Shift observer and RTT lights from mirrored world positions", () => {
-    const registration = getSceneSubjectRegistration("mirror-shift");
-    const observerLighting = registration?.viewportLighting;
-    const rttLighting = registration?.rttLighting;
+  it("uses the scene-specific front-raked key for Macro Oblique Plane", () => {
+    const lighting = getSceneSubjectRegistration("macro-oblique-plane")?.presentationLighting;
+    expect(lighting?.keyOffsetWorld).toEqual({ x: -2.5, y: 3.5, z: -4.5 });
+  });
+
+  it.each([
+    "architecture-rise",
+    "table-tilt",
+    "interior-corner",
+    "macro-depth-of-field",
+    "macro-oblique-plane",
+    "still-life-studio",
+  ] as const)(
+    "%s uses one presentation placement and recipe on Observer and Ground Glass",
+    (sceneId) => {
+      const intent = getSceneSubjectRegistration(sceneId)?.presentationLighting;
+      if (!intent) throw new Error("Expected presentation lighting for " + sceneId);
+      const context = {
+        cameraMovementPresentation: CAMERA_MOVEMENT_BASELINE_PRESENTATION,
+        presentationRegion: "middle" as const,
+      };
+      const observer = resolveScenePresentationLighting(sceneId, {
+        ...context,
+        surface: "observer",
+      });
+      const groundGlass = resolveScenePresentationLighting(sceneId, {
+        ...context,
+        surface: "ground-glass",
+      });
+      const expectedPlacement = resolvePresentationLightingPlacement(intent);
+
+      expect(observer.profile).toBe(TEACHING_PRESENTATION_LIGHTING_PROFILE);
+      expect(groundGlass.profile).toBe(TEACHING_PRESENTATION_LIGHTING_PROFILE);
+      expect(observer.placement).toEqual(expectedPlacement);
+      expect(groundGlass.placement).toEqual(expectedPlacement);
+    },
+  );
+
+  it("derives Shelf Swing presentation placement from the middle canonical focus chart", () => {
+    const lighting = getSceneSubjectRegistration("shelf-swing")?.presentationLighting;
+    expect(lighting?.targetMm).toEqual(geometry.middleSubject.focusDetailProbeWorld);
+    expect(lighting?.keyOffsetWorld).toEqual({ x: -2.5, y: 3.5, z: -2.5 });
+  });
+
+  it("keeps Mirror Shift observer and Ground Glass key placements on their respective sides", () => {
+    const context = {
+      cameraMovementPresentation: CAMERA_MOVEMENT_BASELINE_PRESENTATION,
+      presentationRegion: "middle" as const,
+    };
+    const observer = resolveScenePresentationLighting("mirror-shift", {
+      ...context,
+      surface: "observer",
+    });
+    const groundGlass = resolveScenePresentationLighting("mirror-shift", {
+      ...context,
+      surface: "ground-glass",
+    });
     const realTargetMm = {
       x: mirrorShiftGeometry.mirror.center.x,
       y: mirrorShiftGeometry.mirror.center.y,
       z: mirrorShiftGeometry.floor.centerZ,
     };
     const realKeyPositionMm = {
-      x: realTargetMm.x + TEACHING_LIGHTING_CONFIG.defaultKeyOffsetWorld[0] / WORLD_SCALE,
-      y: realTargetMm.y + TEACHING_LIGHTING_CONFIG.defaultKeyOffsetWorld[1] / WORLD_SCALE,
-      z: realTargetMm.z + TEACHING_LIGHTING_CONFIG.defaultKeyOffsetWorld[2] / WORLD_SCALE,
+      x: realTargetMm.x + DEFAULT_PRESENTATION_LIGHTING_PLACEMENT.keyOffsetWorld[0] / WORLD_SCALE,
+      y: realTargetMm.y + DEFAULT_PRESENTATION_LIGHTING_PLACEMENT.keyOffsetWorld[1] / WORLD_SCALE,
+      z: realTargetMm.z + DEFAULT_PRESENTATION_LIGHTING_PLACEMENT.keyOffsetWorld[2] / WORLD_SCALE,
     };
     const reflectedTargetMm = reflectPointAcrossMirrorPlane(realTargetMm);
     const reflectedKeyPositionMm = reflectPointAcrossMirrorPlane(realKeyPositionMm);
 
-    expect(observerLighting?.targetMm).toEqual(realTargetMm);
-    expect(observerLighting?.keyOffsetWorld).toEqual({ x: -2.5, y: 3.5, z: -2.5 });
-
-    expect(rttLighting?.targetMm).toEqual(reflectedTargetMm);
-    expect(rttLighting?.keyOffsetWorld).toEqual({
-      x: (reflectedKeyPositionMm.x - reflectedTargetMm.x) * WORLD_SCALE,
-      y: (reflectedKeyPositionMm.y - reflectedTargetMm.y) * WORLD_SCALE,
-      z: (reflectedKeyPositionMm.z - reflectedTargetMm.z) * WORLD_SCALE,
-    });
-    expect(rttLighting?.fillOffsetWorld).toEqual({ x: 2.5, y: 1.5, z: 1.5 });
+    expect(observer.profile).toBe(groundGlass.profile);
+    expect(observer.placement).not.toEqual(groundGlass.placement);
+    expect(observer.placement.targetWorld).toEqual([
+      realTargetMm.x * WORLD_SCALE,
+      realTargetMm.y * WORLD_SCALE,
+      realTargetMm.z * WORLD_SCALE,
+    ]);
+    expect(observer.placement.keyOffsetWorld).toEqual(
+      DEFAULT_PRESENTATION_LIGHTING_PLACEMENT.keyOffsetWorld,
+    );
+    expect(groundGlass.placement.targetWorld).toEqual([
+      reflectedTargetMm.x * WORLD_SCALE,
+      reflectedTargetMm.y * WORLD_SCALE,
+      reflectedTargetMm.z * WORLD_SCALE,
+    ]);
+    expect(groundGlass.placement.keyOffsetWorld).toEqual([
+      (reflectedKeyPositionMm.x - reflectedTargetMm.x) * WORLD_SCALE,
+      (reflectedKeyPositionMm.y - reflectedTargetMm.y) * WORLD_SCALE,
+      (reflectedKeyPositionMm.z - reflectedTargetMm.z) * WORLD_SCALE,
+    ]);
   });
 });

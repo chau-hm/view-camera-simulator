@@ -1,0 +1,1781 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "ground-glass-m5s-review-fix-1",
+  "originalReviewedHead": "d2b8f114a132852d51ba9e35bd84f5d412d799ef",
+  "nativeRunSourceCommit": "2bca0783a55482d2d9b673aee448e3984c40504a",
+  "nativeReevaluationArtifact": "test-results/ground-glass-webgpu-apertu-8ba1e-verage-without-changing-M5Q-chrome-native-webgpu/m5s-reference-convergence.json",
+  "frozenThresholdRevision": "m5q-architecture-rise-r186-v3",
+  "nativeRuntime": {
+    "browserProject": "chrome-native-webgpu",
+    "browserVersion": "155.0.8059.86",
+    "platform": "darwin",
+    "rendererRevision": "r186",
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none",
+    "applicationFallback": false
+  },
+  "captureRoles": [
+    {
+      "captureRole": "primary-4x-control-cap60",
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "captureIds": {
+        "full32": "m5r-q1-full32-a-1793035231252",
+        "full64": "m5r-q1-full64-a-1793035239117"
+      },
+      "runtime": {
+        "rendererRevision": "r186",
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "applicationFallback": false
+      }
+    },
+    {
+      "captureRole": "full-frame-control-cap60",
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "captureIds": {
+        "full32": "m5r-q2-full32-1793035259155",
+        "full64": "m5r-q2-full64-1793035261358"
+      },
+      "runtime": {
+        "rendererRevision": "r186",
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "applicationFallback": false
+      }
+    },
+    {
+      "captureRole": "focus-distance-control-cap60",
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "captureIds": {
+        "full32": "m5r-q4-near-1793035265539",
+        "full64": "m5s-q4-full64-1793035267981"
+      },
+      "runtime": {
+        "rendererRevision": "r186",
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "applicationFallback": false
+      }
+    },
+    {
+      "captureRole": "stressed-cap2",
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "captureIds": {
+        "full32": "m5r-q1-cap2-full32-1793035251959",
+        "full64": "m5r-q1-cap2-full64-1793035254281"
+      },
+      "runtime": {
+        "rendererRevision": "r186",
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "applicationFallback": false
+      }
+    }
+  ],
+  "proposalEvaluationCount": 1048320,
+  "proposalEvaluationBudget": 2000000,
+  "samplingMethods": [
+    "golden-angle-count-dependent",
+    "halton-2-3-progressive",
+    "seeded-stratified-square-to-disk"
+  ],
+  "sampleCounts": [
+    32,
+    64,
+    128,
+    256,
+    512,
+    1024
+  ],
+  "participatingSeeds": [
+    104729,
+    130363
+  ],
+  "proposalFingerprintEncoding": "FNV-1a 64-bit over proposal-order x/y IEEE-754 binary64 little-endian bytes; deterministic integrity checksum, not cryptographic hash",
+  "perMethodAnalyticControls": [
+    {
+      "method": "golden-angle-count-dependent",
+      "sequenceId": "golden-angle-sqrt-index-plus-half-v1",
+      "algorithmRevision": "ground-glass-m5s-proposal-v1",
+      "sampleCount": 1024,
+      "seed": null,
+      "progressivePrefix": false,
+      "strategyId": "[\"golden-angle-count-dependent\",\"golden-angle-sqrt-index-plus-half-v1\",1024,null,\"ground-glass-m5s-proposal-v1\"]",
+      "coordinateFingerprint": "fnv1a64-f64le-v1:f60678bb6e0e6c84",
+      "proposalAudit": {
+        "status": "valid",
+        "proposalCount": 1024,
+        "uniqueProposalCount": 1024,
+        "duplicateCount": 0,
+        "nonFiniteCount": 0,
+        "outsideUnitDiskCount": 0,
+        "centroid": [
+          0.0003865365484497762,
+          -0.00034415139839254216
+        ],
+        "minimumRadius": 0.02209708691207961,
+        "maximumRadius": 0.9997558295653994,
+        "meanRadius": 0.6666685049669573,
+        "meanSquaredRadius": 0.5,
+        "radialAreaBandCounts": [
+          256,
+          256,
+          256,
+          256
+        ],
+        "angularSectorCounts": [
+          128,
+          129,
+          127,
+          127,
+          129,
+          128,
+          127,
+          129
+        ],
+        "meanNearestNeighborDistance": 0.05323989489601943,
+        "issues": []
+      },
+      "analyticCases": {
+        "uniformColor": {
+          "status": "passed",
+          "observed": 0.20000000298023224,
+          "expected": 0.2,
+          "absoluteError": 1.1920928910669204e-8,
+          "tolerance": 1e-7,
+          "detail": "uniform valid Far color is invariant under aperture integration"
+        },
+        "affineGradient": {
+          "status": "passed",
+          "observed": 0.5001757807913236,
+          "expected": 0.5,
+          "absoluteError": 0.000175780791323632,
+          "tolerance": 0.02,
+          "detail": "symmetric continuous-disk average equals center color; raster field is symmetric around center texel"
+        },
+        "planarBoundary": {
+          "status": "passed",
+          "observed": 0.50048828125,
+          "expected": 0.5,
+          "absoluteError": 0.00048828125,
+          "tolerance": 0.025,
+          "detail": "symmetric half-plane integral with explicit half-coverage center source texel"
+        },
+        "compactSilhouette": {
+          "status": "passed",
+          "observed": 0.138671875,
+          "expected": 0.14050084510325803,
+          "absoluteError": 0.0018289701032580263,
+          "tolerance": 0.025,
+          "detail": "the supplied proposal sequence is compared with independent 512x512 raster midpoint quadrature"
+        },
+        "depthRejection": {
+          "status": "passed",
+          "observed": 0,
+          "expected": 0,
+          "absoluteError": 0,
+          "tolerance": 1e-7,
+          "detail": "nearer zero-CoC samples pass signed-CoC eligibility but fail depth acceptance"
+        },
+        "radiusCap": {
+          "status": "passed",
+          "observed": 5,
+          "expected": 5,
+          "absoluteError": 0,
+          "tolerance": 1e-8,
+          "detail": "physical ellipse is mapped to source pixels before the 5 px radius cap is applied"
+        },
+        "unitDiskAreaMoment": {
+          "status": "passed",
+          "observed": 0.5,
+          "expected": 0.5,
+          "absoluteError": 0,
+          "tolerance": 0.03,
+          "detail": "equal-area unit-disk proposals satisfy E[x^2 + y^2] = 1/2; a fixed 0.03 finite-sample tolerance rejects center and uniform-radius bias"
+        },
+        "sharpSourceNegativeControl": {
+          "status": "passed",
+          "observed": 0,
+          "expected": 0.49728802482934564,
+          "absoluteError": 0.49728802482934564,
+          "tolerance": 0.01,
+          "detail": "sharp-source substitution is rejected because it removes the analytic defocus transition"
+        }
+      },
+      "analyticStatus": "passed",
+      "failedCriteria": [],
+      "observedErrors": {
+        "uniformColor": 1.1920928910669204e-8,
+        "affineGradient": 0.000175780791323632,
+        "planarBoundary": 0.00048828125,
+        "compactSilhouette": 0.0018289701032580263,
+        "depthRejection": 0,
+        "radiusCap": 0,
+        "unitDiskAreaMoment": 0,
+        "sharpSourceNegativeControl": 0.49728802482934564
+      },
+      "declaredTolerances": {
+        "uniformColor": 1e-7,
+        "affineGradient": 0.02,
+        "planarBoundary": 0.025,
+        "compactSilhouette": 0.025,
+        "depthRejection": 1e-7,
+        "radiusCap": 1e-8,
+        "unitDiskAreaMoment": 0.03,
+        "sharpSourceNegativeControl": 0.01
+      },
+      "independentRasterOracle": {
+        "method": "512x512 midpoint quadrature over unit disk and nearest-source raster cells",
+        "resolutionPerAxis": 512,
+        "evaluatedDiskPoints": 205892
+      }
+    },
+    {
+      "method": "halton-2-3-progressive",
+      "sequenceId": "halton-base-2-3-equal-area-polar-v1",
+      "algorithmRevision": "ground-glass-m5s-proposal-v1",
+      "sampleCount": 1024,
+      "seed": null,
+      "progressivePrefix": true,
+      "strategyId": "[\"halton-2-3-progressive\",\"halton-base-2-3-equal-area-polar-v1\",1024,null,\"ground-glass-m5s-proposal-v1\"]",
+      "coordinateFingerprint": "fnv1a64-f64le-v1:aa154147230ea4a9",
+      "proposalAudit": {
+        "status": "valid",
+        "proposalCount": 1024,
+        "uniqueProposalCount": 1024,
+        "duplicateCount": 0,
+        "nonFiniteCount": 0,
+        "outsideUnitDiskCount": 0,
+        "centroid": [
+          -0.0009540780900039339,
+          0.00029571269432867567
+        ],
+        "minimumRadius": 0.02209708691207961,
+        "maximumRadius": 0.9995115994824673,
+        "meanRadius": 0.6661936601554217,
+        "meanSquaredRadius": 0.4995121955871582,
+        "radialAreaBandCounts": [
+          256,
+          257,
+          256,
+          255
+        ],
+        "angularSectorCounts": [
+          129,
+          128,
+          129,
+          128,
+          127,
+          129,
+          128,
+          126
+        ],
+        "meanNearestNeighborDistance": 0.03647936013671716,
+        "issues": []
+      },
+      "analyticCases": {
+        "uniformColor": {
+          "status": "passed",
+          "observed": 0.20000000298023224,
+          "expected": 0.2,
+          "absoluteError": 1.1920928910669204e-8,
+          "tolerance": 1e-7,
+          "detail": "uniform valid Far color is invariant under aperture integration"
+        },
+        "affineGradient": {
+          "status": "passed",
+          "observed": 0.4996191405225545,
+          "expected": 0.5,
+          "absoluteError": 0.0003808594774454832,
+          "tolerance": 0.02,
+          "detail": "symmetric continuous-disk average equals center color; raster field is symmetric around center texel"
+        },
+        "planarBoundary": {
+          "status": "passed",
+          "observed": 0.498046875,
+          "expected": 0.5,
+          "absoluteError": 0.001953125,
+          "tolerance": 0.025,
+          "detail": "symmetric half-plane integral with explicit half-coverage center source texel"
+        },
+        "compactSilhouette": {
+          "status": "passed",
+          "observed": 0.146484375,
+          "expected": 0.14050084510325803,
+          "absoluteError": 0.005983529896741974,
+          "tolerance": 0.025,
+          "detail": "the supplied proposal sequence is compared with independent 512x512 raster midpoint quadrature"
+        },
+        "depthRejection": {
+          "status": "passed",
+          "observed": 0,
+          "expected": 0,
+          "absoluteError": 0,
+          "tolerance": 1e-7,
+          "detail": "nearer zero-CoC samples pass signed-CoC eligibility but fail depth acceptance"
+        },
+        "radiusCap": {
+          "status": "passed",
+          "observed": 5,
+          "expected": 5,
+          "absoluteError": 0,
+          "tolerance": 1e-8,
+          "detail": "physical ellipse is mapped to source pixels before the 5 px radius cap is applied"
+        },
+        "unitDiskAreaMoment": {
+          "status": "passed",
+          "observed": 0.4995121955871582,
+          "expected": 0.5,
+          "absoluteError": 0.0004878044128417969,
+          "tolerance": 0.03,
+          "detail": "equal-area unit-disk proposals satisfy E[x^2 + y^2] = 1/2; a fixed 0.03 finite-sample tolerance rejects center and uniform-radius bias"
+        },
+        "sharpSourceNegativeControl": {
+          "status": "passed",
+          "observed": 0,
+          "expected": 0.49277747585130166,
+          "absoluteError": 0.49277747585130166,
+          "tolerance": 0.01,
+          "detail": "sharp-source substitution is rejected because it removes the analytic defocus transition"
+        }
+      },
+      "analyticStatus": "passed",
+      "failedCriteria": [],
+      "observedErrors": {
+        "uniformColor": 1.1920928910669204e-8,
+        "affineGradient": 0.0003808594774454832,
+        "planarBoundary": 0.001953125,
+        "compactSilhouette": 0.005983529896741974,
+        "depthRejection": 0,
+        "radiusCap": 0,
+        "unitDiskAreaMoment": 0.0004878044128417969,
+        "sharpSourceNegativeControl": 0.49277747585130166
+      },
+      "declaredTolerances": {
+        "uniformColor": 1e-7,
+        "affineGradient": 0.02,
+        "planarBoundary": 0.025,
+        "compactSilhouette": 0.025,
+        "depthRejection": 1e-7,
+        "radiusCap": 1e-8,
+        "unitDiskAreaMoment": 0.03,
+        "sharpSourceNegativeControl": 0.01
+      },
+      "independentRasterOracle": {
+        "method": "512x512 midpoint quadrature over unit disk and nearest-source raster cells",
+        "resolutionPerAxis": 512,
+        "evaluatedDiskPoints": 205892
+      }
+    },
+    {
+      "method": "seeded-stratified-square-to-disk",
+      "sequenceId": "seeded-jittered-equal-area-square-grid-concentric-v1",
+      "algorithmRevision": "ground-glass-m5s-proposal-v1",
+      "sampleCount": 1024,
+      "seed": 104729,
+      "progressivePrefix": false,
+      "strategyId": "[\"seeded-stratified-square-to-disk\",\"seeded-jittered-equal-area-square-grid-concentric-v1\",1024,104729,\"ground-glass-m5s-proposal-v1\"]",
+      "coordinateFingerprint": "fnv1a64-f64le-v1:444e31a841ab4ad4",
+      "proposalAudit": {
+        "status": "valid",
+        "proposalCount": 1024,
+        "uniqueProposalCount": 1024,
+        "duplicateCount": 0,
+        "nonFiniteCount": 0,
+        "outsideUnitDiskCount": 0,
+        "centroid": [
+          0.00004524814703364601,
+          -0.0002160105121569246
+        ],
+        "minimumRadius": 0.006511142433737405,
+        "maximumRadius": 0.9999938075488898,
+        "meanRadius": 0.6664881387409167,
+        "meanSquaredRadius": 0.49972671511637384,
+        "radialAreaBandCounts": [
+          256,
+          254,
+          257,
+          257
+        ],
+        "angularSectorCounts": [
+          128,
+          128,
+          125,
+          131,
+          129,
+          127,
+          131,
+          125
+        ],
+        "meanNearestNeighborDistance": 0.03523787679567508,
+        "issues": []
+      },
+      "analyticCases": {
+        "uniformColor": {
+          "status": "passed",
+          "observed": 0.20000000298023224,
+          "expected": 0.2,
+          "absoluteError": 1.1920928910669204e-8,
+          "tolerance": 1e-7,
+          "detail": "uniform valid Far color is invariant under aperture integration"
+        },
+        "affineGradient": {
+          "status": "passed",
+          "observed": 0.5001904291566461,
+          "expected": 0.5,
+          "absoluteError": 0.00019042915664613247,
+          "tolerance": 0.02,
+          "detail": "symmetric continuous-disk average equals center color; raster field is symmetric around center texel"
+        },
+        "planarBoundary": {
+          "status": "passed",
+          "observed": 0.5,
+          "expected": 0.5,
+          "absoluteError": 0,
+          "tolerance": 0.025,
+          "detail": "symmetric half-plane integral with explicit half-coverage center source texel"
+        },
+        "compactSilhouette": {
+          "status": "passed",
+          "observed": 0.1328125,
+          "expected": 0.14050084510325803,
+          "absoluteError": 0.007688345103258026,
+          "tolerance": 0.025,
+          "detail": "the supplied proposal sequence is compared with independent 512x512 raster midpoint quadrature"
+        },
+        "depthRejection": {
+          "status": "passed",
+          "observed": 0,
+          "expected": 0,
+          "absoluteError": 0,
+          "tolerance": 1e-7,
+          "detail": "nearer zero-CoC samples pass signed-CoC eligibility but fail depth acceptance"
+        },
+        "radiusCap": {
+          "status": "passed",
+          "observed": 5,
+          "expected": 5,
+          "absoluteError": 0,
+          "tolerance": 1e-8,
+          "detail": "physical ellipse is mapped to source pixels before the 5 px radius cap is applied"
+        },
+        "unitDiskAreaMoment": {
+          "status": "passed",
+          "observed": 0.49972671511637384,
+          "expected": 0.5,
+          "absoluteError": 0.000273284883626157,
+          "tolerance": 0.03,
+          "detail": "equal-area unit-disk proposals satisfy E[x^2 + y^2] = 1/2; a fixed 0.03 finite-sample tolerance rejects center and uniform-radius bias"
+        },
+        "sharpSourceNegativeControl": {
+          "status": "passed",
+          "observed": 0,
+          "expected": 0.5006709365628786,
+          "absoluteError": 0.5006709365628786,
+          "tolerance": 0.01,
+          "detail": "sharp-source substitution is rejected because it removes the analytic defocus transition"
+        }
+      },
+      "analyticStatus": "passed",
+      "failedCriteria": [],
+      "observedErrors": {
+        "uniformColor": 1.1920928910669204e-8,
+        "affineGradient": 0.00019042915664613247,
+        "planarBoundary": 0,
+        "compactSilhouette": 0.007688345103258026,
+        "depthRejection": 0,
+        "radiusCap": 0,
+        "unitDiskAreaMoment": 0.000273284883626157,
+        "sharpSourceNegativeControl": 0.5006709365628786
+      },
+      "declaredTolerances": {
+        "uniformColor": 1e-7,
+        "affineGradient": 0.02,
+        "planarBoundary": 0.025,
+        "compactSilhouette": 0.025,
+        "depthRejection": 1e-7,
+        "radiusCap": 1e-8,
+        "unitDiskAreaMoment": 0.03,
+        "sharpSourceNegativeControl": 0.01
+      },
+      "independentRasterOracle": {
+        "method": "512x512 midpoint quadrature over unit disk and nearest-source raster cells",
+        "resolutionPerAxis": 512,
+        "evaluatedDiskPoints": 205892
+      }
+    },
+    {
+      "method": "seeded-stratified-square-to-disk",
+      "sequenceId": "seeded-jittered-equal-area-square-grid-concentric-v1",
+      "algorithmRevision": "ground-glass-m5s-proposal-v1",
+      "sampleCount": 1024,
+      "seed": 130363,
+      "progressivePrefix": false,
+      "strategyId": "[\"seeded-stratified-square-to-disk\",\"seeded-jittered-equal-area-square-grid-concentric-v1\",1024,130363,\"ground-glass-m5s-proposal-v1\"]",
+      "coordinateFingerprint": "fnv1a64-f64le-v1:54676ccc5fda5785",
+      "proposalAudit": {
+        "status": "valid",
+        "proposalCount": 1024,
+        "uniqueProposalCount": 1024,
+        "duplicateCount": 0,
+        "nonFiniteCount": 0,
+        "outsideUnitDiskCount": 0,
+        "centroid": [
+          -0.00004185402327146616,
+          0.0012125082343247327
+        ],
+        "minimumRadius": 0.015756521926959977,
+        "maximumRadius": 0.9995318244036754,
+        "meanRadius": 0.6671224470706392,
+        "meanSquaredRadius": 0.5005808934020975,
+        "radialAreaBandCounts": [
+          256,
+          256,
+          253,
+          259
+        ],
+        "angularSectorCounts": [
+          129,
+          127,
+          131,
+          125,
+          131,
+          125,
+          128,
+          128
+        ],
+        "meanNearestNeighborDistance": 0.035378598688779433,
+        "issues": []
+      },
+      "analyticCases": {
+        "uniformColor": {
+          "status": "passed",
+          "observed": 0.20000000298023224,
+          "expected": 0.2,
+          "absoluteError": 1.1920928910669204e-8,
+          "tolerance": 1e-7,
+          "detail": "uniform valid Far color is invariant under aperture integration"
+        },
+        "affineGradient": {
+          "status": "passed",
+          "observed": 0.5001318355789408,
+          "expected": 0.5,
+          "absoluteError": 0.00017578338156454265,
+          "tolerance": 0.02,
+          "detail": "symmetric continuous-disk average equals center color; raster field is symmetric around center texel"
+        },
+        "planarBoundary": {
+          "status": "passed",
+          "observed": 0.50146484375,
+          "expected": 0.5,
+          "absoluteError": 0.00146484375,
+          "tolerance": 0.025,
+          "detail": "symmetric half-plane integral with explicit half-coverage center source texel"
+        },
+        "compactSilhouette": {
+          "status": "passed",
+          "observed": 0.14453125,
+          "expected": 0.14050084510325803,
+          "absoluteError": 0.004030404896741974,
+          "tolerance": 0.025,
+          "detail": "the supplied proposal sequence is compared with independent 512x512 raster midpoint quadrature"
+        },
+        "depthRejection": {
+          "status": "passed",
+          "observed": 0,
+          "expected": 0,
+          "absoluteError": 0,
+          "tolerance": 1e-7,
+          "detail": "nearer zero-CoC samples pass signed-CoC eligibility but fail depth acceptance"
+        },
+        "radiusCap": {
+          "status": "passed",
+          "observed": 5,
+          "expected": 5,
+          "absoluteError": 0,
+          "tolerance": 1e-8,
+          "detail": "physical ellipse is mapped to source pixels before the 5 px radius cap is applied"
+        },
+        "unitDiskAreaMoment": {
+          "status": "passed",
+          "observed": 0.5005808934020975,
+          "expected": 0.5,
+          "absoluteError": 0.0005808934020975487,
+          "tolerance": 0.03,
+          "detail": "equal-area unit-disk proposals satisfy E[x^2 + y^2] = 1/2; a fixed 0.03 finite-sample tolerance rejects center and uniform-radius bias"
+        },
+        "sharpSourceNegativeControl": {
+          "status": "passed",
+          "observed": 0,
+          "expected": 0.49390511309581264,
+          "absoluteError": 0.49390511309581264,
+          "tolerance": 0.01,
+          "detail": "sharp-source substitution is rejected because it removes the analytic defocus transition"
+        }
+      },
+      "analyticStatus": "passed",
+      "failedCriteria": [],
+      "observedErrors": {
+        "uniformColor": 1.1920928910669204e-8,
+        "affineGradient": 0.00017578338156454265,
+        "planarBoundary": 0.00146484375,
+        "compactSilhouette": 0.004030404896741974,
+        "depthRejection": 0,
+        "radiusCap": 0,
+        "unitDiskAreaMoment": 0.0005808934020975487,
+        "sharpSourceNegativeControl": 0.49390511309581264
+      },
+      "declaredTolerances": {
+        "uniformColor": 1e-7,
+        "affineGradient": 0.02,
+        "planarBoundary": 0.025,
+        "compactSilhouette": 0.025,
+        "depthRejection": 1e-7,
+        "radiusCap": 1e-8,
+        "unitDiskAreaMoment": 0.03,
+        "sharpSourceNegativeControl": 0.01
+      },
+      "independentRasterOracle": {
+        "method": "512x512 midpoint quadrature over unit disk and nearest-source raster cells",
+        "resolutionPerAxis": 512,
+        "evaluatedDiskPoints": 205892
+      }
+    }
+  ],
+  "analyticAuthority": {
+    "status": "passed",
+    "expectedStrategyIds": [
+      "[\"golden-angle-count-dependent\",\"golden-angle-sqrt-index-plus-half-v1\",1024,null,\"ground-glass-m5s-proposal-v1\"]",
+      "[\"halton-2-3-progressive\",\"halton-base-2-3-equal-area-polar-v1\",1024,null,\"ground-glass-m5s-proposal-v1\"]",
+      "[\"seeded-stratified-square-to-disk\",\"seeded-jittered-equal-area-square-grid-concentric-v1\",1024,104729,\"ground-glass-m5s-proposal-v1\"]",
+      "[\"seeded-stratified-square-to-disk\",\"seeded-jittered-equal-area-square-grid-concentric-v1\",1024,130363,\"ground-glass-m5s-proposal-v1\"]"
+    ],
+    "observedStrategyIds": [
+      "[\"golden-angle-count-dependent\",\"golden-angle-sqrt-index-plus-half-v1\",1024,null,\"ground-glass-m5s-proposal-v1\"]",
+      "[\"halton-2-3-progressive\",\"halton-base-2-3-equal-area-polar-v1\",1024,null,\"ground-glass-m5s-proposal-v1\"]",
+      "[\"seeded-stratified-square-to-disk\",\"seeded-jittered-equal-area-square-grid-concentric-v1\",1024,104729,\"ground-glass-m5s-proposal-v1\"]",
+      "[\"seeded-stratified-square-to-disk\",\"seeded-jittered-equal-area-square-grid-concentric-v1\",1024,130363,\"ground-glass-m5s-proposal-v1\"]"
+    ],
+    "qualifiedStrategyIds": [
+      "[\"golden-angle-count-dependent\",\"golden-angle-sqrt-index-plus-half-v1\",1024,null,\"ground-glass-m5s-proposal-v1\"]",
+      "[\"halton-2-3-progressive\",\"halton-base-2-3-equal-area-polar-v1\",1024,null,\"ground-glass-m5s-proposal-v1\"]",
+      "[\"seeded-stratified-square-to-disk\",\"seeded-jittered-equal-area-square-grid-concentric-v1\",1024,104729,\"ground-glass-m5s-proposal-v1\"]",
+      "[\"seeded-stratified-square-to-disk\",\"seeded-jittered-equal-area-square-grid-concentric-v1\",1024,130363,\"ground-glass-m5s-proposal-v1\"]"
+    ],
+    "failedStrategies": [],
+    "missingStrategyIds": [],
+    "unexpectedStrategyIds": [],
+    "duplicateStrategyIds": [],
+    "identityMismatchStrategyIds": []
+  },
+  "previousQualificationCandidates": [
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S1-smooth-valid-far-interior",
+      "classification": "converged-and-cross-validated",
+      "referenceAuthority": "supported-for-exact-stratum",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S2-strong-defocus-textured-interior",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S3-high-source-gradient-valid-far",
+      "classification": "converged-within-one-method-only",
+      "referenceAuthority": "candidate-only",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S4-depth-discontinuity-valid-far",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S5-signed-coc-boundary-neighborhood",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S6-cap-activated-valid-far",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "stratumId": "S1-smooth-valid-far-interior",
+      "classification": "convergence-trending-but-unresolved",
+      "referenceAuthority": "unresolved",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "stratumId": "S2-strong-defocus-textured-interior",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "stratumId": "S3-high-source-gradient-valid-far",
+      "classification": "convergence-trending-but-unresolved",
+      "referenceAuthority": "unresolved",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "stratumId": "S4-depth-discontinuity-valid-far",
+      "classification": "converged-within-one-method-only",
+      "referenceAuthority": "candidate-only",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "stratumId": "S5-signed-coc-boundary-neighborhood",
+      "classification": "convergence-trending-but-unresolved",
+      "referenceAuthority": "unresolved",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "stratumId": "S6-cap-activated-valid-far",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "stratumId": "S1-smooth-valid-far-interior",
+      "classification": "convergence-trending-but-unresolved",
+      "referenceAuthority": "unresolved",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "stratumId": "S2-strong-defocus-textured-interior",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "stratumId": "S3-high-source-gradient-valid-far",
+      "classification": "convergence-trending-but-unresolved",
+      "referenceAuthority": "unresolved",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "stratumId": "S4-depth-discontinuity-valid-far",
+      "classification": "converged-and-cross-validated",
+      "referenceAuthority": "supported-for-exact-stratum",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "stratumId": "S5-signed-coc-boundary-neighborhood",
+      "classification": "convergence-trending-but-unresolved",
+      "referenceAuthority": "unresolved",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "stratumId": "S6-cap-activated-valid-far",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S1-smooth-valid-far-interior",
+      "classification": "convergence-trending-but-unresolved",
+      "referenceAuthority": "unresolved",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S2-strong-defocus-textured-interior",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S3-high-source-gradient-valid-far",
+      "classification": "convergence-trending-but-unresolved",
+      "referenceAuthority": "unresolved",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S4-depth-discontinuity-valid-far",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S5-signed-coc-boundary-neighborhood",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "historicalOnly": true
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S6-cap-activated-valid-far",
+      "classification": "convergence-trending-but-unresolved",
+      "referenceAuthority": "unresolved",
+      "historicalOnly": true
+    }
+  ],
+  "correctedQualificationCandidates": [
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "captureRole": "primary-4x-control-cap60",
+      "stratumId": "S1-smooth-valid-far-interior",
+      "classification": "converged-and-cross-validated",
+      "referenceAuthority": "supported-for-exact-stratum",
+      "analyticStatus": "passed"
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "captureRole": "primary-4x-control-cap60",
+      "stratumId": "S2-strong-defocus-textured-interior",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "analyticStatus": "invalid"
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "captureRole": "primary-4x-control-cap60",
+      "stratumId": "S3-high-source-gradient-valid-far",
+      "classification": "converged-within-one-method-only",
+      "referenceAuthority": "candidate-only",
+      "analyticStatus": "passed"
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "captureRole": "primary-4x-control-cap60",
+      "stratumId": "S4-depth-discontinuity-valid-far",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "analyticStatus": "invalid"
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "captureRole": "primary-4x-control-cap60",
+      "stratumId": "S5-signed-coc-boundary-neighborhood",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "analyticStatus": "invalid"
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "captureRole": "primary-4x-control-cap60",
+      "stratumId": "S6-cap-activated-valid-far",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "analyticStatus": "invalid"
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "captureRole": "full-frame-control-cap60",
+      "stratumId": "S1-smooth-valid-far-interior",
+      "classification": "convergence-trending-but-unresolved",
+      "referenceAuthority": "unresolved",
+      "analyticStatus": "passed"
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "captureRole": "full-frame-control-cap60",
+      "stratumId": "S2-strong-defocus-textured-interior",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "analyticStatus": "invalid"
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "captureRole": "full-frame-control-cap60",
+      "stratumId": "S3-high-source-gradient-valid-far",
+      "classification": "convergence-trending-but-unresolved",
+      "referenceAuthority": "unresolved",
+      "analyticStatus": "passed"
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "captureRole": "full-frame-control-cap60",
+      "stratumId": "S4-depth-discontinuity-valid-far",
+      "classification": "converged-within-one-method-only",
+      "referenceAuthority": "candidate-only",
+      "analyticStatus": "passed"
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "captureRole": "full-frame-control-cap60",
+      "stratumId": "S5-signed-coc-boundary-neighborhood",
+      "classification": "convergence-trending-but-unresolved",
+      "referenceAuthority": "unresolved",
+      "analyticStatus": "passed"
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "captureRole": "full-frame-control-cap60",
+      "stratumId": "S6-cap-activated-valid-far",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "analyticStatus": "invalid"
+    },
+    {
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "captureRole": "focus-distance-control-cap60",
+      "stratumId": "S1-smooth-valid-far-interior",
+      "classification": "convergence-trending-but-unresolved",
+      "referenceAuthority": "unresolved",
+      "analyticStatus": "passed"
+    },
+    {
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "captureRole": "focus-distance-control-cap60",
+      "stratumId": "S2-strong-defocus-textured-interior",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "analyticStatus": "invalid"
+    },
+    {
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "captureRole": "focus-distance-control-cap60",
+      "stratumId": "S3-high-source-gradient-valid-far",
+      "classification": "convergence-trending-but-unresolved",
+      "referenceAuthority": "unresolved",
+      "analyticStatus": "passed"
+    },
+    {
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "captureRole": "focus-distance-control-cap60",
+      "stratumId": "S4-depth-discontinuity-valid-far",
+      "classification": "converged-and-cross-validated",
+      "referenceAuthority": "supported-for-exact-stratum",
+      "analyticStatus": "passed"
+    },
+    {
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "captureRole": "focus-distance-control-cap60",
+      "stratumId": "S5-signed-coc-boundary-neighborhood",
+      "classification": "convergence-trending-but-unresolved",
+      "referenceAuthority": "unresolved",
+      "analyticStatus": "passed"
+    },
+    {
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "captureRole": "focus-distance-control-cap60",
+      "stratumId": "S6-cap-activated-valid-far",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "analyticStatus": "invalid"
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "captureRole": "stressed-cap2",
+      "stratumId": "S1-smooth-valid-far-interior",
+      "classification": "convergence-trending-but-unresolved",
+      "referenceAuthority": "unresolved",
+      "analyticStatus": "passed"
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "captureRole": "stressed-cap2",
+      "stratumId": "S2-strong-defocus-textured-interior",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "analyticStatus": "invalid"
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "captureRole": "stressed-cap2",
+      "stratumId": "S3-high-source-gradient-valid-far",
+      "classification": "convergence-trending-but-unresolved",
+      "referenceAuthority": "unresolved",
+      "analyticStatus": "passed"
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "captureRole": "stressed-cap2",
+      "stratumId": "S4-depth-discontinuity-valid-far",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "analyticStatus": "invalid"
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "captureRole": "stressed-cap2",
+      "stratumId": "S5-signed-coc-boundary-neighborhood",
+      "classification": "insufficient-support",
+      "referenceAuthority": "none",
+      "analyticStatus": "invalid"
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "captureRole": "stressed-cap2",
+      "stratumId": "S6-cap-activated-valid-far",
+      "classification": "convergence-trending-but-unresolved",
+      "referenceAuthority": "unresolved",
+      "analyticStatus": "passed"
+    }
+  ],
+  "originalVsCorrectedDecisions": [
+    {
+      "captureRole": "primary-4x-control-cap60",
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S1-smooth-valid-far-interior",
+      "previousClassification": "converged-and-cross-validated",
+      "correctedClassification": "converged-and-cross-validated",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "primary-4x-control-cap60",
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S2-strong-defocus-textured-interior",
+      "previousClassification": "insufficient-support",
+      "correctedClassification": "insufficient-support",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "primary-4x-control-cap60",
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S3-high-source-gradient-valid-far",
+      "previousClassification": "converged-within-one-method-only",
+      "correctedClassification": "converged-within-one-method-only",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "primary-4x-control-cap60",
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S4-depth-discontinuity-valid-far",
+      "previousClassification": "insufficient-support",
+      "correctedClassification": "insufficient-support",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "primary-4x-control-cap60",
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S5-signed-coc-boundary-neighborhood",
+      "previousClassification": "insufficient-support",
+      "correctedClassification": "insufficient-support",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "primary-4x-control-cap60",
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S6-cap-activated-valid-far",
+      "previousClassification": "insufficient-support",
+      "correctedClassification": "insufficient-support",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "full-frame-control-cap60",
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "stratumId": "S1-smooth-valid-far-interior",
+      "previousClassification": "convergence-trending-but-unresolved",
+      "correctedClassification": "convergence-trending-but-unresolved",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "full-frame-control-cap60",
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "stratumId": "S2-strong-defocus-textured-interior",
+      "previousClassification": "insufficient-support",
+      "correctedClassification": "insufficient-support",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "full-frame-control-cap60",
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "stratumId": "S3-high-source-gradient-valid-far",
+      "previousClassification": "convergence-trending-but-unresolved",
+      "correctedClassification": "convergence-trending-but-unresolved",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "full-frame-control-cap60",
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "stratumId": "S4-depth-discontinuity-valid-far",
+      "previousClassification": "converged-within-one-method-only",
+      "correctedClassification": "converged-within-one-method-only",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "full-frame-control-cap60",
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "stratumId": "S5-signed-coc-boundary-neighborhood",
+      "previousClassification": "convergence-trending-but-unresolved",
+      "correctedClassification": "convergence-trending-but-unresolved",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "full-frame-control-cap60",
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "stratumId": "S6-cap-activated-valid-far",
+      "previousClassification": "insufficient-support",
+      "correctedClassification": "insufficient-support",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "focus-distance-control-cap60",
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "stratumId": "S1-smooth-valid-far-interior",
+      "previousClassification": "convergence-trending-but-unresolved",
+      "correctedClassification": "convergence-trending-but-unresolved",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "focus-distance-control-cap60",
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "stratumId": "S2-strong-defocus-textured-interior",
+      "previousClassification": "insufficient-support",
+      "correctedClassification": "insufficient-support",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "focus-distance-control-cap60",
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "stratumId": "S3-high-source-gradient-valid-far",
+      "previousClassification": "convergence-trending-but-unresolved",
+      "correctedClassification": "convergence-trending-but-unresolved",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "focus-distance-control-cap60",
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "stratumId": "S4-depth-discontinuity-valid-far",
+      "previousClassification": "converged-and-cross-validated",
+      "correctedClassification": "converged-and-cross-validated",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "focus-distance-control-cap60",
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "stratumId": "S5-signed-coc-boundary-neighborhood",
+      "previousClassification": "convergence-trending-but-unresolved",
+      "correctedClassification": "convergence-trending-but-unresolved",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "focus-distance-control-cap60",
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "stratumId": "S6-cap-activated-valid-far",
+      "previousClassification": "insufficient-support",
+      "correctedClassification": "insufficient-support",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "stressed-cap2",
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S1-smooth-valid-far-interior",
+      "previousClassification": "convergence-trending-but-unresolved",
+      "correctedClassification": "convergence-trending-but-unresolved",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "stressed-cap2",
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S2-strong-defocus-textured-interior",
+      "previousClassification": "insufficient-support",
+      "correctedClassification": "insufficient-support",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "stressed-cap2",
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S3-high-source-gradient-valid-far",
+      "previousClassification": "convergence-trending-but-unresolved",
+      "correctedClassification": "convergence-trending-but-unresolved",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "stressed-cap2",
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S4-depth-discontinuity-valid-far",
+      "previousClassification": "insufficient-support",
+      "correctedClassification": "insufficient-support",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "stressed-cap2",
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S5-signed-coc-boundary-neighborhood",
+      "previousClassification": "insufficient-support",
+      "correctedClassification": "insufficient-support",
+      "classificationChanged": false
+    },
+    {
+      "captureRole": "stressed-cap2",
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "stratumId": "S6-cap-activated-valid-far",
+      "previousClassification": "convergence-trending-but-unresolved",
+      "correctedClassification": "convergence-trending-but-unresolved",
+      "classificationChanged": false
+    }
+  ],
+  "historicalMeasurements": {
+    "previousReportSha256": "b9746968ff1a4089c6077a2c18bd55389683510854e27306f13ca7414873ea0a",
+    "previousReportGeneratedAtUtc": "2026-10-26T16:23:55.075Z",
+    "previousTotalEvaluatedProposals": 1048320,
+    "previousCaptureProvenanceRetainedInHistoricalReport": true,
+    "previousQualifiedStratumMeasurements": [
+      {
+        "captureRole": "primary-4x-control-cap60",
+        "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+        "captureIds": {
+          "full32": "m5r-q1-full32-a-1793031792613",
+          "full64": "m5r-q1-full64-a-1793031800729"
+        },
+        "inputFingerprints": {
+          "sourceColor": "4c6374b1",
+          "depth": "89c670bb",
+          "physical": "e37fced7",
+          "validity": "bde57a05"
+        },
+        "stratumId": "S1-smooth-valid-far-interior",
+        "selectedGatherPixelIds": [
+          6384,
+          17781,
+          33899,
+          47388,
+          63961,
+          78006,
+          99883,
+          118094,
+          136935,
+          168492
+        ],
+        "finalTierWithinMethod": [
+          {
+            "status": "measured",
+            "valueCount": 10,
+            "mae": 0.00009395424470615883,
+            "rmse": 0.00027003832734160625,
+            "maximumChannelError": 0.001056985289324075,
+            "maximumErrorIndex": 5,
+            "p50AbsoluteError": 0.000003829656634479761,
+            "p90AbsoluteError": 0.00006510416278615594,
+            "p99AbsoluteError": 0.00006510416278615594
+          },
+          {
+            "status": "measured",
+            "valueCount": 10,
+            "mae": 0.00009893279833098253,
+            "rmse": 0.0002726803450154149,
+            "maximumChannelError": 0.001056985289324075,
+            "maximumErrorIndex": 5,
+            "p50AbsoluteError": 0.000022977939806878567,
+            "p90AbsoluteError": 0.00008042278932407498,
+            "p99AbsoluteError": 0.00008042278932407498
+          },
+          {
+            "status": "measured",
+            "valueCount": 10,
+            "mae": 0.00021254594709413748,
+            "rmse": 0.0005473681278061095,
+            "maximumChannelError": 0.00211397057864815,
+            "maximumErrorIndex": 5,
+            "p50AbsoluteError": 0.000019148283172398806,
+            "p90AbsoluteError": 0.00029871321748942137,
+            "p99AbsoluteError": 0.00029871321748942137
+          },
+          {
+            "status": "measured",
+            "valueCount": 10,
+            "mae": 0.000024765112902969123,
+            "rmse": 0.000047607011889929566,
+            "maximumChannelError": 0.00014169729547575116,
+            "maximumErrorIndex": 7,
+            "p50AbsoluteError": 0.000011488969903439283,
+            "p90AbsoluteError": 0.00009957107249647379,
+            "p99AbsoluteError": 0.00009957107249647379
+          }
+        ],
+        "highTierCrossMethodAgreement": [
+          {
+            "methods": [
+              "golden-angle",
+              "halton-2-3"
+            ],
+            "metrics": {
+              "status": "measured",
+              "valueCount": 10,
+              "mae": 0.00011195363088821372,
+              "rmse": 0.00027582126168911974,
+              "maximumChannelError": 0.001056985289324075,
+              "maximumErrorIndex": 5,
+              "p50AbsoluteError": 0.000011488969903439283,
+              "p90AbsoluteError": 0.00014552695211023092,
+              "p99AbsoluteError": 0.00014552695211023092
+            }
+          },
+          {
+            "methods": [
+              "golden-angle",
+              "stratified-seed-mean"
+            ],
+            "metrics": {
+              "status": "measured",
+              "valueCount": 10,
+              "mae": 0.00006133833473237852,
+              "rmse": 0.0001398353590447892,
+              "maximumChannelError": 0.0005284926446620375,
+              "maximumErrorIndex": 5,
+              "p50AbsoluteError": 0.000009574141586199403,
+              "p90AbsoluteError": 0.00010148590081371367,
+              "p99AbsoluteError": 0.00010148590081371367
+            }
+          },
+          {
+            "methods": [
+              "halton-2-3",
+              "stratified-seed-mean"
+            ],
+            "metrics": {
+              "status": "measured",
+              "valueCount": 10,
+              "mae": 0.00013716553803533316,
+              "rmse": 0.00040476455391872036,
+              "maximumChannelError": 0.0015854779339861125,
+              "maximumErrorIndex": 5,
+              "p50AbsoluteError": 0.000017233454855158925,
+              "p90AbsoluteError": 0.000049785536248236895,
+              "p99AbsoluteError": 0.000049785536248236895
+            }
+          }
+        ],
+        "randomizedSeedVariation": {
+          "status": "measured",
+          "valueCount": 10,
+          "mae": 0.00004691329474250476,
+          "rmse": 0.00013531167797759455,
+          "maximumChannelError": 0.0005284926446620375,
+          "maximumErrorIndex": 5,
+          "p50AbsoluteError": 0.000007659313268959522,
+          "p90AbsoluteError": 0.00002872242475859821,
+          "p99AbsoluteError": 0.00002872242475859821
+        },
+        "maximumSeedRmse": 0.00013531167797759455,
+        "maximumSeedChannelError": 0.0005284926446620375,
+        "blurPreservation": {
+          "status": "preserved",
+          "sourceToExpectedBlur": {
+            "status": "measured",
+            "valueCount": 10,
+            "mae": 0.005008361203363165,
+            "rmse": 0.012010990056223003,
+            "maximumChannelError": 0.04597886008559726,
+            "maximumErrorIndex": 5,
+            "p50AbsoluteError": 0.0009229472489096224,
+            "p90AbsoluteError": 0.007192095159552991,
+            "p99AbsoluteError": 0.007192095159552991
+          },
+          "sourceToCandidate": {
+            "status": "measured",
+            "valueCount": 10,
+            "mae": 0.005141824739985168,
+            "rmse": 0.012409895064221124,
+            "maximumChannelError": 0.047564338019583374,
+            "maximumErrorIndex": 5,
+            "p50AbsoluteError": 0.0009267769055441022,
+            "p90AbsoluteError": 0.007241880695801228,
+            "p99AbsoluteError": 0.007241880695801228
+          },
+          "expectedToCandidate": {
+            "status": "measured",
+            "valueCount": 10,
+            "mae": 0.00013716553803533316,
+            "rmse": 0.00040476455391872036,
+            "maximumChannelError": 0.0015854779339861125,
+            "maximumErrorIndex": 5,
+            "p50AbsoluteError": 0.000017233454855158925,
+            "p90AbsoluteError": 0.000049785536248236895,
+            "p99AbsoluteError": 0.000049785536248236895
+          },
+          "expectedBlurSignalPresent": true,
+          "candidateRetainsBlurSignal": true,
+          "reason": "candidate retains and matches the independently validated defocus transition"
+        },
+        "candidateComparison": {
+          "sourceToHighSampleRgb": {
+            "status": "measured",
+            "valueCount": 10,
+            "mae": 0.005008361203363165,
+            "rmse": 0.012010990056223003,
+            "maximumChannelError": 0.04597886008559726,
+            "maximumErrorIndex": 5,
+            "p50AbsoluteError": 0.0009229472489096224,
+            "p90AbsoluteError": 0.007192095159552991,
+            "p99AbsoluteError": 0.007192095159552991
+          },
+          "full32ToHighSampleRgb": {
+            "status": "measured",
+            "valueCount": 10,
+            "mae": 0.0012185622084264953,
+            "rmse": 0.00328643113254328,
+            "maximumChannelError": 0.012944237416377291,
+            "maximumErrorIndex": 5,
+            "p50AbsoluteError": 0.00018478339188732207,
+            "p90AbsoluteError": 0.0009171995043288916,
+            "p99AbsoluteError": 0.0009171995043288916
+          },
+          "full64ToHighSampleRgb": {
+            "status": "measured",
+            "valueCount": 10,
+            "mae": 0.00048599752287069954,
+            "rmse": 0.0010930248712442611,
+            "maximumChannelError": 0.004155174916377291,
+            "maximumErrorIndex": 5,
+            "p50AbsoluteError": 0.00015702398377470672,
+            "p90AbsoluteError": 0.0006893282698001713,
+            "p99AbsoluteError": 0.0006893282698001713
+          }
+        },
+        "evidence": {
+          "classification": "converged-and-cross-validated",
+          "confidence": "bounded-high",
+          "referenceAuthority": "supported-for-exact-stratum",
+          "provenanceValid": true,
+          "adequateSupport": true,
+          "analyticControlsPassed": true,
+          "blurPreservationPassed": true,
+          "finiteSampleReferenceConverged": true,
+          "withinMethodConvergencePassed": true,
+          "crossMethodAgreementPassed": true,
+          "randomizedUncertaintyPassed": true,
+          "supportingEvidence": [
+            "source, depth, physical, and validity fingerprints match exactly",
+            "predeclared candidate and selected-pixel support floors are met",
+            "all final tier-to-tier comparisons meet RMSE and maximum-channel limits",
+            "independent high-tier methods agree within both declared limits",
+            "randomized seed RMSE and maximum-channel variation are within declared uncertainty limits"
+          ],
+          "failedConditions": []
+        }
+      },
+      {
+        "captureRole": "focus-distance-control-cap60",
+        "opticalStateId": "ar-f5200-f5p6-full-rise0",
+        "captureIds": {
+          "full32": "m5r-q4-near-1793031827902",
+          "full64": "m5s-q4-full64-1793031830383"
+        },
+        "inputFingerprints": {
+          "sourceColor": "32445fc8",
+          "depth": "3d561cf3",
+          "physical": "c739ac93",
+          "validity": "3f3eb294"
+        },
+        "stratumId": "S4-depth-discontinuity-valid-far",
+        "selectedGatherPixelIds": [
+          63186,
+          120251,
+          133286,
+          133668,
+          134044,
+          134427,
+          139867,
+          140295,
+          140723,
+          141145
+        ],
+        "finalTierWithinMethod": [
+          {
+            "status": "measured",
+            "valueCount": 10,
+            "mae": 0.000023491778783737056,
+            "rmse": 0.00007544456770859025,
+            "maximumChannelError": 0.0002806160818522585,
+            "maximumErrorIndex": 0,
+            "p50AbsoluteError": 0,
+            "p90AbsoluteError": 0,
+            "p99AbsoluteError": 0
+          },
+          {
+            "status": "measured",
+            "valueCount": 10,
+            "mae": 0.00013813663042714548,
+            "rmse": 0.0004436300232195202,
+            "maximumChannelError": 0.0016500819434572822,
+            "maximumErrorIndex": 0,
+            "p50AbsoluteError": 0,
+            "p90AbsoluteError": 0,
+            "p99AbsoluteError": 0
+          },
+          {
+            "status": "measured",
+            "valueCount": 10,
+            "mae": 0.00020872068323946242,
+            "rmse": 0.0006703128725928531,
+            "maximumChannelError": 0.0024932288385386414,
+            "maximumErrorIndex": 0,
+            "p50AbsoluteError": 0,
+            "p90AbsoluteError": 0,
+            "p99AbsoluteError": 0
+          },
+          {
+            "status": "measured",
+            "valueCount": 10,
+            "mae": 0.00011032786068232992,
+            "rmse": 0.00035432130670130893,
+            "maximumChannelError": 0.0013178981578546578,
+            "maximumErrorIndex": 0,
+            "p50AbsoluteError": 0,
+            "p90AbsoluteError": 0,
+            "p99AbsoluteError": 0
+          }
+        ],
+        "highTierCrossMethodAgreement": [
+          {
+            "methods": [
+              "golden-angle",
+              "halton-2-3"
+            ],
+            "metrics": {
+              "status": "measured",
+              "valueCount": 10,
+              "mae": 0.00007858901029313969,
+              "rmse": 0.0002523910157163761,
+              "maximumChannelError": 0.0009387684239720029,
+              "maximumErrorIndex": 0,
+              "p50AbsoluteError": 0,
+              "p90AbsoluteError": 0,
+              "p99AbsoluteError": 0
+            }
+          },
+          {
+            "methods": [
+              "golden-angle",
+              "stratified-seed-mean"
+            ],
+            "metrics": {
+              "status": "measured",
+              "valueCount": 10,
+              "mae": 0.00015927484475817082,
+              "rmse": 0.0005115160465392935,
+              "maximumChannelError": 0.0019025840182270715,
+              "maximumErrorIndex": 0,
+              "p50AbsoluteError": 0,
+              "p90AbsoluteError": 0,
+              "p99AbsoluteError": 0
+            }
+          },
+          {
+            "methods": [
+              "halton-2-3",
+              "stratified-seed-mean"
+            ],
+            "metrics": {
+              "status": "measured",
+              "valueCount": 10,
+              "mae": 0.00008068583446503112,
+              "rmse": 0.0002591250308229173,
+              "maximumChannelError": 0.0009638155942550686,
+              "maximumErrorIndex": 0,
+              "p50AbsoluteError": 0,
+              "p90AbsoluteError": 0,
+              "p99AbsoluteError": 0
+            }
+          }
+        ],
+        "randomizedSeedVariation": {
+          "status": "measured",
+          "valueCount": 10,
+          "mae": 0.00011308092681368195,
+          "rmse": 0.00036316286297787475,
+          "maximumChannelError": 0.0013507843278621756,
+          "maximumErrorIndex": 0,
+          "p50AbsoluteError": 0,
+          "p90AbsoluteError": 0,
+          "p99AbsoluteError": 0
+        },
+        "maximumSeedRmse": 0.00036316286297788077,
+        "maximumSeedChannelError": 0.0013507843278621756,
+        "blurPreservation": {
+          "status": "preserved",
+          "sourceToExpectedBlur": {
+            "status": "measured",
+            "valueCount": 10,
+            "mae": 0.0043629213777066226,
+            "rmse": 0.014011655750628326,
+            "maximumChannelError": 0.05211635584143248,
+            "maximumErrorIndex": 0,
+            "p50AbsoluteError": 0,
+            "p90AbsoluteError": 0,
+            "p99AbsoluteError": 0
+          },
+          "sourceToCandidate": {
+            "status": "measured",
+            "valueCount": 10,
+            "mae": 0.004282235543241591,
+            "rmse": 0.01375253071980541,
+            "maximumChannelError": 0.051152540247177414,
+            "maximumErrorIndex": 0,
+            "p50AbsoluteError": 0,
+            "p90AbsoluteError": 0,
+            "p99AbsoluteError": 0
+          },
+          "expectedToCandidate": {
+            "status": "measured",
+            "valueCount": 10,
+            "mae": 0.00008068583446503112,
+            "rmse": 0.0002591250308229173,
+            "maximumChannelError": 0.0009638155942550686,
+            "maximumErrorIndex": 0,
+            "p50AbsoluteError": 0,
+            "p90AbsoluteError": 0,
+            "p99AbsoluteError": 0
+          },
+          "expectedBlurSignalPresent": true,
+          "candidateRetainsBlurSignal": true,
+          "reason": "candidate retains and matches the independently validated defocus transition"
+        },
+        "candidateComparison": {
+          "sourceToHighSampleRgb": {
+            "status": "measured",
+            "valueCount": 10,
+            "mae": 0.0043629213777066226,
+            "rmse": 0.014011655750628326,
+            "maximumChannelError": 0.05211635584143248,
+            "maximumErrorIndex": 0,
+            "p50AbsoluteError": 0,
+            "p90AbsoluteError": 0,
+            "p99AbsoluteError": 0
+          },
+          "full32ToHighSampleRgb": {
+            "status": "measured",
+            "valueCount": 10,
+            "mae": 0.0017024958736579572,
+            "rmse": 0.005042605970156996,
+            "maximumChannelError": 0.018614492361818225,
+            "maximumErrorIndex": 0,
+            "p50AbsoluteError": 0.0004825592041015625,
+            "p90AbsoluteError": 0.0004825592041015625,
+            "p99AbsoluteError": 0.0004825592041015625
+          },
+          "full64ToHighSampleRgb": {
+            "status": "measured",
+            "valueCount": 10,
+            "mae": 0.000888693790324624,
+            "rmse": 0.002430022399107001,
+            "maximumChannelError": 0.008848867361818225,
+            "maximumErrorIndex": 0,
+            "p50AbsoluteError": 0.0004825592041015625,
+            "p90AbsoluteError": 0.0004825592041015625,
+            "p99AbsoluteError": 0.0004825592041015625
+          }
+        },
+        "evidence": {
+          "classification": "converged-and-cross-validated",
+          "confidence": "bounded-high",
+          "referenceAuthority": "supported-for-exact-stratum",
+          "provenanceValid": true,
+          "adequateSupport": true,
+          "analyticControlsPassed": true,
+          "blurPreservationPassed": true,
+          "finiteSampleReferenceConverged": true,
+          "withinMethodConvergencePassed": true,
+          "crossMethodAgreementPassed": true,
+          "randomizedUncertaintyPassed": true,
+          "supportingEvidence": [
+            "source, depth, physical, and validity fingerprints match exactly",
+            "predeclared candidate and selected-pixel support floors are met",
+            "all final tier-to-tier comparisons meet RMSE and maximum-channel limits",
+            "independent high-tier methods agree within both declared limits",
+            "randomized seed RMSE and maximum-channel variation are within declared uncertainty limits"
+          ],
+          "failedConditions": []
+        }
+      }
+    ],
+    "m5rMeasurements": {
+      "sourceReport": "GROUND_GLASS_M5R_REVIEW_FIX_1_REPORT.json",
+      "measurementsPreserved": true,
+      "full32VsFull64RgbRmseRgba16f": 0.007857539077244886,
+      "full32VsFull64RgbRmseRgba32f": 0.007859192980570341,
+      "gpuFull32VsCpu32RgbRmse": 6.519639132757963e-8,
+      "gpuFull64VsCpu64RgbRmse": 1.3437508839549746e-7,
+      "cpu32Vs64RgbRmse": 0.011646611340034392,
+      "cpu64Vs128RgbRmse": 0.005748315524033702,
+      "cpu128Vs256RgbRmse": 0.00415713039720048,
+      "currentGolden32To64ExactProposalOverlap": "0/32",
+      "nestedCpuOnly32To64ExactProposalOverlap": "32/32",
+      "cpu256IsGroundTruth": false,
+      "fallbackPixels": 57598,
+      "meaningfulBlurFallbackPixels": 6,
+      "registeredApplicationFractionalNearPixels": 0,
+      "controlledNativeFractionalNearAlphaPixels": 1896
+    }
+  },
+  "reportCompaction": {
+    "previousBytes": 1439569,
+    "previousLines": 45457,
+    "correctedBytes": 1132540,
+    "correctedLines": 24988,
+    "redundantCoordinateArraysInPriorTrackedReport": 0,
+    "priorTrackedSamplingPatternsAlreadyPointedToRawArtifact": true,
+    "correctedTrackedReportProposalCoordinateArrays": 0,
+    "proposalCoordinatesAttachment": "m5s-sampling-proposals.json (Playwright ignored test output)",
+    "rawPixelRgbAttachment": "m5s-blur-spread.json (Playwright ignored test output)"
+  },
+  "regressionResults": {
+    "nativeM5sM5r": "passed",
+    "nativeRuntimeEvidence": "webgpu-renderer / webgpu / internalFallback none / applicationFallback false",
+    "allFourAnalyticStrategiesPassed": true,
+    "nativeProposalBudgetPassed": true,
+    "nativeM5qConfirmatory": "passed (1 test)",
+    "nativeM5AdapterRegressions": "passed (3 isolated tests: B1 provenance/fallback/Near, R3 thresholds, stale-capture recovery)",
+    "productionPreviewIsolation": "passed (2 tests)",
+    "fullUnitIntegration": "passed (292 files, 2840 tests; Node Web Storage enabled with a fresh temporary file)",
+    "staticValidation": {
+      "typecheck": "passed",
+      "lint": "passed",
+      "cssStructure": "passed",
+      "productionBuild": "passed",
+      "gitDiffCheck": "passed"
+    },
+    "localCiE2e": {
+      "status": "blocked-by-known-baseline-e2e-failure",
+      "failingSpec": "architecture-foreground-compound.spec.ts",
+      "failure": "Expected the Complete the Photograph heading; the heading was absent.",
+      "cleanMainReproduction": "8cd0d869229de04cf56845d98e93116aa2a92a60",
+      "laterDevelopmentE2eSpecs": "not-run-after-first-failure"
+    },
+    "m5qStatuses": {
+      "thresholdRevision": "m5q-architecture-rise-r186-v3",
+      "evaluator": "m5q-r3-review-fix-2",
+      "q1": "reference-not-converged",
+      "q2": "insufficient-support",
+      "q3": "bounded-qualified",
+      "q4": "insufficient-support",
+      "q5": "reference-not-converged",
+      "q6": "reference-not-converged",
+      "q7": "reference-not-converged"
+    }
+  },
+  "remainingLimitations": [
+    "CPU finite and limiting estimates remain numerical approximations; only synthetic analytic controls have exact expected outcomes.",
+    "A small sparse ROI can qualify only its exact optical state and selected pixels, not a scene-wide reference.",
+    "The native run does not establish browser/device-wide behavior or photographic ground truth.",
+    "GPU/CPU Full32 and Full64 comparisons are diagnostic and do not independently establish the limiting aperture integral.",
+    "The existing CPU128/CPU256 divergence remains historical and CPU256 remains unqualified as ground truth."
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "status": "passed",
+  "sourceCommitSha": "095d9725a1ddb272bf780bd5e7e9e2a2b8f61837",
+  "command": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_WEBGPU_RAW_PILOT=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_APERTURE_GATHER_RESEARCH=1 GROUND_GLASS_WEBGPU_M6_PRESENTATION_REQUIRED=1 GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION_REQUIRED=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=1 GROUND_GLASS_WEBGPU_APERTURE_GATHER_R187_QUALIFICATION=1 GROUND_GLASS_WEBGPU_M7G_R187_QUALIFICATION_REQUIRED=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION=true VITE_GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION=true GROUND_GLASS_M7G_CAPTURE_DIR=docs/architecture/ground-glass-m7g-r187 npm run test:e2e -- --config=playwright.production.config.ts --project=chromium-production-preview src/tests/e2e/architecture-rise-webgpu-production.spec.ts",
+  "browserProject": "chromium-production-preview",
+  "browserVersion": "149.0.7827.55",
+  "operatingSystem": "darwin 27.0.0",
+  "threeRevision": "187",
+  "productionWebGpuEnabled": false,
+  "testSeamExposed": false,
+  "webGpuAttemptCount": 0,
+  "policySelectedBackend": "webgl",
+  "rendererFamily": "webgl-renderer",
+  "actualExecutionApi": "webgl2",
+  "webGpuModuleRequests": []
+}

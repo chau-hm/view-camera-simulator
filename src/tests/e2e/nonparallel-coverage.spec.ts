@@ -33,8 +33,8 @@ test("Oblique Architecture transitions between the parallel circle and non-paral
   await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "true");
   await expect(rtt).toHaveAttribute("data-rtt-coverage-conic-quadratic", /,/);
   await expect(rtt).toHaveAttribute("data-rtt-coverage-conic-axial", /,/);
-  await expect(rtt).toHaveAttribute("data-rtt-natural-illumination-kind", "neutral");
-  await expect(rtt).toHaveAttribute("data-rtt-natural-illumination-enabled", "false");
+  await expect(rtt).toHaveAttribute("data-rtt-natural-illumination-kind", "nonparallel-geometric");
+  await expect(rtt).toHaveAttribute("data-rtt-natural-illumination-enabled", "true");
   await expect(scene).toHaveAttribute("data-image-circle-visible", "false");
   await expect(scene).toHaveAttribute("data-lens-coverage-visible", "true");
   await expect(scene).toHaveAttribute("data-lens-coverage-kind", "nonparallel-conic");
@@ -95,8 +95,8 @@ test("Macro Oblique Plane renders the finite non-parallel coverage conic", async
   await expect(rtt).toHaveAttribute("data-rtt-focal-length-mm", "150");
   await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "nonparallel-conic");
   await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "true");
-  await expect(rtt).toHaveAttribute("data-rtt-natural-illumination-kind", "neutral");
-  await expect(rtt).toHaveAttribute("data-rtt-natural-illumination-enabled", "false");
+  await expect(rtt).toHaveAttribute("data-rtt-natural-illumination-kind", "nonparallel-geometric");
+  await expect(rtt).toHaveAttribute("data-rtt-natural-illumination-enabled", "true");
   await expect(scene).toHaveAttribute("data-image-circle-visible", "false");
   await expect(scene).toHaveAttribute("data-lens-coverage-visible", "true");
   await expect(scene).toHaveAttribute("data-lens-coverage-kind", "nonparallel-conic");

@@ -1,0 +1,422 @@
+{
+  "captureProvenance": {
+    "sourceCommitSha": "b10118bd0f656296451520ba10f4d32347a9a552",
+    "testInvocation": "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_M6_PRESENTATION_REQUIRED=1 GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION_REQUIRED=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true npx playwright test src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts --project=chrome-native-webgpu --workers=1 --grep \"native M6\"",
+    "browserProject": "chrome-native-webgpu",
+    "threePackageVersion": "0.187.0",
+    "rendererRevision": "r187",
+    "nodeVersion": "v24.3.0",
+    "operatingSystem": "darwin 27.0.0 arm64",
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none"
+  },
+  "browserVersion": "156.0.8078.76",
+  "operatingSystem": "darwin arm64",
+  "adapterEvents": [
+    {
+      "kind": "host-attached",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-wjdmhrx0krc",
+      "sequence": 0
+    },
+    {
+      "kind": "host-attached",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-wjdmhrx0krc",
+      "sequence": 1
+    },
+    {
+      "kind": "attempt",
+      "attemptId": "[\"default\",\"gg-mvwu6bph-m7b98ru6mgs-default-generation-1\"]",
+      "channelId": "default",
+      "generationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+      "requestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-2",
+      "sceneId": "architecture-rise",
+      "rendererRevision": "187",
+      "sequence": 2
+    },
+    {
+      "kind": "runtime-observed",
+      "attemptId": "[\"default\",\"gg-mvwu6bph-m7b98ru6mgs-default-generation-1\"]",
+      "generationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+      "rendererRevision": "187",
+      "rendererFamily": "webgpu-renderer",
+      "executionApi": "webgpu",
+      "internalFallback": "none",
+      "sequence": 3
+    },
+    {
+      "kind": "renderer-mounted",
+      "attemptId": "[\"default\",\"gg-mvwu6bph-m7b98ru6mgs-default-generation-1\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-wjdmhrx0krc",
+      "generationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+      "requestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-2",
+      "sceneId": "architecture-rise",
+      "rendererFamily": "webgpu-renderer",
+      "executionApi": "webgpu",
+      "internalFallback": "none",
+      "sequence": 4
+    },
+    {
+      "kind": "queue-completion-settled",
+      "attemptId": "[\"default\",\"gg-mvwu6bph-m7b98ru6mgs-default-generation-1\"]",
+      "generationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+      "requestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-2",
+      "operation": "sceneRender",
+      "sequence": 5
+    },
+    {
+      "kind": "gather-research",
+      "generationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+      "requestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-2",
+      "status": "completed",
+      "qualityMode": "half32",
+      "failureReason": null,
+      "sequence": 6
+    },
+    {
+      "kind": "frame-performance",
+      "evidence": {
+        "generationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+        "requestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-2",
+        "sourceWidthPx": 474,
+        "sourceHeightPx": 379,
+        "sceneRender": {
+          "rendererCallCpuMs": 43.79999999701977,
+          "queueCompletionWaitMs": 6.299999997019768,
+          "wallClockMs": 50.29999999701977
+        },
+        "physicalCocFootprint": {
+          "rendererCallCpuMs": 2.2999999970197678,
+          "queueCompletionWaitMs": 4.100000008940697,
+          "wallClockMs": 6.5
+        },
+        "physicalValidity": {
+          "rendererCallCpuMs": 1.7000000029802322,
+          "queueCompletionWaitMs": 4,
+          "wallClockMs": 5.799999997019768
+        }
+      },
+      "sequence": 7
+    },
+    {
+      "kind": "frame-completed",
+      "attemptId": "[\"default\",\"gg-mvwu6bph-m7b98ru6mgs-default-generation-1\"]",
+      "generationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+      "requestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-2",
+      "sequence": 8
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwu6bph-m7b98ru6mgs-default-generation-1\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-wjdmhrx0krc",
+      "generationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+      "requestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-2",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-2",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+      "activeRendererFamily": "webgpu-renderer",
+      "sequence": 9
+    },
+    {
+      "kind": "queue-completion-settled",
+      "attemptId": "[\"default\",\"gg-mvwu6bph-m7b98ru6mgs-default-generation-1\"]",
+      "generationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+      "requestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-3",
+      "operation": "sceneRender",
+      "sequence": 10
+    },
+    {
+      "kind": "gather-research",
+      "generationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+      "requestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-3",
+      "status": "completed",
+      "qualityMode": "half32",
+      "failureReason": null,
+      "sequence": 11
+    },
+    {
+      "kind": "frame-performance",
+      "evidence": {
+        "generationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+        "requestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-3",
+        "sourceWidthPx": 474,
+        "sourceHeightPx": 379,
+        "sceneRender": {
+          "rendererCallCpuMs": 4.100000008940697,
+          "queueCompletionWaitMs": 4.899999991059303,
+          "wallClockMs": 9.200000002980232
+        },
+        "physicalCocFootprint": {
+          "rendererCallCpuMs": 0.19999998807907104,
+          "queueCompletionWaitMs": 1.9000000059604645,
+          "wallClockMs": 2.2000000029802322
+        },
+        "physicalValidity": {
+          "rendererCallCpuMs": 0.10000000894069672,
+          "queueCompletionWaitMs": 0.5999999940395355,
+          "wallClockMs": 0.7999999970197678
+        }
+      },
+      "sequence": 12
+    },
+    {
+      "kind": "frame-completed",
+      "attemptId": "[\"default\",\"gg-mvwu6bph-m7b98ru6mgs-default-generation-1\"]",
+      "generationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+      "requestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-3",
+      "sequence": 13
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwu6bph-m7b98ru6mgs-default-generation-1\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-wjdmhrx0krc",
+      "generationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+      "requestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-3",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": true,
+      "latestAcceptedRequestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-3",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+      "activeRendererFamily": "webgpu-renderer",
+      "sequence": 14
+    },
+    {
+      "kind": "queue-completion-settled",
+      "attemptId": "[\"default\",\"gg-mvwu6bph-m7b98ru6mgs-default-generation-1\"]",
+      "generationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+      "requestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-3",
+      "operation": "sceneRender",
+      "sequence": 15
+    },
+    {
+      "kind": "gather-research",
+      "generationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+      "requestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-3",
+      "status": "completed",
+      "qualityMode": "half16",
+      "failureReason": null,
+      "sequence": 16
+    },
+    {
+      "kind": "frame-performance",
+      "evidence": {
+        "generationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+        "requestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-3",
+        "sourceWidthPx": 474,
+        "sourceHeightPx": 379,
+        "sceneRender": {
+          "rendererCallCpuMs": 2.4000000059604645,
+          "queueCompletionWaitMs": 2.5999999940395355,
+          "wallClockMs": 5.0999999940395355
+        },
+        "physicalCocFootprint": {
+          "rendererCallCpuMs": 0.10000000894069672,
+          "queueCompletionWaitMs": 0.7000000029802322,
+          "wallClockMs": 0.800000011920929
+        },
+        "physicalValidity": {
+          "rendererCallCpuMs": 0.09999999403953552,
+          "queueCompletionWaitMs": 0.29999999701976776,
+          "wallClockMs": 0.3999999910593033
+        }
+      },
+      "sequence": 17
+    },
+    {
+      "kind": "frame-completed",
+      "attemptId": "[\"default\",\"gg-mvwu6bph-m7b98ru6mgs-default-generation-1\"]",
+      "generationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+      "requestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-3",
+      "sequence": 18
+    },
+    {
+      "kind": "host-frame-result",
+      "attemptId": "[\"default\",\"gg-mvwu6bph-m7b98ru6mgs-default-generation-1\"]",
+      "channelId": "default",
+      "hostId": "gg-host-_r_d_-wjdmhrx0krc",
+      "generationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+      "requestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-3",
+      "sceneId": "architecture-rise",
+      "frameStatus": "completed",
+      "acceptedByHost": false,
+      "latestAcceptedRequestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-3",
+      "latestAcceptedSceneId": "architecture-rise",
+      "activeGenerationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+      "activeRendererFamily": "webgpu-renderer",
+      "sequence": 19
+    }
+  ],
+  "registeredM5Capture": {
+    "captureId": "m6d-composite-contract-1793477464769",
+    "requestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-3",
+    "channelId": "default",
+    "sceneId": "architecture-rise",
+    "sourceRevision": "architecture-rise-raw-rtt-v1",
+    "rendererGenerationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none",
+    "completedPasses": [
+      "sourceIdentity",
+      "gatherIdentity",
+      "gatherCenterProvenance",
+      "farGather",
+      "nearGather",
+      "selectedProvenance",
+      "farReconstructionB1",
+      "farReconstructionB1",
+      "researchComposite"
+    ],
+    "compositeTargetFormat": "rgba16float"
+  },
+  "controlledCompositeProbe": {
+    "token": "m6d-composite-contract-1793477464769",
+    "contractRevision": "m6d-opaque-presentation-v1",
+    "requestId": "gg-mvwu6bph-m7b98ru6mgs-default-request-3",
+    "channelId": "default",
+    "sceneId": "architecture-rise",
+    "rendererGenerationId": "gg-mvwu6bph-m7b98ru6mgs-default-generation-1",
+    "rendererRevision": "r187",
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none",
+    "applicationFallback": false,
+    "sourceTextureIdentity": {
+      "farUuid": "77ac1688-60a2-43fa-992e-b02ea51cb9e4",
+      "nearUuid": "0783d8f5-3454-4e2c-bbde-08ba5bc55ae7"
+    },
+    "sourceTextureFormat": "rgba16float",
+    "nearTextureFormat": "rgba16float",
+    "targetIdentity": {
+      "uuid": "5e496899-1cd5-4152-8b0e-f8e88b41da1d",
+      "widthPx": 5,
+      "heightPx": 1
+    },
+    "targetFormat": "rgba16float",
+    "targetColorSpace": "no-color-space",
+    "targetAllocationObserved": true,
+    "rendererStateRestored": true,
+    "temporaryResourcesDisposed": true,
+    "cases": [
+      {
+        "id": "near-coverage-0",
+        "coverage": 0,
+        "farRgba": [
+          0.75,
+          0.5,
+          0.25,
+          1
+        ],
+        "nearRgba": [
+          0.25,
+          0.75,
+          0.5,
+          0
+        ],
+        "measuredCompositeRgba": [
+          0.75,
+          0.5,
+          0.25,
+          1
+        ]
+      },
+      {
+        "id": "near-coverage-0.25",
+        "coverage": 0.25,
+        "farRgba": [
+          0.75,
+          0.5,
+          0.25,
+          1
+        ],
+        "nearRgba": [
+          0.25,
+          0.75,
+          0.5,
+          0.25
+        ],
+        "measuredCompositeRgba": [
+          0.625,
+          0.5625,
+          0.3125,
+          1
+        ]
+      },
+      {
+        "id": "near-coverage-0.5",
+        "coverage": 0.5,
+        "farRgba": [
+          0.75,
+          0.5,
+          0.25,
+          1
+        ],
+        "nearRgba": [
+          0.25,
+          0.75,
+          0.5,
+          0.5
+        ],
+        "measuredCompositeRgba": [
+          0.5,
+          0.625,
+          0.375,
+          1
+        ]
+      },
+      {
+        "id": "near-coverage-0.75",
+        "coverage": 0.75,
+        "farRgba": [
+          0.75,
+          0.5,
+          0.25,
+          1
+        ],
+        "nearRgba": [
+          0.25,
+          0.75,
+          0.5,
+          0.75
+        ],
+        "measuredCompositeRgba": [
+          0.375,
+          0.6875,
+          0.4375,
+          1
+        ]
+      },
+      {
+        "id": "near-coverage-1",
+        "coverage": 1,
+        "farRgba": [
+          0.75,
+          0.5,
+          0.25,
+          1
+        ],
+        "nearRgba": [
+          0.25,
+          0.75,
+          0.5,
+          1
+        ],
+        "measuredCompositeRgba": [
+          0.25,
+          0.75,
+          0.5,
+          1
+        ]
+      }
+    ]
+  }
+}

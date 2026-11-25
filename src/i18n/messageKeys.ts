@@ -15,6 +15,10 @@ export const publicSceneGroupMessageKeys = {
     title: "scenes.groups.macroPhotography.title",
     description: "scenes.groups.macroPhotography.description",
   },
+  freePractice: {
+    title: "scenes.groups.freePractice.title",
+    description: "scenes.groups.freePractice.description",
+  },
 } as const;
 
 type PublicSceneGroupMessage =
@@ -24,6 +28,15 @@ export type PublicSceneGroupTitleKey = PublicSceneGroupMessage["title"];
 export type PublicSceneGroupDescriptionKey = PublicSceneGroupMessage["description"];
 
 export const publicSceneMessageKeys = {
+  stillLifeStudio: {
+    title: "scenes.stillLifeStudio.title",
+    description: "scenes.stillLifeStudio.description",
+    topics: {
+      composition: "scenes.stillLifeStudio.topics.composition",
+      focus: "scenes.stillLifeStudio.topics.focus",
+      depthOfField: "scenes.stillLifeStudio.topics.depthOfField",
+    },
+  },
   viewCameraAnatomy: {
     title: "scenes.viewCameraAnatomy.title",
     description: "scenes.viewCameraAnatomy.description",
@@ -183,4 +196,5 @@ export type PublicSceneTopicKey =
   | TopicValues<typeof publicSceneMessageKeys.macroBellowsExtension>
   | TopicValues<typeof publicSceneMessageKeys.macroDepthOfField>
   | TopicValues<typeof publicSceneMessageKeys.macroObliquePlane>
-  | TopicValues<typeof publicSceneMessageKeys.macroCompoundMovements>;
+  | TopicValues<typeof publicSceneMessageKeys.macroCompoundMovements>
+  | TopicValues<typeof publicSceneMessageKeys.stillLifeStudio>;

@@ -18,6 +18,8 @@ import {
   disposeRegisteredRttSubject,
   getSceneSubjectRegistration,
 } from "../../render/sceneSubjectRegistry";
+import { resolveScenePresentationLighting } from "../../render/presentationLighting";
+import { vecToWorld } from "../../render/rttUtils";
 import {
   CAMERA_MOVEMENT_CALIBRATION_BASELINE,
   resolveEffectiveCameraMovementCalibration,
@@ -227,7 +229,26 @@ describe("dynamic camera-movement lattice presentation", () => {
     )!;
     const options = { cameraMovementPresentation: presentation };
     const diagnostics = registration.resolveCanonicalLattice?.(options);
-    const lighting = registration.resolveRttLighting?.(options);
+    const lightingContext = {
+      cameraMovementPresentation: presentation,
+      presentationRegion: "middle" as const,
+    };
+    const observerLighting = resolveScenePresentationLighting(
+      "understanding-camera-movements",
+      { ...lightingContext, surface: "observer" },
+    );
+    const groundGlassLighting = resolveScenePresentationLighting(
+      "understanding-camera-movements",
+      { ...lightingContext, surface: "ground-glass" },
+    );
+    const baselineObserverLighting = resolveScenePresentationLighting(
+      "understanding-camera-movements",
+      {
+        cameraMovementPresentation: CAMERA_MOVEMENT_BASELINE_PRESENTATION,
+        presentationRegion: "middle",
+        surface: "observer",
+      },
+    );
     const group = createCameraMovementsGroup(
       cameraMovementsGroupOptionsFromPresentation(presentation),
     );
@@ -242,7 +263,16 @@ describe("dynamic camera-movement lattice presentation", () => {
         edgeCount: presentation.lattice.edges.length,
       });
       expect(diagnostics?.bounds).toBe(presentation.subjectBoundsWorldMm);
-      expect(lighting?.targetMm).toEqual(presentation.lightingTargetWorldMm);
+      expect(observerLighting.placement.targetWorld).toEqual(
+        vecToWorld(presentation.lightingTargetWorldMm),
+      );
+      expect(observerLighting.placement.targetWorld).not.toEqual(
+        baselineObserverLighting.placement.targetWorld,
+      );
+      expect(groundGlassLighting.placement.targetWorld).toEqual(
+        vecToWorld(presentation.lightingTargetWorldMm),
+      );
+      expect(observerLighting.profile).toBe(groundGlassLighting.profile);
       expect(grid.userData.geometryKey).toBe(presentation.geometryKey);
       expect(grid.userData.cellSizeMm).toBe(presentation.referenceGrid.cellSizeMm);
       expect(grid.userData.halfExtentMm).toBe(presentation.referenceGrid.halfExtentMm);

@@ -1,0 +1,265 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: focus-fundamentals-selectable-focus.spec.ts >> Focus Fundamentals proves front/rear viewpoint behavior without replacing RTT resources
+- Location: src/tests/e2e/focus-fundamentals-selectable-focus.spec.ts:94:1
+
+# Error details
+
+```
+Test timeout of 240000ms exceeded.
+```
+
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - status
+  - main [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - link "View Camera Simulator home" [ref=e8] [cursor=pointer]:
+          - /url: /
+          - img [ref=e9]
+          - generic [ref=e10]: View Camera Simulator
+        - generic [ref=e11]:
+          - generic [ref=e12]: Focus Fundamentals — Two Targets
+          - generic [ref=e13]: Free Exploration
+        - generic [ref=e14]:
+          - link "All Scenes" [ref=e15] [cursor=pointer]:
+            - /url: /scenes
+          - generic [ref=e16]:
+            - text: Language
+            - combobox "Language" [ref=e17]:
+              - option "English" [selected]
+              - option "繁體中文"
+      - region "Simulator body" [ref=e18]:
+        - main [ref=e19]:
+          - generic [ref=e21]:
+            - generic [ref=e22]:
+              - generic [ref=e23]:
+                - generic [ref=e25]: view_in_ar
+                - heading "3D Scene" [level=2] [ref=e26]
+              - generic [ref=e27]:
+                - generic [ref=e29]:
+                  - generic [ref=e30]:
+                    - button "Reset 3D view" [ref=e31] [cursor=pointer]
+                    - group "View Focus" [ref=e32]:
+                      - generic [ref=e33]: View Focus
+                      - generic [ref=e34]:
+                        - button "Scene" [pressed] [ref=e35] [cursor=pointer]
+                        - button "Camera" [ref=e36] [cursor=pointer]
+                  - generic [ref=e37]:
+                    - generic [ref=e38]: Render quality
+                    - combobox "Render quality" [ref=e39]:
+                      - option "High" [selected]
+                      - option "Standard"
+                      - option "Low"
+                - generic [ref=e41]:
+                  - button "Expand 3D Scene" [ref=e47] [cursor=pointer]:
+                    - generic [ref=e48]: open_in_new
+                  - button "View overlays" [ref=e50] [cursor=pointer]:
+                    - generic [ref=e51]: layers
+                    - generic [ref=e52]: View overlays
+                    - generic [ref=e53]: ▾
+                  - region "Task and Feedback":
+                    - button "Open Task and Feedback" [ref=e54] [cursor=pointer]:
+                      - generic [ref=e55]: Task and Feedback
+            - generic "GroundGlassColumn" [ref=e56]:
+              - generic [ref=e57]:
+                - generic [ref=e59]: center_focus_strong
+                - heading "Ground Glass" [level=2] [ref=e60]
+              - generic [ref=e61]:
+                - generic [ref=e63]:
+                  - group "Preview" [ref=e64]:
+                    - generic [ref=e65]: Preview
+                    - generic [ref=e67]:
+                      - generic [ref=e68]:
+                        - radio "Raw Ground Glass" [checked] [ref=e69]
+                        - generic [ref=e70]: Raw Ground Glass
+                      - generic [ref=e71]:
+                        - radio "Upright Assist" [ref=e72]
+                        - generic [ref=e73]: Upright Assist
+                  - group "View Options" [ref=e74]:
+                    - generic [ref=e75]: View Options
+                    - region "View Options" [ref=e77]:
+                      - generic [ref=e79]:
+                        - checkbox "Grid" [checked] [ref=e80]
+                        - generic [ref=e81]: Grid
+                - generic "GroundGlassViewport" [ref=e82]:
+                  - generic [ref=e84]:
+                    - generic [ref=e85]:
+                      - button "Focus loupe · 4× Ground Glass" [ref=e86]:
+                        - generic:
+                          - generic: Ground glass preview
+                          - generic:
+                            - generic: 1350.0 mm focus / CoC 1.122 mm (0%)
+                      - button "Focus loupe · 4× Ground Glass view" [ref=e90] [cursor=pointer]: Focus loupe · 4×
+                    - generic [ref=e91]: Ground Glass blur follows the physical optical model. Use the Focus Loupe to inspect critical focus.
+                  - button "Expand Ground Glass" [ref=e92] [cursor=pointer]:
+                    - generic [ref=e93]: open_in_new
+            - generic [ref=e95]:
+              - generic [ref=e96]:
+                - heading "2D Geometry" [level=2] [ref=e97]
+                - generic [ref=e98]:
+                  - group "Geometry view" [ref=e99]:
+                    - button "Side" [pressed] [ref=e100] [cursor=pointer]
+                    - button "Top" [ref=e101] [cursor=pointer]
+                  - group "Geometry framing" [ref=e102]:
+                    - button "Fit Scene" [pressed] [ref=e103] [cursor=pointer]
+                  - button "Expand 2D Geometry" [ref=e104] [cursor=pointer]:
+                    - generic [ref=e105]: open_in_new
+              - paragraph [ref=e106]: "Side view | Rise: 0.0 mm | Tilt: 0.0° | Swing: 0.0°"
+              - img [ref=e108]:
+                - generic [ref=e109]:
+                  - generic [ref=e111]: Film · reference
+                  - generic [ref=e113]: Film · current
+                  - generic [ref=e115]: Lens · reference
+                  - generic [ref=e117]: Lens · current
+                - generic [ref=e118]:
+                  - generic "image-side construction line from a film edge to the lens centre" [ref=e119]
+                  - generic "image-side construction line from a film edge to the lens centre" [ref=e120]
+                  - generic "FOV boundary ray from a film edge through the lens centre" [ref=e121]
+                  - generic "FOV boundary ray from a film edge through the lens centre" [ref=e122]
+                  - generic [ref=e124]: Optical axis
+                  - generic:
+                    - generic "film plane"
+                  - generic:
+                    - generic "lens plane"
+                  - generic:
+                    - generic "focus plane"
+                  - generic:
+                    - generic "nearDof plane"
+                  - generic:
+                    - generic "farDof plane"
+                  - generic [ref=e126]:
+                    - generic "Simplified bellows connector"
+                  - generic [ref=e132]: Near detail
+                  - generic [ref=e136]: Far detail
+              - generic "Optical depth order" [ref=e138]:
+                - generic [ref=e141]: Film 0 mm
+                - generic [ref=e144]: Lens 214 mm
+                - generic [ref=e147]: DOF limit 1.3 m
+                - generic [ref=e150]: Focus 1.3 m
+                - generic [ref=e153]: Far DOF 1.4 m
+            - region "Focus distribution · Focus" [ref=e155]:
+              - generic [ref=e156]:
+                - heading "Focus distribution" [level=4] [ref=e157]
+                - 'generic "Ground Glass orientation: Raw" [ref=e158]': Raw
+              - table "Focus distribution" [ref=e159]:
+                - caption [ref=e160]: Focus distribution
+                - rowgroup [ref=e161]:
+                  - row [ref=e162]:
+                    - cell [ref=e163]
+                    - cell [ref=e164]
+                    - cell [ref=e165]
+                  - 'row "Middle left Middle left · Near detail: 0% · Soft Centre Centre · Far detail: 100% · Sharp" [ref=e166]':
+                    - 'cell "Middle left Middle left · Near detail: 0% · Soft" [ref=e167]':
+                      - generic "Middle left" [ref=e168]
+                      - 'group "Middle left · Near detail: 0% · Soft" [ref=e170]':
+                        - generic "Near detail" [ref=e172]
+                        - generic [ref=e173]:
+                          - text: 0%
+                          - generic [ref=e174]: —
+                    - 'cell "Centre Centre · Far detail: 100% · Sharp" [ref=e175]':
+                      - generic "Centre" [ref=e176]
+                      - 'group "Centre · Far detail: 100% · Sharp" [ref=e178]':
+                        - generic "Far detail" [ref=e180]
+                        - generic [ref=e181]:
+                          - text: 100%
+                          - generic [ref=e182]: ✓
+                    - cell [ref=e183]
+                  - row [ref=e184]:
+                    - cell [ref=e185]
+                    - cell [ref=e186]
+                    - cell [ref=e187]
+          - group [ref=e190]:
+            - generic "Optical Debug focus-fundamentals-two-targets · parallel" [ref=e191] [cursor=pointer]:
+              - generic [ref=e192]: Optical Debug
+              - generic [ref=e193]: focus-fundamentals-two-targets · parallel
+        - complementary [ref=e194]:
+          - generic [ref=e195]:
+            - region "Camera Controls" [ref=e196]:
+              - heading "Camera Controls" [level=3] [ref=e198]
+              - paragraph [ref=e199]:
+                - generic [ref=e200]: 🔒
+                - generic [ref=e201]: Disabled for this guided task
+              - generic [ref=e202]:
+                - region "Movement" [ref=e204]:
+                  - generic [ref=e205]:
+                    - heading "Front standard" [level=4] [ref=e206]
+                    - button "Help" [ref=e207] [cursor=pointer]:
+                      - generic [ref=e208]: "?"
+                  - generic [ref=e209]:
+                    - generic [ref=e210]:
+                      - generic [ref=e211]: Rise
+                      - slider "Rise" [disabled] [ref=e212]: "0"
+                      - generic [ref=e213]: 0.0 mm
+                    - generic [ref=e214]:
+                      - generic [ref=e215]: Tilt
+                      - slider "Tilt" [disabled] [ref=e216]: "0"
+                      - generic [ref=e217]: 0.0°
+                    - generic [ref=e218]:
+                      - generic [ref=e219]: Swing
+                      - slider "Swing" [disabled] [ref=e220]: "0"
+                      - generic [ref=e221]: 0.0°
+                - region "Focus" [ref=e223]:
+                  - heading "Focus" [level=3] [ref=e224]
+                  - generic [ref=e225]:
+                    - generic [ref=e226]: Focus distance
+                    - slider "Focus distance" [ref=e227]: "1350"
+                    - generic [ref=e228]: 1350.0 mm
+                    - button "Infinity Reset" [ref=e230] [cursor=pointer]: ∞
+                  - group "Focus standard" [ref=e231]:
+                    - generic [ref=e232]: Focus with
+                    - generic [ref=e233]:
+                      - generic [ref=e234]:
+                        - radio "Front standard" [ref=e235]
+                        - text: Front standard
+                      - generic [ref=e236]:
+                        - radio "Rear standard" [checked] [active] [ref=e237]
+                        - text: Rear standard
+                    - generic [ref=e238]: Rear focusing moves the film while the lens/viewpoint stays fixed.
+                    - generic [ref=e239]:
+                      - generic [ref=e240]: Watch the white frame (near gate) and far pointer.
+                      - generic [ref=e241]: Front focus changes their alignment; Rear focus keeps them aligned.
+                  - generic [ref=e242]:
+                    - button "Focus Near Detail" [ref=e243] [cursor=pointer]
+                    - button "Focus Far Detail" [ref=e244] [cursor=pointer]
+                - region "Aperture" [ref=e246]:
+                  - heading "Aperture" [level=3] [ref=e247]
+                  - radiogroup "Aperture" [disabled] [ref=e248]:
+                    - generic [ref=e249]:
+                      - radio "f/5.6" [disabled] [ref=e250]
+                      - generic [ref=e251]: f/5.6
+                    - generic [ref=e252]:
+                      - radio "f/8" [disabled] [ref=e253]
+                      - generic [ref=e254]: f/8
+                    - generic [ref=e255]:
+                      - radio "f/11" [checked] [disabled] [ref=e256]
+                      - generic [ref=e257]: f/11
+                    - generic [ref=e258]:
+                      - radio "f/16" [disabled] [ref=e259]
+                      - generic [ref=e260]: f/16
+                    - generic [ref=e261]:
+                      - radio "f/22" [disabled] [ref=e262]
+                      - generic [ref=e263]: f/22
+                    - generic [ref=e264]:
+                      - radio "f/32" [disabled] [ref=e265]
+                      - generic [ref=e266]: f/32
+                  - generic [ref=e267]: Aperture is fixed for this lesson
+                - generic [ref=e268]:
+                  - generic [ref=e269]: Reset
+                  - region "Reset" [ref=e270]:
+                    - button "Reset movements" [ref=e272] [cursor=pointer]
+            - region "Developer Tools" [ref=e273]:
+              - heading "Developer Tools" [level=3] [ref=e274]
+              - generic [ref=e276]:
+                - checkbox "Raw RTT — bypass DOF" [ref=e277]
+                - text: Raw RTT — bypass DOF
+```

@@ -261,16 +261,19 @@ export function createMacroObliquePlaneGroup({
   });
   const copperMaterial = createMacroMaterial({
     color: "#e19a4d",
-    roughness: 0.38,
-    metalness: 0.95,
+    // A restrained oxidized/satin response keeps routed copper readable
+    // under the existing bounded teaching-light rig without an environment map.
+    roughness: 0.46,
+    metalness: 0.62,
     seed: 107,
     roughnessVariation: 0.12,
     repeat: [7, 5],
   });
   const goldMaterial = createMacroMaterial({
     color: "#f0c866",
-    roughness: 0.28,
-    metalness: 0.97,
+    // Plated pads retain a metallic response with a broader, visible highlight.
+    roughness: 0.38,
+    metalness: 0.82,
     seed: 109,
     roughnessVariation: 0.08,
     repeat: [6, 4],

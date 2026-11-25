@@ -7,6 +7,16 @@ export const simulatorMessages = {
     title: "Task",
     freePractice: "Free practice",
   },
+  variation: {
+    groupLabel: "Scene variation",
+    activeSeed: "Seed {{seed}} · schema v{{version}}",
+    regenerate: "Regenerate scene",
+    copyUrl: "Copy share URL",
+    copied: "Share URL copied",
+    copyFailed: "Could not copy the share URL",
+    unsupportedSchema: "This variation version is unsupported. Showing the canonical scene.",
+    invalidSchema: "This variation version is invalid. Showing the canonical scene.",
+  },
   feedback: {
     title: "Feedback",
     liveObservation: "Live observation",

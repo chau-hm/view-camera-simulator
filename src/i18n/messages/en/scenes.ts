@@ -24,6 +24,21 @@ export const scenesMessages = {
       description:
         "Explore close focusing, magnification, depth of field, and camera movements at macro distances.",
     },
+    freePractice: {
+      title: "Free Practice",
+      description:
+        "Explore composition, focus and camera movements in open-ended photographic scenes.",
+    },
+  },
+  stillLifeStudio: {
+    title: "Still-Life Studio",
+    description:
+      "Build a photograph from changing arrangements of vessels, books, bowls and wooden forms. Explore composition, selective focus, aperture and large-format camera movements.",
+    topics: {
+      composition: "Composition",
+      focus: "Focus",
+      depthOfField: "Depth of field",
+    },
   },
   macroBellowsExtension: {
     title: "1:1 Flat Subject",

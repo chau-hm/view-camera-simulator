@@ -1,0 +1,27 @@
+
+> view-camera-simulator@0.0.0 test:e2e
+> playwright test --project=chromium-renderer-serial --no-deps --workers=1 --retries=0 --reporter=list,json --output=<REDACTED_USER_HOME>/repo/view-camera-simulator/.worktrees/ground-glass-m7r-e2e-qualification-recovery/docs/architecture/ground-glass-m7r-e2e-recovery/capture/main-d34fe8/full-run-attempt-2/attachments/renderer-serial/playwright-output
+
+[WebServer] (node:78933) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 4 tests using 1 worker
+
+(node:78954) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 11:13:15 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 11:13:15 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+  ✓  1 [chromium-renderer-serial] › src/tests/e2e/camera-controls-compact.spec.ts:103:1 › camera control rows keep useful rendered tracks across rail widths @m7j-renderer-contention (1.6m)
+[WebServer] 11:14:51 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 11:14:55 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 11:15:20 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 11:15:31 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+  ✓  2 [chromium-renderer-serial] › src/tests/e2e/fringe-club-dev-integration.spec.ts:647:1 › Stage 2N-A Observer and RTT instances survive independent sibling removal @m7j-renderer-contention (49.9s)
+[WebServer] 11:15:41 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 11:15:41 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+  ✓  3 [chromium-renderer-serial] › src/tests/e2e/scene-view-focus.spec.ts:98:1 › View Focus preserves independent Scene and Camera views and resets the active preset @m7j-renderer-contention (1.1m)
+[WebServer] 11:16:50 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 11:16:50 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+  ✓  4 [chromium-renderer-serial] › src/tests/e2e/table-tilt.spec.ts:321:1 › Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress @m7j-renderer-contention (48.7s)
+
+  4 passed (4.4m)

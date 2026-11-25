@@ -17,6 +17,52 @@ const parallelState = (imageDistanceMm: number) => ({
   opticalAxisOffsetYMm: 0,
 });
 
+const tiltedGeometry = (tiltDeg: number, filmCenterYmm = 0) => {
+  const angle = (tiltDeg * Math.PI) / 180;
+  const sine = Math.sin(angle);
+  const cosine = Math.cos(angle);
+  const center = vec(0, filmCenterYmm, -150);
+  const normal = vec(0, sine, cosine);
+  const frame = {
+    centerWorld: center,
+    rightWorld: vec(1, 0, 0),
+    upWorld: vec(0, cosine, -sine),
+    normalWorld: normal,
+    plane: planeFromPointNormal(center, normal),
+  };
+  return {
+    lensCenterWorld: vec(0, 0, 0),
+    filmPlane: planeFromPointNormal(center, normal),
+    rearStandardFrame: frame,
+    opticalAxis: { origin: vec(0, 0, 0), direction: vec(0, 0, 1) },
+  };
+};
+
+const swungGeometry = (swingDeg: number) => {
+  const angle = (swingDeg * Math.PI) / 180;
+  const sine = Math.sin(angle);
+  const cosine = Math.cos(angle);
+  const center = vec(0, 0, -150);
+  const normal = vec(sine, 0, cosine);
+  return {
+    lensCenterWorld: vec(0, 0, 0),
+    filmPlane: planeFromPointNormal(center, normal),
+    rearStandardFrame: {
+      centerWorld: center,
+      rightWorld: vec(cosine, 0, -sine),
+      upWorld: vec(0, 1, 0),
+      normalWorld: normal,
+      plane: planeFromPointNormal(center, normal),
+    },
+    opticalAxis: { origin: vec(0, 0, 0), direction: vec(0, 0, 1) },
+  };
+};
+
+const gainAt = (
+  state: Parameters<typeof calculateGroundGlassNaturalIlluminationGain>[0],
+  point: readonly [number, number],
+): number => calculateGroundGlassNaturalIlluminationGain(state, point[0], point[1]);
+
 const cameraFor = (overrides: Partial<CameraState> = {}): CameraState => ({
   ...DEFAULT_CAMERA_STATE,
   ...architectureRiseScene.cameraPreset,
@@ -25,17 +71,34 @@ const cameraFor = (overrides: Partial<CameraState> = {}): CameraState => ({
 });
 
 describe("Ground Glass natural illumination", () => {
-  it("represents non-parallel geometry as neutral rather than applying parallel cos^4", () => {
+  it("derives geometric natural illumination for non-parallel film", () => {
     const optics = deriveOpticsState(
       cameraFor({ frontTiltDeg: 5 }),
       architectureRiseScene,
     );
 
     expect(optics.diagnostics.isParallelLensFilm).toBe(false);
-    expect(optics.groundGlassNaturalIllumination).toEqual({
-      kind: "neutral",
-      reason: "non-parallel-lens-film",
-    });
+    expect(optics.groundGlassNaturalIllumination.kind).toBe("nonparallel-geometric");
+    expect(calculateGroundGlassNaturalIlluminationGain(
+      optics.groundGlassNaturalIllumination,
+      40,
+      0,
+    )).toBeGreaterThan(0);
+  });
+
+  it("normalizes at the optical-axis intersection without forcing the displaced film center to unity", () => {
+    const state = deriveGroundGlassNaturalIllumination(tiltedGeometry(5, 12));
+    if (state.kind !== "nonparallel-geometric") throw new Error("Expected a non-parallel fixture");
+
+    const axisParameter = state.lensToFilmCenterLocalMm[2] / state.imageSideAxisLocal[2];
+    const axisIntersectionX = axisParameter * state.imageSideAxisLocal[0] - state.lensToFilmCenterLocalMm[0];
+    const axisIntersectionY = axisParameter * state.imageSideAxisLocal[1] - state.lensToFilmCenterLocalMm[1];
+    expect(calculateGroundGlassNaturalIlluminationGain(
+      state,
+      axisIntersectionX,
+      axisIntersectionY,
+    )).toBeCloseTo(1, 12);
+    expect(calculateGroundGlassNaturalIlluminationGain(state, 0, 0)).not.toBeCloseTo(1, 3);
   });
 
   it("keeps the optical axis centre at unit gain", () => {
@@ -52,6 +115,113 @@ describe("Ground Glass natural illumination", () => {
     );
 
     expect(gain).toBeCloseTo(0.5973, 4);
+  });
+
+  it("preserves the parallel cos^4 formula at multiple physical-film points", () => {
+    const state = deriveGroundGlassNaturalIllumination(tiltedGeometry(0));
+    expect(state.kind).toBe("parallel-cos4");
+    for (const point of [[0, 0], [63.5, 50.8], [-40, 20], [12.5, -47]] as const) {
+      expect(gainAt(state, point)).toBeCloseTo(
+        gainAt(parallelState(150), point),
+        12,
+      );
+    }
+  });
+
+  it.each([-5, -1, -0.1, 0.1, 1, 5])(
+    "keeps Tilt %s degrees finite in the geometric illumination model",
+    (tiltDeg) => {
+      const state = deriveGroundGlassNaturalIllumination(tiltedGeometry(tiltDeg));
+      expect(state.kind).toBe("nonparallel-geometric");
+      for (const point of [[0, 0], [63.5, 50.8], [-63.5, -50.8], [0, 40]] as const) {
+        const gain = gainAt(state, point);
+        expect(Number.isFinite(gain)).toBe(true);
+        expect(gain).toBeGreaterThanOrEqual(0);
+      }
+      expect(calculateGroundGlassNaturalIlluminationGain(state, 0, 0)).toBeCloseTo(1, 12);
+    },
+  );
+
+  it.each([-5, -1, -0.1, 0.1, 1, 5])(
+    "keeps Swing %s degrees finite in the geometric illumination model",
+    (swingDeg) => {
+      const state = deriveGroundGlassNaturalIllumination(swungGeometry(swingDeg));
+      expect(state.kind).toBe("nonparallel-geometric");
+      for (const point of [[0, 0], [63.5, 50.8], [-63.5, -50.8], [40, 0]] as const) {
+        const gain = gainAt(state, point);
+        expect(Number.isFinite(gain)).toBe(true);
+        expect(gain).toBeGreaterThanOrEqual(0);
+      }
+    },
+  );
+
+  it("approaches the existing parallel result continuously as Tilt approaches zero", () => {
+    const parallel = deriveGroundGlassNaturalIllumination(tiltedGeometry(0));
+    const tinyPositive = deriveGroundGlassNaturalIllumination(tiltedGeometry(1e-5));
+    const tinyNegative = deriveGroundGlassNaturalIllumination(tiltedGeometry(-1e-5));
+    for (const point of [[-63.5, -50.8], [0, 0], [63.5, 50.8]] as const) {
+      const reference = gainAt(parallel, point);
+      expect(gainAt(tinyPositive, point)).toBeCloseTo(reference, 6);
+      expect(gainAt(tinyNegative, point)).toBeCloseTo(reference, 6);
+    }
+  });
+
+  it("approaches the existing parallel result continuously as Swing approaches zero", () => {
+    const parallel = deriveGroundGlassNaturalIllumination(swungGeometry(0));
+    const tinyPositive = deriveGroundGlassNaturalIllumination(swungGeometry(1e-5));
+    const tinyNegative = deriveGroundGlassNaturalIllumination(swungGeometry(-1e-5));
+    for (const point of [[-63.5, -50.8], [0, 0], [63.5, 50.8]] as const) {
+      const reference = gainAt(parallel, point);
+      expect(gainAt(tinyPositive, point)).toBeCloseTo(reference, 6);
+      expect(gainAt(tinyNegative, point)).toBeCloseTo(reference, 6);
+    }
+  });
+
+  it("mirrors the physical illumination field when Tilt changes sign", () => {
+    const positive = deriveGroundGlassNaturalIllumination(tiltedGeometry(5));
+    const negative = deriveGroundGlassNaturalIllumination(tiltedGeometry(-5));
+    for (const y of [-50.8, -20, 0, 20, 50.8]) {
+      expect(calculateGroundGlassNaturalIlluminationGain(positive, 12, y)).toBeCloseTo(
+        calculateGroundGlassNaturalIlluminationGain(negative, 12, -y),
+        12,
+      );
+    }
+    expect(calculateGroundGlassNaturalIlluminationGain(positive, 0, 40)).not.toBeCloseTo(
+      calculateGroundGlassNaturalIlluminationGain(positive, 0, -40),
+      5,
+    );
+  });
+
+  it("mirrors the physical illumination field when Swing changes sign", () => {
+    const positive = deriveGroundGlassNaturalIllumination(swungGeometry(5));
+    const negative = deriveGroundGlassNaturalIllumination(swungGeometry(-5));
+    expect(positive.kind).toBe("nonparallel-geometric");
+    expect(negative.kind).toBe("nonparallel-geometric");
+    for (const x of [-63.5, -20, 0, 20, 63.5]) {
+      expect(calculateGroundGlassNaturalIlluminationGain(positive, x, 12)).toBeCloseTo(
+        calculateGroundGlassNaturalIlluminationGain(negative, -x, 12),
+        12,
+      );
+    }
+  });
+
+  it("keeps combined rise, shift, Tilt, and Swing geometry finite", () => {
+    const optics = deriveOpticsState(cameraFor({
+      frontRiseMm: 15,
+      frontShiftMm: -12,
+      frontTiltDeg: 3,
+      frontSwingDeg: -2,
+    }), architectureRiseScene);
+    expect(optics.groundGlassNaturalIllumination.kind).toBe("nonparallel-geometric");
+    for (const point of [[0, 0], [-63.5, -50.8], [63.5, 50.8]] as const) {
+      expect(Number.isFinite(gainAt(optics.groundGlassNaturalIllumination, point))).toBe(true);
+    }
+  });
+
+  it("keeps aperture throughput independent from the spatial natural-illumination field", () => {
+    const wide = deriveOpticsState(cameraFor({ frontTiltDeg: 5, aperture: 5.6 }), architectureRiseScene);
+    const stopped = deriveOpticsState(cameraFor({ frontTiltDeg: 5, aperture: 22 }), architectureRiseScene);
+    expect(stopped.groundGlassNaturalIllumination).toEqual(wide.groundGlassNaturalIllumination);
   });
 
   it.each([
@@ -162,7 +332,6 @@ describe("Ground Glass natural illumination", () => {
         plane: planeFromPointNormal(vec(0, 0, -150), vec(0, 0, 1)),
       },
       opticalAxis: { origin: vec(0, 0, 0), direction: vec(0, 0, 1) },
-      isParallelLensFilm: true,
     });
 
     expect(invalidGeometry).toEqual({ kind: "neutral", reason: "invalid-geometry" });
@@ -176,5 +345,47 @@ describe("Ground Glass natural illumination", () => {
     expect(
       calculateGroundGlassNaturalIlluminationGain(parallelState(-1), 0, 0),
     ).toBe(1);
+    const incorrectSign = {
+      kind: "nonparallel-geometric" as const,
+      referenceImageDistanceMm: 150,
+      referenceFilmIncidenceCosine: 0.99,
+      lensToFilmCenterLocalMm: [0, 0, -150] as const,
+      imageSideAxisLocal: [0, 0, -1] as const,
+      filmNormalTowardLensSign: 0 as -1 | 1,
+    };
+    expect(calculateGroundGlassNaturalIlluminationGain(incorrectSign, 0, 0)).toBe(1);
+    const validTiltState = deriveGroundGlassNaturalIllumination(tiltedGeometry(5));
+    if (validTiltState.kind !== "nonparallel-geometric") throw new Error("Expected a non-parallel fixture");
+    expect(calculateGroundGlassNaturalIlluminationGain({
+      ...validTiltState,
+      filmNormalTowardLensSign: -validTiltState.filmNormalTowardLensSign as -1 | 1,
+    }, 0, 0)).toBe(1);
+  });
+
+  it("rejects degenerate plane bases and image-side intersections behind the lens", () => {
+    const tilted = tiltedGeometry(5);
+    expect(deriveGroundGlassNaturalIllumination({
+      ...tilted,
+      rearStandardFrame: {
+        ...tilted.rearStandardFrame,
+        upWorld: tilted.rearStandardFrame.rightWorld,
+      },
+    })).toEqual({ kind: "neutral", reason: "invalid-geometry" });
+
+    const behindLensCenter = vec(0, 0, 150);
+    expect(deriveGroundGlassNaturalIllumination({
+      ...tilted,
+      filmPlane: planeFromPointNormal(behindLensCenter, tilted.filmPlane.normal),
+      rearStandardFrame: {
+        ...tilted.rearStandardFrame,
+        centerWorld: behindLensCenter,
+      },
+    })).toEqual({ kind: "neutral", reason: "invalid-geometry" });
+  });
+
+  it("does not emit light from the image-side back hemisphere", () => {
+    const state = deriveGroundGlassNaturalIllumination(tiltedGeometry(5));
+    expect(state.kind).toBe("nonparallel-geometric");
+    expect(calculateGroundGlassNaturalIlluminationGain(state, 0, -10_000)).toBe(0);
   });
 });

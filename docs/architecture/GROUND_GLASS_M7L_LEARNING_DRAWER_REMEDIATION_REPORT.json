@@ -1,0 +1,773 @@
+{
+  "schemaVersion": 2,
+  "reportId": "ground-glass-m7l-learning-drawer-remediation",
+  "evaluatorRevision": "m7l-learning-drawer-remediation-evaluator-v2",
+  "generatedAt": "2026-11-04T16:53:36Z",
+  "baseCommitSha": "ed51a370689421befc9e33b8367f05e2e71308eb",
+  "candidateCommitSha": "ed51a370689421befc9e33b8367f05e2e71308eb",
+  "candidateCommitMeaning": "The application and existing E2E assertions under test are unchanged from the M7L base. The PR adds report/evaluator/tests only; no product fix is claimed.",
+  "historicalM7k": {
+    "executionSourceCommitSha": "e6066a244510387c32995c1e973a771667b04d10",
+    "reportSha256": "963b9001f29d43073b0c07912bb2c4904a9bd79ffb3dbe9878d9add6e5c9b60f",
+    "unexpectedCount": 82,
+    "fullSuiteCounts": {
+      "discovered": 278,
+      "passed": 121,
+      "unexpected": 82,
+      "skipped": 75,
+      "flaky": 0,
+      "incomplete": 0
+    },
+    "failureSignatures": {
+      "test-timeout": 36,
+      "css-assertion": 11,
+      "predicate-timeout": 9,
+      "attribute-assertion": 8,
+      "visibility-assertion": 7,
+      "count-assertion": 6,
+      "text-assertion": 2,
+      "value-assertion": 1,
+      "other-timeout": 1,
+      "other-assertion": 1
+    },
+    "cohortIdentities": [
+      "architecture-foreground-dof.spec.ts::Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
+      "architecture-foreground-guided-lesson.spec.ts::Architecture + Foreground lesson entry resets after Free Practice and direct task routes stay standalone",
+      "interior-corner-guided-lesson.spec.ts::Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+      "interior-corner-guided-lesson.spec.ts::Interior Corner keeps the solved focus state when returning to Swing",
+      "interior-corner-rise-composition.spec.ts::Interior Corner free mode exposes reachable Rise composition feedback",
+      "mirror-shift-guided-lesson.spec.ts::Mirror Shift guided task teaches camera movement followed by opposite Front Shift",
+      "oblique-architecture.spec.ts::Oblique Architecture compound task solves Rise, Swing, and Focus from neutral",
+      "oblique-architecture.spec.ts::Oblique Architecture guided lesson progresses through the four stages",
+      "oblique-architecture.spec.ts::Oblique Architecture guided Rise task solves observable framing and restarts to neutral",
+      "oblique-tabletop-guided-lesson.spec.ts::Oblique Tabletop completes the public Focus → Tilt → Swing → Focus → Aperture lesson",
+      "table-tilt.spec.ts::Table Tilt zero-tilt point focus moves from near to middle to far"
+    ],
+    "cohortFailureSignatures": {
+      "cssAssertion": 10,
+      "textAssertion": 1
+    },
+    "artifacts": [
+      {
+        "id": "ordinary-playwright",
+        "path": "docs/architecture/ground-glass-m7k-broad-e2e/execution/three-r187/execution/ordinary-playwright.json",
+        "sha256": "95a7abebfaa7abe53805be7171d0ff84166dbb9e3e3d45eaa134a68f098963de"
+      },
+      {
+        "id": "renderer-serial-playwright",
+        "path": "docs/architecture/ground-glass-m7k-broad-e2e/execution/three-r187/execution/renderer-serial-playwright.json",
+        "sha256": "4be43aa1e68c5bd45d861092cf298db6f43e77576f3a338dc4533f162e32d71a"
+      },
+      {
+        "id": "m7i-historical-report",
+        "path": "docs/architecture/GROUND_GLASS_M7I_BROAD_E2E_REMEDIATION_REPORT.json",
+        "sha256": "486f1c7ac010cd4d4fbede55fdb669f448c26adfaaee6de5717814ddff9bccde"
+      },
+      {
+        "id": "m7g-historical-playwright",
+        "path": "docs/architecture/ground-glass-m7g-r187/validation/broad-e2e-playwright.json",
+        "sha256": "393d1360f32a85c83664ca3ed7ec4d5bec217e77edd8045f4ace61b054ae32d6"
+      }
+    ]
+  },
+  "environment": {
+    "platform": "macOS darwin arm64",
+    "nodeVersion": "v24.3.0",
+    "npmVersion": "11.12.0",
+    "playwrightVersion": "1.61.1",
+    "chromiumVersion": "149.0.7827.55",
+    "threeJsVersion": "0.187.0",
+    "browserMode": "headless Chromium",
+    "project": "chromium",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "webglBackend": "WebGL2 SwiftShader compatibility path",
+    "nativeWebGpuRequested": false,
+    "testSeamsEnabled": false,
+    "retries": 0
+  },
+  "cohort": {
+    "identities": [
+      "architecture-foreground-dof.spec.ts::Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
+      "architecture-foreground-guided-lesson.spec.ts::Architecture + Foreground lesson entry resets after Free Practice and direct task routes stay standalone",
+      "interior-corner-guided-lesson.spec.ts::Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+      "interior-corner-guided-lesson.spec.ts::Interior Corner keeps the solved focus state when returning to Swing",
+      "interior-corner-rise-composition.spec.ts::Interior Corner free mode exposes reachable Rise composition feedback",
+      "mirror-shift-guided-lesson.spec.ts::Mirror Shift guided task teaches camera movement followed by opposite Front Shift",
+      "oblique-architecture.spec.ts::Oblique Architecture compound task solves Rise, Swing, and Focus from neutral",
+      "oblique-architecture.spec.ts::Oblique Architecture guided lesson progresses through the four stages",
+      "oblique-architecture.spec.ts::Oblique Architecture guided Rise task solves observable framing and restarts to neutral",
+      "oblique-tabletop-guided-lesson.spec.ts::Oblique Tabletop completes the public Focus → Tilt → Swing → Focus → Aperture lesson",
+      "table-tilt.spec.ts::Table Tilt zero-tilt point focus moves from near to middle to far"
+    ],
+    "historicalFailureSignatures": {
+      "cssAssertion": 10,
+      "missingDrawerContent": 1
+    },
+    "currentWorkerMatrixPath": "docs/architecture/ground-glass-m7l-learning-drawer/historical-82-failure-inventory.json",
+    "currentWorkerMatrixSha256": "ee7e6e0de2e280207f5b5e1935b812dcc19432922061c01cf57cfbc6fb25a647",
+    "outcomes": {
+      "cohortW1": {
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "retries": 0
+      },
+      "cohortW2": {
+        "passed": 9,
+        "failed": 2,
+        "skipped": 0,
+        "retries": 0
+      },
+      "cohortW4": {
+        "passed": 4,
+        "failed": 7,
+        "skipped": 0,
+        "retries": 0
+      }
+    }
+  },
+  "experiments": [
+    {
+      "id": "single-case-w1",
+      "artifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/baseline/single-architecture-foreground-w1.json",
+      "role": "one historical CSS-failure test run alone",
+      "configuredWorkers": 1,
+      "loadProfile": "single-test",
+      "sourceCommitSha": "ed51a370689421befc9e33b8367f05e2e71308eb",
+      "sourceRole": "M7L current-main baseline; no application candidate changes",
+      "artifactSha256": "27ebfa11c8f0d32363d8d6b6f97c7d63148d81a16b018d82c6cfe98c7341bf04",
+      "playwrightVersion": "1.61.1",
+      "playwrightActualWorkers": 1,
+      "actualWorkers": 1,
+      "maxConcurrentTests": 1,
+      "repetitions": 1,
+      "outcomes": {
+        "discovered": 1,
+        "passed": 1,
+        "failed": 0,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0,
+        "timedOut": 0
+      },
+      "durationMs": 35538.759,
+      "runStatus": "passed",
+      "targetIdentities": [
+        "architecture-foreground-dof.spec.ts::Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only"
+      ],
+      "recordedSourceCaptureSha256": "c72c864bb506d1a86dae17826249a00eae7d5cf36c0ade319f2ec22ed42cecc8"
+    },
+    {
+      "id": "cohort-w1",
+      "artifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/baseline/cohort-w1.json",
+      "role": "all eleven exact historical Learning Drawer failures",
+      "configuredWorkers": 1,
+      "loadProfile": "baseline",
+      "sourceCommitSha": "ed51a370689421befc9e33b8367f05e2e71308eb",
+      "sourceRole": "M7L current-main baseline; no application candidate changes",
+      "artifactSha256": "6235e161419b8398d8a8b7739657d776de55ca030c49ff4a0b0de6d05e7da2e7",
+      "playwrightVersion": "1.61.1",
+      "playwrightActualWorkers": 1,
+      "actualWorkers": 1,
+      "maxConcurrentTests": 1,
+      "repetitions": 1,
+      "outcomes": {
+        "discovered": 11,
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0,
+        "timedOut": 0
+      },
+      "durationMs": 861969.366,
+      "runStatus": "passed",
+      "targetIdentities": [
+        "architecture-foreground-dof.spec.ts::Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
+        "architecture-foreground-guided-lesson.spec.ts::Architecture + Foreground lesson entry resets after Free Practice and direct task routes stay standalone",
+        "interior-corner-guided-lesson.spec.ts::Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+        "interior-corner-guided-lesson.spec.ts::Interior Corner keeps the solved focus state when returning to Swing",
+        "interior-corner-rise-composition.spec.ts::Interior Corner free mode exposes reachable Rise composition feedback",
+        "mirror-shift-guided-lesson.spec.ts::Mirror Shift guided task teaches camera movement followed by opposite Front Shift",
+        "oblique-architecture.spec.ts::Oblique Architecture compound task solves Rise, Swing, and Focus from neutral",
+        "oblique-architecture.spec.ts::Oblique Architecture guided lesson progresses through the four stages",
+        "oblique-architecture.spec.ts::Oblique Architecture guided Rise task solves observable framing and restarts to neutral",
+        "oblique-tabletop-guided-lesson.spec.ts::Oblique Tabletop completes the public Focus → Tilt → Swing → Focus → Aperture lesson",
+        "table-tilt.spec.ts::Table Tilt zero-tilt point focus moves from near to middle to far"
+      ],
+      "recordedSourceCaptureSha256": "34611073b34e7ca57c131fcb097e41a5944724dc9eba41e62608407036d8edf3"
+    },
+    {
+      "id": "cohort-w2",
+      "artifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/baseline/cohort-w2.json",
+      "role": "all eleven exact historical Learning Drawer failures",
+      "configuredWorkers": 2,
+      "loadProfile": "baseline",
+      "sourceCommitSha": "ed51a370689421befc9e33b8367f05e2e71308eb",
+      "sourceRole": "M7L current-main baseline; no application candidate changes",
+      "artifactSha256": "42ed4f4ddc21f438dc3ab86098c23244d9950a1b4f52e9bcff284da49546ad26",
+      "playwrightVersion": "1.61.1",
+      "playwrightActualWorkers": 2,
+      "actualWorkers": 2,
+      "maxConcurrentTests": 2,
+      "repetitions": 1,
+      "outcomes": {
+        "discovered": 11,
+        "passed": 9,
+        "failed": 2,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0,
+        "timedOut": 2
+      },
+      "durationMs": 642767.605,
+      "runStatus": "unexpected-outcomes",
+      "targetIdentities": [
+        "architecture-foreground-dof.spec.ts::Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
+        "architecture-foreground-guided-lesson.spec.ts::Architecture + Foreground lesson entry resets after Free Practice and direct task routes stay standalone",
+        "interior-corner-guided-lesson.spec.ts::Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+        "interior-corner-guided-lesson.spec.ts::Interior Corner keeps the solved focus state when returning to Swing",
+        "interior-corner-rise-composition.spec.ts::Interior Corner free mode exposes reachable Rise composition feedback",
+        "mirror-shift-guided-lesson.spec.ts::Mirror Shift guided task teaches camera movement followed by opposite Front Shift",
+        "oblique-architecture.spec.ts::Oblique Architecture compound task solves Rise, Swing, and Focus from neutral",
+        "oblique-architecture.spec.ts::Oblique Architecture guided lesson progresses through the four stages",
+        "oblique-architecture.spec.ts::Oblique Architecture guided Rise task solves observable framing and restarts to neutral",
+        "oblique-tabletop-guided-lesson.spec.ts::Oblique Tabletop completes the public Focus → Tilt → Swing → Focus → Aperture lesson",
+        "table-tilt.spec.ts::Table Tilt zero-tilt point focus moves from near to middle to far"
+      ],
+      "recordedSourceCaptureSha256": "0aca6f968973fd5e33e44503b9d7bb20ebdd652e06b496c6de6b1d9ced7de621"
+    },
+    {
+      "id": "cohort-w4",
+      "artifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/baseline/cohort-w4.json",
+      "role": "all eleven exact historical Learning Drawer failures",
+      "configuredWorkers": 4,
+      "loadProfile": "baseline-clean-no-instrumentation",
+      "sourceCommitSha": "ed51a370689421befc9e33b8367f05e2e71308eb",
+      "sourceRole": "M7L current-main baseline; no application candidate changes",
+      "artifactSha256": "dc7a1151818d855b8353e9010c6edd127c301d4ea3f63f939118e6869d5c62ef",
+      "playwrightVersion": "1.61.1",
+      "playwrightActualWorkers": 4,
+      "actualWorkers": 4,
+      "maxConcurrentTests": 4,
+      "repetitions": 1,
+      "outcomes": {
+        "discovered": 11,
+        "passed": 4,
+        "failed": 7,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0,
+        "timedOut": 0
+      },
+      "durationMs": 108835.544,
+      "runStatus": "unexpected-outcomes",
+      "targetIdentities": [
+        "architecture-foreground-dof.spec.ts::Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
+        "architecture-foreground-guided-lesson.spec.ts::Architecture + Foreground lesson entry resets after Free Practice and direct task routes stay standalone",
+        "interior-corner-guided-lesson.spec.ts::Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+        "interior-corner-guided-lesson.spec.ts::Interior Corner keeps the solved focus state when returning to Swing",
+        "interior-corner-rise-composition.spec.ts::Interior Corner free mode exposes reachable Rise composition feedback",
+        "mirror-shift-guided-lesson.spec.ts::Mirror Shift guided task teaches camera movement followed by opposite Front Shift",
+        "oblique-architecture.spec.ts::Oblique Architecture compound task solves Rise, Swing, and Focus from neutral",
+        "oblique-architecture.spec.ts::Oblique Architecture guided lesson progresses through the four stages",
+        "oblique-architecture.spec.ts::Oblique Architecture guided Rise task solves observable framing and restarts to neutral",
+        "oblique-tabletop-guided-lesson.spec.ts::Oblique Tabletop completes the public Focus → Tilt → Swing → Focus → Aperture lesson",
+        "table-tilt.spec.ts::Table Tilt zero-tilt point focus moves from near to middle to far"
+      ],
+      "recordedSourceCaptureSha256": "ed628e6fa7d96771ea461bacbc2bb3587d85a9e98acd5648fa2d3c43633bec99"
+    },
+    {
+      "id": "controlled-heavy-free-w4",
+      "artifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/diagnostics/controlled-heavy-free-w4.json",
+      "role": "one free-practice drawer target plus three WebGL renderer-heavy peer pages",
+      "configuredWorkers": 4,
+      "loadProfile": "renderer-heavy",
+      "sourceCommitSha": "ed51a370689421befc9e33b8367f05e2e71308eb",
+      "sourceRole": "M7L current-main baseline; no application candidate changes",
+      "artifactSha256": "070599e80d6eee511fc1ae2835cfc9530fa94b2c2cae5fbe9749f1dc2b3cc9a1",
+      "playwrightVersion": "1.61.1",
+      "playwrightActualWorkers": 4,
+      "actualWorkers": 4,
+      "maxConcurrentTests": 4,
+      "repetitions": 1,
+      "outcomes": {
+        "discovered": 4,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0,
+        "timedOut": 0
+      },
+      "durationMs": 21084.453,
+      "runStatus": "passed",
+      "recordedSourceCaptureSha256": "c3e310cfc0c2c11181403c6607285f22048465a18dee9abb2beb2a803bce6048"
+    },
+    {
+      "id": "controlled-heavy-guided-w4",
+      "artifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/diagnostics/controlled-heavy-guided-w4.json",
+      "role": "one guided drawer target plus three WebGL renderer-heavy peer pages",
+      "configuredWorkers": 4,
+      "loadProfile": "renderer-heavy",
+      "sourceCommitSha": "ed51a370689421befc9e33b8367f05e2e71308eb",
+      "sourceRole": "M7L current-main baseline; no application candidate changes",
+      "artifactSha256": "e561049449352901b61e8e74544db265d0f426807961715effb5962104507c2c",
+      "playwrightVersion": "1.61.1",
+      "playwrightActualWorkers": 4,
+      "actualWorkers": 4,
+      "maxConcurrentTests": 4,
+      "repetitions": 1,
+      "outcomes": {
+        "discovered": 4,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0,
+        "timedOut": 0
+      },
+      "durationMs": 28667.986,
+      "runStatus": "passed",
+      "recordedSourceCaptureSha256": "d740041258592627531be1101229784218e19121c78f1e7d1a8555d3228c005c"
+    },
+    {
+      "id": "controlled-light-guided-w4",
+      "artifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/diagnostics/controlled-light-guided-w4.json",
+      "role": "same guided drawer target plus three lightweight /scenes peer pages",
+      "configuredWorkers": 4,
+      "loadProfile": "lightweight",
+      "sourceCommitSha": "ed51a370689421befc9e33b8367f05e2e71308eb",
+      "sourceRole": "M7L current-main baseline; no application candidate changes",
+      "artifactSha256": "c308e99787c7e88b39bf012f07a360aaac78def37686c4adb260680aaf757ed1",
+      "playwrightVersion": "1.61.1",
+      "playwrightActualWorkers": 4,
+      "actualWorkers": 4,
+      "maxConcurrentTests": 4,
+      "repetitions": 1,
+      "outcomes": {
+        "discovered": 4,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "flaky": 0,
+        "incomplete": 0,
+        "retries": 0,
+        "timedOut": 0
+      },
+      "durationMs": 12676.952000000001,
+      "runStatus": "passed",
+      "recordedSourceCaptureSha256": "d870796260a9073b6b89042509f77bb9a1053716766c00d056b337494ff8d03a"
+    }
+  ],
+  "diagnosis": {
+    "canonicalDrawerState": {
+      "initialDesktop": "peek",
+      "initialNarrow": "flow",
+      "openDesktop": "transient",
+      "pinned": "pinned",
+      "narrowOpen": "flow",
+      "closed": "peek"
+    },
+    "opening": "Desktop rail hover, focus, or click opens transiently; touch uses stable open behavior. Pin toggles transient/pinned. Drawer accessibility state is aria-hidden=false whenever state is not peek.",
+    "closing": "Desktop transient state closes after a 400 ms pointer-out delay unless focus remains inside; Escape and the close action close explicitly. Route, mode, task, or narrow-layout changes reset state.",
+    "semanticOpenState": "data-drawer-state plus rail aria-expanded; drawer aria-hidden is derived from state !== peek.",
+    "animation": {
+      "desktop": "transform and visibility transition, 190 ms ease/step timing",
+      "narrow": "static in-flow layout with no transition",
+      "reducedMotion": "transition disabled"
+    },
+    "observations": [
+      "All eleven target identities passed with 1 worker and zero retries; the same representative test also passed alone.",
+      "With 2 workers, 9/11 passed and two Oblique Architecture cases timed out while waiting for task actions; there were no retries.",
+      "With 4 workers and no instrumentation, 4/11 passed and 7 failed; five failures were completed-position transform assertions showing nonzero translateX while the drawer was semantically open, and two were content/text assertions.",
+      "In the controlled diagnostic traces, requestedOpen became true and drawerState became transient while the drawer remained mounted, aria-hidden=false, and the document visible. The sampled transform initially remained at -288 px.",
+      "In one guided heavy-load trace, first observed transitionrun occurred 1603.1 ms after the open-state mutation; a later sampled transitionrun occurred 592.1 ms after mutation with lightweight peers. Both target tests eventually reached transform zero and passed. Each profile was run once.",
+      "The controlled trace sampled long animation-frame gaps (about 0.7–0.9 s under the heavy profile and about 0.29 s under the light profile in the recorded interval). The instrumentation was diagnostic-only and the clean four-worker cohort report is the outcome evidence.",
+      "The six existing overlay regressions passed, covering pointer-out, keyboard focus, internal scrolling, responsive flow, and expanded Ground Glass layout.",
+      "The current four-worker run also produced a missing lesson-stage text assertion in Oblique Architecture; this differs from its historical transform signature and the M7K Oblique Tabletop content failure remains separate."
+    ],
+    "hypotheses": [
+      {
+        "id": "H1-shared-state-race",
+        "status": "not-demonstrated",
+        "evidence": "The sampled failures had requestedOpen=true, transient state, aria-hidden=false, and a mounted drawer; sampled controlled traces did not show a superseding close. This does not rule out races in unobserved runs."
+      },
+      {
+        "id": "H2-css-transition-scheduling",
+        "status": "supported-as-contributor",
+        "evidence": "Clean four-worker failures retained intermediate translateX while semantically open; controlled traces showed delayed frames/transition start under load. One attempt per controlled profile is insufficient to establish a universal cause."
+      },
+      {
+        "id": "H3-pointer-hit-testing",
+        "status": "not-demonstrated",
+        "evidence": "No unexpected close was observed in controlled samples. The existing pointer-out regression passed, but this does not eliminate every pointer race."
+      },
+      {
+        "id": "H4-renderer-contention",
+        "status": "plausible-not-established",
+        "evidence": "Three WebGL-heavy peers and three lightweight peers both allowed the guided target to pass; one paired timing sample was slower with heavy peers. This is suggestive only and does not establish renderer contention as a sole cause."
+      },
+      {
+        "id": "content-readiness",
+        "status": "separate-unresolved-mechanism",
+        "evidence": "The Oblique Tabletop missing Step 1 content and the current Oblique Architecture stage text failure are content assertions; evidence does not connect them to CSS transform scheduling."
+      }
+    ],
+    "supportedCause": "No single shared root cause is established. Browser frame/transition scheduling pressure is the best-supported contributor to the transform failures; the content failures remain separate and unresolved.",
+    "rejectedCauses": [
+      "No demonstrated drawer close-state mutation during the sampled transform failures.",
+      "No demonstrated responsive breakpoint change in the desktop transform failures."
+    ],
+    "confidence": "moderate for concurrency-sensitive transition scheduling as a contributor; low for a single shared root cause or renderer-specific causality",
+    "limitations": [
+      "One attempt per worker configuration and controlled profile.",
+      "The primary four-worker capture was uninstrumented; diagnostic traces use a temporary test-only observer and are not a clean outcome run.",
+      "No full 278-test suite, native GPU capture, or matched product-fix run was performed."
+    ],
+    "sharedRootCauseEstablished": false
+  },
+  "remediation": {
+    "status": "no-implementation-change-justified",
+    "applicationFilesChanged": false,
+    "testAssertionsChanged": false,
+    "changedBehaviorFiles": [],
+    "verifiedFixCount": 0,
+    "verifiedFixIdentities": [],
+    "behaviorContractPreserved": true,
+    "decision": "Keep all eleven assertions and the existing renderer scheduling policy. The evidence establishes sensitivity but not a specific application defect or a safe synchronization fix."
+  },
+  "remainingBacklog": {
+    "historicalUnexpectedCount": 82,
+    "drawerCohortCount": 11,
+    "otherHistoricalFailureCount": 71,
+    "inventoryPath": "docs/architecture/ground-glass-m7l-learning-drawer/historical-82-failure-inventory.json",
+    "inventorySha256": "ee7e6e0de2e280207f5b5e1935b812dcc19432922061c01cf57cfbc6fb25a647",
+    "newlyVerifiedFixCount": 0,
+    "drawerCasesPassingAtOneWorker": 11,
+    "drawerCasesPassingAtTwoWorkers": 9,
+    "drawerCasesPassingAtFourWorkers": 4,
+    "currentlyFailingAtFourWorkers": 7,
+    "other71Status": "not-run-in-m7l",
+    "proposedNextCohort": {
+      "name": "Scene / Ground Glass readiness failures",
+      "identities": [
+        "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+        "macro-bellows-extension.spec.ts::Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions",
+        "macro-compound-movements.spec.ts::Macro 4 teaches compound Tilt + Swing + Focus through the public route",
+        "mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed",
+        "observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure",
+        "phase13-guided-tasks.spec.ts::TST-E2E-002: user can open Architecture Rise from the Scenes page",
+        "scene-view-focus.spec.ts::Understanding Camera Movements Camera focus follows continuous viewpoint changes",
+        "scene-view-focus.spec.ts::Architecture + Foreground Camera focus uses the physical camera anchor",
+        "scene-view-focus.spec.ts::SPA scene switching discards the previous Camera target and returns to Scene focus",
+        "scene-viewport-expansion.spec.ts::simulator viewports expand in main without replacing their active canvases",
+        "secondary-workspace-pairing.spec.ts::normal desktop pairs Geometry with Scene and Focus Distribution with Ground Glass",
+        "viewport-learning-overlay.spec.ts::Scene-local learning drawer leaves the paired workspace layout intact"
+      ],
+      "candidateIdentityCount": 12,
+      "commonCause": "unestablished; shared selector/readiness surface only",
+      "existingEvidence": "Repeated missing scene-canvas/scene heading and renderer/RTT readiness assertions in the historical M7K messages.",
+      "likelihoodOfSharedFix": "low-to-medium; needs independent reproduction before assigning cause",
+      "estimatedInvestigationCost": "medium",
+      "productionRisk": "low if limited to test/readiness investigation; potentially moderate if production lifecycle behavior is changed"
+    },
+    "remainingM7kQualification": "not-qualified"
+  },
+  "qualification": {
+    "cohortStatus": "scheduling-sensitive-unresolved",
+    "fullBroadE2eStatus": "not-qualified",
+    "m7Overall": "partially-qualified",
+    "m8Entry": "denied",
+    "externalGpuDeviceLoss": "blocked",
+    "m5q": "partially-qualified",
+    "m6": "development-only",
+    "productionGroundGlass": "WebGL-only",
+    "productionWebGpuEnabled": false
+  },
+  "focusedRegressionPath": "docs/architecture/ground-glass-m7l-learning-drawer/validation/focused-drawer-regressions.json",
+  "focusedRegressionSha256": "f7ec6f84c1f221ff79985218b722143694311d3d8c7c5780d0662a6d83102f90",
+  "validation": {
+    "singleRepresentative": {
+      "artifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/baseline/single-architecture-foreground-w1.json",
+      "status": "passed",
+      "passed": 1,
+      "retries": 0
+    },
+    "workerMatrix": {
+      "oneWorker": {
+        "discovered": 11,
+        "passed": 11,
+        "failed": 0,
+        "retries": 0,
+        "maxConcurrentTests": 1
+      },
+      "twoWorkers": {
+        "discovered": 11,
+        "passed": 9,
+        "failed": 2,
+        "retries": 0,
+        "maxConcurrentTests": 2
+      },
+      "fourWorkers": {
+        "discovered": 11,
+        "passed": 4,
+        "failed": 7,
+        "retries": 0,
+        "maxConcurrentTests": 4
+      }
+    },
+    "focusedDrawerRegression": {
+      "artifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/validation/focused-drawer-regressions.json",
+      "status": "passed",
+      "passed": 6,
+      "retries": 0
+    },
+    "m7kHistoricalArtifactsUnchanged": true,
+    "fullBroadE2e": "not-run",
+    "mutationCoverage": {
+      "revision": "m7l-learning-drawer-evidence-mutations-v2",
+      "requiredCases": [
+        "historical-report-digest-changed",
+        "historical-inventory-count-changed",
+        "historical-identity-removed",
+        "historical-inventory-identity-invented",
+        "cohort-identity-removed",
+        "raw-artifact-digest-changed",
+        "raw-artifact-missing",
+        "configured-worker-count-mismatch",
+        "actual-concurrency-mismatch",
+        "retry-dependent-pass-hidden",
+        "incomplete-run-counted-as-complete",
+        "not-reproduced-case-promoted-to-fixed",
+        "cohort-promoted-to-full-broad-qualified",
+        "m8-authorization-enabled",
+        "production-webgpu-enabled",
+        "evaluator-revision-changed",
+        "historical-full-suite-count-altered",
+        "accepted-m7k-counts-altered",
+        "captured-outcome-promoted-to-pass",
+        "candidate-source-replaced",
+        "reported-worker-matrix-altered",
+        "raw-failed-outcome-promoted-to-pass",
+        "raw-provenance-promoted-to-verified",
+        "raw-to-normalized-provenance-promoted-to-verified",
+        "raw-capture-local-audit-digest-changed",
+        "raw-capture-declared-retained-for-offline-replay",
+        "raw-capture-per-artifact-retention-overstated",
+        "raw-capture-local-availability-contradiction",
+        "normalized-digest-substituted-for-source-capture-digest"
+      ],
+      "testCount": 29,
+      "suiteTestsPassed": 33
+    },
+    "unitIntegration": {
+      "command": "npm test",
+      "status": "passed",
+      "testFiles": 319,
+      "tests": 3736
+    },
+    "typecheck": {
+      "command": "npm run typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "status": "passed"
+    },
+    "css": {
+      "command": "npm run check:css",
+      "status": "passed"
+    },
+    "build": {
+      "command": "npm run build",
+      "status": "passed"
+    },
+    "evidenceChecks": {
+      "m7h": {
+        "status": "passed"
+      },
+      "m7i": {
+        "status": "passed"
+      },
+      "m7j": {
+        "status": "passed"
+      },
+      "m7kSchemaV1": {
+        "status": "passed",
+        "discovered": 278,
+        "passed": 121,
+        "unexpected": 82,
+        "skipped": 75,
+        "flaky": 0,
+        "incomplete": 0,
+        "broadE2eQualification": "not-qualified"
+      },
+      "m7kSchemaV2Selected": {
+        "status": "passed",
+        "selected": 6,
+        "passed": 6,
+        "executionCompleteness": "incomplete",
+        "broadE2eQualification": "blocked"
+      },
+      "m7l": {
+        "status": "passed",
+        "evaluatorRevision": "m7l-learning-drawer-remediation-evaluator-v2",
+        "normalizedArtifactIntegrity": "passed",
+        "originalRawCaptureProvenance": "unverified",
+        "rawToNormalizedNormalization": "unverified",
+        "verifiedFixes": 0
+      }
+    },
+    "m7fReplay": {
+      "status": "passed",
+      "scenarios": 17,
+      "outputPath": ".m7l-review-fix-r1-m7f-replay.json",
+      "temporaryOutput": true
+    },
+    "m7gReport": {
+      "status": "passed",
+      "passedScenarios": 5,
+      "blockedScenarios": 2,
+      "m8Entry": "denied",
+      "temporaryOutputs": [
+        ".m7l-review-fix-r1-m7g-report.json",
+        ".m7l-review-fix-r1-m7g-evaluation.json"
+      ]
+    },
+    "hostedCi": {
+      "status": "passed",
+      "runNumber": 1892,
+      "url": "https://github.com/chau-hm/view-camera-simulator/actions/runs/41857402027",
+      "verifiedHeadSha": "0950b612ec609e14ab28631ee32f01dc6a8929f3",
+      "context": "Historical run from the pre-review-fix implementation; it is not evidence for the M7L Round 1 evaluator update."
+    }
+  },
+  "rawCaptureProvenance": {
+    "offlineVerificationStatus": "unverified",
+    "originalRawCaptureProvenance": "unverified",
+    "rawToNormalizedNormalization": "unverified",
+    "normalizationReplay": "not-established",
+    "rawFilesRetainedForOfflineReplay": false,
+    "offlineEvaluatorHasOriginalRawBytes": false,
+    "retentionReason": "The original Playwright JSON files contain developer-specific absolute paths, complete process environment values, and local Codex session identifiers. They are not retained in the repository, and no durable external raw-artifact store is configured.",
+    "localReviewAudit": {
+      "status": "local-digest-check-only",
+      "performedAt": "2026-11-04T16:40:30Z",
+      "location": "/private/tmp",
+      "allSevenDigestChecksMatched": true,
+      "normalizationReplay": "not-performed",
+      "rawFilesRetained": false,
+      "scope": "The original bytes were available during this review and their SHA-256 values were recomputed. This local audit is recorded for traceability; the bytes and check are not independently replayable by CI."
+    },
+    "experiments": [
+      {
+        "experimentId": "single-case-w1",
+        "originalRawPath": "/private/tmp/m7l-baseline-single-architecture-foreground.json",
+        "originalRawAvailableDuringReview": true,
+        "originalRawBytes": 9857,
+        "originalRawSha256Expected": "c72c864bb506d1a86dae17826249a00eae7d5cf36c0ade319f2ec22ed42cecc8",
+        "originalRawSha256Computed": "c72c864bb506d1a86dae17826249a00eae7d5cf36c0ade319f2ec22ed42cecc8",
+        "originalRawDigestMatches": true,
+        "normalizedArtifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/baseline/single-architecture-foreground-w1.json",
+        "normalizedArtifactSha256": "27ebfa11c8f0d32363d8d6b6f97c7d63148d81a16b018d82c6cfe98c7341bf04",
+        "normalizationReproducible": false,
+        "rawRetainedForOfflineReplay": false,
+        "verificationStatus": "digest-verified-locally; offline-unverified; normalization-unverified"
+      },
+      {
+        "experimentId": "cohort-w1",
+        "originalRawPath": "/private/tmp/m7l-baseline-w1-attempt-1.json",
+        "originalRawAvailableDuringReview": true,
+        "originalRawBytes": 22612,
+        "originalRawSha256Expected": "34611073b34e7ca57c131fcb097e41a5944724dc9eba41e62608407036d8edf3",
+        "originalRawSha256Computed": "34611073b34e7ca57c131fcb097e41a5944724dc9eba41e62608407036d8edf3",
+        "originalRawDigestMatches": true,
+        "normalizedArtifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/baseline/cohort-w1.json",
+        "normalizedArtifactSha256": "6235e161419b8398d8a8b7739657d776de55ca030c49ff4a0b0de6d05e7da2e7",
+        "normalizationReproducible": false,
+        "rawRetainedForOfflineReplay": false,
+        "verificationStatus": "digest-verified-locally; offline-unverified; normalization-unverified"
+      },
+      {
+        "experimentId": "cohort-w2",
+        "originalRawPath": "/private/tmp/m7l-baseline-w2-attempt-1.json",
+        "originalRawAvailableDuringReview": true,
+        "originalRawBytes": 27358,
+        "originalRawSha256Expected": "0aca6f968973fd5e33e44503b9d7bb20ebdd652e06b496c6de6b1d9ced7de621",
+        "originalRawSha256Computed": "0aca6f968973fd5e33e44503b9d7bb20ebdd652e06b496c6de6b1d9ced7de621",
+        "originalRawDigestMatches": true,
+        "normalizedArtifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/baseline/cohort-w2.json",
+        "normalizedArtifactSha256": "42ed4f4ddc21f438dc3ab86098c23244d9950a1b4f52e9bcff284da49546ad26",
+        "normalizationReproducible": false,
+        "rawRetainedForOfflineReplay": false,
+        "verificationStatus": "digest-verified-locally; offline-unverified; normalization-unverified"
+      },
+      {
+        "experimentId": "cohort-w4",
+        "originalRawPath": "/private/tmp/m7l-baseline-w4-clean-attempt-1.json",
+        "originalRawAvailableDuringReview": true,
+        "originalRawBytes": 64803,
+        "originalRawSha256Expected": "ed628e6fa7d96771ea461bacbc2bb3587d85a9e98acd5648fa2d3c43633bec99",
+        "originalRawSha256Computed": "ed628e6fa7d96771ea461bacbc2bb3587d85a9e98acd5648fa2d3c43633bec99",
+        "originalRawDigestMatches": true,
+        "normalizedArtifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/baseline/cohort-w4.json",
+        "normalizedArtifactSha256": "dc7a1151818d855b8353e9010c6edd127c301d4ea3f63f939118e6869d5c62ef",
+        "normalizationReproducible": false,
+        "rawRetainedForOfflineReplay": false,
+        "verificationStatus": "digest-verified-locally; offline-unverified; normalization-unverified"
+      },
+      {
+        "experimentId": "controlled-heavy-free-w4",
+        "originalRawPath": "/private/tmp/m7l-controlled-heavy.json",
+        "originalRawAvailableDuringReview": true,
+        "originalRawBytes": 32754,
+        "originalRawSha256Expected": "c3e310cfc0c2c11181403c6607285f22048465a18dee9abb2beb2a803bce6048",
+        "originalRawSha256Computed": "c3e310cfc0c2c11181403c6607285f22048465a18dee9abb2beb2a803bce6048",
+        "originalRawDigestMatches": true,
+        "normalizedArtifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/diagnostics/controlled-heavy-free-w4.json",
+        "normalizedArtifactSha256": "070599e80d6eee511fc1ae2835cfc9530fa94b2c2cae5fbe9749f1dc2b3cc9a1",
+        "normalizationReproducible": false,
+        "rawRetainedForOfflineReplay": false,
+        "verificationStatus": "digest-verified-locally; offline-unverified; normalization-unverified"
+      },
+      {
+        "experimentId": "controlled-heavy-guided-w4",
+        "originalRawPath": "/private/tmp/m7l-controlled-heavy-guided.json",
+        "originalRawAvailableDuringReview": true,
+        "originalRawBytes": 38726,
+        "originalRawSha256Expected": "d740041258592627531be1101229784218e19121c78f1e7d1a8555d3228c005c",
+        "originalRawSha256Computed": "d740041258592627531be1101229784218e19121c78f1e7d1a8555d3228c005c",
+        "originalRawDigestMatches": true,
+        "normalizedArtifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/diagnostics/controlled-heavy-guided-w4.json",
+        "normalizedArtifactSha256": "e561049449352901b61e8e74544db265d0f426807961715effb5962104507c2c",
+        "normalizationReproducible": false,
+        "rawRetainedForOfflineReplay": false,
+        "verificationStatus": "digest-verified-locally; offline-unverified; normalization-unverified"
+      },
+      {
+        "experimentId": "controlled-light-guided-w4",
+        "originalRawPath": "/private/tmp/m7l-controlled-light.json",
+        "originalRawAvailableDuringReview": true,
+        "originalRawBytes": 38717,
+        "originalRawSha256Expected": "d870796260a9073b6b89042509f77bb9a1053716766c00d056b337494ff8d03a",
+        "originalRawSha256Computed": "d870796260a9073b6b89042509f77bb9a1053716766c00d056b337494ff8d03a",
+        "originalRawDigestMatches": true,
+        "normalizedArtifactPath": "docs/architecture/ground-glass-m7l-learning-drawer/diagnostics/controlled-light-guided-w4.json",
+        "normalizedArtifactSha256": "c308e99787c7e88b39bf012f07a360aaac78def37686c4adb260680aaf757ed1",
+        "normalizationReproducible": false,
+        "rawRetainedForOfflineReplay": false,
+        "verificationStatus": "digest-verified-locally; offline-unverified; normalization-unverified"
+      }
+    ]
+  }
+}

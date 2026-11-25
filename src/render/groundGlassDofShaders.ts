@@ -502,18 +502,34 @@ float depthToleranceMm(float centerDistanceMm){
   return max(20.0, centerDistanceMm * 0.015);
 }
 
+float farDepthToleranceMm(float centerDistanceMm){
+  if(!isFiniteFloat(centerDistanceMm) || centerDistanceMm <= 0.0 ||
+     !isFiniteFloat(near) || !isFiniteFloat(far) || near <= 0.0 || far <= near) return 0.0;
+  // GroundGlassRTT uses a 16-bit depth texture. Two depth-code steps bound the
+  // Far-gather comparison tolerance for quantization at this distance and clip
+  // range; a fixed scene-scale window can hide close-focus depth discontinuities.
+  float nearDistanceMm = near * 1000.0;
+  float farDistanceMm = far * 1000.0;
+  float depthStepMm = centerDistanceMm * centerDistanceMm *
+    (farDistanceMm - nearDistanceMm) /
+    (nearDistanceMm * farDistanceMm * 65535.0);
+  if(!isFiniteFloat(depthStepMm) || depthStepMm < 0.0) return 0.0;
+  return depthStepMm * 2.0;
+}
+
 // Far/background gather is asymmetric: samples that are geometrically in
 // front of the center surface are occluders and cannot freely mix into it.
 float calculateFarSampleWeight(
   float centerDepth,
   float sampleDepth,
-  float sampleSignedCocMm
+  float sampleSignedCocMm,
+  float toleranceMm
 ){
   if(!isFiniteFloat(centerDepth) || !isFiniteFloat(sampleDepth)) return 0.0;
   float centerUmm = depthDistanceMm(centerDepth);
   float sampleUmm = depthDistanceMm(sampleDepth);
-  if(centerUmm <= 0.0 || sampleUmm <= 0.0 || !isFiniteFloat(sampleSignedCocMm)) return 0.0;
-  float toleranceMm = depthToleranceMm(centerUmm);
+  if(centerUmm <= 0.0 || sampleUmm <= 0.0 || !isFiniteFloat(sampleSignedCocMm) ||
+     !isFiniteFloat(toleranceMm) || toleranceMm < 0.0) return 0.0;
   if(sampleSignedCocMm < -0.00001 || sampleUmm < centerUmm - toleranceMm) return 0.0;
   return 1.0;
 }

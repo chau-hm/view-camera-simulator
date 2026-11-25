@@ -1,0 +1,894 @@
+{
+  "schemaVersion": 2,
+  "policyRevision": "m7v-e2e-skip-governance-v2",
+  "decision": "V2-governance-established-approvals-pending",
+  "provenance": {
+    "historicalM7rReportPath": "docs/architecture/GROUND_GLASS_M7R_BROAD_E2E_QUALIFICATION_RECOVERY_REPORT.json",
+    "historicalM7rReportSha256": "b39b3c4b4a0c56b8d62120ccc62dfcca509e37356c565538316d983dc44b4823",
+    "historicalM7rExecutionSourceCommitSha": "d34fe8b39f6c1e0509b3ffecb6fcc6566282d9f8",
+    "currentPolicySourceCommitSha": "6e236d2ef4f248bfd3ad081d8d1786a7c0f8f382",
+    "sourceDeclarationBaselineCommitSha": "6e236d2ef4f248bfd3ad081d8d1786a7c0f8f382",
+    "playwrightVersion": "1.61.1",
+    "nodeVersion": "v26.12.1",
+    "evaluatorRevision": "m7v-e2e-skip-governance-v2",
+    "discoveryPerformed": true,
+    "fullE2eExecuted": false,
+    "playwrightConfigurationEvidence": {
+      "standardGateExpressions": {
+        "nativeWebGpuRequired": "process.env.OBSERVER_NATIVE_WEBGPU_REQUIRED === \"1\"",
+        "groundGlassNativeWebGpuRequired": "process.env.GROUND_GLASS_NATIVE_WEBGPU_REQUIRED === \"1\"",
+        "groundGlassFailureIntegration": "process.env.GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION === \"1\"",
+        "groundGlassPhysicalCocResearch": "process.env.GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH === \"1\"",
+        "groundGlassPhysicalCocR187Qualification": "process.env.GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION === \"1\"",
+        "groundGlassApertureGatherResearch": "process.env.GROUND_GLASS_WEBGPU_APERTURE_GATHER_RESEARCH === \"1\"",
+        "groundGlassApertureGatherR187Qualification": "process.env.GROUND_GLASS_WEBGPU_APERTURE_GATHER_R187_QUALIFICATION === \"1\"",
+        "groundGlassM6PresentationRequired": "process.env.GROUND_GLASS_WEBGPU_M6_PRESENTATION_REQUIRED === \"1\"",
+        "groundGlassM6R187Qualification": "process.env.GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION_REQUIRED === \"1\"",
+        "groundGlassM6NativeRequired": "groundGlassM6PresentationRequired || groundGlassM6R187Qualification",
+        "headedNativeWebGpuRequired": "nativeWebGpuRequired || groundGlassNativeWebGpuRequired || groundGlassM6NativeRequired"
+      },
+      "standardTestIgnore": "[productionPreviewSpecGlob]",
+      "standardProjects": "headedNativeWebGpuRequired ? [ { name: \"chrome-native-webgpu\", use: { channel: \"chrome\", headless: false, launchOptions: { ignoreDefaultArgs: [\"--no-sandbox\", \"--enable-unsafe-swiftshader\"], }, }, }, ] : [ { name: \"chromium\", grepInvert: m7jRendererContentionTag, use: { ...devices[\"Desktop Chrome\"] }, }, { name: \"chromium-renderer-serial\", dependencies: [\"chromium\"], grep: m7jRendererContentionTag, workers: 1, fullyParallel: false, use: { ...devices[\"Desktop Chrome\"] }, }, ]",
+      "standardWebServerBuildFlags": [
+        {
+          "name": "VITE_GROUND_GLASS_WEBGPU_APERTURE_GATHER_R187_QUALIFICATION",
+          "expression": "groundGlassApertureGatherR187Qualification ? \"true\" : \"false\""
+        },
+        {
+          "name": "VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH",
+          "expression": "groundGlassApertureGatherResearch ? \"true\" : groundGlassM6NativeRequired ? \"false\" : process.env.VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH ?? \"false\""
+        },
+        {
+          "name": "VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION",
+          "expression": "groundGlassM6NativeRequired ? \"true\" : \"false\""
+        },
+        {
+          "name": "VITE_GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION",
+          "expression": "groundGlassM6R187Qualification ? \"true\" : \"false\""
+        },
+        {
+          "name": "VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION",
+          "expression": "groundGlassPhysicalCocR187Qualification ? \"true\" : \"false\""
+        },
+        {
+          "name": "VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH",
+          "expression": "groundGlassPhysicalCocResearch ? \"true\" : groundGlassM6NativeRequired ? \"false\" : process.env.VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH ?? \"false\""
+        },
+        {
+          "name": "VITE_GROUND_GLASS_WEBGPU_RAW_PILOT",
+          "expression": "groundGlassM6NativeRequired ? \"true\" : process.env.VITE_GROUND_GLASS_WEBGPU_RAW_PILOT ?? \"false\""
+        },
+        {
+          "name": "VITE_GROUND_GLASS_WEBGPU_TEST_SEAM",
+          "expression": "groundGlassFailureIntegration || groundGlassPhysicalCocResearch || groundGlassApertureGatherResearch || groundGlassApertureGatherR187Qualification || groundGlassM6NativeRequired ? \"true\" : \"false\""
+        }
+      ],
+      "productionTestMatch": "[productionPreviewSpecGlob]",
+      "productionProjects": "[{ name: \"chromium-production-preview\", use: { ...devices[\"Desktop Chrome\"] }, }]",
+      "productionSpecSuffix": "\"-production.spec.ts\""
+    }
+  },
+  "historicalM7r": {
+    "discovered": 278,
+    "passed": 118,
+    "unexpected": 85,
+    "skipped": 75,
+    "retries": 0,
+    "incomplete": 0,
+    "approvedExclusions": 0
+  },
+  "currentInventory": {
+    "standardDiscovered": 280,
+    "standardProjects": {
+      "chromium-renderer-serial": 4,
+      "chromium": 276
+    },
+    "nativeProjectDiscovered": 280,
+    "nativeProject": {
+      "chrome-native-webgpu": 280
+    },
+    "productionPreviewDiscovered": 4,
+    "productionPreviewProject": {
+      "chromium-production-preview": 4
+    },
+    "addedSinceM7r": [
+      "chromium::interior-corner-swing-focus.spec.ts::Interior Corner Swing keyboard steps update the public movement readout in both directions",
+      "chromium::interior-corner-swing-focus.spec.ts::validated direct Swing input rejects inaccessible and off-grid targets"
+    ],
+    "removedSinceM7r": [],
+    "m7uAdditions": [
+      "chromium::interior-corner-swing-focus.spec.ts::Interior Corner Swing keyboard steps update the public movement readout in both directions",
+      "chromium::interior-corner-swing-focus.spec.ts::validated direct Swing input rejects inaccessible and off-grid targets"
+    ],
+    "laneAssignmentCounts": {
+      "renderer-serial": 4,
+      "ordinary-webgl": 201,
+      "native-webgpu": 73,
+      "research-development": 2
+    },
+    "sourceGuardAudit": {
+      "historicalSkippedIdentities": 75,
+      "historicalSkippedWithSourceGate": 75,
+      "additionalNativeProjectConditionalGuards": 10,
+      "totalCurrentSourceGuardedIdentities": 85,
+      "projectConditionalSkipGuards": [
+        {
+          "identity": "chromium::ground-glass-webgpu-aperture-gather.spec.ts::ordinary Chromium can execute the isolated aperture-gather fixture without claiming native WebGPU",
+          "historicalM7rOutcome": "passed",
+          "lane": "ordinary-webgl",
+          "standardProjectDisposition": "ordinary-webgl-covered",
+          "nativeProjectDisposition": "source-guarded-not-part-of-native-required-capture",
+          "sourceEvidence": {
+            "identity": "chromium::ground-glass-webgpu-aperture-gather.spec.ts::ordinary Chromium can execute the isolated aperture-gather fixture without claiming native WebGPU",
+            "sourcePath": "src/tests/e2e/ground-glass-webgpu-aperture-gather.spec.ts",
+            "definition": {
+              "line": 294,
+              "callName": "test",
+              "titleExpression": "\"ordinary Chromium can execute the isolated aperture-gather fixture without claiming native WebGPU\""
+            },
+            "skipConditions": [
+              {
+                "line": 295,
+                "scope": "test",
+                "sourceText": "test.skip(nativeWebGpuRequired, \"Ordinary Chromium compatibility control runs in the standard Playwright project\")",
+                "condition": "nativeWebGpuRequired",
+                "reason": "Ordinary Chromium compatibility control runs in the standard Playwright project"
+              }
+            ],
+            "requiredEnvironment": [
+              "OBSERVER_NATIVE_WEBGPU_REQUIRED"
+            ],
+            "requiredBuildFlags": []
+          },
+          "pairedNativeIdentity": "chrome-native-webgpu::ground-glass-webgpu-aperture-gather.spec.ts::ordinary Chromium can execute the isolated aperture-gather fixture without claiming native WebGPU",
+          "rationale": "This test exercises the ordinary Chromium compatibility/fallback control and is guarded only in the native-required project. It remains mandatory in ordinary WebGL coverage; its native-project skip is not an exclusion."
+        },
+        {
+          "identity": "chromium::ground-glass-webgpu-b1-optical-validation.spec.ts::ordinary Chromium can execute the canonical Macro fixture without claiming native WebGPU",
+          "historicalM7rOutcome": "passed",
+          "lane": "ordinary-webgl",
+          "standardProjectDisposition": "ordinary-webgl-covered",
+          "nativeProjectDisposition": "source-guarded-not-part-of-native-required-capture",
+          "sourceEvidence": {
+            "identity": "chromium::ground-glass-webgpu-b1-optical-validation.spec.ts::ordinary Chromium can execute the canonical Macro fixture without claiming native WebGPU",
+            "sourcePath": "src/tests/e2e/ground-glass-webgpu-b1-optical-validation.spec.ts",
+            "definition": {
+              "line": 269,
+              "callName": "test",
+              "titleExpression": "\"ordinary Chromium can execute the canonical Macro fixture without claiming native WebGPU\""
+            },
+            "skipConditions": [
+              {
+                "line": 270,
+                "scope": "test",
+                "sourceText": "test.skip(nativeRequired, \"This control is run separately from the native-required headed Chrome gate\")",
+                "condition": "nativeRequired",
+                "reason": "This control is run separately from the native-required headed Chrome gate"
+              }
+            ],
+            "requiredEnvironment": [
+              "OBSERVER_NATIVE_WEBGPU_REQUIRED"
+            ],
+            "requiredBuildFlags": []
+          },
+          "pairedNativeIdentity": "chrome-native-webgpu::ground-glass-webgpu-b1-optical-validation.spec.ts::ordinary Chromium can execute the canonical Macro fixture without claiming native WebGPU",
+          "rationale": "This test exercises the ordinary Chromium compatibility/fallback control and is guarded only in the native-required project. It remains mandatory in ordinary WebGL coverage; its native-project skip is not an exclusion."
+        },
+        {
+          "identity": "chromium::ground-glass-webgpu-correspondence-large-coc.spec.ts::ordinary Chromium executes Phase K controls without claiming native WebGPU",
+          "historicalM7rOutcome": "passed",
+          "lane": "ordinary-webgl",
+          "standardProjectDisposition": "ordinary-webgl-covered",
+          "nativeProjectDisposition": "source-guarded-not-part-of-native-required-capture",
+          "sourceEvidence": {
+            "identity": "chromium::ground-glass-webgpu-correspondence-large-coc.spec.ts::ordinary Chromium executes Phase K controls without claiming native WebGPU",
+            "sourcePath": "src/tests/e2e/ground-glass-webgpu-correspondence-large-coc.spec.ts",
+            "definition": {
+              "line": 292,
+              "callName": "test",
+              "titleExpression": "\"ordinary Chromium executes Phase K controls without claiming native WebGPU\""
+            },
+            "skipConditions": [
+              {
+                "line": 293,
+                "scope": "test",
+                "sourceText": "test.skip(nativeRequired, \"Ordinary Chromium control is run separately from the native-required gate\")",
+                "condition": "nativeRequired",
+                "reason": "Ordinary Chromium control is run separately from the native-required gate"
+              }
+            ],
+            "requiredEnvironment": [
+              "OBSERVER_NATIVE_WEBGPU_REQUIRED"
+            ],
+            "requiredBuildFlags": []
+          },
+          "pairedNativeIdentity": "chrome-native-webgpu::ground-glass-webgpu-correspondence-large-coc.spec.ts::ordinary Chromium executes Phase K controls without claiming native WebGPU",
+          "rationale": "This test exercises the ordinary Chromium compatibility/fallback control and is guarded only in the native-required project. It remains mandatory in ordinary WebGL coverage; its native-project skip is not an exclusion."
+        },
+        {
+          "identity": "chromium::ground-glass-webgpu-far-reconstruction-i.spec.ts::ordinary Chromium Phase I fixture remains a fallback-only control",
+          "historicalM7rOutcome": "passed",
+          "lane": "ordinary-webgl",
+          "standardProjectDisposition": "ordinary-webgl-covered",
+          "nativeProjectDisposition": "source-guarded-not-part-of-native-required-capture",
+          "sourceEvidence": {
+            "identity": "chromium::ground-glass-webgpu-far-reconstruction-i.spec.ts::ordinary Chromium Phase I fixture remains a fallback-only control",
+            "sourcePath": "src/tests/e2e/ground-glass-webgpu-far-reconstruction-i.spec.ts",
+            "definition": {
+              "line": 274,
+              "callName": "test",
+              "titleExpression": "\"ordinary Chromium Phase I fixture remains a fallback-only control\""
+            },
+            "skipConditions": [
+              {
+                "line": 275,
+                "scope": "test",
+                "sourceText": "test.skip(nativeRequired, \"Native execution is measured only in headed Chrome\")",
+                "condition": "nativeRequired",
+                "reason": "Native execution is measured only in headed Chrome"
+              }
+            ],
+            "requiredEnvironment": [
+              "OBSERVER_NATIVE_WEBGPU_REQUIRED"
+            ],
+            "requiredBuildFlags": []
+          },
+          "pairedNativeIdentity": "chrome-native-webgpu::ground-glass-webgpu-far-reconstruction-i.spec.ts::ordinary Chromium Phase I fixture remains a fallback-only control",
+          "rationale": "This test exercises the ordinary Chromium compatibility/fallback control and is guarded only in the native-required project. It remains mandatory in ordinary WebGL coverage; its native-project skip is not an exclusion."
+        },
+        {
+          "identity": "chromium::ground-glass-webgpu-far-reconstruction.spec.ts::ordinary Chromium Phase H control records fallback-compatible behavior only",
+          "historicalM7rOutcome": "passed",
+          "lane": "ordinary-webgl",
+          "standardProjectDisposition": "ordinary-webgl-covered",
+          "nativeProjectDisposition": "source-guarded-not-part-of-native-required-capture",
+          "sourceEvidence": {
+            "identity": "chromium::ground-glass-webgpu-far-reconstruction.spec.ts::ordinary Chromium Phase H control records fallback-compatible behavior only",
+            "sourcePath": "src/tests/e2e/ground-glass-webgpu-far-reconstruction.spec.ts",
+            "definition": {
+              "line": 208,
+              "callName": "test",
+              "titleExpression": "\"ordinary Chromium Phase H control records fallback-compatible behavior only\""
+            },
+            "skipConditions": [
+              {
+                "line": 209,
+                "scope": "test",
+                "sourceText": "test.skip(nativeWebGpuRequired, \"Native execution evidence is collected in headed Chrome\")",
+                "condition": "nativeWebGpuRequired",
+                "reason": "Native execution evidence is collected in headed Chrome"
+              }
+            ],
+            "requiredEnvironment": [
+              "OBSERVER_NATIVE_WEBGPU_REQUIRED"
+            ],
+            "requiredBuildFlags": []
+          },
+          "pairedNativeIdentity": "chrome-native-webgpu::ground-glass-webgpu-far-reconstruction.spec.ts::ordinary Chromium Phase H control records fallback-compatible behavior only",
+          "rationale": "This test exercises the ordinary Chromium compatibility/fallback control and is guarded only in the native-required project. It remains mandatory in ordinary WebGL coverage; its native-project skip is not an exclusion."
+        },
+        {
+          "identity": "chromium::ground-glass-webgpu-gather-quality.spec.ts::Phase G ordinary Chromium compatibility control does not claim native execution",
+          "historicalM7rOutcome": "passed",
+          "lane": "ordinary-webgl",
+          "standardProjectDisposition": "ordinary-webgl-covered",
+          "nativeProjectDisposition": "source-guarded-not-part-of-native-required-capture",
+          "sourceEvidence": {
+            "identity": "chromium::ground-glass-webgpu-gather-quality.spec.ts::Phase G ordinary Chromium compatibility control does not claim native execution",
+            "sourcePath": "src/tests/e2e/ground-glass-webgpu-gather-quality.spec.ts",
+            "definition": {
+              "line": 300,
+              "callName": "test",
+              "titleExpression": "\"Phase G ordinary Chromium compatibility control does not claim native execution\""
+            },
+            "skipConditions": [
+              {
+                "line": 301,
+                "scope": "test",
+                "sourceText": "test.skip(nativeWebGpuRequired, \"Fallback-compatible browser control runs in the ordinary Chromium project\")",
+                "condition": "nativeWebGpuRequired",
+                "reason": "Fallback-compatible browser control runs in the ordinary Chromium project"
+              }
+            ],
+            "requiredEnvironment": [
+              "OBSERVER_NATIVE_WEBGPU_REQUIRED"
+            ],
+            "requiredBuildFlags": []
+          },
+          "pairedNativeIdentity": "chrome-native-webgpu::ground-glass-webgpu-gather-quality.spec.ts::Phase G ordinary Chromium compatibility control does not claim native execution",
+          "rationale": "This test exercises the ordinary Chromium compatibility/fallback control and is guarded only in the native-required project. It remains mandatory in ordinary WebGL coverage; its native-project skip is not an exclusion."
+        },
+        {
+          "identity": "chromium::ground-glass-webgpu-interior-coc-quality.spec.ts::ordinary Chromium Phase L route remains an isolated research fixture",
+          "historicalM7rOutcome": "passed",
+          "lane": "ordinary-webgl",
+          "standardProjectDisposition": "ordinary-webgl-covered",
+          "nativeProjectDisposition": "source-guarded-not-part-of-native-required-capture",
+          "sourceEvidence": {
+            "identity": "chromium::ground-glass-webgpu-interior-coc-quality.spec.ts::ordinary Chromium Phase L route remains an isolated research fixture",
+            "sourcePath": "src/tests/e2e/ground-glass-webgpu-interior-coc-quality.spec.ts",
+            "definition": {
+              "line": 622,
+              "callName": "test",
+              "titleExpression": "\"ordinary Chromium Phase L route remains an isolated research fixture\""
+            },
+            "skipConditions": [
+              {
+                "line": 623,
+                "scope": "test",
+                "sourceText": "test.skip(nativeRequired, \"Ordinary compatibility control runs separately from native-required validation\")",
+                "condition": "nativeRequired",
+                "reason": "Ordinary compatibility control runs separately from native-required validation"
+              }
+            ],
+            "requiredEnvironment": [
+              "OBSERVER_NATIVE_WEBGPU_REQUIRED"
+            ],
+            "requiredBuildFlags": []
+          },
+          "pairedNativeIdentity": "chrome-native-webgpu::ground-glass-webgpu-interior-coc-quality.spec.ts::ordinary Chromium Phase L route remains an isolated research fixture",
+          "rationale": "This test exercises the ordinary Chromium compatibility/fallback control and is guarded only in the native-required project. It remains mandatory in ordinary WebGL coverage; its native-project skip is not an exclusion."
+        },
+        {
+          "identity": "chromium::observer-webgpu-pilot.spec.ts::application fallback remounts once and clears when the scene changes",
+          "historicalM7rOutcome": "timedOut",
+          "lane": "ordinary-webgl",
+          "standardProjectDisposition": "ordinary-webgl-covered",
+          "nativeProjectDisposition": "source-guarded-not-part-of-native-required-capture",
+          "sourceEvidence": {
+            "identity": "chromium::observer-webgpu-pilot.spec.ts::application fallback remounts once and clears when the scene changes",
+            "sourcePath": "src/tests/e2e/observer-webgpu-pilot.spec.ts",
+            "definition": {
+              "line": 1435,
+              "callName": "test",
+              "titleExpression": "\"application fallback remounts once and clears when the scene changes\""
+            },
+            "skipConditions": [
+              {
+                "line": 1436,
+                "scope": "test",
+                "sourceText": "test.skip(\n    nativeWebGpuRequired,\n    \"This fault-injection case verifies application fallback; the native-required pilot test separately requires native execution.\",\n  )",
+                "condition": "nativeWebGpuRequired",
+                "reason": "This fault-injection case verifies application fallback; the native-required pilot test separately requires native execution."
+              }
+            ],
+            "requiredEnvironment": [
+              "OBSERVER_NATIVE_WEBGPU_REQUIRED"
+            ],
+            "requiredBuildFlags": []
+          },
+          "pairedNativeIdentity": "chrome-native-webgpu::observer-webgpu-pilot.spec.ts::application fallback remounts once and clears when the scene changes",
+          "rationale": "This test exercises the ordinary Chromium compatibility/fallback control and is guarded only in the native-required project. It remains mandatory in ordinary WebGL coverage; its native-project skip is not an exclusion."
+        },
+        {
+          "identity": "chromium::observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure",
+          "historicalM7rOutcome": "passed",
+          "lane": "ordinary-webgl",
+          "standardProjectDisposition": "ordinary-webgl-covered",
+          "nativeProjectDisposition": "source-guarded-not-part-of-native-required-capture",
+          "sourceEvidence": {
+            "identity": "chromium::observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure",
+            "sourcePath": "src/tests/e2e/observer-webgpu-pilot.spec.ts",
+            "definition": {
+              "line": 1758,
+              "callName": "test",
+              "titleExpression": "\"Architecture Rise restores standard output after a controlled material-aware module failure\""
+            },
+            "skipConditions": [
+              {
+                "line": 1759,
+                "scope": "test",
+                "sourceText": "test.skip(\n    nativeWebGpuRequired,\n    \"This fault-injection case verifies output-policy fallback; native-required parity runs without module interception.\",\n  )",
+                "condition": "nativeWebGpuRequired",
+                "reason": "This fault-injection case verifies output-policy fallback; native-required parity runs without module interception."
+              }
+            ],
+            "requiredEnvironment": [
+              "OBSERVER_NATIVE_WEBGPU_REQUIRED"
+            ],
+            "requiredBuildFlags": []
+          },
+          "pairedNativeIdentity": "chrome-native-webgpu::observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure",
+          "rationale": "This test exercises the ordinary Chromium compatibility/fallback control and is guarded only in the native-required project. It remains mandatory in ordinary WebGL coverage; its native-project skip is not an exclusion."
+        },
+        {
+          "identity": "chromium::observer-webgpu-pilot.spec.ts::Architecture Rise uses one application fallback after a controlled WebGPU initialization failure",
+          "historicalM7rOutcome": "passed",
+          "lane": "ordinary-webgl",
+          "standardProjectDisposition": "ordinary-webgl-covered",
+          "nativeProjectDisposition": "source-guarded-not-part-of-native-required-capture",
+          "sourceEvidence": {
+            "identity": "chromium::observer-webgpu-pilot.spec.ts::Architecture Rise uses one application fallback after a controlled WebGPU initialization failure",
+            "sourcePath": "src/tests/e2e/observer-webgpu-pilot.spec.ts",
+            "definition": {
+              "line": 1574,
+              "callName": "test",
+              "titleExpression": "\"Architecture Rise uses one application fallback after a controlled WebGPU initialization failure\""
+            },
+            "skipConditions": [
+              {
+                "line": 1575,
+                "scope": "test",
+                "sourceText": "test.skip(\n    nativeWebGpuRequired,\n    \"This controlled initialization failure is separate from native-required renderer verification.\",\n  )",
+                "condition": "nativeWebGpuRequired",
+                "reason": "This controlled initialization failure is separate from native-required renderer verification."
+              }
+            ],
+            "requiredEnvironment": [
+              "OBSERVER_NATIVE_WEBGPU_REQUIRED"
+            ],
+            "requiredBuildFlags": []
+          },
+          "pairedNativeIdentity": "chrome-native-webgpu::observer-webgpu-pilot.spec.ts::Architecture Rise uses one application fallback after a controlled WebGPU initialization failure",
+          "rationale": "This test exercises the ordinary Chromium compatibility/fallback control and is guarded only in the native-required project. It remains mandatory in ordinary WebGL coverage; its native-project skip is not an exclusion."
+        }
+      ]
+    }
+  },
+  "skipGovernance": {
+    "historicalIdentityCount": 75,
+    "proposedLaneCounts": {
+      "native-webgpu": 73,
+      "research-development": 2
+    },
+    "approvalStatus": "pending",
+    "approvals": {
+      "pending": 75,
+      "approved": 0,
+      "rejected": 0
+    },
+    "approvedExclusions": 0,
+    "sourceGuardedHistoricalIdentities": 75,
+    "additionalNativeProjectOnlyGuards": 10,
+    "annotationsAreApproval": false
+  },
+  "laneEvidence": {
+    "ordinary-webgl": {
+      "status": "not-run",
+      "purpose": "Public simulator regression on application-default WebGL.",
+      "requiredIdentities": [
+        "chromium::architecture-foreground-compound.spec.ts::Architecture + Foreground compound task solves the photograph from neutral",
+        "chromium::architecture-foreground-dof.spec.ts::Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
+        "chromium::architecture-foreground-dof.spec.ts::Architecture + Foreground Free Practice exposes Aperture after Rise, Tilt, and Focus",
+        "chromium::architecture-foreground-guided-lesson.spec.ts::Architecture + Foreground completes its five-stage Guided Lesson from the Scenes page",
+        "chromium::architecture-foreground-guided-lesson.spec.ts::Architecture + Foreground lesson entry resets after Free Practice and direct task routes stay standalone",
+        "chromium::architecture-foreground-rise.spec.ts::Architecture + Foreground Free Practice exposes cumulative Rise, Tilt, Focus, and Aperture controls",
+        "chromium::architecture-foreground-rise.spec.ts::Architecture + Foreground Rise guided task is observable, reachable, and restartable",
+        "chromium::architecture-foreground-tilt-focus.spec.ts::Architecture + Foreground Free Practice exposes Rise, Tilt, Focus, and Aperture",
+        "chromium::architecture-foreground-tilt-focus.spec.ts::Architecture + Foreground is discoverable from the Scenes page",
+        "chromium::architecture-foreground-tilt-focus.spec.ts::Architecture + Foreground Tilt + Focus guided task starts composed and is restartable",
+        "chromium::architecture-foreground.spec.ts::Architecture + Foreground exposes the cumulative photographic problem in Free Practice",
+        "chromium::architecture-foreground.spec.ts::Architecture + Foreground focus propagates to the physical film plane and processed RTT",
+        "chromium::architecture-rise-focus-range.spec.ts::Architecture Rise exposes visible blur for the reported strong-defocus state",
+        "chromium::architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+        "chromium::architecture-rise-multiprobe-coverage.spec.ts::Architecture Rise bounded multi-Probe CPU study protects the placement and holdout conclusion",
+        "chromium::architecture-rise-observer-reflection-pilot.spec.ts::Architecture Rise corrected Probe appearance is measured at Observer scale",
+        "chromium::architecture-rise-planar-focus-reference.spec.ts::Architecture Rise planar reflection follows independent Ground Glass focus",
+        "chromium::architecture-rise-probe-distance-correction-cpu.spec.ts::measures bounded ideal distance-cube Probe parallax correction",
+        "chromium::architecture-rise-probe-distance-correction-cpu.spec.ts::validates the one-step distance-cube correction against frozen Planar and Probe evidence",
+        "chromium::architecture-rise-probe-vs-planar.spec.ts::Architecture Rise local Probe is compared with the planar Ground Glass reference",
+        "chromium::architecture-rise-webgpu-validation.spec.ts::full Architecture Rise scene has measurable subject, material, environment, lighting, interaction and lifecycle evidence",
+        "chromium::architecture-rise-webgpu-validation.spec.ts::normal Architecture Rise route keeps WebGL as default and runs an explicit interactive WebGPU pilot",
+        "chromium::camera-controls-compact.spec.ts::compact common camera controls stay usable at desktop and narrow widths",
+        "chromium::camera-controls-compact.spec.ts::Focus slider and Infinity Reset stay usable across rail widths",
+        "chromium::camera-controls-compact.spec.ts::Macro Focus stays in the lower controls rail at landscape widths",
+        "chromium::camera-controls-compact.spec.ts::responsive workspace keeps the primary simulator wider than the controls rail",
+        "chromium::camera-movement-calibration-workbench.spec.ts::calibration workbench is hidden on the production route",
+        "chromium::camera-movement-calibration-workbench.spec.ts::session calibration separates geometry, optics, rig, reset, and SPA lifecycle",
+        "chromium::camera-movement-ground-glass-comparison.spec.ts::calibration workbench keeps the existing single Ground Glass path",
+        "chromium::camera-movement-ground-glass-comparison.spec.ts::public camera-movement Ground Glass renders one live Current view through the default RTT channel",
+        "chromium::camera-movement-public-controls.spec.ts::3D Scene layout stays stable across continuous movement sliders",
+        "chromium::camera-movement-public-controls.spec.ts::calibration route preserves workbench and hides public controls",
+        "chromium::camera-movement-public-controls.spec.ts::public camera movement controls on the normal route",
+        "chromium::camera-movement-public-controls.spec.ts::teaching controls stay usable and non-overflowing at 1024px and narrow widths",
+        "chromium::focus-fundamentals-selectable-focus.spec.ts::Focus Fundamentals controls remain usable at responsive viewports",
+        "chromium::focus-fundamentals-selectable-focus.spec.ts::Focus Fundamentals proves front/rear viewpoint behavior without replacing RTT resources",
+        "chromium::focus-fundamentals-selectable-focus.spec.ts::Focus Fundamentals rear reference station keeps physical blur and lens position",
+        "chromium::fringe-club-dev-integration.spec.ts::development Fringe fixture keeps Stage 2H default, activation-gated, and releases its source through SPA navigation",
+        "chromium::fringe-club-dev-integration.spec.ts::navigation away aborts a delayed development load without a stale mount",
+        "chromium::fringe-club-dev-integration.spec.ts::rapid H/N-A selection aborts delayed stale fetches and only the final candidate attaches",
+        "chromium::fringe-club-dev-integration.spec.ts::Stage 2H and Stage 2N-A render through all VCS modes and candidate/probe diagnostics remain current",
+        "chromium::fringe-club-dev-integration.spec.ts::Stage 2N-A join probes retain fresh RTT identity through bounded motion",
+        "chromium::ground-glass-dof-profiling.spec.ts::Ground Glass profiling populates finite snapshots across representative scenes",
+        "chromium::ground-glass-dof-profiling.spec.ts::profiling preserves Raw RTT bypass and can be disabled",
+        "chromium::ground-glass-dof-stability.spec.ts::Architecture + Foreground DOF regression stays finite across Raw RTT toggles",
+        "chromium::ground-glass-dof-stability.spec.ts::Architecture + Foreground DOF remains finite through a transition sequence",
+        "chromium::ground-glass-radiance-contributions.spec.ts::Ground Glass contributions retain independent focus and unclamped linear-radiance addition",
+        "chromium::ground-glass-webgpu-aperture-gather.spec.ts::ordinary Chromium can execute the isolated aperture-gather fixture without claiming native WebGPU",
+        "chromium::ground-glass-webgpu-b1-optical-validation.spec.ts::ordinary Chromium can execute the canonical Macro fixture without claiming native WebGPU",
+        "chromium::ground-glass-webgpu-coc-footprint.spec.ts::a rejected accepted readback remains a failure while SPA cleanup succeeds",
+        "chromium::ground-glass-webgpu-coc-footprint.spec.ts::GPU CoC/footprint writers and TSL consumers match the CPU codec contract",
+        "chromium::ground-glass-webgpu-coc-footprint.spec.ts::post-writer failure is explicit and does not prevent resource cleanup",
+        "chromium::ground-glass-webgpu-coc-footprint.spec.ts::successful readback retirement and handle-owned resource cleanup survive SPA remount",
+        "chromium::ground-glass-webgpu-correspondence-large-coc.spec.ts::ordinary Chromium executes Phase K controls without claiming native WebGPU",
+        "chromium::ground-glass-webgpu-far-reconstruction-i.spec.ts::ordinary Chromium Phase I fixture remains a fallback-only control",
+        "chromium::ground-glass-webgpu-far-reconstruction.spec.ts::ordinary Chromium Phase H control records fallback-compatible behavior only",
+        "chromium::ground-glass-webgpu-gather-quality.spec.ts::Phase G ordinary Chromium compatibility control does not claim native execution",
+        "chromium::ground-glass-webgpu-host.spec.ts::development Raw request defaults to WebGL and URL parameters cannot authorize the adapter",
+        "chromium::ground-glass-webgpu-interior-coc-quality.spec.ts::ordinary Chromium Phase L route remains an isolated research fixture",
+        "chromium::ground-glass-webgpu-physical-coc.spec.ts::native focal-length boundary preserves finite virtual, exact-limit, and finite real branches",
+        "chromium::ground-glass-webgpu-physical-coc.spec.ts::native scene depth and TSL physical footprints match independent geometry and CPU optics",
+        "chromium::ground-glass-webgpu-raw-rtt.spec.ts::display failure remains visible and does not prevent a clean remount",
+        "chromium::ground-glass-webgpu-raw-rtt.spec.ts::fixture failure after target allocation disposes the registered subject and renderer",
+        "chromium::ground-glass-webgpu-raw-rtt.spec.ts::Ground Glass WebGL control renders the registered subject through an offscreen texture",
+        "chromium::ground-glass-webgpu-raw-rtt.spec.ts::raster and screenshot gates reject wrong-axis, incomplete, stale, failed, and retired evidence",
+        "chromium::groundglass-interaction.spec.ts::Ground Glass interaction::Architecture Rise: off-center anchor, drag pan, short-click preservation, and immediate re-zoom",
+        "chromium::groundglass-interaction.spec.ts::Ground Glass interaction::Architecture Rise: Reset view preserves the contentful RTT resource graph",
+        "chromium::groundglass-interaction.spec.ts::Ground Glass interaction::Focus Fundamentals: image zoom and explicit reset smoke test",
+        "chromium::home.spec.ts::compact-menu navigation restores toggle focus after a route change",
+        "chromium::home.spec.ts::concept learning sections keep their responsive grids without overflow",
+        "chromium::home.spec.ts::FAQ disclosures are keyboard accessible from the public page",
+        "chromium::home.spec.ts::Hero locale switching keeps the two-line composition and mobile catalog action",
+        "chromium::home.spec.ts::home can navigate to Scenes page",
+        "chromium::home.spec.ts::home hero uses the approved artwork, semantic copy, and one catalog CTA",
+        "chromium::home.spec.ts::tablet menu is keyboard accessible and mobile hero remains catalog-oriented",
+        "chromium::interior-corner-guided-lesson.spec.ts::Interior Corner completes the public Compose → Swing → Refine → Aperture lesson",
+        "chromium::interior-corner-guided-lesson.spec.ts::Interior Corner keeps the solved focus state when returning to Swing",
+        "chromium::interior-corner-rise-composition.spec.ts::Interior Corner free mode exposes reachable Rise composition feedback",
+        "chromium::interior-corner-swing-focus.spec.ts::Interior Corner free mode exposes public Swing + Focus wall alignment",
+        "chromium::interior-corner-swing-focus.spec.ts::Interior Corner Swing keyboard steps update the public movement readout in both directions",
+        "chromium::interior-corner-swing-focus.spec.ts::validated direct Swing input rejects inaccessible and off-grid targets",
+        "chromium::landing-motion.spec.ts::Landing motion progressive enhancement::enables motion before the first landing-root mutation is observed",
+        "chromium::landing-motion.spec.ts::Landing motion progressive enhancement::initializes correctly after direct navigation and browser back",
+        "chromium::landing-motion.spec.ts::Landing motion progressive enhancement::keeps all landing content visible when IntersectionObserver is unavailable",
+        "chromium::landing-motion.spec.ts::Landing motion progressive enhancement::reveals once, keeps revealed content visible, and updates the header scroll state",
+        "chromium::landing-motion.spec.ts::Landing motion progressive enhancement::settles Why elements to their static position on mobile",
+        "chromium::landing-motion.spec.ts::Landing motion progressive enhancement::shows the static landing immediately and disables motion under reduced motion",
+        "chromium::lens-catalog-ui.spec.ts::lens catalog presentation stays readable and localized at desktop and tablet widths",
+        "chromium::lens-catalog-ui.spec.ts::lens catalog selection keeps finite coverage across published simulator profiles",
+        "chromium::lesson-zero-anatomy.spec.ts::Lesson 0 presents the anatomy sequence and isolates its presentation state",
+        "chromium::lesson-zero-image-circle-coverage.spec.ts::Lesson 0 shows the same film-relative coverage model for Image Circle, Rise, and Shift",
+        "chromium::macro-bellows-extension.spec.ts::Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions",
+        "chromium::macro-bellows-extension.spec.ts::Macro 1 physical grid follows both Raw and Upright film-origin positions",
+        "chromium::macro-bellows-extension.spec.ts::Macro 1 tracks canonical Image Circle growth and bellows exposure across focus",
+        "chromium::macro-compound-movements.spec.ts::Macro 4 teaches compound Tilt + Swing + Focus through the public route",
+        "chromium::macro-depth-of-field-orientation.spec.ts::Architecture Rise WebGL raster distinguishes the Raw/Upright X and Y mapping",
+        "chromium::macro-depth-of-field-orientation.spec.ts::Macro depth targets, Focus Distribution, and Raw/Upright raster stay aligned",
+        "chromium::macro-depth-of-field.spec.ts::Macro 2 teaches shallow physical depth of field across a 3D subject",
+        "chromium::macro-oblique-plane.spec.ts::Macro 3 aligns the oblique planar subject with Front Tilt and Focus",
+        "chromium::macro-series-release-sweep.spec.ts::Macro Photography cards, route initialization, and state isolation survive ordered SPA navigation",
+        "chromium::marketing-responsive.spec.ts::Marketing responsive::Desktop Home and Scenes (1280x800) show no warning",
+        "chromium::marketing-responsive.spec.ts::Marketing responsive::Narrow FAQ (390x844) does not overflow",
+        "chromium::marketing-responsive.spec.ts::Marketing responsive::Narrow Home (390x844) keeps the landing flow without overflow",
+        "chromium::marketing-responsive.spec.ts::Marketing responsive::Narrow Scenes (390x844) shows warning and scene cards without overflow",
+        "chromium::mirror-shift-guided-lesson.spec.ts::Mirror Shift guided task teaches camera movement followed by opposite Front Shift",
+        "chromium::mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed",
+        "chromium::mirror-shift-rig-lateral.spec.ts::Mirror Shift moves the canonical rig while keeping its RTT mounted",
+        "chromium::mirror-shift-teaching-geometry.spec.ts::Mirror Shift presents Top without leaking Geometry View into Architecture Rise",
+        "chromium::mirror-shift-teaching-geometry.spec.ts::Mirror Shift top-view geometry follows canonical A/B/C state relationships",
+        "chromium::nonparallel-coverage.spec.ts::Macro Compound Movements renders a rotated conic for compound Tilt and Swing",
+        "chromium::nonparallel-coverage.spec.ts::Macro Oblique Plane renders the finite non-parallel coverage conic",
+        "chromium::nonparallel-coverage.spec.ts::Oblique Architecture transitions between the parallel circle and non-parallel conic",
+        "chromium::oblique-architecture.spec.ts::Oblique Architecture compound task solves Rise, Swing, and Focus from neutral",
+        "chromium::oblique-architecture.spec.ts::Oblique Architecture free practice exposes Rise, Swing, and Focus",
+        "chromium::oblique-architecture.spec.ts::Oblique Architecture guided lesson progresses through the four stages",
+        "chromium::oblique-architecture.spec.ts::Oblique Architecture guided Rise task solves observable framing and restarts to neutral",
+        "chromium::oblique-architecture.spec.ts::Oblique Architecture guided Swing + Focus task starts from solved Rise and restarts deterministically",
+        "chromium::oblique-tabletop-guided-lesson.spec.ts::Oblique Tabletop completes the public Focus → Tilt → Swing → Focus → Aperture lesson",
+        "chromium::oblique-tabletop-teaching-geometry.spec.ts::Oblique Tabletop exposes live Side, Top, and 3D compound teaching geometry",
+        "chromium::observer-environment-compatibility.spec.ts::Architecture Rise keeps its normal WebGL environment and Ground Glass path",
+        "chromium::observer-environment-compatibility.spec.ts::webgl Observer PMREM changes only the reflective subject region",
+        "chromium::observer-environment-compatibility.spec.ts::webgpu Observer PMREM changes only the reflective subject region",
+        "chromium::observer-webgpu-pilot.spec.ts::an unevaluated scene refuses the WebGPU pilot",
+        "chromium::observer-webgpu-pilot.spec.ts::application fallback remounts once and clears when the scene changes",
+        "chromium::observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure",
+        "chromium::observer-webgpu-pilot.spec.ts::Architecture Rise uses one application fallback after a controlled WebGPU initialization failure",
+        "chromium::observer-webgpu-pilot.spec.ts::development WebGPU pilot keeps View Camera Anatomy interactive beside WebGL Ground Glass",
+        "chromium::observer-webgpu-pilot.spec.ts::explicit Anatomy material-aware output keeps source ownership and rendered teaching parts intact",
+        "chromium::observer-webgpu-pilot.spec.ts::material-aware output adapts the Architecture Rise Observer and stays scene-scoped across navigation",
+        "chromium::observer-webgpu-pilot.spec.ts::Observer backend state follows eligible and ineligible SPA scene/request transitions",
+        "chromium::observer-webgpu-pilot.spec.ts::View Camera Anatomy keeps its default mounted Observer on WebGL",
+        "chromium::phase13-guided-tasks.spec.ts::TST-E2E-002: user can open Architecture Rise from the Scenes page",
+        "chromium::phase13-guided-tasks.spec.ts::TST-E2E-003: rise task starts in failed state",
+        "chromium::phase13-guided-tasks.spec.ts::TST-E2E-004: rise task can be completed with valid rise",
+        "chromium::phase13-guided-tasks.spec.ts::TST-E2E-005: restart resets Architecture Rise guided task",
+        "chromium::phase13-guided-tasks.spec.ts::TST-E2E-006: free mode can return to All Scenes and open Focus Fundamentals",
+        "chromium::phase13-guided-tasks.spec.ts::TST-E2E-007: shows webgl fallback when WebGL is unavailable",
+        "chromium::physical-image-circle.spec.ts::3D Image Circle consumes the Ground Glass finite coverage state",
+        "chromium::scene-switching.spec.ts::public SPA scene switching keeps one current scene and its RTT renderer channels without reloads",
+        "chromium::scene-view-focus.spec.ts::Architecture + Foreground Camera focus uses the physical camera anchor",
+        "chromium::scene-view-focus.spec.ts::guided task restart restores task Optical Geometry preset",
+        "chromium::scene-view-focus.spec.ts::SPA scene switching discards the previous Camera target and returns to Scene focus",
+        "chromium::scene-view-focus.spec.ts::Understanding Camera Movements Camera focus follows continuous viewpoint changes",
+        "chromium::scene-viewport-expansion.spec.ts::Ground Glass reset restores RTT framing after zoomed expand and restore",
+        "chromium::scene-viewport-expansion.spec.ts::Ground Glass RTT follows expanded and live browser sizes without reallocating",
+        "chromium::scene-viewport-expansion.spec.ts::Ground Glass RTT quality changes resize targets in place",
+        "chromium::scene-viewport-expansion.spec.ts::simulator viewports expand in main without replacing their active canvases",
+        "chromium::secondary-workspace-pairing.spec.ts::a scene without Focus Distribution keeps Geometry in the left secondary slot",
+        "chromium::secondary-workspace-pairing.spec.ts::Geometry owns expansion and restores focus to its normal-workspace trigger",
+        "chromium::secondary-workspace-pairing.spec.ts::narrow normal workspace flows Scene, Ground Glass, Geometry, and Focus Distribution in one column",
+        "chromium::secondary-workspace-pairing.spec.ts::normal desktop pairs Geometry with Scene and Focus Distribution with Ground Glass",
+        "chromium::secondary-workspace-pairing.spec.ts::normal Geometry uses a compact diagram height while expanded Geometry remains full-size",
+        "chromium::shelf-swing.spec.ts::Shelf Swing card exposes free and guided modes",
+        "chromium::shelf-swing.spec.ts::Shelf Swing expanded Geometry keeps controls interactive and restores the normal layout",
+        "chromium::shelf-swing.spec.ts::Shelf Swing free and guided workflows stay accessible without console errors",
+        "chromium::shelf-swing.spec.ts::Shelf Swing free scene uses canonical R3F and contentful RTT rendering",
+        "chromium::shelf-swing.spec.ts::Shelf Swing geometry limits projected depth planes to the movement-relevant Top view",
+        "chromium::shelf-swing.spec.ts::Shelf Swing Ground Glass zoom, pan, reset, orientation, and quality stay live",
+        "chromium::shelf-swing.spec.ts::Shelf Swing guided task teaches negative swing and restores its initial state",
+        "chromium::shelf-swing.spec.ts::Shelf Swing physical focus becomes near-sharp and approaches the Raw RTT control",
+        "chromium::shelf-swing.spec.ts::Shelf Swing routes reject mismatched and free-mode task IDs",
+        "chromium::shelf-swing.spec.ts::Shelf Swing solved geometry and RTT remain coherent at the public solution",
+        "chromium::simulator-header.spec.ts::keeps the active lesson context between the brand and desktop actions",
+        "chromium::simulator-header.spec.ts::keeps the lesson context and global actions reachable in the narrow header",
+        "chromium::simulator-header.spec.ts::wraps the lesson context before it becomes unusably narrow",
+        "chromium::smoke.spec.ts::smoke: app boots at home",
+        "chromium::smoke.spec.ts::smoke: Architecture Rise navigates to contentful WebGL Ground Glass controls",
+        "chromium::table-tilt.spec.ts::2D Geometry keeps projected camera orientation and fit/view state coherent",
+        "chromium::table-tilt.spec.ts::3D overlay controls switch responsively without wrapping or blocking the scene",
+        "chromium::table-tilt.spec.ts::Expanded Geometry reflows Scheimpflug construction while controls stay usable",
+        "chromium::table-tilt.spec.ts::Ground Glass zoom state resets across free/guided and scene navigation",
+        "chromium::table-tilt.spec.ts::Table Tilt calibrated controls complete the guided task",
+        "chromium::table-tilt.spec.ts::Table Tilt calibrated side geometry keeps the table, targets, focus, and DOF readable",
+        "chromium::table-tilt.spec.ts::Table Tilt card exposes free and guided navigation",
+        "chromium::table-tilt.spec.ts::Table Tilt exposes the 3D and perpendicular Scheimpflug construction",
+        "chromium::table-tilt.spec.ts::Table Tilt focus and DOF overlays stay renderable at 9 degrees and 5780 mm",
+        "chromium::table-tilt.spec.ts::Table Tilt Focus Distribution follows the displayed Raw/Upright orientation",
+        "chromium::table-tilt.spec.ts::Table Tilt Focus Distribution keeps a same-cell target stack co-equal",
+        "chromium::table-tilt.spec.ts::Table Tilt Focus Distribution stays compact when its panel is constrained",
+        "chromium::table-tilt.spec.ts::Table Tilt Focus Loupe maps displayed centers to the pre-composite RTT crop",
+        "chromium::table-tilt.spec.ts::Table Tilt Ground Glass recovers from interrupted pointer gestures",
+        "chromium::table-tilt.spec.ts::Table Tilt Ground Glass responsive overlays remain separate and centered",
+        "chromium::table-tilt.spec.ts::Table Tilt Ground Glass survives optics, preview, and quality changes",
+        "chromium::table-tilt.spec.ts::Table Tilt Ground Glass uses one RTT surface",
+        "chromium::table-tilt.spec.ts::Table Tilt Ground Glass zoom, pan, jitter, and reset stay deterministic",
+        "chromium::table-tilt.spec.ts::Table Tilt preserves the requested Scheimpflug construction after Geometry restore",
+        "chromium::table-tilt.spec.ts::Table Tilt raw and final RTT diagnostics contain scene pixels before and after refocus",
+        "chromium::table-tilt.spec.ts::Table Tilt zero-tilt point focus moves from near to middle to far",
+        "chromium::understanding-camera-movements.spec.ts::camera movements scene loads and renders valid Ground Glass content",
+        "chromium::understanding-camera-movements.spec.ts::canonical lattice remains stable across controls and SPA routes",
+        "chromium::understanding-camera-movements.spec.ts::continuous viewpoint, tilt, and vertical framing change Ground Glass without breaking",
+        "chromium::understanding-camera-movements.spec.ts::Reset Movements restores zero state and keeps Ground Glass valid",
+        "chromium::viewport-learning-overlay.spec.ts::constrained desktop Scenes move overlay controls below the host without menu clipping",
+        "chromium::viewport-learning-overlay.spec.ts::desktop learning rail and Scene overlay controls keep separate visual anchors",
+        "chromium::viewport-learning-overlay.spec.ts::Ground Glass expansion keeps one bounded learning rail and drawer",
+        "chromium::viewport-learning-overlay.spec.ts::guided completion updates the peek rail without auto-opening or leaving Task",
+        "chromium::viewport-learning-overlay.spec.ts::keyboard focus remains visible on the rail while the drawer opens transiently",
+        "chromium::viewport-learning-overlay.spec.ts::learning drawer supports keyboard focus and internal scrolling without changing Task/Feedback content",
+        "chromium::viewport-learning-overlay.spec.ts::narrow Ground Glass expansion keeps the learning flow outside the clipped frame",
+        "chromium::viewport-learning-overlay.spec.ts::narrow layouts keep the learning surface in flow without horizontal overflow",
+        "chromium::viewport-learning-overlay.spec.ts::Scene-local learning drawer leaves the paired workspace layout intact"
+      ],
+      "coveredIdentities": [],
+      "artifact": null,
+      "retries": null,
+      "flaky": null,
+      "incomplete": null,
+      "failed": null,
+      "skipped": null,
+      "executionApi": null,
+      "rendererFamily": null,
+      "applicationFallback": null,
+      "webglCompatibilityBackend": null,
+      "reason": "M7V performed discovery and source-policy verification only; no lane execution is represented as qualification evidence."
+    },
+    "renderer-serial": {
+      "status": "not-run",
+      "purpose": "The four required renderer-contention identities under one worker.",
+      "requiredIdentities": [
+        "chromium-renderer-serial::camera-controls-compact.spec.ts::camera control rows keep useful rendered tracks across rail widths",
+        "chromium-renderer-serial::fringe-club-dev-integration.spec.ts::Stage 2N-A Observer and RTT instances survive independent sibling removal",
+        "chromium-renderer-serial::scene-view-focus.spec.ts::View Focus preserves independent Scene and Camera views and resets the active preset",
+        "chromium-renderer-serial::table-tilt.spec.ts::Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress"
+      ],
+      "coveredIdentities": [],
+      "artifact": null,
+      "retries": null,
+      "flaky": null,
+      "incomplete": null,
+      "failed": null,
+      "skipped": null,
+      "executionApi": null,
+      "rendererFamily": null,
+      "applicationFallback": null,
+      "webglCompatibilityBackend": null,
+      "reason": "M7V performed discovery and source-policy verification only; no lane execution is represented as qualification evidence."
+    },
+    "native-webgpu": {
+      "status": "not-run",
+      "purpose": "Conditional-mandatory native lifecycle/rendering evidence; requires real headed native WebGPU.",
+      "requiredIdentities": [
+        "chrome-native-webgpu::architecture-rise-webgpu-validation.spec.ts::r187 native public Architecture Rise Observer pilot preserves WebGL Ground Glass",
+        "chrome-native-webgpu::ground-glass-webgpu-aperture-gather-app.spec.ts::M7E native r187 requalifies the bounded M5 Far/Near/B1 matrices",
+        "chrome-native-webgpu::ground-glass-webgpu-aperture-gather-app.spec.ts::M7E r187 isolates optional M5 failures from the completed M3 Raw frame",
+        "chrome-native-webgpu::ground-glass-webgpu-aperture-gather-app.spec.ts::native M3/M4 Raw baseline records frame and physical pass timing with M5 disabled",
+        "chrome-native-webgpu::ground-glass-webgpu-aperture-gather-app.spec.ts::native M5 app adapter applies frozen R3 thresholds to an independent matched capture",
+        "chrome-native-webgpu::ground-glass-webgpu-aperture-gather-app.spec.ts::native M5 app adapter captures B1 provenance, source fallback, and near coverage for matched quality modes",
+        "chrome-native-webgpu::ground-glass-webgpu-aperture-gather-app.spec.ts::native M5 rejects stale captures and recovers from a local gather failure",
+        "chrome-native-webgpu::ground-glass-webgpu-aperture-gather-app.spec.ts::native M5Q applies frozen per-dimension R3 gates to independent optical states",
+        "chrome-native-webgpu::ground-glass-webgpu-aperture-gather-app.spec.ts::native M5Q explores a bounded Architecture Rise optical-state catalog before confirmation",
+        "chrome-native-webgpu::ground-glass-webgpu-aperture-gather-app.spec.ts::native M5R diagnoses reference convergence, B1 fallback, and Near coverage without changing M5Q",
+        "chrome-native-webgpu::ground-glass-webgpu-aperture-gather-app.spec.ts::native M5T validates adaptive Far quadrature and spatial blur without changing M5 or M5Q",
+        "chrome-native-webgpu::ground-glass-webgpu-aperture-gather-app.spec.ts::native M5U measures M5T cost and confirms geometry-aware quadrature",
+        "chrome-native-webgpu::ground-glass-webgpu-aperture-gather-app.spec.ts::native M6D confirms the actual M5 composite completes Near coverage as opaque RGB",
+        "chrome-native-webgpu::ground-glass-webgpu-aperture-gather.spec.ts::native SPA navigation retires a held readback and remounts an independent renderer",
+        "chrome-native-webgpu::ground-glass-webgpu-aperture-gather.spec.ts::native pass failures remain observable and release the exact owning handle",
+        "chrome-native-webgpu::ground-glass-webgpu-aperture-gather.spec.ts::native quality, aperture, film tilt, and off-center crop preserve physical units",
+        "chrome-native-webgpu::ground-glass-webgpu-aperture-gather.spec.ts::native r186 WebGPU performs scene depth, physical CoC, far/near gathers, composite, and readback",
+        "chrome-native-webgpu::ground-glass-webgpu-b1-optical-validation.spec.ts::native Interior and Architecture focus/movement states preserve canonical camera/film state",
+        "chrome-native-webgpu::ground-glass-webgpu-b1-optical-validation.spec.ts::native Macro focus/aperture matrix preserves canonical state and compares B1 with full references",
+        "chrome-native-webgpu::ground-glass-webgpu-coc-footprint.spec.ts::native binary16 range probe records finite and saturated storage separately",
+        "chrome-native-webgpu::ground-glass-webgpu-correspondence-large-coc.spec.ts::native large-CoC crop activates and measures the real 12 px cap against matched references",
+        "chrome-native-webgpu::ground-glass-webgpu-correspondence-large-coc.spec.ts::native point projection, fixed readback orientation, and visible-surface audit cover all seven states",
+        "chrome-native-webgpu::ground-glass-webgpu-failure-host.spec.ts::native M3 WebGPU adapter-to-host controlled failure recovery::D1 initialization failure cleans acquired resources before WebGL fallback and remains sticky",
+        "chrome-native-webgpu::ground-glass-webgpu-failure-host.spec.ts::native M3 WebGPU adapter-to-host controlled failure recovery::D2 controlled scene render submission rejection fails the whole frame and falls back only after confirmed cleanup",
+        "chrome-native-webgpu::ground-glass-webgpu-failure-host.spec.ts::native M3 WebGPU adapter-to-host controlled failure recovery::D3 controlled queue completion rejection fails the whole frame and falls back only after confirmed cleanup",
+        "chrome-native-webgpu::ground-glass-webgpu-failure-host.spec.ts::native M3 WebGPU adapter-to-host controlled failure recovery::D4 failed disposal keeps the host unavailable and prevents a replacement generation",
+        "chrome-native-webgpu::ground-glass-webgpu-failure-host.spec.ts::native M3 WebGPU adapter-to-host controlled failure recovery::D4 texture display submission fails the whole frame and falls back only after confirmed cleanup",
+        "chrome-native-webgpu::ground-glass-webgpu-failure-host.spec.ts::native M3 WebGPU adapter-to-host controlled failure recovery::D5 pending queue work blocks replacement until the actual adapter operation settles",
+        "chrome-native-webgpu::ground-glass-webgpu-failure-host.spec.ts::native M3 WebGPU adapter-to-host controlled failure recovery::D6 latest request wins after a held adapter failure and an out-of-order fallback completion",
+        "chrome-native-webgpu::ground-glass-webgpu-failure-host.spec.ts::native M3 WebGPU adapter-to-host controlled failure recovery::D8 WebGPURenderer on its WebGL2 compatibility backend is not reported as native and falls back safely",
+        "chrome-native-webgpu::ground-glass-webgpu-failure-host.spec.ts::native M3 WebGPU adapter-to-host controlled failure recovery::M4 physical validity writer failure stays local while Raw completes and the next request recovers",
+        "chrome-native-webgpu::ground-glass-webgpu-failure-host.spec.ts::native M3 WebGPU adapter-to-host controlled failure recovery::M4 physical writer failure stays local while Raw completes and the next request recovers",
+        "chrome-native-webgpu::ground-glass-webgpu-failure-host.spec.ts::native M3 WebGPU adapter-to-host controlled failure recovery::M4 unsupported physical storage reports unsupported while native Raw remains available",
+        "chrome-native-webgpu::ground-glass-webgpu-failure-host.spec.ts::native M3 WebGPU adapter-to-host controlled failure recovery::M7A explicit retry and new session are developer actions, preserve history, and never loop",
+        "chrome-native-webgpu::ground-glass-webgpu-failure-host.spec.ts::native M3 WebGPU adapter-to-host controlled failure recovery::M7A injected device loss uses the native runtime failure and cleanup path",
+        "chrome-native-webgpu::ground-glass-webgpu-failure-host.spec.ts::native M3 WebGPU adapter-to-host controlled failure recovery::M7B current WebGL context loss is terminal across client-side remount",
+        "chrome-native-webgpu::ground-glass-webgpu-failure-host.spec.ts::native M3 WebGPU adapter-to-host controlled failure recovery::M7B test-destroyed GPUDevice resolves its actual lost promise through the owned failure path",
+        "chrome-native-webgpu::ground-glass-webgpu-failure-host.spec.ts::native M3 WebGPU adapter-to-host controlled failure recovery::M7C scene navigation during pending cleanup does not publish retired output or retry on remount",
+        "chrome-native-webgpu::ground-glass-webgpu-far-reconstruction-i.spec.ts::native Phase I benchmark state is isolated after a tilted 4× crop",
+        "chrome-native-webgpu::ground-glass-webgpu-far-reconstruction-i.spec.ts::native Phase I measures matched references, B0/B1/C1 quality, coverage, performance and lifecycle",
+        "chrome-native-webgpu::ground-glass-webgpu-far-reconstruction.spec.ts::native Phase H verifies gather coordinates, leakage provenance, CPU reconstruction, and bounded candidate",
+        "chrome-native-webgpu::ground-glass-webgpu-gather-quality.spec.ts::native Phase G factorial gather-quality study, scaling, caps, scene proxies, and lifecycle",
+        "chrome-native-webgpu::ground-glass-webgpu-host.spec.ts::native-required app-host pilot renders Architecture Rise Raw RTT and cleans up across SPA remount",
+        "chrome-native-webgpu::ground-glass-webgpu-interior-coc-quality.spec.ts::native Phase L crop search and matched B1 large-CoC quality matrix",
+        "chrome-native-webgpu::ground-glass-webgpu-m6-presentation.spec.ts::native M6 displays the M5 composite with shared crop and presentation behavior",
+        "chrome-native-webgpu::ground-glass-webgpu-m6-presentation.spec.ts::native M6 final-display failure never publishes a completed M6 frame",
+        "chrome-native-webgpu::ground-glass-webgpu-m6-presentation.spec.ts::native M6 flags leave an unsupported Ground Glass scene on WebGL without attempting WebGPU",
+        "chrome-native-webgpu::ground-glass-webgpu-m6-presentation.spec.ts::native M6 optical-resource initialization failure cleans up the Raw-first adapter and falls back",
+        "chrome-native-webgpu::ground-glass-webgpu-m6-presentation.spec.ts::native M6 presentation node initialization failure selects the existing WebGL host",
+        "chrome-native-webgpu::ground-glass-webgpu-m6-presentation.spec.ts::native M6 presentation-pass failure never publishes a completed M6 frame",
+        "chrome-native-webgpu::ground-glass-webgpu-m6-presentation.spec.ts::native M6 provisions once from initial Raw Debug and completes Raw/M6/loupe/resize transitions",
+        "chrome-native-webgpu::ground-glass-webgpu-m6-presentation.spec.ts::native M6 rejects an incomplete M5 composite before WebGL fallback",
+        "chrome-native-webgpu::ground-glass-webgpu-m6-presentation.spec.ts::native M6 rejects presentation work made stale by resize before queue completion",
+        "chrome-native-webgpu::ground-glass-webgpu-m6b-conformance.spec.ts::native M6B measures physical overlay alignment and final canvas output",
+        "chrome-native-webgpu::ground-glass-webgpu-m6c-alpha.spec.ts::native M6C captures actual presentation alpha across effects, orientation, crop and resize",
+        "chrome-native-webgpu::ground-glass-webgpu-m6c-alpha.spec.ts::native M6C discards held alpha readback when SPA navigation retires its renderer generation",
+        "chrome-native-webgpu::ground-glass-webgpu-m6c-alpha.spec.ts::native M6C rejects a held alpha result after the accepted request changes",
+        "chrome-native-webgpu::ground-glass-webgpu-m7g-lifecycle.spec.ts::M7G holds a submitted M5 composite, rejects its stale request, and publishes the latest M4/M5/M6 result",
+        "chrome-native-webgpu::ground-glass-webgpu-physical-coc-app.spec.ts::M4 probe readback is stale after resize and cannot publish the superseded request",
+        "chrome-native-webgpu::ground-glass-webgpu-physical-coc-app.spec.ts::M4 unmount during a held probe prevents publication and confirms cleanup after the readback settles",
+        "chrome-native-webgpu::ground-glass-webgpu-physical-coc-app.spec.ts::native M4 app adapter reconstructs Architecture Rise depth and writes physical CoC data",
+        "chrome-native-webgpu::ground-glass-webgpu-physical-coc.spec.ts::a failure after native depth rendering releases the allocated depth and renderer resources",
+        "chrome-native-webgpu::ground-glass-webgpu-physical-coc.spec.ts::a post-physical TSL failure remains visible and still cleans the exact native handle",
+        "chrome-native-webgpu::ground-glass-webgpu-physical-coc.spec.ts::native SPA retirement waits for held readbacks, rejects stale publication, and remounts independently",
+        "chrome-native-webgpu::ground-glass-webgpu-r187-app-pilot.spec.ts::r187 native M3 Raw RTT runs in the application and disposes on scene transition",
+        "chrome-native-webgpu::ground-glass-webgpu-raw-rtt.spec.ts::native-required WebGPU Ground Glass RTT samples and presents an offscreen target",
+        "chrome-native-webgpu::ground-glass-webgpu-raw-rtt.spec.ts::native-required WebGPU SPA navigation drains the exact retired handle and remounts independently",
+        "chrome-native-webgpu::ground-glass-webgpu-raw-rtt.spec.ts::native-required WebGPU display failure stays observable and remounts cleanly",
+        "chrome-native-webgpu::ground-glass-webgpu-raw-rtt.spec.ts::native-required WebGPU readback rejection remains a failure while cleanup completes",
+        "chrome-native-webgpu::observer-webgpu-pilot.spec.ts::Anatomy material-aware output failure uses the existing one-shot standard WebGL fallback",
+        "chrome-native-webgpu::observer-webgpu-pilot.spec.ts::Anatomy material-aware readiness remains stable after a long active Lesson 0 transition",
+        "chrome-native-webgpu::observer-webgpu-pilot.spec.ts::persistent Anatomy material-aware readiness loss times out through one-shot WebGL fallback",
+        "chrome-native-webgpu::observer-webgpu-pilot.spec.ts::unsupported Anatomy material fails immediately without a readiness grace period"
+      ],
+      "coveredIdentities": [],
+      "artifact": null,
+      "retries": null,
+      "flaky": null,
+      "incomplete": null,
+      "failed": null,
+      "skipped": null,
+      "executionApi": null,
+      "rendererFamily": null,
+      "applicationFallback": null,
+      "webglCompatibilityBackend": null,
+      "reason": "M7V performed discovery and source-policy verification only; no lane execution is represented as qualification evidence."
+    },
+    "research-development": {
+      "status": "not-run",
+      "purpose": "Explicitly invoked Dream Loop capture and Scene Capacity benchmark workflows.",
+      "requiredIdentities": [
+        "chromium::dream-loop-capture.spec.ts::Dream Loop pilot captures teaching and clean observer views",
+        "chromium::scene-capacity-benchmark.spec.ts::scene capacity benchmark::captures static scene capacity and Ground Glass timing matrix"
+      ],
+      "coveredIdentities": [],
+      "artifact": null,
+      "retries": null,
+      "flaky": null,
+      "incomplete": null,
+      "failed": null,
+      "skipped": null,
+      "executionApi": null,
+      "rendererFamily": null,
+      "applicationFallback": null,
+      "webglCompatibilityBackend": null,
+      "reason": "M7V performed discovery and source-policy verification only; no lane execution is represented as qualification evidence."
+    },
+    "production-preview": {
+      "status": "not-run",
+      "purpose": "Production-build WebGL isolation, independent of native WebGPU qualification.",
+      "requiredIdentities": [
+        "chromium-production-preview::architecture-rise-webgpu-production.spec.ts::production preview denies explicit standard WebGPU selection on Architecture Rise",
+        "chromium-production-preview::architecture-rise-webgpu-production.spec.ts::production preview denies the Anatomy material-aware WebGPU candidate",
+        "chromium-production-preview::architecture-rise-webgpu-production.spec.ts::production preview denies the Architecture Rise material-aware WebGPU candidate",
+        "chromium-production-preview::architecture-rise-webgpu-production.spec.ts::production preview renders Architecture Rise on WebGL and excludes WebGPU from the default bundle"
+      ],
+      "coveredIdentities": [],
+      "artifact": null,
+      "retries": null,
+      "flaky": null,
+      "incomplete": null,
+      "failed": null,
+      "skipped": null,
+      "executionApi": null,
+      "rendererFamily": null,
+      "applicationFallback": null,
+      "webglCompatibilityBackend": null,
+      "reason": "M7V performed discovery and source-policy verification only; no lane execution is represented as qualification evidence."
+    }
+  },
+  "validation": {
+    "policyIntegrity": {
+      "command": "npm run evidence:check:m7v",
+      "status": "passed",
+      "integrityIssues": []
+    },
+    "focusedPolicyTests": {
+      "command": "npm test -- --run src/tests/unit/m7vE2eQualificationPolicy.test.ts",
+      "status": "passed",
+      "testCount": 31
+    },
+    "repositoryTests": {
+      "command": "npm test",
+      "status": "passed",
+      "nodeVersion": "v24.3.0",
+      "testFiles": 327,
+      "tests": 3953
+    },
+    "typecheck": {
+      "command": "npm run typecheck",
+      "status": "passed"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "status": "passed"
+    },
+    "previousEvidenceChecks": {
+      "m7r": "passed",
+      "m7q": "passed",
+      "m7k": "passed"
+    },
+    "approvalCompletion": {
+      "command": "npm run evidence:require-approved:m7v",
+      "status": "pending-approval",
+      "exitCode": 1,
+      "expectedFailure": "owner-approval-pending:75"
+    },
+    "qualification": {
+      "command": "npm run evidence:require-qualified:m7v",
+      "status": "not-qualified",
+      "exitCode": 1,
+      "expectedFailures": [
+        "owner-approval-pending:75",
+        "lane-not-qualified:ordinary-webgl:not-run",
+        "lane-not-qualified:renderer-serial:not-run",
+        "lane-not-qualified:native-webgpu:not-run",
+        "lane-not-qualified:production-preview:not-run"
+      ]
+    },
+    "fullBroadE2e": "not-run",
+    "nativeWebGpuLane": "not-run",
+    "ciPolicyIntegrityGate": {
+      "workflow": ".github/workflows/pages.yml",
+      "step": "Validate M7V E2E qualification lane and skip governance policy",
+      "required": true,
+      "command": "npm run evidence:check:m7v"
+    }
+  },
+  "qualification": {
+    "broadE2e": "not-qualified",
+    "m7": "partially-qualified",
+    "m8Entry": "denied",
+    "spontaneousExternalGpuDeviceLoss": "blocked",
+    "productionGroundGlass": "WebGL-only",
+    "productionWebGpu": "disabled"
+  },
+  "notes": [
+    "Playwright discovery is inventory evidence only; it does not execute tests or evaluate all conditional skips.",
+    "All historical skipped identities remain pending owner decisions; native lane assignment is conditional-mandatory, not an exclusion.",
+    "A passing policy-integrity check does not qualify any execution lane or the Broad E2E suite.",
+    "The two research/development entries retain their existing npm entrypoints and are not removed.",
+    "M7V Review-Fix Round 1 advances the evaluator to v2, pins source declaration comparison to the M7U source commit, and adds artifact-derived lane validation plus authenticated GitHub approval verification. No lane execution or owner approval is claimed."
+  ]
+}

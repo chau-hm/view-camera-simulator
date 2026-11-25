@@ -1,0 +1,375 @@
+import {
+  resolveGroundGlassSceneEligibility,
+  type GroundGlassFeatureCompatibility,
+  type GroundGlassSceneCompatibility,
+} from "../backend/groundGlassSceneCompatibility";
+
+/** Frozen source revision for accepted r186 and historical r187 evidence. */
+export const ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1 = "architecture-rise-raw-rtt-v1";
+
+/** Current raster inputs after RQ2; advance this with bounded M3 revalidation. */
+export const ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION = "architecture-rise-raw-rtt-v2";
+
+/** Verification evidence is bound to the installed r186 renderer API/runtime. */
+export const ARCHITECTURE_RISE_RAW_RTT_VERIFIED_RENDERER_REVISION = "r186";
+
+/** Native r187 evidence is separate and qualifies only the Raw RTT feature. */
+export const ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION = "r187";
+
+export const ARCHITECTURE_RISE_RAW_RTT_R187_V1_EVIDENCE_REVISION =
+  "m3-architecture-rise-raw-rtt-native-r187-v1";
+export const ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION =
+  "m3-architecture-rise-raw-rtt-native-r187-v2";
+
+export const ARCHITECTURE_RISE_RAW_RTT_EVIDENCE_REVISION =
+  "m3-architecture-rise-raw-rtt-native-v1";
+
+/** M4 physical CoC remains research-only even after the bounded native evidence run. */
+export const ARCHITECTURE_RISE_PHYSICAL_COC_EVIDENCE_REVISION =
+  "m4-architecture-rise-physical-coc-native-v1";
+
+/** r187 M4 evidence is a separate research record and does not expand feature authorization. */
+export const ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION =
+  "m4-architecture-rise-physical-coc-native-r187-v1";
+
+export const ARCHITECTURE_RISE_APERTURE_GATHER_EVIDENCE_REVISION =
+  "m5-architecture-rise-aperture-gather-research-v1";
+
+/** Native r187 Gather research is independently revision-bound and remains research-only. */
+export const ARCHITECTURE_RISE_APERTURE_GATHER_R187_EVIDENCE_REVISION =
+  "m5-architecture-rise-aperture-gather-r187-v1";
+
+export const ARCHITECTURE_RISE_B1_RESEARCH_EVIDENCE_REVISION =
+  "m5-architecture-rise-far-reconstruction-b1-research-v1";
+
+/** Native r187 B1 research is independently revision-bound and remains research-only. */
+export const ARCHITECTURE_RISE_B1_R187_RESEARCH_EVIDENCE_REVISION =
+  "m5-architecture-rise-far-reconstruction-b1-r187-v1";
+
+/**
+ * This record authorizes only the Raw scene target and its separate texture display.
+ * M4 physical CoC is recorded as research-only and cannot authorize a renderer attempt.
+ * Gathers, composite, coverage, and full-presentation features remain unverified.
+ */
+export const GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY: GroundGlassSceneCompatibility = {
+  sceneId: "architecture-rise",
+  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
+  features: [
+    {
+      feature: "raw-rtt",
+      status: "verified",
+      sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
+      evidenceRevision: ARCHITECTURE_RISE_RAW_RTT_EVIDENCE_REVISION,
+      testedContext: {
+        rendererFamily: "webgpu-renderer",
+        executionApi: "webgpu",
+        rendererRevision: ARCHITECTURE_RISE_RAW_RTT_VERIFIED_RENDERER_REVISION,
+        runtimeDescription: "Three.js r186 WebGPURenderer native WebGPU backend",
+      },
+      verificationEvidence: [
+        "native-required Architecture Rise Ground Glass host browser integration",
+        "canonical off-axis camera and registered RTT subject raster validation",
+        "Raw/Upright orientation, asymmetric landmarks, crop, resize, and cleanup validation",
+      ],
+      requiredCapabilities: {
+        adapterFeatures: [],
+        textureStorageFormats: [],
+      },
+      knownIncompatibilities: [],
+    },
+    {
+      feature: "physical-coc",
+      status: "research-only",
+      sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
+      evidenceRevision: ARCHITECTURE_RISE_PHYSICAL_COC_EVIDENCE_REVISION,
+      testedContext: {
+        rendererFamily: "webgpu-renderer",
+        executionApi: "webgpu",
+        rendererRevision: ARCHITECTURE_RISE_RAW_RTT_VERIFIED_RENDERER_REVISION,
+        runtimeDescription: "Three.js r186 native WebGPU M4 development research pass",
+      },
+      evidence: [
+        "native-required Architecture Rise application adapter depth reconstruction and RGBA16F/RGBA8 targets",
+        "independent near, far, off-axis, asymmetric, and clear-background scene probes compared with canonical CPU optics",
+        "controlled U=f boundary vectors evaluated by the same M4 TSL kernel and compared with computePhysicalBlurFootprint",
+        "focus, aperture, rise, crop, resize, and confirmed SPA cleanup/remount lifecycle validation",
+      ],
+      requiredCapabilities: {
+        adapterFeatures: [],
+        textureStorageFormats: ["depth24plus", "rgba16float", "rgba8unorm"],
+      },
+      knownIncompatibilities: [],
+    },
+    {
+      feature: "aperture-gather",
+      status: "research-only",
+      sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
+      evidenceRevision: ARCHITECTURE_RISE_APERTURE_GATHER_EVIDENCE_REVISION,
+      testedContext: {
+        rendererFamily: "webgpu-renderer",
+        executionApi: "webgpu",
+        rendererRevision: ARCHITECTURE_RISE_RAW_RTT_VERIFIED_RENDERER_REVISION,
+        runtimeDescription: "Three.js r186 native WebGPU M5 development research pass",
+      },
+      evidence: [
+        "M5 adapter-owned far and near passes consume the successful current M4 physical and validity outputs",
+        "research-only targets are separate from the M3 Raw display and public Ground Glass output",
+      ],
+      requiredCapabilities: {
+        adapterFeatures: [],
+        textureStorageFormats: ["rgba16float", "rgba32float", "rgba8unorm"],
+      },
+      knownIncompatibilities: [
+        "Architecture Rise gather quality remains research-only until matched native references and edge gates are evaluated",
+        "full presentation parity and production materials are not established",
+      ],
+    },
+    {
+      feature: "far-reconstruction-b1",
+      status: "research-only",
+      sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
+      evidenceRevision: ARCHITECTURE_RISE_B1_RESEARCH_EVIDENCE_REVISION,
+      testedContext: {
+        rendererFamily: "webgpu-renderer",
+        executionApi: "webgpu",
+        rendererRevision: ARCHITECTURE_RISE_RAW_RTT_VERIFIED_RENDERER_REVISION,
+        runtimeDescription: "Three.js r186 native WebGPU Phase H B1 research pass",
+      },
+      evidence: [
+        "B1 preserves GPU-observed gather selection and source-center provenance with explicit source-color fallback",
+        "the independent CPU oracle is separate from the Phase I C1 neighbor-search oracle",
+      ],
+      requiredCapabilities: {
+        adapterFeatures: [],
+        textureStorageFormats: ["rgba16float", "rgba32float", "rgba8unorm"],
+      },
+      knownIncompatibilities: [
+        "B1 quality qualification remains state-specific and incomplete until matched references and fallback-halo gates pass",
+        "M5 research composition does not establish M6 presentation or production parity",
+      ],
+    },
+  ],
+};
+
+const architectureRiseRawRttR187V1Feature: Extract<
+  GroundGlassFeatureCompatibility,
+  { status: "verified" }
+> = {
+  feature: "raw-rtt",
+  status: "verified",
+  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
+  evidenceRevision: ARCHITECTURE_RISE_RAW_RTT_R187_V1_EVIDENCE_REVISION,
+  testedContext: {
+    rendererFamily: "webgpu-renderer",
+    executionApi: "webgpu",
+    rendererRevision: ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION,
+    runtimeDescription: "Three.js r187 WebGPURenderer native WebGPU backend in Chrome 156 on macOS 27 arm64",
+  },
+  verificationEvidence: [
+    "native-required r187 application-host run rendered Raw RTT on WebGPURenderer/webgpu with no internal fallback, preserved contentful output during focus/aperture changes, and confirmed cleanup on SPA scene transition",
+    "native-required r187 Raw RTT fixture verified asymmetric Raw/Upright landmarks, full and off-center crop, and inspection-window source correspondence",
+    "the r187 fixture verified target resize, stale-request rejection, exact resource cleanup, readback rejection, and allocation-failure disposal without publishing retired output",
+  ],
+  requiredCapabilities: {
+    adapterFeatures: [],
+    textureStorageFormats: [],
+  },
+  knownIncompatibilities: [],
+};
+
+const architectureRiseRawRttR187Feature: Extract<
+  GroundGlassFeatureCompatibility,
+  { status: "verified" }
+> = {
+  feature: "raw-rtt",
+  status: "verified",
+  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+  evidenceRevision: ARCHITECTURE_RISE_RAW_RTT_R187_EVIDENCE_REVISION,
+  testedContext: {
+    rendererFamily: "webgpu-renderer",
+    executionApi: "webgpu",
+    rendererRevision: ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION,
+    runtimeDescription: "Three.js r187 native WebGPU in Google Chrome 157.0.8103.40 on macOS 27.0.1 arm64",
+  },
+  verificationEvidence: [
+    "RQ2.1 two-stage native-required application test observed the source-bound v2 M3 evidence revision on WebGPURenderer/webgpu with no internal or application fallback",
+    "Architecture Rise Raw RTT remained contentful and the current request completed and was accepted after focus, f/8 aperture, and Front Rise updates",
+    "SPA scene transition confirmed native-generation cleanup before the next unsupported scene mounted through WebGL2",
+    "the native r187 Raw RTT raster fixture passed asymmetric landmark orientation, off-center crop, and source-correspondence checks",
+    "RQ2.1 native capture run produced the exact neutral and Front Rise states with current-frame, host-acceptance, and contentfulness evidence",
+  ],
+  requiredCapabilities: { adapterFeatures: [], textureStorageFormats: [] },
+  knownIncompatibilities: [],
+};
+
+const architectureRisePhysicalCocR187Feature: Extract<
+  GroundGlassFeatureCompatibility,
+  { status: "research-only" }
+> = {
+  feature: "physical-coc",
+  status: "research-only",
+  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
+  evidenceRevision: ARCHITECTURE_RISE_PHYSICAL_COC_R187_EVIDENCE_REVISION,
+  testedContext: {
+    rendererFamily: "webgpu-renderer",
+    executionApi: "webgpu",
+    rendererRevision: ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION,
+    runtimeDescription: "Three.js r187 native WebGPU in Chrome 156.0.8078.76 on Darwin arm64",
+  },
+  evidence: [
+    "M7D native-required controlled M4 TSL kernel vectors compared with computePhysicalBlurFootprint at frozen tolerances, with captured RGBA16F half bits, decoded storage, and GPU sampled decode",
+    "registered Architecture Rise plinth, street sign, checker, sign edge, focus-chart, and clear-depth probes reconstructed from observed depth24plus and compared with independent analytical surface points",
+    "the M4 adapter observed depth24plus, rgba16float, and rgba8unorm allocations through the Three.js r187 WebGPU backend and rejected unsupported formats",
+    "native M4 physical and validity writer failures remained local to the optional pass while the M3 Raw frame completed and a later request recovered",
+    "r187 native M4 resize and unmount captures rejected stale diagnostic readbacks and recorded confirmed adapter cleanup",
+    "independently identifiable native captures and numerical/storage qualification are recorded in docs/architecture/GROUND_GLASS_M7D_R187_PHYSICAL_COC_REPORT.json",
+  ],
+  requiredCapabilities: {
+    adapterFeatures: [],
+    textureStorageFormats: ["depth24plus", "rgba16float", "rgba8unorm"],
+  },
+  knownIncompatibilities: [
+    "the depth24plus reconstruction remains depth-limited near focal inversion and does not establish exact U=f from rounded raster depth",
+    "M5 Gather/B1 have separate r187 research-only records with partially-qualified M5Q results; M6 presentation remains tied to r186 and is not authorized on r187",
+    "photographic quality, cross-browser behavior, and production WebGPU are not qualified",
+  ],
+};
+
+const architectureRiseApertureGatherR187Feature: Extract<
+  GroundGlassFeatureCompatibility,
+  { status: "research-only" }
+> = {
+  feature: "aperture-gather",
+  status: "research-only",
+  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
+  evidenceRevision: ARCHITECTURE_RISE_APERTURE_GATHER_R187_EVIDENCE_REVISION,
+  testedContext: {
+    rendererFamily: "webgpu-renderer",
+    executionApi: "webgpu",
+    rendererRevision: ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION,
+    runtimeDescription: "Three.js r187 native WebGPU in Chrome 156.0.8078.76 on Darwin arm64",
+  },
+  evidence: [
+    "M7E native-required registered Architecture Rise capture matrices observed r187 WebGPURenderer/webgpu execution, actual M4 inputs and native M5 target formats across Half32, Full32, and Full64 profiles",
+    "all twelve M7E Far/Near GPU outputs matched independent captured-input CPU references within the existing 0.001 comparison limit; Near output remained unchanged by B1",
+    "eight injected M5 initialization, submitted-pass, decision, composite, and readback failures left the M3 Raw host frame complete and contentful, rejected failed M5 capture publication, and recovered on a later capture",
+    "the independent M5Q r187 matrix is partially-qualified: Q3 passed; Q1 and Q5/Q6/Q7 did not converge; Q2/Q4 have insufficient support; the frozen r186 numeric thresholds were unchanged",
+    "M7E reports, exact source revision, native invocation, and compressed GPU/CPU readback artifacts are retained under docs/architecture/ground-glass-m7e-r187-gather-b1",
+  ],
+  requiredCapabilities: {
+    adapterFeatures: [],
+    textureStorageFormats: ["rgba16float", "rgba32float", "rgba8unorm"],
+  },
+  knownIncompatibilities: [
+    "M5Q quality evidence is only partially qualified on the tested r187 environment and remains research-only",
+    "M6 presentation, cross-browser behavior, photographic quality, and production WebGPU are not qualified",
+  ],
+};
+
+const architectureRiseB1R187Feature: Extract<
+  GroundGlassFeatureCompatibility,
+  { status: "research-only" }
+> = {
+  feature: "far-reconstruction-b1",
+  status: "research-only",
+  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
+  evidenceRevision: ARCHITECTURE_RISE_B1_R187_RESEARCH_EVIDENCE_REVISION,
+  testedContext: {
+    rendererFamily: "webgpu-renderer",
+    executionApi: "webgpu",
+    rendererRevision: ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION,
+    runtimeDescription: "Three.js r187 native WebGPU in Chrome 156.0.8078.76 on Darwin arm64",
+  },
+  evidence: [
+    "M7E native B1 boundary probe exercised ten observed RGBA16F physical/Far storage cases and compared stored binary16 bits with Three.js conversion",
+    "GPU B1 eligibility, fallback reason, selected path, and output matched an independent CPU reconstruction using recorded RGBA8 source, M4 physical, validity, and Far inputs",
+    "all twelve registered-app M5 profiles independently recomputed B1 decisions from actual captured M3/M4/Far data and observed request/generation identities",
+    "M5Q r187 remains partially-qualified and cannot authorize M6 presentation or production WebGPU",
+  ],
+  requiredCapabilities: {
+    adapterFeatures: [],
+    textureStorageFormats: ["rgba16float", "rgba32float", "rgba8unorm"],
+  },
+  knownIncompatibilities: [
+    "M5Q dimensions Q1, Q2, Q4, Q5, Q6, and Q7 did not meet their frozen bounded qualification gates in the tested environment",
+    "M6 presentation, cross-browser behavior, photographic quality, and production WebGPU are not qualified",
+  ],
+};
+
+/**
+ * New native r187 evidence keeps M3 Raw RTT independently eligible and records M4/M5 as
+ * research-only. These records cannot authorize a renderer attempt or production WebGPU.
+ */
+export const GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY: GroundGlassSceneCompatibility = {
+  ...GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY,
+  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION,
+  features: [
+    architectureRiseRawRttR187Feature,
+    architectureRisePhysicalCocR187Feature,
+    architectureRiseApertureGatherR187Feature,
+    architectureRiseB1R187Feature,
+    ...GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY.features.filter(
+      (feature) => feature.feature !== "raw-rtt"
+        && feature.feature !== "physical-coc"
+        && feature.feature !== "aperture-gather"
+        && feature.feature !== "far-reconstruction-b1",
+    ),
+  ],
+};
+
+/** Historical r187 records remain bound to the original v1 Architecture Rise raster inputs. */
+export const GROUND_GLASS_RAW_WEBGPU_R187_V1_COMPATIBILITY: GroundGlassSceneCompatibility = {
+  ...GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY,
+  sourceRevision: ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION_V1,
+  features: [
+    architectureRiseRawRttR187V1Feature,
+    architectureRisePhysicalCocR187Feature,
+    architectureRiseApertureGatherR187Feature,
+    architectureRiseB1R187Feature,
+  ],
+};
+
+/**
+ * Selects only evidence bound to the active Architecture Rise raster source. Historical renderer
+ * records remain available as immutable evidence objects, but cannot authorize a changed scene.
+ */
+export const resolveGroundGlassRawWebGpuCompatibility = (
+  rendererRevision: string,
+): GroundGlassSceneCompatibility | null => {
+  const compatibility = rendererRevision === "r186"
+    ? GROUND_GLASS_RAW_WEBGPU_COMPATIBILITY
+    : rendererRevision === ARCHITECTURE_RISE_RAW_RTT_R187_VERIFIED_RENDERER_REVISION
+      ? GROUND_GLASS_RAW_WEBGPU_R187_COMPATIBILITY
+      : null;
+
+  return compatibility?.sourceRevision === ARCHITECTURE_RISE_RAW_RTT_SOURCE_REVISION
+    ? compatibility
+    : null;
+};
+
+/** Returns only a Raw RTT qualification whose tested renderer revision matches the request. */
+export const resolveGroundGlassRawWebGpuEvidenceRevision = (
+  rendererRevision: string,
+): string | null => {
+  const compatibility = resolveGroundGlassRawWebGpuCompatibility(rendererRevision);
+  if (!compatibility) return null;
+  const eligibility = resolveGroundGlassSceneEligibility(
+    compatibility.sceneId,
+    ["raw-rtt"],
+    compatibility,
+    rendererRevision,
+  );
+  return eligibility.status === "eligible" && eligibility.evidenceRevisions.length === 1
+    ? eligibility.evidenceRevisions[0]
+    : null;
+};
+
+export const requireGroundGlassRawWebGpuEvidenceRevision = (
+  rendererRevision: string,
+): string => {
+  const evidenceRevision = resolveGroundGlassRawWebGpuEvidenceRevision(rendererRevision);
+  if (!evidenceRevision) {
+    throw new Error(`Ground Glass Raw RTT is not qualified for renderer ${rendererRevision}`);
+  }
+  return evidenceRevision;
+};

@@ -1,0 +1,414 @@
+{
+  "schemaVersion": "ground-glass-m7g-r187-native-observation-v1",
+  "sourceHeadSha": "8dfc6e10baf5d03ceb06826a1a9a7ca4498e782d",
+  "scenarioId": "m7g-r187-test-destroyed-device-loss-promise",
+  "title": "ground-glass-webgpu-failure-host.spec.ts › native M3 WebGPU adapter-to-host controlled failure recovery › M7B test-destroyed GPUDevice resolves its actual lost promise through the owned failure path",
+  "result": {
+    "status": "passed",
+    "expectedStatus": "passed"
+  },
+  "environment": {
+    "testProject": "chrome-native-webgpu",
+    "browserName": "chromium",
+    "browserVersion": "156.0.8078.76",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/156.0.0.0 Safari/537.36",
+    "threeRevision": "187",
+    "operatingSystem": {
+      "platform": "darwin",
+      "release": "27.0.0",
+      "architecture": "arm64",
+      "nodeVersion": "v24.3.0"
+    },
+    "flags": {
+      "nativeRequired": true,
+      "failureIntegrationEnabled": true,
+      "rawPilotBuildEnabled": true
+    }
+  },
+  "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1 GROUND_GLASS_WEBGPU_M7G_R187_QUALIFICATION_REQUIRED=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true npx playwright test src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts --project=chrome-native-webgpu --workers=1 --grep \"D1 initialization failure|M7A injected device loss|M7B test-destroyed GPUDevice\"",
+  "processArguments": [
+    "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+    "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7g-r187-lifecycle-consolidation/node_modules/playwright/lib/worker/workerProcessEntry.js"
+  ],
+  "observation": {
+    "controlPresent": true,
+    "configuredFailurePoints": [],
+    "adapterAttemptGenerations": [
+      "gg-mvxb3iye-pg0ws28356-default-generation-2"
+    ],
+    "m7cObservations": [
+      {
+        "kind": "native-policy-runtime-identity",
+        "policyEvidence": {
+          "threeRevision": "187",
+          "selectedBackend": "webgpu",
+          "policyEvidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v1",
+          "mountedRendererRevision": null,
+          "mountedVerificationEvidenceRevision": null
+        },
+        "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+        "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+        "requestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+        "sceneId": "architecture-rise",
+        "channelId": "default",
+        "pilotSessionId": "ground-glass-raw-m3:default",
+        "retryEpoch": 0,
+        "hostId": "gg-host-_r_d_-9l32nhebtk8",
+        "runtimeEventSequence": 20,
+        "runtimeIdentity": {
+          "rendererRevision": "187",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu",
+          "internalFallback": "none"
+        }
+      }
+    ],
+    "identities": {
+      "channelId": "default",
+      "pilotSessionId": "ground-glass-raw-m3:default",
+      "retryEpoch": "0",
+      "hostId": "gg-host-_r_d_-9l32nhebtk8",
+      "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+      "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+      "requestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+      "sceneId": "architecture-rise",
+      "attemptIds": [
+        "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]"
+      ],
+      "attempts": [
+        {
+          "kind": "attempt",
+          "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+          "channelId": "default",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+          "requestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+          "sceneId": "architecture-rise",
+          "rendererRevision": "187",
+          "sequence": 19
+        }
+      ]
+    },
+    "policy": {
+      "requestedBackend": "webgpu",
+      "selectedBackend": "webgl",
+      "evidenceRevision": null,
+      "mountedRendererRevision": null,
+      "mountedVerificationEvidenceRevision": null,
+      "attemptedBackend": "webgl",
+      "attemptStatus": "mounted"
+    },
+    "runtime": {
+      "finalMountedRendererFamily": "webgl-renderer",
+      "finalActualExecutionApi": "webgl2",
+      "finalInternalFallback": "none",
+      "adapterObservations": [
+        {
+          "kind": "runtime-observed",
+          "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+          "rendererRevision": "187",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 20
+        }
+      ],
+      "hostMountObservations": [
+        {
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-1\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-9l32nhebtk8",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-1",
+          "requestId": "gg-mvxb3iye-pg0ws28356-default-request-2",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgl-renderer",
+          "executionApi": "webgl2",
+          "internalFallback": "none",
+          "sequence": 2
+        },
+        {
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-9l32nhebtk8",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+          "requestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu",
+          "internalFallback": "none",
+          "sequence": 21
+        },
+        {
+          "kind": "renderer-mounted",
+          "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-3\"]",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-9l32nhebtk8",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-3",
+          "requestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+          "sceneId": "architecture-rise",
+          "rendererFamily": "webgl-renderer",
+          "executionApi": "webgl2",
+          "internalFallback": "none",
+          "sequence": 28
+        }
+      ]
+    },
+    "failure": {
+      "hostId": "gg-host-_r_d_-9l32nhebtk8",
+      "channelId": "default",
+      "pilotSessionId": "ground-glass-raw-m3:default",
+      "retryEpoch": "0",
+      "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+      "requestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+      "sceneId": "architecture-rise",
+      "stage": "runtime",
+      "operation": null,
+      "adapterEvents": [
+        {
+          "kind": "failure",
+          "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+          "channelId": "default",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+          "requestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+          "sceneId": "architecture-rise",
+          "stage": "runtime",
+          "operation": "device-loss",
+          "reason": "WebGPU device lost: Device was destroyed.",
+          "sequence": 24
+        }
+      ]
+    },
+    "cleanup": {
+      "finalStatus": "not-required",
+      "lastObserved": {
+        "kind": "cleanup-acknowledged",
+        "channelId": "default",
+        "hostId": "gg-host-_r_d_-9l32nhebtk8",
+        "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+        "outcome": "confirmed",
+        "reason": null,
+        "sequence": 27
+      },
+      "events": [
+        {
+          "kind": "cleanup-acknowledged",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-9l32nhebtk8",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-1",
+          "outcome": "confirmed",
+          "reason": null,
+          "sequence": 18
+        },
+        {
+          "kind": "cleanup",
+          "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+          "outcome": "confirmed",
+          "wallClockMs": 5.5,
+          "sequence": 26
+        },
+        {
+          "kind": "cleanup-acknowledged",
+          "channelId": "default",
+          "hostId": "gg-host-_r_d_-9l32nhebtk8",
+          "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+          "outcome": "confirmed",
+          "reason": null,
+          "sequence": 27
+        }
+      ]
+    },
+    "fallback": {
+      "applicationFallback": "occurred"
+    },
+    "publication": {
+      "currentRequestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+      "lastCompletedRequestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+      "completedCurrentRequest": true,
+      "frameResultStatus": "completed"
+    },
+    "finalLifecycle": "ready",
+    "totalEventCount": 33,
+    "qualificationEvents": [
+      {
+        "kind": "host-attached",
+        "channelId": "default",
+        "hostId": "gg-host-_r_d_-9l32nhebtk8",
+        "sequence": 0
+      },
+      {
+        "kind": "host-attached",
+        "channelId": "default",
+        "hostId": "gg-host-_r_d_-9l32nhebtk8",
+        "sequence": 1
+      },
+      {
+        "kind": "renderer-mounted",
+        "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-1\"]",
+        "channelId": "default",
+        "hostId": "gg-host-_r_d_-9l32nhebtk8",
+        "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-1",
+        "requestId": "gg-mvxb3iye-pg0ws28356-default-request-2",
+        "sceneId": "architecture-rise",
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "internalFallback": "none",
+        "sequence": 2
+      },
+      {
+        "kind": "host-frame-result",
+        "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-1\"]",
+        "channelId": "default",
+        "hostId": "gg-host-_r_d_-9l32nhebtk8",
+        "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-1",
+        "requestId": "gg-mvxb3iye-pg0ws28356-default-request-2",
+        "sceneId": "architecture-rise",
+        "frameStatus": "completed",
+        "acceptedByHost": true,
+        "latestAcceptedRequestId": "gg-mvxb3iye-pg0ws28356-default-request-2",
+        "latestAcceptedSceneId": "architecture-rise",
+        "activeGenerationId": "gg-mvxb3iye-pg0ws28356-default-generation-1",
+        "activeRendererFamily": "webgl-renderer",
+        "sequence": 3
+      },
+      {
+        "kind": "cleanup-acknowledged",
+        "channelId": "default",
+        "hostId": "gg-host-_r_d_-9l32nhebtk8",
+        "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-1",
+        "outcome": "confirmed",
+        "reason": null,
+        "sequence": 18
+      },
+      {
+        "kind": "attempt",
+        "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+        "channelId": "default",
+        "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+        "requestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+        "sceneId": "architecture-rise",
+        "rendererRevision": "187",
+        "sequence": 19
+      },
+      {
+        "kind": "runtime-observed",
+        "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+        "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+        "rendererRevision": "187",
+        "rendererFamily": "webgpu-renderer",
+        "executionApi": "webgpu",
+        "internalFallback": "none",
+        "sequence": 20
+      },
+      {
+        "kind": "renderer-mounted",
+        "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+        "channelId": "default",
+        "hostId": "gg-host-_r_d_-9l32nhebtk8",
+        "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+        "requestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+        "sceneId": "architecture-rise",
+        "rendererFamily": "webgpu-renderer",
+        "executionApi": "webgpu",
+        "internalFallback": "none",
+        "sequence": 21
+      },
+      {
+        "kind": "device-destroy-requested",
+        "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+        "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+        "cause": "test-destroy",
+        "sequence": 22
+      },
+      {
+        "kind": "device-lost-observed",
+        "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+        "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+        "cause": "test-destroy",
+        "reason": "destroyed",
+        "message": "Device was destroyed.",
+        "sequence": 23
+      },
+      {
+        "kind": "failure",
+        "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+        "channelId": "default",
+        "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+        "requestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+        "sceneId": "architecture-rise",
+        "stage": "runtime",
+        "operation": "device-loss",
+        "reason": "WebGPU device lost: Device was destroyed.",
+        "sequence": 24
+      },
+      {
+        "kind": "queue-completion-settled",
+        "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+        "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+        "requestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+        "operation": "sceneRender",
+        "sequence": 25
+      },
+      {
+        "kind": "cleanup",
+        "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-2\"]",
+        "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+        "outcome": "confirmed",
+        "wallClockMs": 5.5,
+        "sequence": 26
+      },
+      {
+        "kind": "cleanup-acknowledged",
+        "channelId": "default",
+        "hostId": "gg-host-_r_d_-9l32nhebtk8",
+        "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-2",
+        "outcome": "confirmed",
+        "reason": null,
+        "sequence": 27
+      },
+      {
+        "kind": "renderer-mounted",
+        "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-3\"]",
+        "channelId": "default",
+        "hostId": "gg-host-_r_d_-9l32nhebtk8",
+        "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-3",
+        "requestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+        "sceneId": "architecture-rise",
+        "rendererFamily": "webgl-renderer",
+        "executionApi": "webgl2",
+        "internalFallback": "none",
+        "sequence": 28
+      },
+      {
+        "kind": "host-frame-result",
+        "attemptId": "[\"default\",\"gg-mvxb3iye-pg0ws28356-default-generation-3\"]",
+        "channelId": "default",
+        "hostId": "gg-host-_r_d_-9l32nhebtk8",
+        "generationId": "gg-mvxb3iye-pg0ws28356-default-generation-3",
+        "requestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+        "sceneId": "architecture-rise",
+        "frameStatus": "completed",
+        "acceptedByHost": true,
+        "latestAcceptedRequestId": "gg-mvxb3iye-pg0ws28356-default-request-3",
+        "latestAcceptedSceneId": "architecture-rise",
+        "activeGenerationId": "gg-mvxb3iye-pg0ws28356-default-generation-3",
+        "activeRendererFamily": "webgl-renderer",
+        "sequence": 29
+      }
+    ]
+  },
+  "captureProvenance": {
+    "sourceCommitSha": "8dfc6e10baf5d03ceb06826a1a9a7ca4498e782d",
+    "testInvocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_FAILURE_INTEGRATION=1 GROUND_GLASS_WEBGPU_M7G_R187_QUALIFICATION_REQUIRED=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true npx playwright test src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts --project=chrome-native-webgpu --workers=1 --grep \"D1 initialization failure|M7A injected device loss|M7B test-destroyed GPUDevice\"",
+    "browserProject": "chrome-native-webgpu",
+    "threePackageVersion": "0.187.0",
+    "rendererRevision": "r187",
+    "nodeVersion": "v24.3.0",
+    "operatingSystem": "darwin 27.0.0 arm64",
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none"
+  }
+}

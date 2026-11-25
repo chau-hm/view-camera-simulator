@@ -34,6 +34,14 @@ Scene IDs remain separate from asset keys. Interactive static subjects and RTT
 subjects resolve the same registered factory; the two specialized runtime
 adapters are called out below.
 
+World illumination is outside the registered asset lifetime. The scene
+illumination resolver supplies renderer-neutral source data in scene
+millimetres; Observer and Ground Glass each create a separate light object for
+their own scene. The R3F consumer owns the Observer light lifecycle, while the
+imperative Ground Glass rig removes and disposes its lights with the RTT scene.
+The Interior Corner asset disposer owns only the subject's geometry, materials,
+and textures.
+
 | Scene ID | Asset slot | Implementation ID | Presentation contract | Resource lifetime | Special runtime integration |
 |---|---|---|---|---|---|
 | `view-camera-anatomy` | `view-camera-anatomy-subject` | `threejs-view-camera-anatomy` | `ViewCameraAnatomyPresentation` | Module-shared | Lesson 0 scene integration |
@@ -46,7 +54,7 @@ adapters are called out below.
 | `mirror-shift` | `mirror-shift-subject` | `threejs-mirror-shift` | `MirrorShiftPresentation` | Instance-owned | RTT representation plus Mirror Shift-specific reflection updater |
 | `oblique-architecture` | `oblique-architecture-subject` | `threejs-oblique-architecture` | `ObliqueArchitecturePresentation` | Instance-owned | None |
 | `architecture-foreground` | `architecture-foreground-subject` | `threejs-architecture-foreground` | `ArchitectureForegroundPresentation` | Instance-owned | None |
-| `interior-corner` | `interior-corner-subject` | `threejs-interior-corner` | `InteriorCornerPresentation` | Instance-owned | Subject-local PointLight remains part of its Object3D graph |
+| `interior-corner` | `interior-corner-subject` | `threejs-interior-corner` | `InteriorCornerPresentation` | Instance-owned | World-illumination consumer owns the practical PointLight; subject owns geometry/materials only |
 | `macro-bellows-extension` | `macro-bellows-extension-subject` | `threejs-macro-bellows-extension` | `MacroBellowsExtensionPresentation` | Instance-owned | None |
 | `macro-depth-of-field` | `macro-depth-of-field-subject` | `threejs-macro-depth-of-field` | `MacroDepthOfFieldPresentation` | Instance-owned | None |
 | `macro-oblique-plane` | `macro-oblique-plane-subject` | `threejs-macro-oblique-plane` | `MacroObliquePlanePresentation` | Instance-owned | None |

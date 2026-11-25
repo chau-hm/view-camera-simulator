@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ground Glass DOF depth-edge fixture</title>
+    <style>
+      :root { font: 14px system-ui, sans-serif; color: #e8edf0; background: #171b1e; }
+      body { margin: 20px; }
+      h1 { margin: 0 0 8px; font-size: 20px; }
+      p { max-width: 900px; color: #bdc7cc; }
+      .panels { display: grid; grid-template-columns: repeat(3, minmax(240px, 512px)); gap: 14px; }
+      figure { margin: 0; }
+      figcaption { margin-bottom: 6px; }
+      canvas { display: block; width: 100%; height: auto; border: 1px solid #637078; image-rendering: pixelated; }
+      #gpu-source { position: fixed; left: -600px; top: 0; width: 1px; height: 1px; }
+      pre { max-width: 1200px; min-height: 80px; padding: 10px; background: #22282c; overflow: auto; }
+    </style>
+  </head>
+  <body data-proof-ready="false">
+    <h1>Ground Glass controlled depth-edge fixture</h1>
+    <p>A red high-contrast foreground card at 400 mm occludes a blue/cyan striped background at 410 mm. Both source surfaces are rendered with a real WebGL depth attachment, then the production physical CoC and Far/Near gather shaders process the frame. The vertical card edge at x=256 and measurement regions are fixed by fixture geometry.</p>
+    <section class="panels" aria-label="GPU-rendered depth-edge fixture outputs">
+      <figure><figcaption>Opaque source color</figcaption><canvas id="source-output" width="512" height="384"></canvas></figure>
+      <figure><figcaption>Candidate far/near composite</figcaption><canvas id="candidate-output" width="512" height="384"></canvas></figure>
+      <figure><figcaption>Legacy tolerance control</figcaption><canvas id="legacy-output" width="512" height="384"></canvas></figure>
+    </section>
+    <pre id="measurements" aria-live="polite">Waiting for GPU fixture…</pre>
+    <canvas id="gpu-source" width="512" height="384"></canvas>
+    <script type="module" src="/src/tests/e2e/fixtures/ground-glass-dof-edge-harness.ts"></script>
+  </body>
+</html>

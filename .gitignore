@@ -1,5 +1,7 @@
 # Dependencies
 node_modules/
+# Some worktrees link the shared dependency tree instead of using a directory.
+/node_modules
 
 # Build output
 dist/
@@ -25,8 +27,21 @@ pnpm-debug.log*
 *.tsbuildinfo
 
 # Test artifacts
+.agents/output/ci-local/
 playwright-report/
 test-results/
+.test-results/
+.dream-loop/
+/docs/render-quality/.rq1-runs/
+/docs/render-quality/.rq2-runs/
+/docs/render-quality/.rq3a-runs/
+/docs/render-quality/.rq3b-runs/
+/docs/render-quality/.rq3e-runs/
+/docs/render-quality/.rq3f-runs/
+/docs/render-quality/.rq3g-runs/
+/docs/render-quality/.interior-corner-seeded-materials-runs/
+.m7g-predecessor-replay-*/
+.m7g-consolidation-*/
 
 # Editor/OS files
 .DS_Store
@@ -36,3 +51,5 @@ tsc
 view-camera-simulator@0.0.0
 
 AGENTS.md.backup
+
+.worktrees/

@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "evaluatorRevision": "m7o-canvas-assertion-timing-evaluator-v1",
+  "source": {
+    "executionSourceCommitSha": "e5150fdaa6d9660c99ac3c36086cfaa1439e4bcb",
+    "toolingSourceCommitSha": "c1135c8f7be9c3530eaeaad030a98079457ff8c0",
+    "matrixNormalizerSourceCommitSha": "817f534dc0e61068cf20c586947ea3d6b4b5b481",
+    "evidenceNormalizerSourceCommitSha": "817f534dc0e61068cf20c586947ea3d6b4b5b481",
+    "evaluationSourceCommitSha": "26a856a52e7d2809727588813e65dc40684abc97"
+  },
+  "captureEnvironment": {
+    "host": "macOS 27.0.1 (26A434), arm64",
+    "nodeVersion": "v24.3.0",
+    "playwrightVersion": "1.61.1",
+    "browserName": "Chromium",
+    "browserVersion": "149.0.7827.55",
+    "playwrightBrowserRevision": "chromium-1228 / chromium_headless_shell-1228",
+    "browserExecution": "Playwright bundled headless Chromium; standard chromium project",
+    "rendererBackend": "production-default WebGL; no WebGPU qualification or override enabled",
+    "retries": 0,
+    "rawPlaywrightReports": "private-local-only"
+  },
+  "captureManifest": {
+    "artifactPath": "docs/architecture/ground-glass-m7o-canvas-timing/capture/final/capture-manifest.json",
+    "sha256": "46a89906d27dd9a43285c3fc7881d6553473ff59e4fe5b42646165549a5789be"
+  },
+  "experimentSummary": {
+    "attemptsPerCondition": {
+      "A": 3,
+      "B": 3,
+      "C": 3,
+      "D": 3
+    },
+    "targetOutcomesByCondition": {
+      "A": ["passed", "passed", "passed"],
+      "B": ["passed", "passed", "passed"],
+      "C": ["passed", "passed", "passed"],
+      "D": ["failed", "failed", "failed"]
+    },
+    "instrumentationOverhead": {
+      "instrumentationOffWholeTestDurationsMs": [14366, 14687, 15241],
+      "instrumentationOnWholeTestDurationsMs": [16042, 16106, 15114],
+      "medianOffMs": 14687,
+      "medianOnMs": 16042,
+      "medianOnMinusOffMs": 1355,
+      "interpretation": "whole-test durations include browser instrumentation and diagnostic teardown; three pairs do not isolate its causal cost"
+    },
+    "failureAnalysis": {
+      "targetFailures": 3,
+      "failureSnapshotsWithOneCanvas": 3,
+      "firstCanvasObservedBeforeBudgetDeadline": 3,
+      "sameSceneAndCanvasIdentityAtFailure": 3,
+      "canvasRemovalOrReplacementObserved": 0,
+      "failuresWithLongTaskOverlap": 3,
+      "maxLongTaskDurationsMs": [5560, 5264, 5249],
+      "immediateCatchEvaluationRoundTripMs": [1542.8423329999996, 1219.8754159999999, 1198.3919580000002],
+      "catchEvaluationSampleAfterBudgetDeadline": 3,
+      "browserHeartbeatMaxIntervalsMs": [5946, 5617.5, 5590],
+      "nodeHeartbeatMaxExcessDelayMs": [24.140041999999994, 13.23529199999939, 13.243540999999823],
+      "postFailurePollCounts": [1, 1, 1],
+      "aggregatedLocatorResolutionsAtZero": [5, 5, 5],
+      "totalDroppedEvents": 0
+    }
+  },
+  "diagnosis": {
+    "rootCause": "unresolved",
+    "remediationDecision": "scheduling-pressure-supported-cause-unresolved",
+    "hypotheses": {
+      "H1": "supported-but-unproven",
+      "H2": "supported-but-unproven",
+      "H3": "inconclusive",
+      "H4": "supported-but-unproven",
+      "H5": "inconclusive"
+    },
+    "claims": {
+      "exactInternalToHaveCountPolls": false,
+      "internalLocatorResolutionIdentityEvidence": "unavailable",
+      "canvasAbsentAtFailureSnapshot": false,
+      "firstCanvasObservedBeforeBudgetDeadline": 3,
+      "longTaskOverlapsAssertionWindow": 3,
+      "aggregatedCallLogZeroResolutionCounts": [5, 5, 5],
+      "sameSceneAndCanvasIdentityAtFailure": 3,
+      "gpuSaturation": "not-established",
+      "gpuCausation": "not-confirmed",
+      "nodeEventLoopCause": "not-confirmed",
+      "verifiedApplicationFixes": 0,
+      "originalAssertionPreserved": true,
+      "retries": 0
+    }
+  },
+  "qualification": {
+    "fullBroadE2e": "not-run",
+    "broadE2eQualification": "not-qualified",
+    "m7Overall": "partially-qualified",
+    "m8Entry": "denied",
+    "spontaneousExternalGpuDeviceLoss": "blocked",
+    "productionGroundGlass": "webgl-only",
+    "productionWebGpu": "disabled"
+  }
+}

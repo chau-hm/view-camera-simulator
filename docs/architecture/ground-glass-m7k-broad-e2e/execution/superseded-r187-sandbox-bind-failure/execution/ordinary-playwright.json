@@ -1,0 +1,166 @@
+{
+  "config": {
+    "argv": [
+      "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+      "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7k-broad-e2e-qualification/node_modules/.bin/playwright",
+      "test",
+      "--project=chromium",
+      "--workers=4",
+      "--retries=0",
+      "--reporter=list,json"
+    ],
+    "configFile": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7k-broad-e2e-qualification/playwright.config.ts",
+    "rootDir": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7k-broad-e2e-qualification/src/tests/e2e",
+    "failOnFlakyTests": false,
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {},
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7k-broad-e2e-qualification/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7k-broad-e2e-qualification/src/tests/e2e",
+        "testIgnore": [
+          "**/*-production.spec.ts"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7k-broad-e2e-qualification/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {},
+        "id": "chromium-renderer-serial",
+        "name": "chromium-renderer-serial",
+        "testDir": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7k-broad-e2e-qualification/src/tests/e2e",
+        "testIgnore": [
+          "**/*-production.spec.ts"
+        ],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.61.1",
+    "workers": 4,
+    "webServer": {
+      "command": "npm run dev -- --host 127.0.0.1 --port 4471 --strictPort",
+      "url": "http://127.0.0.1:4471",
+      "reuseExistingServer": false,
+      "timeout": 120000,
+      "env": {
+        "CODEX_SANDBOX_NETWORK_DISABLED": "1",
+        "VITE_GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION": "false",
+        "VITE_GROUND_GLASS_WEBGPU_RAW_PILOT": "false",
+        "NODE": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+        "INIT_CWD": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7k-broad-e2e-qualification",
+        "TERM": "dumb",
+        "PLAYWRIGHT_JSON_OUTPUT_NAME": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7k-broad-e2e-qualification/docs/architecture/ground-glass-m7k-broad-e2e/execution/three-r187/execution/ordinary-playwright.json",
+        "HOMEBREW_REPOSITORY": "/opt/homebrew",
+        "npm_config_global_prefix": "/Users/homan/.nvm/versions/node/v24.3.0",
+        "CODEX_APPLY_PATCH_PRESERVE_LINE_ENDINGS": "1",
+        "FPATH": "/opt/homebrew/share/zsh/site-functions:/usr/local/share/zsh/site-functions:/usr/share/zsh/site-functions:/usr/share/zsh/5.9/functions",
+        "VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH": "false",
+        "NO_COLOR": "1",
+        "COLOR": "0",
+        "npm_config_noproxy": "",
+        "LC_ALL": "C.UTF-8",
+        "npm_config_local_prefix": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7k-broad-e2e-qualification",
+        "VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION": "false",
+        "npm_config_globalconfig": "/Users/homan/.nvm/versions/node/v24.3.0/etc/npmrc",
+        "PLAYWRIGHT_WEB_SERVER_PORT": "4471",
+        "CODEX_PERMISSION_PROFILE": ":workspace",
+        "__CF_USER_TEXT_ENCODING": "0x1F7:0x0:0x0",
+        "npm_execpath": "/Users/homan/.nvm/versions/node/v24.3.0/lib/node_modules/npm/bin/npm-cli.js",
+        "PAGER": "cat",
+        "CODEX_SANDBOX": "seatbelt",
+        "PATH": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7k-broad-e2e-qualification/node_modules/.bin:/Users/homan/repo/view-camera-simulator/.worktrees/node_modules/.bin:/Users/homan/repo/view-camera-simulator/node_modules/.bin:/Users/homan/repo/node_modules/.bin:/Users/homan/node_modules/.bin:/Users/node_modules/.bin:/node_modules/.bin:/Users/homan/.nvm/versions/node/v24.3.0/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin:/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7k-broad-e2e-qualification/node_modules/.bin:/Users/homan/repo/view-camera-simulator/.worktrees/node_modules/.bin:/Users/homan/repo/view-camera-simulator/node_modules/.bin:/Users/homan/repo/node_modules/.bin:/Users/homan/node_modules/.bin:/Users/node_modules/.bin:/node_modules/.bin:/Users/homan/.nvm/versions/node/v24.3.0/lib/node_modules/npm/node_modules/@npmcli/run-script/lib/node-gyp-bin:/Users/homan/.nvm/versions/node/v24.3.0/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/Library/Frameworks/Python.framework/Versions/3.11/bin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/pkg/env/global/bin:/Library/Apple/usr/bin:/usr/local/go/bin:/opt/homebrew/bin:/Applications/ChatGPT.app/Contents/Resources/codex-cli/codex-path:/Users/homan/.codex/tmp/arg0-macos/codex-arg0fEqm8A:/Users/homan/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/override:/Users/homan/miniconda3/bin:/Users/homan/miniconda3/condabin:/usr/local/sbin:/Users/homan/.nvm/versions/node/v26.12.1/bin:/Applications/Blender.app/Contents/MacOS:/opt/homebrew/sbin:/Library/Frameworks/Python.framework/Versions/3.11/bin:/Users/homan/.local/bin:/Applications/Obsidian.app/Contents/MacOS:/Users/homan/.lmstudio/bin:/Users/homan/.cache/codex-runtimes/codex-primary-runtime/dependencies/bin/fallback:/Applications/ChatGPT.app/Contents/Resources:/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS:/Users/homan/.local/bin:/Applications/Obsidian.app/Contents/MacOS",
+        "_": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7k-broad-e2e-qualification/node_modules/.bin/playwright",
+        "npm_package_json": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7k-broad-e2e-qualification/package.json",
+        "CODEX_THREAD_ID": "01a19c67-52b2-7872-a0dd-7ffec4125072",
+        "npm_config_init_module": "/Users/homan/.npm-init.js",
+        "npm_config_userconfig": "/Users/homan/.npmrc",
+        "PWD": "/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7k-broad-e2e-qualification",
+        "npm_command": "run",
+        "EDITOR": "vi",
+        "npm_lifecycle_event": "test:e2e",
+        "LANG": "C.UTF-8",
+        "npm_package_name": "view-camera-simulator",
+        "VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH": "false",
+        "CODEX_TOOL_CALL_ID": "exec-1c0c8d17-7a82-44b6-8467-9592972c9cd5",
+        "npm_config_npm_version": "11.12.0",
+        "CODEX_CI": "1",
+        "npm_config_node_gyp": "/Users/homan/.nvm/versions/node/v24.3.0/lib/node_modules/npm/node_modules/node-gyp/bin/node-gyp.js",
+        "npm_package_version": "0.0.0",
+        "VITE_GROUND_GLASS_WEBGPU_TEST_SEAM": "false",
+        "CODEX_VERSION": "0.166.0-alpha.5.1",
+        "HOME": "/Users/homan",
+        "SHLVL": "2",
+        "HOMEBREW_PREFIX": "/opt/homebrew",
+        "GH_PAGER": "cat",
+        "LOGNAME": "homan",
+        "npm_config_cache": "/Users/homan/.npm",
+        "npm_lifecycle_script": "playwright test",
+        "LC_CTYPE": "C.UTF-8",
+        "npm_config_user_agent": "npm/11.12.0 node/v24.3.0 darwin arm64 workspaces/false",
+        "HOMEBREW_CELLAR": "/opt/homebrew/Cellar",
+        "INFOPATH": "/opt/homebrew/share/info:",
+        "CODEX_SESSION_ID": "01a19c67-52b2-7872-a0dd-7ffec4125072",
+        "GIT_PAGER": "cat",
+        "COLORTERM": "",
+        "npm_config_prefix": "/Users/homan/.nvm/versions/node/v24.3.0",
+        "npm_node_execpath": "/Users/homan/.nvm/versions/node/v24.3.0/bin/node",
+        "VITE_BASE_PATH": "/",
+        "VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION": "false",
+        "VITE_GROUND_GLASS_WEBGPU_APERTURE_GATHER_R187_QUALIFICATION": "false"
+      }
+    }
+  },
+  "suites": [],
+  "errors": [
+    {
+      "message": "Error: Process from config.webServer was not able to start. Exit code: 1",
+      "stack": "Error: Process from config.webServer was not able to start. Exit code: 1"
+    }
+  ],
+  "stats": {
+    "startTime": "2026-11-03T17:53:24.497Z",
+    "duration": 180.87,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

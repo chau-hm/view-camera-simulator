@@ -41,6 +41,15 @@ const interiorCornerLessonWorkspace = () => (
   </MemoryRouter>
 );
 
+const shelfSwingSeededWorkspace = (search = "?seed=284719&sv=1") => (
+  <MemoryRouter initialEntries={[`/simulator/free/shelf-swing${search}`]}>
+    <Routes>
+      <Route path="/simulator/:mode/:sceneId" element={<SimulatorRoutePage />} />
+      <Route path="/simulator/:mode/:sceneId/:taskId" element={<SimulatorRoutePage />} />
+    </Routes>
+  </MemoryRouter>
+);
+
 const openLearningDrawer = async () => {
   const panel = await screen.findByTestId("learning-overlay-panel");
   const rail = panel.querySelector<HTMLButtonElement>(".learning-overlay-panel__rail");
@@ -53,6 +62,19 @@ describe("SimulatorWorkspace expanded Geometry accessibility", () => {
     cleanup();
     useAppStore.getState().resetCamera();
     useAppStore.getState().setActiveTask(null);
+  });
+
+  it("exposes the existing variation controls for seeded Shelf Swing Free Practice only", async () => {
+    const view = render(shelfSwingSeededWorkspace());
+    const controls = await screen.findByTestId("scene-variation-controls");
+    expect(controls).toHaveAttribute("data-active-seed", "284719");
+    expect(controls).toHaveAttribute("data-active-schema", "1");
+    expect(screen.getByRole("button", { name: "Regenerate scene" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Copy share URL" })).toBeInTheDocument();
+
+    view.unmount();
+    render(workspace("shelf-swing"));
+    expect(screen.queryByTestId("scene-variation-controls")).not.toBeInTheDocument();
   });
 
   it("focuses Restore, restores with Escape, and returns focus to its trigger", async () => {
@@ -600,11 +622,13 @@ describe("SimulatorWorkspace viewport expansion", () => {
     expect(screen.queryByTestId("focus-distribution-panel")).not.toBeInTheDocument();
     const groundGlassLearning = screen.getByTestId("learning-overlay-panel");
     expect(screen.getAllByTestId("learning-overlay-panel")).toHaveLength(1);
-    expect(groundGlassLearning).toHaveAttribute("data-drawer-state", "peek");
+    expect(groundGlassLearning).toHaveAttribute("data-drawer-state", "pinned");
     expect(groundGlassLearning.closest(".groundglass-viewport-frame")).toBeInTheDocument();
     expect(screen.queryByText("Optical Debug")).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
+    fireEvent.click(screen.getByRole("button", { name: "Close Task and Feedback" }));
+    expect(screen.getByTestId("learning-overlay-panel")).toHaveAttribute("data-drawer-state", "peek");
     fireEvent.click(groundGlassLearning.querySelector(".learning-overlay-panel__rail") as HTMLButtonElement);
     expect(screen.getByTestId("learning-overlay-panel")).toHaveAttribute("data-drawer-state", "transient");
     expect(screen.getByRole("button", { name: "Restore Ground Glass" })).toBeInTheDocument();

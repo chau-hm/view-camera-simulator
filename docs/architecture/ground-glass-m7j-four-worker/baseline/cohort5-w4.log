@@ -1,0 +1,122 @@
+
+> view-camera-simulator@0.0.0 test:e2e
+> playwright test --project=chromium --workers=4 --retries=0 --trace=retain-on-failure --reporter=list,json --grep=(camera control rows keep useful rendered tracks across rail widths|Stage 2N-A Observer and RTT instances survive independent sibling removal|View Focus preserves independent Scene and Camera views and resets the active preset|Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress|Scene-local learning drawer leaves the paired workspace layout intact) src/tests/e2e/camera-controls-compact.spec.ts src/tests/e2e/fringe-club-dev-integration.spec.ts src/tests/e2e/scene-view-focus.spec.ts src/tests/e2e/table-tilt.spec.ts src/tests/e2e/viewport-learning-overlay.spec.ts
+
+[WebServer] (node:15233) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 5 tests using 4 workers
+
+(node:15255) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15253) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15254) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:15256) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 7:51:34 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:51:35 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:51:35 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:51:35 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:51:35 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:51:35 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:51:35 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:51:41 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+  ✘  2 [chromium] › src/tests/e2e/scene-view-focus.spec.ts:98:1 › View Focus preserves independent Scene and Camera views and resets the active preset (1.5m)
+(node:16331) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 7:53:06 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:53:07 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+  ✘  1 [chromium] › src/tests/e2e/camera-controls-compact.spec.ts:103:1 › camera control rows keep useful rendered tracks across rail widths (2.0m)
+  ✘  4 [chromium] › src/tests/e2e/table-tilt.spec.ts:321:1 › Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress (2.0m)
+[WebServer] 7:53:56 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 7:54:27 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+  ✓  3 [chromium] › src/tests/e2e/fringe-club-dev-integration.spec.ts:647:1 › Stage 2N-A Observer and RTT instances survive independent sibling removal (3.3m)
+  ✓  5 [chromium] › src/tests/e2e/viewport-learning-overlay.spec.ts:28:1 › Scene-local learning drawer leaves the paired workspace layout intact (1.8m)
+
+
+  1) [chromium] › src/tests/e2e/camera-controls-compact.spec.ts:103:1 › camera control rows keep useful rendered tracks across rail widths
+
+    Test timeout of 120000ms exceeded.
+
+    Error: locator.evaluateAll: Test timeout of 120000ms exceeded.
+
+      137 |     });
+      138 |     const minimumUsefulTrackWidth = Math.min(160, railBounds.width * 0.6);
+    > 139 |     const rows = await controls.locator(".movement-controls__rows .compact-range-row").evaluateAll(
+          |                                                                                        ^
+      140 |       (elements) => elements.map((element) => {
+      141 |         const row = element.getBoundingClientRect();
+      142 |         const label = element.querySelector<HTMLElement>(".compact-range-row__label")?.getBoundingClientRect();
+        at /Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/src/tests/e2e/camera-controls-compact.spec.ts:139:88
+
+    Error Context: test-results/camera-controls-compact-ca-40688-d-tracks-across-rail-widths-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/camera-controls-compact-ca-40688-d-tracks-across-rail-widths-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/camera-controls-compact-ca-40688-d-tracks-across-rail-widths-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) [chromium] › src/tests/e2e/scene-view-focus.spec.ts:98:1 › View Focus preserves independent Scene and Camera views and resets the active preset
+
+    Test timeout of 90000ms exceeded.
+
+    Error: keyboard.press: Test timeout of 90000ms exceeded.
+
+      141 |   const cameraButton = page.getByRole("button", { name: "Camera" });
+      142 |   await cameraButton.focus();
+    > 143 |   await page.keyboard.press("Enter");
+          |                       ^
+      144 |   await expect(cameraButton).toHaveAttribute("aria-pressed", "true");
+      145 |   await expect(sceneCanvas).toHaveAttribute("data-view-focus", "camera");
+      146 |   const cameraPreset = await readViewState(sceneCanvas);
+        at /Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/src/tests/e2e/scene-view-focus.spec.ts:143:23
+
+    Error Context: test-results/scene-view-focus-View-Focu-01f56-nd-resets-the-active-preset-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/scene-view-focus-View-Focu-01f56-nd-resets-the-active-preset-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/scene-view-focus-View-Focu-01f56-nd-resets-the-active-preset-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3) [chromium] › src/tests/e2e/table-tilt.spec.ts:321:1 › Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress
+
+    Test timeout of 120000ms exceeded.
+
+    Error: locator.evaluate: Test timeout of 120000ms exceeded.
+    Call log:
+      - waiting for getByLabel('GroundGlassViewport').getByTestId('ground-glass-rtt').locator('canvas')
+
+
+      328 |     const canvas = rtt.locator("canvas");
+      329 |     await expect(canvas).toBeVisible();
+    > 330 |     const state = await canvas.evaluate((element) => {
+          |                                ^
+      331 |       const surface = element as HTMLCanvasElement;
+      332 |       const context = surface.getContext("webgl2") ?? surface.getContext("webgl");
+      333 |       return {
+        at assertLiveCanvas (/Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/src/tests/e2e/table-tilt.spec.ts:330:32)
+        at /Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/src/tests/e2e/table-tilt.spec.ts:365:3
+
+    Error Context: test-results/table-tilt-Table-Tilt-RTT--fa2a5-ty-and-tilt-resource-stress-chromium/error-context.md
+
+    attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/table-tilt-Table-Tilt-RTT--fa2a5-ty-and-tilt-resource-stress-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/table-tilt-Table-Tilt-RTT--fa2a5-ty-and-tilt-resource-stress-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  3 failed
+    [chromium] › src/tests/e2e/camera-controls-compact.spec.ts:103:1 › camera control rows keep useful rendered tracks across rail widths
+    [chromium] › src/tests/e2e/scene-view-focus.spec.ts:98:1 › View Focus preserves independent Scene and Camera views and resets the active preset
+    [chromium] › src/tests/e2e/table-tilt.spec.ts:321:1 › Table Tilt RTT survives focus, preview, zoom, quality, and tilt resource stress
+  2 passed (3.4m)

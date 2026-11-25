@@ -1,0 +1,485 @@
+import { Buffer } from "node:buffer";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, relative, resolve, sep } from "node:path";
+import { expect, test } from "@playwright/test";
+import { getSceneById } from "../../scenes/definitions";
+import type { SceneCapacitySnapshot } from "../../render/sceneCapacityProfiling";
+import type { CameraMovementField } from "../../types/scene";
+import { isDreamLoopSubjectCaptureReady } from "../helpers/dreamLoopCaptureReadiness";
+
+const defaultPublicMovementFields: readonly CameraMovementField[] = [
+  "frontRiseMm",
+  "frontTiltDeg",
+  "frontSwingDeg",
+];
+
+const publicMovementLabels: Partial<Record<CameraMovementField, string>> = {
+  frontRiseMm: "Rise",
+  frontTiltDeg: "Tilt",
+  frontSwingDeg: "Swing",
+};
+
+type DreamLoopManifest = {
+  pilotId: string;
+  sceneId: string;
+  assetKey: string;
+  optimizationSurface: {
+    id: string;
+    route: string;
+    sceneSelector: string;
+    canvasSelector: string;
+  };
+  capture: {
+    viewport: { width: number; height: number };
+    deviceScaleFactor: number;
+    renderQuality: string;
+    outputPath: string;
+    teachingOutputPath: string;
+  };
+};
+
+test("Dream Loop pilot captures teaching and clean observer views", async ({ page }) => {
+  test.skip(process.env.DREAM_LOOP_CAPTURE !== "1", "Run through dream-loop:capture.");
+
+  const manifestPath = process.env.DREAM_LOOP_CAPTURE_MANIFEST;
+  const outputPath = process.env.DREAM_LOOP_CAPTURE_OUTPUT;
+  const teachingOutputPath = process.env.DREAM_LOOP_CAPTURE_TEACHING_OUTPUT;
+  expect(manifestPath, "capture runner supplies the selected pilot manifest").toBeTruthy();
+  expect(outputPath, "capture runner supplies the clean observer output path").toBeTruthy();
+  expect(teachingOutputPath, "capture runner supplies the teaching observer output path").toBeTruthy();
+
+  const manifest = JSON.parse(
+    await readFile(manifestPath as string, "utf8"),
+  ) as DreamLoopManifest;
+  const sceneDefinition = getSceneById(manifest.sceneId);
+  expect(sceneDefinition, "pilot scene resolves from the canonical scene registry").toBeDefined();
+  if (!sceneDefinition) throw new Error("Unknown Dream Loop scene: " + manifest.sceneId);
+  expect(sceneDefinition.id).toBe(manifest.sceneId);
+  expect(manifest.pilotId).toMatch(/^[a-z0-9-]+$/);
+  expect(manifest.assetKey).toMatch(/^[a-z0-9-]+$/);
+  expect(manifest.optimizationSurface.id).toBe("observer-scene-viewport");
+  expect(manifest.capture.viewport.width).toBeGreaterThan(0);
+  expect(manifest.capture.viewport.height).toBeGreaterThan(0);
+  expect(manifest.capture.deviceScaleFactor).toBeGreaterThan(0);
+
+  const outputPaths = [outputPath as string, teachingOutputPath as string];
+  expect(new Set(outputPaths).size).toBe(2);
+  for (const output of outputPaths) {
+    const outputRelative = relative(process.cwd(), resolve(output));
+    expect(outputRelative.startsWith(".." + sep)).toBe(false);
+    expect(outputRelative.startsWith(".dream-loop" + sep)).toBe(true);
+    await mkdir(dirname(output), { recursive: true });
+  }
+  expect(resolve(outputPath as string)).toBe(resolve(process.cwd(), manifest.capture.outputPath));
+  expect(resolve(teachingOutputPath as string)).toBe(
+    resolve(process.cwd(), manifest.capture.teachingOutputPath),
+  );
+
+  const captureUrl = manifest.optimizationSurface.route + "?sceneCapacityProfiling=1";
+  await page.goto(captureUrl);
+  expect(new URL(page.url()).pathname).toBe(manifest.optimizationSurface.route);
+  expect(new URL(page.url()).searchParams.get("sceneCapacityProfiling")).toBe("1");
+  await expect(page).toHaveTitle(/.+/);
+
+  const scene = page.locator(manifest.optimizationSurface.sceneSelector);
+  // The simulator route lazy-loads its workspace before the Observer mounts.
+  await expect(scene).toBeVisible({ timeout: 60_000 });
+  await expect(scene).toHaveAttribute("data-scene-subject-id", manifest.sceneId);
+  await expect(scene).toHaveAttribute("data-optics-fallback-applied", "false");
+  await expect(scene).toHaveAttribute("data-view-focus", "scene");
+  await expect(scene).toHaveAttribute("data-observer-renderer-status", "active", { timeout: 60_000 });
+  await expect(scene).toHaveAttribute("data-observer-renderer-family", /.+/);
+  await expect(scene).toHaveAttribute("data-observer-execution-backend", /.+/);
+  await expect(scene).toHaveAttribute("data-observer-three-revision", "187");
+  await expect(scene).toHaveAttribute("data-observer-application-fallback", "none");
+
+  const renderQuality = page.getByLabel(/Render quality/i);
+  await expect(renderQuality).toBeVisible();
+  await renderQuality.selectOption(manifest.capture.renderQuality);
+  const defaultObserverView = await scene.evaluate((element) => ({
+    cameraPosition: element.getAttribute("data-observer-camera-position"),
+    orbitTarget: element.getAttribute("data-orbit-target"),
+  }));
+  const focus = page.getByRole("slider", { name: "Focus distance" });
+  const focusMinimum = await focus.getAttribute("min");
+  const focusMaximum = await focus.getAttribute("max");
+  expect(focusMinimum).not.toBeNull();
+  expect(focusMaximum).not.toBeNull();
+  await page.getByRole("button", { name: "Reset movements", exact: true }).click();
+  await page.getByRole("button", { name: "Reset 3D view", exact: true }).click();
+  await expect(scene).toHaveAttribute("data-view-focus", "scene");
+  const movementFields =
+    sceneDefinition.movementCapabilities?.available ?? defaultPublicMovementFields;
+  expect(movementFields.length).toBeGreaterThan(0);
+  for (const field of movementFields) {
+    const label = publicMovementLabels[field];
+    if (!label) {
+      throw new Error("Dream Loop capture has no public slider mapping for movement: " + field);
+    }
+    const control = page.getByRole("slider", { name: label, exact: true });
+    await expect(control, "scene-declared movement control is rendered: " + field).toBeVisible();
+    await expect(control).toHaveValue(String(sceneDefinition.cameraPreset[field] ?? 0));
+  }
+  const focusMinValue = Number(focusMinimum);
+  const focusMaxValue = Number(focusMaximum);
+  expect(Number.isFinite(focusMinValue)).toBe(true);
+  expect(Number.isFinite(focusMaxValue)).toBe(true);
+  const resetUsesScenePreset = Boolean(sceneDefinition.movementCapabilities) ||
+    sceneDefinition.cameraControlPolicy?.movement === "fixed";
+  const { DEFAULT_CAMERA_STATE } = await import("../../utils/constants");
+  const focusResetValue = resetUsesScenePreset
+    ? sceneDefinition.cameraPreset.focusDistanceMm
+    : DEFAULT_CAMERA_STATE.focusDistanceMm;
+  const expectedFocus = Math.max(
+    focusMinValue,
+    Math.min(focusMaxValue, focusResetValue),
+  );
+  await expect(focus).toHaveValue(String(expectedFocus));
+  await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute(
+    "data-selected-aperture",
+    String(sceneDefinition.cameraPreset.aperture),
+  );
+  await expect(scene).toHaveAttribute(
+    "data-observer-camera-position",
+    defaultObserverView.cameraPosition as string,
+  );
+  await expect(scene).toHaveAttribute(
+    "data-orbit-target",
+    defaultObserverView.orbitTarget as string,
+  );
+
+  const canvas = scene.locator(manifest.optimizationSurface.canvasSelector);
+  await expect(canvas).toHaveCount(1);
+  await expect(canvas).toBeVisible();
+
+  const capacitySnapshotElement = page.getByTestId("scene-capacity-snapshot");
+  await expect(capacitySnapshotElement).toHaveCount(1);
+  const readCapacitySnapshot = async (): Promise<SceneCapacitySnapshot | null> => {
+    const text = await capacitySnapshotElement.textContent();
+    if (!text || text.trim() === "null") return null;
+    try {
+      return JSON.parse(text) as SceneCapacitySnapshot;
+    } catch {
+      return null;
+    }
+  };
+  await expect.poll(
+    async () => isDreamLoopSubjectCaptureReady(
+      await readCapacitySnapshot(),
+      manifest.sceneId,
+    ),
+    {
+      timeout: 20_000,
+      message: "Expected renderable viewport subject metrics from the selected mounted registered-subject root",
+    },
+  ).toBe(true);
+  const subjectSnapshot = await readCapacitySnapshot();
+  if (!isDreamLoopSubjectCaptureReady(subjectSnapshot, manifest.sceneId)) {
+    throw new Error(
+      "The mounted " + manifest.sceneId + " subject did not provide renderable capacity evidence: " +
+        JSON.stringify(subjectSnapshot),
+    );
+  }
+  const viewportSubject = subjectSnapshot.viewportSubject;
+  const subjectSnapshotIsInsideCanvas = await capacitySnapshotElement.evaluate((element) =>
+    element.closest("canvas") !== null,
+  );
+  expect(subjectSnapshotIsInsideCanvas).toBe(false);
+
+  const viewport = await page.evaluate(() => ({
+    width: window.innerWidth,
+    height: window.innerHeight,
+    devicePixelRatio: window.devicePixelRatio,
+  }));
+  expect(viewport).toEqual({
+    width: manifest.capture.viewport.width,
+    height: manifest.capture.viewport.height,
+    devicePixelRatio: manifest.capture.deviceScaleFactor,
+  });
+
+  const readDeterministicState = async () => ({
+    sceneId: await scene.getAttribute("data-scene-subject-id"),
+    opticsFallbackApplied: await scene.getAttribute("data-optics-fallback-applied"),
+    viewFocus: await scene.getAttribute("data-view-focus"),
+    cameraPosition: await scene.getAttribute("data-observer-camera-position"),
+    orbitTarget: await scene.getAttribute("data-orbit-target"),
+    movements: Object.fromEntries(
+      await Promise.all(
+        movementFields.map(async (field) => {
+          const label = publicMovementLabels[field];
+          if (!label) {
+            throw new Error("Dream Loop capture has no public slider mapping for movement: " + field);
+          }
+          return [
+            field,
+            await page.getByRole("slider", { name: label, exact: true }).inputValue(),
+          ];
+        }),
+      ),
+    ),
+    focus: await focus.inputValue(),
+    aperture: await page.getByRole("radiogroup", { name: "Aperture" })
+      .getAttribute("data-selected-aperture"),
+    renderQuality: await renderQuality.inputValue(),
+  });
+  const deterministicState = await readDeterministicState();
+  const subjectEvidence = {
+    sceneId: subjectSnapshot.sceneId,
+    mounted: true,
+    evidenceSource: "sceneCapacitySnapshot.viewportSubject from TeachingShadowParticipation subject root",
+    objectCount: viewportSubject.objectCount,
+    meshCount: viewportSubject.meshCount,
+    renderableMeshCount: viewportSubject.renderableMeshCount,
+    effectiveTriangleCount: viewportSubject.effectiveTriangleCount,
+    renderableEffectiveTriangleCount: viewportSubject.renderableEffectiveTriangleCount,
+  };
+
+  const overlayGroup = await getOverlayGroup(page);
+  const overlayButtons = overlayGroup.locator("button[aria-pressed]");
+  const overlayButtonCount = await overlayButtons.count();
+  expect(overlayButtonCount).toBeGreaterThanOrEqual(4);
+  const readOverlayState = async () => overlayButtons.evaluateAll((buttons) =>
+    buttons.map((button) => ({
+      label: button.getAttribute("aria-label") ?? button.textContent?.trim() ?? button.tagName,
+      visible: button.getAttribute("aria-pressed") === "true",
+    })),
+  );
+  const teachingOverlays = await readOverlayState();
+  expect(teachingOverlays.some((overlay) => overlay.visible)).toBe(true);
+  const teachingOverlayLabels = teachingOverlays.map((overlay) => overlay.label.toLowerCase());
+  for (const expectedOverlay of ["focus plane", "dof region", "legends", "optical geometry"]) {
+    expect(teachingOverlayLabels.some((label) => label.includes(expectedOverlay))).toBe(true);
+  }
+  for (const expectedActiveOverlay of ["focus plane", "dof region", "optical geometry"]) {
+    const overlay = teachingOverlays.find((choice) =>
+      choice.label.toLowerCase().includes(expectedActiveOverlay),
+    );
+    expect(overlay?.visible).toBe(true);
+  }
+
+  const captureCanvas = async () => {
+    // Locator screenshots include positioned DOM siblings. Temporarily hide
+    // overlapping controls, never scene geometry, then restore them before
+    // the next public-UI interaction.
+    const hiddenDomControls = await canvas.evaluate((canvasElement) => {
+      const canvasBounds = canvasElement.getBoundingClientRect();
+      const candidates = Array.from(
+        document.querySelectorAll<HTMLElement>(
+          'button, a[href], [role="button"], .scene-overlay-responsive',
+        ),
+      );
+      const hidden: string[] = [];
+      for (const candidate of candidates) {
+        if (
+          candidate === canvasElement ||
+          candidate.contains(canvasElement) ||
+          canvasElement.contains(candidate)
+        ) {
+          continue;
+        }
+        const bounds = candidate.getBoundingClientRect();
+        const overlapsCanvas =
+          bounds.width > 0 &&
+          bounds.height > 0 &&
+          bounds.left < canvasBounds.right &&
+          bounds.right > canvasBounds.left &&
+          bounds.top < canvasBounds.bottom &&
+          bounds.bottom > canvasBounds.top;
+        if (!overlapsCanvas) continue;
+        candidate.dataset.dreamLoopCaptureHidden = "true";
+        hidden.push(
+          candidate.getAttribute("aria-label") ??
+            candidate.textContent?.trim() ??
+            candidate.className.toString() ??
+            candidate.tagName,
+        );
+      }
+      const style = document.createElement("style");
+      style.dataset.dreamLoopCaptureStyles = "true";
+      style.textContent =
+        '[data-dream-loop-capture-hidden="true"] { visibility: hidden !important; pointer-events: none !important; }';
+      document.head.append(style);
+      return hidden;
+    });
+
+    try {
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolveFrame) => {
+            requestAnimationFrame(() => requestAnimationFrame(() => resolveFrame()));
+          }),
+      );
+      const image = await canvas.screenshot({ animations: "disabled" });
+      const imageDataUrl = "data:image/png;base64," + Buffer.from(image).toString("base64");
+      const content = await page.evaluate(async (dataUrl) => {
+      const screenshot = new Image();
+      screenshot.src = dataUrl;
+      await screenshot.decode();
+      const probe = document.createElement("canvas");
+      probe.width = screenshot.naturalWidth;
+      probe.height = screenshot.naturalHeight;
+      const context = probe.getContext("2d");
+      if (!context || probe.width === 0 || probe.height === 0) {
+        return {
+          ready: false,
+          width: probe.width,
+          height: probe.height,
+          distinctSampleColors: 0,
+          nonDominantSampleFraction: 0,
+        };
+      }
+
+      context.drawImage(screenshot, 0, 0);
+      const pixels = context.getImageData(0, 0, probe.width, probe.height).data;
+      const colors = new Map<string, number>();
+      const gridSize = 16;
+      for (let row = 0; row < gridSize; row += 1) {
+        for (let column = 0; column < gridSize; column += 1) {
+          const x = Math.min(
+            probe.width - 1,
+            Math.floor(((column + 0.5) / gridSize) * probe.width),
+          );
+          const y = Math.min(
+            probe.height - 1,
+            Math.floor(((row + 0.5) / gridSize) * probe.height),
+          );
+          const offset = (y * probe.width + x) * 4;
+          const color = [
+            pixels[offset],
+            pixels[offset + 1],
+            pixels[offset + 2],
+            pixels[offset + 3],
+          ].join(",");
+          colors.set(color, (colors.get(color) ?? 0) + 1);
+        }
+      }
+      const sampleCount = gridSize * gridSize;
+      const dominantCount = Math.max(...colors.values());
+      const nonDominantSampleFraction = 1 - dominantCount / sampleCount;
+      return {
+        ready: colors.size > 4 && nonDominantSampleFraction > 0.08,
+        width: probe.width,
+        height: probe.height,
+        distinctSampleColors: colors.size,
+        nonDominantSampleFraction,
+      };
+      }, imageDataUrl);
+      // Pixel diversity is only a canvas sanity check; subject readiness is
+      // established independently from the mounted registered-subject root.
+      expect(content).toMatchObject({ ready: true });
+      return { image, content, hiddenDomControls };
+    } finally {
+      await page.evaluate(() => {
+        document.querySelector('[data-dream-loop-capture-styles="true"]')?.remove();
+        document
+          .querySelectorAll<HTMLElement>('[data-dream-loop-capture-hidden="true"]')
+          .forEach((element) => delete element.dataset.dreamLoopCaptureHidden);
+      });
+    }
+  };
+
+  const writeCapture = async (
+    path: string,
+    view: "observer-teaching" | "observer-clean",
+    image: Buffer,
+    overlays: Awaited<ReturnType<typeof readOverlayState>>,
+    content: Awaited<ReturnType<typeof captureCanvas>>["content"],
+    hiddenDomControls: string[],
+  ) => {
+    await writeFile(path, image);
+    await writeFile(
+      path + ".json",
+      JSON.stringify(
+        {
+          pilotId: manifest.pilotId,
+          sceneId: manifest.sceneId,
+          assetKey: manifest.assetKey,
+          optimizationSurface: manifest.optimizationSurface.id,
+          captureRole: view === "observer-clean" ? "optimization-target" : "regression-only",
+          view,
+          route: manifest.optimizationSurface.route,
+          viewport,
+          renderQuality: manifest.capture.renderQuality,
+          sourceCommit: process.env.DREAM_LOOP_SOURCE_COMMIT ?? null,
+          deterministicState,
+          runtime: {
+            status: await scene.getAttribute("data-observer-renderer-status"),
+            rendererFamily: await scene.getAttribute("data-observer-renderer-family"),
+            executionApi: await scene.getAttribute("data-observer-execution-backend"),
+            rendererRevision: await scene.getAttribute("data-observer-three-revision"),
+            applicationFallback: await scene.getAttribute("data-observer-application-fallback"),
+            browserName: page.context().browser()?.browserType().name() ?? null,
+            browserVersion: page.context().browser()?.version() ?? null,
+            userAgent: await page.evaluate(() => navigator.userAgent),
+            operatingSystem: {
+              platform: process.platform,
+              architecture: process.arch,
+              nodeVersion: process.version,
+            },
+          },
+          subject: subjectEvidence,
+          overlays,
+          canvas: content,
+          hiddenDomControls,
+          captureBoundary: "observer canvas locator screenshot with overlapping DOM controls temporarily hidden; scene geometry remains rendered",
+        },
+        null,
+        2,
+      ),
+    );
+    console.log("Dream Loop " + view + " capture: " + path);
+  };
+
+  const teachingCapture = await captureCanvas();
+  await writeCapture(
+    teachingOutputPath as string,
+    "observer-teaching",
+    teachingCapture.image,
+    teachingOverlays,
+    teachingCapture.content,
+    teachingCapture.hiddenDomControls,
+  );
+
+  const activeOverlayButtons = overlayGroup.locator('button[aria-pressed="true"]');
+  while (await activeOverlayButtons.count() > 0) {
+    const previousCount = await activeOverlayButtons.count();
+    await activeOverlayButtons.first().click();
+    await expect(activeOverlayButtons).toHaveCount(previousCount - 1);
+  }
+  await expect(activeOverlayButtons).toHaveCount(0);
+  const cleanOverlays = await readOverlayState();
+  expect(cleanOverlays.every((overlay) => !overlay.visible)).toBe(true);
+
+  const stateAfterOverlayToggles = await readDeterministicState();
+  expect(stateAfterOverlayToggles).toEqual(deterministicState);
+  const subjectAfterOverlayToggles = await readCapacitySnapshot();
+  expect(isDreamLoopSubjectCaptureReady(subjectAfterOverlayToggles, manifest.sceneId)).toBe(true);
+  expect(subjectAfterOverlayToggles?.viewportSubject).toEqual(subjectSnapshot.viewportSubject);
+
+  const cleanCapture = await captureCanvas();
+  await writeCapture(
+    outputPath as string,
+    "observer-clean",
+    cleanCapture.image,
+    cleanOverlays,
+    cleanCapture.content,
+    cleanCapture.hiddenDomControls,
+  );
+});
+
+async function getOverlayGroup(page: import("@playwright/test").Page) {
+  const inlineGroup = page.getByTestId("scene-overlay-inline");
+  if (await inlineGroup.count() === 1) {
+    await expect(inlineGroup).toBeVisible();
+    return inlineGroup;
+  }
+
+  const collapsedGroup = page.getByTestId("scene-overlay-collapsed");
+  if (await collapsedGroup.count() === 0) {
+    const openOverlays = page.getByRole("button", { name: /View overlays/i });
+    await expect(openOverlays).toBeVisible();
+    await openOverlays.click();
+  }
+  await expect(collapsedGroup).toBeVisible();
+  return collapsedGroup;
+}

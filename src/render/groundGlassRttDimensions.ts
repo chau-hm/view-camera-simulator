@@ -6,6 +6,8 @@ import type {
   GroundGlassProfilingSnapshot,
 } from "./groundGlassProfiling";
 import type { SceneCapacityRuntimeDetails } from "./sceneCapacityProfiling";
+import type { GroundGlassVisualPipelineCapabilities } from "./backend/visualPipelineCapabilities";
+import type { GroundGlassPassId } from "./groundGlassPassGraph";
 
 export type GroundGlassRttChannel =
   | "default"
@@ -83,6 +85,8 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   cameraConfigurationOk?: boolean;
   cameraConfigurationError?: string | null;
   projectionDeterminant?: number | null;
+  /** Column-major projection matrix from the actual configured Ground Glass camera. */
+  projectionMatrix?: readonly number[];
   /** Extrinsics read from the configured Three.js camera, in render-world units. */
   cameraPositionWorld?: [number, number, number];
   cameraUpWorld?: [number, number, number];
@@ -98,8 +102,24 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   finalNonBackgroundPixelCount?: number;
   finalContentful?: boolean;
   renderSanitySampleCount?: number;
+  /** Scene-profile/subject generation whose pixels produced this observation. */
+  renderSanitySubjectGeneration?: number;
   renderSanityStateKey?: string;
+  renderSanitySubjectIdentity?: string;
   renderSanityError?: string | null;
+  /** Last unexpected exception from the mounted Ground Glass frame callback. */
+  frameExecutionError?: string | null;
+  /** Semantic pass active when the last unexpected frame exception occurred. */
+  failedPass?: GroundGlassPassId;
+  rendererStats?: Readonly<{
+    calls: number;
+    triangles: number;
+    points: number;
+    lines: number;
+    geometries: number;
+    textures: number;
+    sampledAtMs: number;
+  }>;
   inspectionWindowActive?: boolean;
   inspectionCenterU?: number;
   inspectionCenterV?: number;
@@ -109,6 +129,8 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   profilingBackend?: GroundGlassProfilingBackend;
   profilingSnapshot?: GroundGlassProfilingSnapshot;
   sceneCapacity?: SceneCapacityRuntimeDetails;
+  /** Opt-in report from the mounted RTT renderer and existing target probe. */
+  visualPipelineCapabilities?: GroundGlassVisualPipelineCapabilities | null;
   /** Values actually consumed by the current owned RTT subject/shader graph. */
   focalLengthMm?: number;
   latticeEdgeCount?: number;
@@ -123,10 +145,12 @@ export type GroundGlassRttRuntimeInfo = GroundGlassRttDimensions & {
   groundGlassIlluminanceGain?: number;
   /** Whether the physical parallel-film cos^4 factor is enabled in the composite. */
   groundGlassNaturalIlluminationEnabled?: boolean;
-  groundGlassNaturalIlluminationKind?: "parallel-cos4" | "neutral";
+  groundGlassNaturalIlluminationKind?: "parallel-cos4" | "nonparallel-geometric" | "neutral";
   groundGlassNaturalIlluminationImageDistanceMm?: number;
   groundGlassNaturalIlluminationOffsetXMm?: number;
   groundGlassNaturalIlluminationOffsetYMm?: number;
+  groundGlassNaturalIlluminationReferenceFilmIncidenceCosine?: number;
+  groundGlassNaturalIlluminationStateJson?: string;
   /** Whether the finite coverage mask is enabled in the final composite. */
   groundGlassCoverageEnabled?: boolean;
   groundGlassCoverageKind?: "parallel-circle" | "nonparallel-conic" | "unbounded" | "neutral";

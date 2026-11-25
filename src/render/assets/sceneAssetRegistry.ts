@@ -13,6 +13,8 @@ import type { ArchitectureForegroundAssetRequest } from "../ArchitectureForegrou
 import * as architectureForegroundAsset from "../ArchitectureForegroundSubjectFactory";
 import type { InteriorCornerAssetRequest } from "../InteriorCornerSubjectFactory";
 import * as interiorCornerAsset from "../InteriorCornerSubjectFactory";
+import type { StillLifeStudioAssetRequest } from "../StillLifeStudioSubjectFactory";
+import * as stillLifeStudioAsset from "../StillLifeStudioSubjectFactory";
 import type { ObliqueTabletopAssetRequest } from "../ObliqueTabletopSubjectFactory";
 import * as obliqueTabletopAsset from "../ObliqueTabletopSubjectFactory";
 import type { FocusFundamentalsAssetRequest } from "../FocusFundamentalsSubjectFactory";
@@ -29,6 +31,8 @@ import type { MacroObliquePlaneAssetRequest } from "../MacroObliquePlaneSubjectF
 import * as macroObliquePlaneAsset from "../MacroObliquePlaneSubjectFactory";
 import type { MacroCompoundMovementsAssetRequest } from "../MacroCompoundMovementsSubjectFactory";
 import * as macroCompoundMovementsAsset from "../MacroCompoundMovementsSubjectFactory";
+import type { FringeClubAssetRequest } from "./FringeClubRuntimeAsset";
+import * as fringeClubRuntimeAsset from "./FringeClubRuntimeAsset";
 
 /** Stable asset slot owned by the scene asset registry layer. */
 export const CAMERA_MOVEMENT_LATTICE_ASSET_KEY =
@@ -40,6 +44,7 @@ export const SHELF_SWING_ASSET_KEY = "shelf-swing-subject" as const;
 export const ARCHITECTURE_FOREGROUND_ASSET_KEY =
   "architecture-foreground-subject" as const;
 export const INTERIOR_CORNER_ASSET_KEY = "interior-corner-subject" as const;
+export const STILL_LIFE_STUDIO_ASSET_KEY = "still-life-studio-subject" as const;
 export const OBLIQUE_TABLETOP_ASSET_KEY = "oblique-tabletop-subject" as const;
 export const FOCUS_FUNDAMENTALS_ASSET_KEY = "focus-fundamentals-subject" as const;
 export const VIEW_CAMERA_ANATOMY_ASSET_KEY = "view-camera-anatomy-subject" as const;
@@ -48,6 +53,8 @@ export const MACRO_BELLOWS_EXTENSION_ASSET_KEY = "macro-bellows-extension-subjec
 export const MACRO_DEPTH_OF_FIELD_ASSET_KEY = "macro-depth-of-field-subject" as const;
 export const MACRO_OBLIQUE_PLANE_ASSET_KEY = "macro-oblique-plane-subject" as const;
 export const MACRO_COMPOUND_MOVEMENTS_ASSET_KEY = "macro-compound-movements-subject" as const;
+/** Dormant development fixture slot; this is not a public scene identity. */
+export const FRINGE_CLUB_RUNTIME_ASSET_KEY = "fringe-club-runtime-subject" as const;
 
 /** Registry-owned set of visual asset slots; scene IDs remain separate. */
 export type SceneAssetKey =
@@ -58,6 +65,7 @@ export type SceneAssetKey =
   | typeof SHELF_SWING_ASSET_KEY
   | typeof ARCHITECTURE_FOREGROUND_ASSET_KEY
   | typeof INTERIOR_CORNER_ASSET_KEY
+  | typeof STILL_LIFE_STUDIO_ASSET_KEY
   | typeof OBLIQUE_TABLETOP_ASSET_KEY
   | typeof FOCUS_FUNDAMENTALS_ASSET_KEY
   | typeof VIEW_CAMERA_ANATOMY_ASSET_KEY
@@ -65,7 +73,8 @@ export type SceneAssetKey =
   | typeof MACRO_BELLOWS_EXTENSION_ASSET_KEY
   | typeof MACRO_DEPTH_OF_FIELD_ASSET_KEY
   | typeof MACRO_OBLIQUE_PLANE_ASSET_KEY
-  | typeof MACRO_COMPOUND_MOVEMENTS_ASSET_KEY;
+  | typeof MACRO_COMPOUND_MOVEMENTS_ASSET_KEY
+  | typeof FRINGE_CLUB_RUNTIME_ASSET_KEY;
 
 export type CameraMovementLatticeAssetFactory = (
   options: CameraMovementsGroupOptions,
@@ -79,6 +88,7 @@ export type SceneAssetRequestMap = {
   [SHELF_SWING_ASSET_KEY]: ShelfSwingAssetRequest;
   [ARCHITECTURE_FOREGROUND_ASSET_KEY]: ArchitectureForegroundAssetRequest;
   [INTERIOR_CORNER_ASSET_KEY]: InteriorCornerAssetRequest;
+  [STILL_LIFE_STUDIO_ASSET_KEY]: StillLifeStudioAssetRequest;
   [OBLIQUE_TABLETOP_ASSET_KEY]: ObliqueTabletopAssetRequest;
   [FOCUS_FUNDAMENTALS_ASSET_KEY]: FocusFundamentalsAssetRequest;
   [VIEW_CAMERA_ANATOMY_ASSET_KEY]: ViewCameraAnatomyAssetRequest;
@@ -87,6 +97,7 @@ export type SceneAssetRequestMap = {
   [MACRO_DEPTH_OF_FIELD_ASSET_KEY]: MacroDepthOfFieldAssetRequest;
   [MACRO_OBLIQUE_PLANE_ASSET_KEY]: MacroObliquePlaneAssetRequest;
   [MACRO_COMPOUND_MOVEMENTS_ASSET_KEY]: MacroCompoundMovementsAssetRequest;
+  [FRINGE_CLUB_RUNTIME_ASSET_KEY]: FringeClubAssetRequest;
 };
 
 export type SceneAssetResourceLifetimeByKey = {
@@ -97,6 +108,7 @@ export type SceneAssetResourceLifetimeByKey = {
   [SHELF_SWING_ASSET_KEY]: "instance-owned";
   [ARCHITECTURE_FOREGROUND_ASSET_KEY]: "instance-owned";
   [INTERIOR_CORNER_ASSET_KEY]: "instance-owned";
+  [STILL_LIFE_STUDIO_ASSET_KEY]: "instance-owned";
   [OBLIQUE_TABLETOP_ASSET_KEY]: "instance-owned";
   [FOCUS_FUNDAMENTALS_ASSET_KEY]: "module-shared";
   [VIEW_CAMERA_ANATOMY_ASSET_KEY]: "module-shared";
@@ -105,6 +117,7 @@ export type SceneAssetResourceLifetimeByKey = {
   [MACRO_DEPTH_OF_FIELD_ASSET_KEY]: "instance-owned";
   [MACRO_OBLIQUE_PLANE_ASSET_KEY]: "instance-owned";
   [MACRO_COMPOUND_MOVEMENTS_ASSET_KEY]: "instance-owned";
+  [FRINGE_CLUB_RUNTIME_ASSET_KEY]: "instance-owned";
 };
 
 export type SceneAssetKeyWithLifetime<
@@ -164,6 +177,7 @@ export const SHELF_SWING_IMPLEMENTATION_ID = "threejs-shelf-swing";
 export const ARCHITECTURE_FOREGROUND_IMPLEMENTATION_ID =
   "threejs-architecture-foreground";
 export const INTERIOR_CORNER_IMPLEMENTATION_ID = "threejs-interior-corner";
+export const STILL_LIFE_STUDIO_IMPLEMENTATION_ID = "threejs-still-life-studio";
 export const OBLIQUE_TABLETOP_IMPLEMENTATION_ID = "threejs-oblique-tabletop";
 export const FOCUS_FUNDAMENTALS_IMPLEMENTATION_ID = "threejs-focus-fundamentals";
 export const VIEW_CAMERA_ANATOMY_IMPLEMENTATION_ID = "threejs-view-camera-anatomy";
@@ -172,6 +186,7 @@ export const MACRO_BELLOWS_EXTENSION_IMPLEMENTATION_ID = "threejs-macro-bellows-
 export const MACRO_DEPTH_OF_FIELD_IMPLEMENTATION_ID = "threejs-macro-depth-of-field";
 export const MACRO_OBLIQUE_PLANE_IMPLEMENTATION_ID = "threejs-macro-oblique-plane";
 export const MACRO_COMPOUND_MOVEMENTS_IMPLEMENTATION_ID = "threejs-macro-compound-movements";
+export const FRINGE_CLUB_RUNTIME_IMPLEMENTATION_ID = "threejs-fringe-club-runtime";
 
 const cameraMovementLatticeRegistration: SceneAssetRegistration<typeof CAMERA_MOVEMENT_LATTICE_ASSET_KEY> =
   Object.freeze({
@@ -231,6 +246,14 @@ const interiorCornerRegistration: SceneAssetRegistration<typeof INTERIOR_CORNER_
     implementationId: INTERIOR_CORNER_IMPLEMENTATION_ID,
     create: (request) => interiorCornerAsset.createInteriorCornerGroup(request),
     dispose: (asset) => interiorCornerAsset.disposeInteriorCornerGroup(asset),
+  });
+
+const stillLifeStudioRegistration: SceneAssetRegistration<typeof STILL_LIFE_STUDIO_ASSET_KEY> =
+  Object.freeze({
+    assetKey: STILL_LIFE_STUDIO_ASSET_KEY,
+    implementationId: STILL_LIFE_STUDIO_IMPLEMENTATION_ID,
+    create: (request) => stillLifeStudioAsset.createStillLifeStudioGroup(request),
+    dispose: (asset) => stillLifeStudioAsset.disposeStillLifeStudioGroup(asset),
   });
 
 const obliqueTabletopRegistration: SceneAssetRegistration<typeof OBLIQUE_TABLETOP_ASSET_KEY> =
@@ -299,6 +322,17 @@ const macroCompoundMovementsRegistration: SceneAssetRegistration<typeof MACRO_CO
     dispose: (asset) => macroCompoundMovementsAsset.disposeMacroCompoundMovementsGroup(asset),
   });
 
+const fringeClubRuntimeRegistration: SceneAssetRegistration<typeof FRINGE_CLUB_RUNTIME_ASSET_KEY> =
+  Object.freeze({
+    assetKey: FRINGE_CLUB_RUNTIME_ASSET_KEY,
+    implementationId: FRINGE_CLUB_RUNTIME_IMPLEMENTATION_ID,
+    renderResourceLifetime: "instance-owned",
+    create: (request) =>
+      fringeClubRuntimeAsset.createFringeClubRegisteredGroup(request),
+    dispose: (asset) =>
+      fringeClubRuntimeAsset.disposeFringeClubRegisteredGroup(asset),
+  });
+
 /** Immutable production mapping from each registered scene asset slot. */
 export const sceneAssetRegistry: CompleteSceneAssetRegistry = Object.freeze({
   [CAMERA_MOVEMENT_LATTICE_ASSET_KEY]: cameraMovementLatticeRegistration,
@@ -308,6 +342,7 @@ export const sceneAssetRegistry: CompleteSceneAssetRegistry = Object.freeze({
   [SHELF_SWING_ASSET_KEY]: shelfSwingRegistration,
   [ARCHITECTURE_FOREGROUND_ASSET_KEY]: architectureForegroundRegistration,
   [INTERIOR_CORNER_ASSET_KEY]: interiorCornerRegistration,
+  [STILL_LIFE_STUDIO_ASSET_KEY]: stillLifeStudioRegistration,
   [OBLIQUE_TABLETOP_ASSET_KEY]: obliqueTabletopRegistration,
   [FOCUS_FUNDAMENTALS_ASSET_KEY]: focusFundamentalsRegistration,
   [VIEW_CAMERA_ANATOMY_ASSET_KEY]: viewCameraAnatomyRegistration,
@@ -316,6 +351,7 @@ export const sceneAssetRegistry: CompleteSceneAssetRegistry = Object.freeze({
   [MACRO_DEPTH_OF_FIELD_ASSET_KEY]: macroDepthOfFieldRegistration,
   [MACRO_OBLIQUE_PLANE_ASSET_KEY]: macroObliquePlaneRegistration,
   [MACRO_COMPOUND_MOVEMENTS_ASSET_KEY]: macroCompoundMovementsRegistration,
+  [FRINGE_CLUB_RUNTIME_ASSET_KEY]: fringeClubRuntimeRegistration,
 });
 
 /**
@@ -343,6 +379,7 @@ export function resolveSceneAsset(
     assetKey !== SHELF_SWING_ASSET_KEY &&
     assetKey !== ARCHITECTURE_FOREGROUND_ASSET_KEY &&
     assetKey !== INTERIOR_CORNER_ASSET_KEY &&
+    assetKey !== STILL_LIFE_STUDIO_ASSET_KEY &&
     assetKey !== OBLIQUE_TABLETOP_ASSET_KEY &&
     assetKey !== FOCUS_FUNDAMENTALS_ASSET_KEY &&
     assetKey !== VIEW_CAMERA_ANATOMY_ASSET_KEY &&
@@ -350,7 +387,8 @@ export function resolveSceneAsset(
     assetKey !== MACRO_BELLOWS_EXTENSION_ASSET_KEY &&
     assetKey !== MACRO_DEPTH_OF_FIELD_ASSET_KEY &&
     assetKey !== MACRO_OBLIQUE_PLANE_ASSET_KEY &&
-    assetKey !== MACRO_COMPOUND_MOVEMENTS_ASSET_KEY
+    assetKey !== MACRO_COMPOUND_MOVEMENTS_ASSET_KEY &&
+    assetKey !== FRINGE_CLUB_RUNTIME_ASSET_KEY
   ) {
     throw new Error('Unknown scene asset "' + assetKey + '"');
   }

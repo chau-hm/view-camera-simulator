@@ -1,0 +1,52 @@
+{
+  "schema": "m7m-playwright-outcomes-v1",
+  "normalizerRevision": "m7m-playwright-normalizer-v1",
+  "captureId": "single-viewport-geometry-w1",
+  "executionSourceCommitSha": "0c32f113c1e3d16a8fd42e7748c64909366c6ae8",
+  "rawCapture": {
+    "sha256": "7e1d71996741fc6025026203aca898e8a096512d2816a71e7287ae8d2da61482",
+    "bytes": 11839,
+    "retention": "private-local-only",
+    "offlineReplayAvailable": false
+  },
+  "config": {
+    "projectNames": [
+      "chromium",
+      "chromium-renderer-serial"
+    ],
+    "configuredWorkers": 1,
+    "configuredRetries": 0,
+    "testSeam": "disabled"
+  },
+  "stats": {
+    "discovered": 1,
+    "passed": 0,
+    "failed": 1,
+    "skipped": 0,
+    "flaky": 0,
+    "incomplete": 0,
+    "retries": 0,
+    "maxConcurrentTests": 1,
+    "actualWorkerIndices": [
+      0
+    ],
+    "durationMs": 35281
+  },
+  "tests": [
+    {
+      "identity": "scene-viewport-expansion.spec.ts::simulator viewports expand in main without replacing their active canvases",
+      "status": "unexpected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "workerIndex": 0,
+          "startOffsetMs": 640,
+          "durationMs": 34524,
+          "failureSignature": "expanded-viewport-ratio-mismatch"
+        }
+      ]
+    }
+  ]
+}

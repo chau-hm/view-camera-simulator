@@ -608,7 +608,6 @@ export const deriveOpticsState = (
           filmPlane,
           rearStandardFrame: rearFrame,
           opticalAxis,
-          isParallelLensFilm: infinityLensFilmRel.isParallel,
         });
 
     const offAxisProjectionInput = createOffAxisProjectionInput(
@@ -881,7 +880,6 @@ export const deriveOpticsState = (
     filmPlane,
     rearStandardFrame: rearFrame,
     opticalAxis,
-    isParallelLensFilm,
   });
   const { focusPlane, focusPlaneModel } = calculateFocusPlaneWithFallback(
     focusPointWorld,

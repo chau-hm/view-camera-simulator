@@ -1,0 +1,59 @@
+
+> view-camera-simulator@0.0.0 evidence:report:m7g
+> node ./scripts/run-m7g-consolidation.mjs --diagnostic --report-output=docs/architecture/ground-glass-m7j-four-worker/validation/m7g-temporary-report.json --evaluation-output=docs/architecture/ground-glass-m7j-four-worker/validation/m7g-temporary-evaluation.json
+
+M7G evidence integrity: PASS
+M7G qualification: PARTIALLY QUALIFIED
+M8 entry: DENIED
+Production WebGPU: DISABLED
+{
+  "reportId": "ground-glass-m7g-r187-lifecycle-consolidation",
+  "evaluatorRevision": "m7g-r187-consolidation-evaluator-v2",
+  "mode": "diagnostic-report",
+  "qualificationStatus": "partially-qualified",
+  "qualificationPass": false,
+  "evidenceIntegrity": "passed",
+  "valid": true,
+  "scenarioCounts": {
+    "declared": {
+      "passed": 5,
+      "failed": 0,
+      "blocked": 2,
+      "not-run": 0
+    },
+    "computed": {
+      "passed": 5,
+      "failed": 0,
+      "blocked": 2,
+      "not-run": 0
+    },
+    "inventoryConsistent": true
+  },
+  "decisions": {
+    "rawLifecycle": "partially-qualified",
+    "physicalCocResearch": "research-qualified",
+    "gatherB1Research": "research-qualified",
+    "m5OpticalQuality": "partially-qualified",
+    "presentationConformance": "passed",
+    "crossStageRequestIntegrity": "passed",
+    "initializationFailureIntegrity": "passed",
+    "runtimeFailureRecovery": "passed",
+    "deviceLossHandling": "partially-qualified",
+    "resourceCleanup": "passed",
+    "stickyFallback": "passed",
+    "retryAndSessionOwnership": "passed",
+    "resizeAndRemount": "passed",
+    "sceneTransition": "passed",
+    "productionIsolation": "passed",
+    "consolidatedM7": "partially-qualified",
+    "m8EntryGate": "denied"
+  },
+  "issues": [],
+  "reportOutput": "docs/architecture/ground-glass-m7j-four-worker/validation/m7g-temporary-report.json",
+  "evaluationOutput": "docs/architecture/ground-glass-m7j-four-worker/validation/m7g-temporary-evaluation.json",
+  "predecessorReplayValidity": {
+    "m7e": true,
+    "m7f": true
+  },
+  "predecessorReplayDiagnostics": {}
+}

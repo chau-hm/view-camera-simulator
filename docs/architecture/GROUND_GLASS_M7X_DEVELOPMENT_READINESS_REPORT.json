@@ -1,0 +1,287 @@
+{
+  "schemaVersion": "ground-glass-m7x-development-readiness-v1",
+  "milestone": "M7X",
+  "reportId": "m7x-webgpu-development-readiness-closure-2026-11",
+  "source": {
+    "baseCommit": "69fcd6227e6a3ddf629ece88fd80124158b22d98",
+    "captureSourceCommit": "69fcd6227e6a3ddf629ece88fd80124158b22d98",
+    "branch": "feature/ground-glass-m7x-development-readiness",
+    "implementationFilesChanged": false,
+    "reportFilesAreDevelopmentReadinessDocumentation": true
+  },
+  "renderer": {
+    "threeRevision": "187",
+    "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+    "nativeEvidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v1"
+  },
+  "developmentReadinessDecision": {
+    "decision": "X1",
+    "label": "development-ready-limited-native-webgpu",
+    "scope": {
+      "sceneId": "architecture-rise",
+      "registeredBoundsRequired": true,
+      "features": [
+        "raw-rtt"
+      ],
+      "environment": "development",
+      "rendererRevision": "r187"
+    },
+    "doesNotAuthorize": [
+      "M7 completion",
+      "M8 entry",
+      "M9",
+      "production WebGPU",
+      "other scenes",
+      "M4/M5/M6 general renderer eligibility"
+    ]
+  },
+  "capabilities": [
+    {
+      "id": "webgpu-raw-rtt",
+      "implemented": true,
+      "authorization": "M3 trusted development pilot only; exact Architecture Rise scene/bounds, raw-rtt feature, and r187 evidence",
+      "verifiedRuntime": "Native Chrome 157.0.8103.39 application smoke; webgpu-renderer, actual API webgpu, internal fallback none, host application-fallback status not-observed (no fallback observed), contentful Raw output",
+      "readyForVisualWork": true,
+      "readyScope": "Architecture Rise scene-color/Raw RTT stage only"
+    },
+    {
+      "id": "physical-coc-footprint",
+      "implemented": true,
+      "authorization": "separate research-only configuration; not authorized by M3 Raw evidence",
+      "verifiedRuntime": "Separate native r187 research evidence exists; disabled in M7X smoke",
+      "readyForVisualWork": false,
+      "nextStage": "RQ3 feature-specific quality work"
+    },
+    {
+      "id": "far-near-gather-b1",
+      "implemented": true,
+      "authorization": "separate research-only configuration",
+      "verifiedRuntime": "Native research evidence exists; M5Q remains partially-qualified with only its exact Q3 signed-boundary case bounded-qualified; disabled in M7X smoke",
+      "readyForVisualWork": false,
+      "nextStage": "RQ3 feature-specific quality work"
+    },
+    {
+      "id": "far-near-composite",
+      "implemented": true,
+      "authorization": "scoped M5/M6 research experiment only",
+      "verifiedRuntime": "Scoped native Architecture Rise output-contract evidence exists; disabled in M7X smoke",
+      "readyForVisualWork": false,
+      "nextStage": "RQ3 feature-specific quality work"
+    },
+    {
+      "id": "m6-final-presentation",
+      "implemented": true,
+      "authorization": "separately gated Architecture Rise development experiment; not general renderer eligibility",
+      "verifiedRuntime": "Scoped native conformance evidence exists; quality remains unqualified; disabled in M7X smoke",
+      "readyForVisualWork": false,
+      "nextStage": "RQ3 feature-specific quality work"
+    },
+    {
+      "id": "architecture-rise-materials",
+      "implemented": true,
+      "authorization": "only registered subject/material inputs in the exact M3 Raw compatibility record",
+      "verifiedRuntime": "Verified only within the M3 Architecture Rise Raw scene scope",
+      "readyForVisualWork": true,
+      "eligibilityRule": "Any change to registered scene/material inputs invalidates reuse of the existing compatibility record until revalidated"
+    },
+    {
+      "id": "other-scene-compatibility",
+      "implemented": true,
+      "authorization": "none under the M3 record",
+      "verifiedRuntime": "not verified by M7X",
+      "readyForVisualWork": false,
+      "eligibilityRule": "unsupported scene/revision/feature combinations fail closed"
+    }
+  ],
+  "runtimeEnvironment": {
+    "browser": "Chrome 157.0.8103.39",
+    "playwrightProject": "chrome-native-webgpu",
+    "nodeVersion": "v24.3.0",
+    "platform": "darwin",
+    "kernelRelease": "27.0.0",
+    "architecture": "arm64",
+    "hardwareAccelerationClaim": false
+  },
+  "nativeSmoke": {
+    "testIdentity": "r187 native M3 Raw RTT runs in the application and disposes on scene transition",
+    "testPath": "src/tests/e2e/ground-glass-webgpu-r187-app-pilot.spec.ts",
+    "workerCount": 1,
+    "retries": 0,
+    "attempts": [
+      {
+        "id": "initial-diagnostic-seam-mismatch",
+        "outcome": "failed",
+        "classification": "invalid-for-M7X-acceptance",
+        "reason": "Playwright configuration reset the test seam to false; native Raw runtime/output assertions completed, but the final lifecycle-event assertion could not observe its required seam event."
+      },
+      {
+        "id": "seam-enabled-native-smoke",
+        "outcome": "passed",
+        "durationMs": 3800,
+        "retainedCapture": false
+      },
+      {
+        "id": "seam-enabled-native-smoke-retained",
+        "outcome": "passed",
+        "durationMs": 3600,
+        "retainedCapture": "docs/architecture/ground-glass-m7x-development/runtime/native-m3-raw-smoke.json"
+      }
+    ],
+    "assertedObservations": {
+      "rendererFamily": "webgpu-renderer",
+      "actualExecutionApi": "webgpu",
+      "internalFallback": "none",
+      "policyEvidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v1",
+      "mountedEvidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v1",
+      "rawContentful": true,
+      "finalContentful": true,
+      "frameAcceptedByHost": true,
+      "focusUpdated": true,
+      "apertureUpdated": true,
+      "navigationUnmountedNativeGeneration": true,
+      "nativeCleanupAcknowledged": "confirmed",
+      "nextSceneRenderer": "webgl-renderer",
+      "applicationFallbackStatus": "not-observed"
+    },
+    "rawCapture": {
+      "committed": false,
+      "byteLength": 31112,
+      "sha256": "8f13acdbb38a569659d27b1bceb8dd6f06d809fb8c069f53f5ceb33a705b63fc",
+      "note": "Raw temporary Playwright attachment included local process paths. A public-safe normalized event export is committed; raw attachment is not retained in the repository."
+    },
+    "normalizedCapture": {
+      "path": "docs/architecture/ground-glass-m7x-development/runtime/native-m3-raw-smoke.json",
+      "byteLength": 8454,
+      "sha256": "4432d5797aec10a8bbe80081b9e2a2e963588164d124d126aeaefb1f0fab0432"
+    }
+  },
+  "visualBaseline": {
+    "captureSourceCommit": "69fcd6227e6a3ddf629ece88fd80124158b22d98",
+    "route": "/simulator/free/architecture-rise?rttDiagnostics=1",
+    "sceneId": "architecture-rise",
+    "pipelineStage": "scene-color Raw RTT display",
+    "pipelineComparisonValidAtSameStage": true,
+    "fullPhotographicParityClaim": false,
+    "viewport": {
+      "width": 1280,
+      "height": 900,
+      "deviceScaleFactor": 1
+    },
+    "displayedGroundGlass": {
+      "width": 450,
+      "height": 360
+    },
+    "internalTarget": {
+      "width": 900,
+      "height": 720
+    },
+    "opticalState": {
+      "focalLengthMm": 150,
+      "focusDistanceMm": 8900,
+      "focusChangeMm": {
+        "from": 8890,
+        "to": 8900
+      },
+      "apertureFNumber": 8,
+      "frontRiseMm": 0,
+      "frontShiftMm": 0,
+      "frontTiltDeg": 0,
+      "frontSwingDeg": 0,
+      "rearRiseMm": 0,
+      "rearShiftMm": 0,
+      "rearTiltDeg": 0,
+      "rearSwingDeg": 0,
+      "otherMovementValuesSource": "Architecture Rise cameraPreset; screenshot runner left these controls at route defaults"
+    },
+    "captures": [
+      {
+        "rendererFamily": "webgl-renderer",
+        "actualExecutionApi": "webgl2",
+        "internalFallback": null,
+        "rawContentful": true,
+        "frameStatus": "completed",
+        "path": "docs/architecture/ground-glass-m7x-development/visual-baseline/webgl-raw-architecture-rise-focus-step-f8.png",
+        "byteLength": 56098,
+        "sha256": "2dd8143cdf4303f8a083f0c2a453f1352154ec73ffc89b220e52486800252432",
+        "metadata": "docs/architecture/ground-glass-m7x-development/visual-baseline/webgl-reference.json"
+      },
+      {
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "rawContentful": true,
+        "frameStatus": "completed",
+        "path": "docs/architecture/ground-glass-m7x-development/visual-baseline/webgpu-raw-architecture-rise-focus-step-f8.png",
+        "byteLength": 45597,
+        "sha256": "c4fc8919a429000b77c4fca37efc1d1f2e5a76535bf2b85cd6091e6c68ba0a2e",
+        "metadata": "docs/architecture/ground-glass-m7x-development/visual-baseline/webgpu-native-candidate.json"
+      }
+    ],
+    "observation": "Screenshots visibly differ in tone/color. They document a review baseline at the same Raw scene-color stage, not pixel parity, optical correctness, or a controlled color-science result."
+  },
+  "historicalEvidence": {
+    "m3RawSceneRevision": "architecture-rise-raw-rtt-v1",
+    "m3NativeR187EvidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v1",
+    "m7cSourceHead": "c5940393ad3877373f2d2b4ac833ba4fa7413e98",
+    "m7cEvaluatorRevision": "m7c-r187-lifecycle-evidence-v2",
+    "m7gPassed": 5,
+    "m7gFailed": 0,
+    "m7gBlocked": 2,
+    "m7gNotRun": 0,
+    "m5qRevision": "m5q-architecture-rise-r186-v3",
+    "m5qStatus": "partially-qualified",
+    "m6Status": "architecture-partially-implemented-quality-unqualified",
+    "m7vOwnerApprovalsPending": 75,
+    "m7wOrdinary": {
+      "mandatory": 201,
+      "passed": 117,
+      "failed": 52,
+      "timedOut": 32,
+      "unexpected": 84,
+      "mandatorySkipped": 0,
+      "retries": 0,
+      "incomplete": 0
+    },
+    "m7wRendererSerial": {
+      "required": 4,
+      "passedLocally": 4,
+      "formalM7vProvenance": "incomplete"
+    },
+    "historicalEvidenceModified": false
+  },
+  "qualificationBoundary": {
+    "broadE2e": "not-qualified",
+    "m7": "partially-qualified",
+    "m8Entry": "denied",
+    "m9": "not-authorized",
+    "spontaneousExternalGpuDeviceLoss": "blocked",
+    "m7vOwnerApprovals": "pending",
+    "productionGroundGlass": "WebGL-only",
+    "productionWebgpu": "disabled"
+  },
+  "validation": {
+    "nativeM3Smoke": "passed after using existing test-only diagnostic seam; one earlier seam-misconfigured test attempt failed at final lifecycle assertion",
+    "visualWebglWebgpuRawPair": "captured and digest-verified at the same Raw scene-color stage",
+    "focusedRendererTests": {
+      "status": "passed",
+      "files": 5,
+      "tests": 153
+    },
+    "productionPreviewIsolation": {
+      "status": "passed",
+      "tests": 4,
+      "build": "production preview config completed npm run build"
+    },
+    "m7vEvidenceCheck": "passed; 280 current standard identities; 75 owner approvals remain pending",
+    "m7wEvidenceCheck": "passed; 201 mandatory ordinary identities (117 passed, 84 unexpected); serial 4/4 local; formal M7V provenance incomplete",
+    "unitSuite": {
+      "status": "passed",
+      "files": 328,
+      "tests": 3977
+    },
+    "typecheck": "passed",
+    "lint": "passed",
+    "gitDiffCheck": "passed",
+    "hostedCi": "pending"
+  }
+}

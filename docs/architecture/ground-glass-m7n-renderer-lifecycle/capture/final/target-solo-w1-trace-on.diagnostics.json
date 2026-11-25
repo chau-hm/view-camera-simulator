@@ -1,0 +1,2650 @@
+{
+  "schemaVersion": 1,
+  "runId": "target-solo-w1-trace-on-r2",
+  "capturePhase": "after-test",
+  "testIdentity": "architecture-rise-focus-range.spec.ts › Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+  "testOutcome": "passed",
+  "expectedStatus": "passed",
+  "browserVersion": "149.0.7827.55",
+  "projectName": "chromium",
+  "captureStartedAtNodeMonotonicMs": 292.923334,
+  "captureEndedAtNodeMonotonicMs": 14744.532584,
+  "observed": {
+    "observedAtPageMonotonicMs": 14440.5,
+    "route": "/simulator/free/architecture-rise",
+    "documentReadyState": "complete",
+    "expectedScene": "architecture-rise",
+    "observedScene": "architecture-rise",
+    "workspaceFallbackVisible": false,
+    "sceneContainerExists": true,
+    "observerCanvasCount": 1,
+    "observerAttributes": {
+      "data-observer-renderer-surface": "observer",
+      "data-observer-three-revision": "187",
+      "data-observer-renderer-generation": "0",
+      "data-observer-renderer-status": "active",
+      "data-observer-renderer-request": "webgl",
+      "data-observer-renderer-attempt": "webgl",
+      "data-observer-selection-reason": "default-webgl-request",
+      "data-observer-application-fallback": "none",
+      "data-observer-webgpu-scene-compatibility": "verified",
+      "data-observer-webgpu-pilot-eligibility": "eligible",
+      "data-observer-scene-requirements-status": "declared",
+      "data-observer-scene-rendering-requirements": "observer-scene-subject,presentation-lighting,shadow-maps,procedural-world-environment",
+      "data-observer-scene-known-backend-constraints": "none",
+      "data-observer-webgpu-api-present": "true",
+      "data-observer-adapter-availability": "not-requested",
+      "data-observer-output-policy-requested": "standard",
+      "data-observer-output-policy-requested-param": "unspecified",
+      "data-observer-output-policy-selected": "standard",
+      "data-observer-output-policy-selection-reason": "standard-default",
+      "data-observer-environment-status": "active",
+      "data-scene-subject-id": "architecture-rise",
+      "data-observer-camera-position": "6.500000,3.000000,-6.500000",
+      "data-observer-renderer-family": "webgl-renderer",
+      "data-observer-execution-backend": "webgl2",
+      "data-observer-output-policy-installed": "standard",
+      "data-observer-shadow-map-status": "active",
+      "data-observer-shadow-map-type": "pcf",
+      "data-observer-tone-mapping-active": "true",
+      "data-observer-tone-mapping": "aces-filmic",
+      "data-observer-tone-mapping-exposure": "1.000000",
+      "data-observer-output-color-space": "srgb"
+    },
+    "groundGlassAttributes": {
+      "data-rtt-channel": "default",
+      "data-rtt-scene-id": "architecture-rise",
+      "data-frame-request-id": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+      "data-frame-channel-id": "default",
+      "data-frame-scene-id": "architecture-rise",
+      "data-render-host-lifecycle": "ready",
+      "data-frame-result-status": "completed",
+      "data-render-cleanup-status": "not-required",
+      "data-rtt-depth-available": "true",
+      "data-rtt-resource-generation": "1",
+      "data-rtt-owner-id": "ground-glass-rtt-owner-_r_0_",
+      "data-rtt-physical-boundary-blur-radius-px": "0.17716535433070865",
+      "data-rtt-logical-width": "450",
+      "data-rtt-logical-height": "360",
+      "data-rtt-resolution-scale": "1",
+      "data-rtt-effective-device-pixel-ratio": "2",
+      "data-rtt-internal-width": "900",
+      "data-rtt-internal-height": "720",
+      "data-rtt-canvas-css-width": "450",
+      "data-rtt-canvas-css-height": "360",
+      "data-rtt-color-target-width": "900",
+      "data-rtt-color-target-height": "720",
+      "data-rtt-depth-target-width": "900",
+      "data-rtt-depth-target-height": "720",
+      "data-rtt-blur-target-width": "900",
+      "data-rtt-blur-target-height": "720",
+      "data-rtt-gather-scale": "1",
+      "data-rtt-final-target-width": "900",
+      "data-rtt-final-target-height": "720",
+      "data-rtt-horizontal-shader-width": "900",
+      "data-rtt-horizontal-shader-height": "720",
+      "data-rtt-vertical-shader-width": "900",
+      "data-rtt-vertical-shader-height": "720",
+      "data-rtt-was-clamped": "false",
+      "data-rtt-inspection-window-active": "false",
+      "data-rtt-inspection-center-u": "0.5",
+      "data-rtt-inspection-center-v": "0.5",
+      "data-rtt-sampled-film-width-mm": "127",
+      "data-rtt-sampled-film-height-mm": "101.6",
+      "data-rtt-profiling-enabled": "false",
+      "data-rtt-profiling-backend": "disabled",
+      "data-rtt-camera-ok": "true",
+      "data-rtt-ground-glass-illuminance-gain": "0.9052691111320578",
+      "data-rtt-natural-illumination-enabled": "true",
+      "data-rtt-natural-illumination-kind": "parallel-cos4",
+      "data-rtt-natural-illumination-image-distance-mm": "157.6530612244898",
+      "data-rtt-natural-illumination-offset-x-mm": "0",
+      "data-rtt-natural-illumination-offset-y-mm": "0",
+      "data-rtt-coverage-enabled": "true",
+      "data-rtt-coverage-kind": "parallel-circle",
+      "data-rtt-coverage-radius-mm": "114.54165364982474",
+      "data-rtt-coverage-offset-x-mm": "0",
+      "data-rtt-coverage-offset-y-mm": "0",
+      "data-rtt-camera-position": "0,0,0",
+      "data-rtt-camera-up": "0,1,0",
+      "data-rtt-camera-forward": "0,0,1"
+    },
+    "pageNavigationAndLongTaskTiming": {
+      "navigation": [
+        {
+          "startTimeMs": 0,
+          "durationMs": 231.5,
+          "domInteractiveMs": 75.80000001192093,
+          "domContentLoadedMs": 230.80000001192093,
+          "loadEventEndMs": 231.5
+        }
+      ],
+      "longTasks": [
+        {
+          "startTimeMs": 181.10000002384186,
+          "durationMs": 50
+        },
+        {
+          "startTimeMs": 455.4000000357628,
+          "durationMs": 55
+        },
+        {
+          "startTimeMs": 650.3000000119209,
+          "durationMs": 642
+        },
+        {
+          "startTimeMs": 1293.199999988079,
+          "durationMs": 3289
+        },
+        {
+          "startTimeMs": 4598.100000023842,
+          "durationMs": 538
+        },
+        {
+          "startTimeMs": 5139.300000011921,
+          "durationMs": 305
+        },
+        {
+          "startTimeMs": 5446.400000035763,
+          "durationMs": 295
+        },
+        {
+          "startTimeMs": 5742.699999988079,
+          "durationMs": 283
+        },
+        {
+          "startTimeMs": 6027.5,
+          "durationMs": 283
+        },
+        {
+          "startTimeMs": 6311.300000011921,
+          "durationMs": 277
+        },
+        {
+          "startTimeMs": 6589.699999988079,
+          "durationMs": 283
+        },
+        {
+          "startTimeMs": 6873.699999988079,
+          "durationMs": 276
+        },
+        {
+          "startTimeMs": 7150.600000023842,
+          "durationMs": 314
+        },
+        {
+          "startTimeMs": 7465.199999988079,
+          "durationMs": 278
+        },
+        {
+          "startTimeMs": 7744.100000023842,
+          "durationMs": 285
+        },
+        {
+          "startTimeMs": 8030.199999988079,
+          "durationMs": 282
+        },
+        {
+          "startTimeMs": 8313.300000011921,
+          "durationMs": 281
+        },
+        {
+          "startTimeMs": 8597.300000011921,
+          "durationMs": 295
+        },
+        {
+          "startTimeMs": 8895.400000035763,
+          "durationMs": 280
+        },
+        {
+          "startTimeMs": 9175.699999988079,
+          "durationMs": 300
+        },
+        {
+          "startTimeMs": 9476.5,
+          "durationMs": 309
+        },
+        {
+          "startTimeMs": 9786.400000035763,
+          "durationMs": 285
+        },
+        {
+          "startTimeMs": 10102.300000011921,
+          "durationMs": 406
+        },
+        {
+          "startTimeMs": 10509.300000011921,
+          "durationMs": 376
+        },
+        {
+          "startTimeMs": 10897,
+          "durationMs": 417
+        },
+        {
+          "startTimeMs": 11316.100000023842,
+          "durationMs": 384
+        },
+        {
+          "startTimeMs": 11701,
+          "durationMs": 387
+        },
+        {
+          "startTimeMs": 12089.100000023842,
+          "durationMs": 396
+        },
+        {
+          "startTimeMs": 12485.800000011921,
+          "durationMs": 384
+        },
+        {
+          "startTimeMs": 12877.600000023842,
+          "durationMs": 390
+        },
+        {
+          "startTimeMs": 13267.800000011921,
+          "durationMs": 392
+        },
+        {
+          "startTimeMs": 13660.5,
+          "durationMs": 394
+        },
+        {
+          "startTimeMs": 14054.800000011921,
+          "durationMs": 384
+        }
+      ],
+      "droppedLongTasks": 0,
+      "longTaskObserverAvailable": true,
+      "lifecycleMilestones": [
+        {
+          "event": "document-start-observed",
+          "timestampMs": 5.699999988079071,
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": null,
+          "canvasCount": 0,
+          "rendererStatus": null,
+          "rendererGeneration": null,
+          "workspaceMounted": false,
+          "suspenseVisible": false
+        },
+        {
+          "event": "workspace-suspense-visible",
+          "timestampMs": 244.10000002384186,
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": null,
+          "canvasCount": 0,
+          "rendererStatus": null,
+          "rendererGeneration": null,
+          "workspaceMounted": false,
+          "suspenseVisible": true
+        },
+        {
+          "event": "workspace-dom-mounted",
+          "timestampMs": 573.1000000238419,
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "canvasCount": 1,
+          "rendererStatus": "pending",
+          "rendererGeneration": "0",
+          "workspaceMounted": true,
+          "suspenseVisible": false
+        },
+        {
+          "event": "scene-identity-observed",
+          "timestampMs": 573.1000000238419,
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "canvasCount": 1,
+          "rendererStatus": "pending",
+          "rendererGeneration": "0",
+          "workspaceMounted": true,
+          "suspenseVisible": false
+        },
+        {
+          "event": "observer-canvas-dom-attached",
+          "timestampMs": 573.1000000238419,
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "canvasCount": 1,
+          "rendererStatus": "pending",
+          "rendererGeneration": "0",
+          "workspaceMounted": true,
+          "suspenseVisible": false
+        },
+        {
+          "event": "observer-status-pending",
+          "timestampMs": 573.1000000238419,
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "canvasCount": 1,
+          "rendererStatus": "pending",
+          "rendererGeneration": "0",
+          "workspaceMounted": true,
+          "suspenseVisible": false
+        },
+        {
+          "event": "observer-status-active",
+          "timestampMs": 1292.699999988079,
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "canvasCount": 1,
+          "rendererStatus": "active",
+          "rendererGeneration": "0",
+          "workspaceMounted": true,
+          "suspenseVisible": false
+        }
+      ],
+      "droppedLifecycleMilestones": 0,
+      "lifecycleMutationObserverAvailable": true
+    },
+    "applicationTrace": {
+      "schemaVersion": 1,
+      "pageId": "m7n-otztnvu9",
+      "timeOriginMs": 1793894304066.4,
+      "capacity": 512,
+      "droppedEventCount": 0,
+      "events": [
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 1,
+          "timestampMs": 237.69999998807907,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "route",
+          "event": "workspace-module-load-started",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": null,
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 2,
+          "timestampMs": 249.19999998807907,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "simulator",
+          "event": "workspace-suspense-fallback-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": null,
+          "rendererGeneration": null,
+          "status": "visible"
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 3,
+          "timestampMs": 249.4000000357628,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "route",
+          "event": "simulator-route-component-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": null,
+          "rendererGeneration": null,
+          "status": null,
+          "detail": {
+            "taskRequested": false
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 4,
+          "timestampMs": 249.69999998807907,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "simulator",
+          "event": "workspace-suspense-fallback-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": null,
+          "rendererGeneration": null,
+          "status": "visible"
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 5,
+          "timestampMs": 249.80000001192093,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "route",
+          "event": "simulator-route-component-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": null,
+          "rendererGeneration": null,
+          "status": null,
+          "detail": {
+            "taskRequested": false
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 6,
+          "timestampMs": 510.9000000357628,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "route",
+          "event": "workspace-module-load-completed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": null,
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 7,
+          "timestampMs": 553.9000000357628,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "observer",
+          "event": "observer-generation-authority-activated",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1",
+          "rendererGeneration": 0,
+          "status": "awaiting-capabilities",
+          "detail": {
+            "backendStatus": "selected",
+            "rendererAttempt": "webgl",
+            "requestIdentity": "architecture-rise:default:public:standard",
+            "generationNumber": 0
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 8,
+          "timestampMs": 572.8000000119209,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-request-accepted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "accepted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-1",
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 9,
+          "timestampMs": 576,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "scene",
+          "event": "scene-renderer-component-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "committed"
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 10,
+          "timestampMs": 576.1000000238419,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "scene",
+          "event": "scene-asset-configuration-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "configured",
+          "detail": {
+            "declaredAssetCount": 3,
+            "selectedAssetCount": 2,
+            "lazyAssetsDeferred": true
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 11,
+          "timestampMs": 576.1999999880791,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "observer",
+          "event": "observer-scene-container-dom-attached",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "attached"
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 12,
+          "timestampMs": 576.1999999880791,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "observer",
+          "event": "observer-canvas-dom-attached",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "attached",
+          "detail": {
+            "canvasCount": 1
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 13,
+          "timestampMs": 576.3000000119209,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "scene",
+          "event": "scene-viewport-effect-setup",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1",
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 14,
+          "timestampMs": 576.3000000119209,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "observer",
+          "event": "observer-backend-selected",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1",
+          "rendererGeneration": 0,
+          "status": "selected",
+          "detail": {
+            "requestedRenderer": "webgl",
+            "rendererAttempt": "webgl",
+            "selectionReason": "default-webgl-request",
+            "applicationFallback": "none"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 15,
+          "timestampMs": 576.3000000119209,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "observer",
+          "event": "observer-renderer-requested",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1",
+          "rendererGeneration": 0,
+          "status": "webgl",
+          "detail": {
+            "requestIdentity": "architecture-rise:default:public:standard"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 16,
+          "timestampMs": 576.8000000119209,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "simulator",
+          "event": "simulator-workspace-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "free:architecture-rise:free",
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 17,
+          "timestampMs": 576.8000000119209,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "simulator",
+          "event": "scene-route-initialization-started",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "free:architecture-rise:free",
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 18,
+          "timestampMs": 577.1999999880791,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "simulator",
+          "event": "scene-route-initialization-requested",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "free:architecture-rise:free",
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 19,
+          "timestampMs": 577.5,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "simulator",
+          "event": "simulator-workspace-effect-cleanup",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "free:architecture-rise:free",
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 20,
+          "timestampMs": 577.5,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "scene",
+          "event": "scene-viewport-effect-cleanup",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1",
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 21,
+          "timestampMs": 577.5,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "scene",
+          "event": "scene-renderer-component-effect-cleanup",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": null
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 22,
+          "timestampMs": 577.5,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "observer",
+          "event": "observer-scene-container-observation-stopped",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "observation-stopped"
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 23,
+          "timestampMs": 577.8000000119209,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-request-accepted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "accepted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-1",
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 24,
+          "timestampMs": 577.9000000357628,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "scene",
+          "event": "scene-renderer-component-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "committed"
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 25,
+          "timestampMs": 578,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "scene",
+          "event": "scene-asset-configuration-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "configured",
+          "detail": {
+            "declaredAssetCount": 3,
+            "selectedAssetCount": 2,
+            "lazyAssetsDeferred": true
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 26,
+          "timestampMs": 578,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "observer",
+          "event": "observer-scene-container-dom-attached",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "attached"
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 27,
+          "timestampMs": 578,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "observer",
+          "event": "observer-canvas-dom-attached",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "attached",
+          "detail": {
+            "canvasCount": 1
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 28,
+          "timestampMs": 578,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "scene",
+          "event": "scene-viewport-effect-setup",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1",
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 29,
+          "timestampMs": 578,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "observer",
+          "event": "observer-backend-selected",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1",
+          "rendererGeneration": 0,
+          "status": "selected",
+          "detail": {
+            "requestedRenderer": "webgl",
+            "rendererAttempt": "webgl",
+            "selectionReason": "default-webgl-request",
+            "applicationFallback": "none"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 30,
+          "timestampMs": 578,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "observer",
+          "event": "observer-renderer-requested",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1",
+          "rendererGeneration": 0,
+          "status": "webgl",
+          "detail": {
+            "requestIdentity": "architecture-rise:default:public:standard"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 31,
+          "timestampMs": 578.1000000238419,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "simulator",
+          "event": "simulator-workspace-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "free:architecture-rise:free",
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 32,
+          "timestampMs": 578.1000000238419,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "simulator",
+          "event": "scene-route-initialization-started",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "free:architecture-rise:free",
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 33,
+          "timestampMs": 578.1999999880791,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "simulator",
+          "event": "scene-route-initialization-requested",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "free:architecture-rise:free",
+          "rendererGeneration": null,
+          "status": null
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 34,
+          "timestampMs": 596.9000000357628,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-request-accepted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "accepted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 35,
+          "timestampMs": 597.9000000357628,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-generation-active",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "active",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-1"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 36,
+          "timestampMs": 599.3000000119209,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-request-accepted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "accepted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 37,
+          "timestampMs": 604,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-request-accepted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "accepted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 38,
+          "timestampMs": 604.1999999880791,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "scene",
+          "event": "scene-asset-configuration-committed",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "configured",
+          "detail": {
+            "declaredAssetCount": 3,
+            "selectedAssetCount": 3,
+            "lazyAssetsDeferred": false
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 39,
+          "timestampMs": 744.1000000238419,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "observer",
+          "event": "observer-r3f-renderer-created",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1:renderer-0",
+          "rendererGeneration": 0,
+          "status": "created",
+          "detail": {
+            "rendererFamily": "webgl-renderer",
+            "executionBackend": "webgl2",
+            "canvasDomAttached": true
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 40,
+          "timestampMs": 744.5,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "observer",
+          "event": "observer-capabilities-published",
+          "routeId": "/simulator/free/architecture-rise",
+          "sceneId": "architecture-rise",
+          "mountGeneration": "m7n-observer-viewport-1",
+          "rendererGeneration": 0,
+          "status": "active",
+          "detail": {
+            "rendererFamily": "webgl-renderer",
+            "executionBackend": "webgl2"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 41,
+          "timestampMs": 1257,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-renderer-mounted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "mounted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "rendererFamily": "webgl-renderer",
+            "executionApi": "webgl2"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 42,
+          "timestampMs": 1292,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-request-accepted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "accepted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 43,
+          "timestampMs": 1554.4000000357628,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-current-frame-published",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "published",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 44,
+          "timestampMs": 1568.300000011921,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-request-accepted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "accepted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 45,
+          "timestampMs": 4596.100000023842,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-request-accepted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "accepted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 46,
+          "timestampMs": 4602.199999988079,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 47,
+          "timestampMs": 5142,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 48,
+          "timestampMs": 5449.100000023842,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 49,
+          "timestampMs": 5745.400000035763,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 50,
+          "timestampMs": 6030.100000023842,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 51,
+          "timestampMs": 6313.900000035763,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 52,
+          "timestampMs": 6592.300000011921,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 53,
+          "timestampMs": 6876.300000011921,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 54,
+          "timestampMs": 7153.5,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 55,
+          "timestampMs": 7467.600000023842,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 56,
+          "timestampMs": 7746.5,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 57,
+          "timestampMs": 8032.5,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 58,
+          "timestampMs": 8315.800000011921,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 59,
+          "timestampMs": 8600,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 60,
+          "timestampMs": 8897.600000023842,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 61,
+          "timestampMs": 9178.300000011921,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 62,
+          "timestampMs": 9478.699999988079,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 63,
+          "timestampMs": 9788.5,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 64,
+          "timestampMs": 10088.5,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-request-accepted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "accepted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 65,
+          "timestampMs": 10104.800000011921,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-current-frame-published",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "published",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 66,
+          "timestampMs": 10123.100000023842,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-request-accepted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "accepted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 67,
+          "timestampMs": 10511.699999988079,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 68,
+          "timestampMs": 10887.5,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-request-accepted",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "accepted",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 69,
+          "timestampMs": 10899.300000011921,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 70,
+          "timestampMs": 11318.300000011921,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 71,
+          "timestampMs": 11703.300000011921,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 72,
+          "timestampMs": 12091.300000011921,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 73,
+          "timestampMs": 12488,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 74,
+          "timestampMs": 12879.699999988079,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 75,
+          "timestampMs": 13269.900000035763,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 76,
+          "timestampMs": 13662.900000035763,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3"
+          }
+        },
+        {
+          "pageId": "m7n-otztnvu9",
+          "sequence": 77,
+          "timestampMs": 14057,
+          "timeOriginMs": 1793894304066.4,
+          "surface": "ground-glass",
+          "event": "ground-glass-stale-frame-result-rejected",
+          "routeId": null,
+          "sceneId": "architecture-rise",
+          "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+          "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "status": "rejected-stale",
+          "detail": {
+            "channel": "default",
+            "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+            "acceptedByHost": false,
+            "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+            "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3"
+          }
+        }
+      ]
+    },
+    "traceUnavailable": false,
+    "traceOverflowCount": 0,
+    "lastLifecycleEvents": [
+      {
+        "pageId": "m7n-otztnvu9",
+        "sequence": 58,
+        "timestampMs": 8315.800000011921,
+        "timeOriginMs": 1793894304066.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-stale-frame-result-rejected",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+        "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+        "status": "rejected-stale",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+          "acceptedByHost": false,
+          "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+        }
+      },
+      {
+        "pageId": "m7n-otztnvu9",
+        "sequence": 59,
+        "timestampMs": 8600,
+        "timeOriginMs": 1793894304066.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-stale-frame-result-rejected",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+        "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+        "status": "rejected-stale",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+          "acceptedByHost": false,
+          "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+        }
+      },
+      {
+        "pageId": "m7n-otztnvu9",
+        "sequence": 60,
+        "timestampMs": 8897.600000023842,
+        "timeOriginMs": 1793894304066.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-stale-frame-result-rejected",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+        "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+        "status": "rejected-stale",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+          "acceptedByHost": false,
+          "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+        }
+      },
+      {
+        "pageId": "m7n-otztnvu9",
+        "sequence": 61,
+        "timestampMs": 9178.300000011921,
+        "timeOriginMs": 1793894304066.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-stale-frame-result-rejected",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+        "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+        "status": "rejected-stale",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+          "acceptedByHost": false,
+          "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+        }
+      },
+      {
+        "pageId": "m7n-otztnvu9",
+        "sequence": 62,
+        "timestampMs": 9478.699999988079,
+        "timeOriginMs": 1793894304066.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-stale-frame-result-rejected",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+        "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+        "status": "rejected-stale",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+          "acceptedByHost": false,
+          "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+        }
+      },
+      {
+        "pageId": "m7n-otztnvu9",
+        "sequence": 63,
+        "timestampMs": 9788.5,
+        "timeOriginMs": 1793894304066.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-stale-frame-result-rejected",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+        "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+        "status": "rejected-stale",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2",
+          "acceptedByHost": false,
+          "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-2"
+        }
+      },
+      {
+        "pageId": "m7n-otztnvu9",
+        "sequence": 64,
+        "timestampMs": 10088.5,
+        "timeOriginMs": 1793894304066.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-request-accepted",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+        "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+        "status": "accepted",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+          "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1"
+        }
+      },
+      {
+        "pageId": "m7n-otztnvu9",
+        "sequence": 65,
+        "timestampMs": 10104.800000011921,
+        "timeOriginMs": 1793894304066.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-current-frame-published",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+        "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+        "status": "published",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+          "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1"
+        }
+      },
+      {
+        "pageId": "m7n-otztnvu9",
+        "sequence": 66,
+        "timestampMs": 10123.100000023842,
+        "timeOriginMs": 1793894304066.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-request-accepted",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+        "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+        "status": "accepted",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+          "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1"
+        }
+      },
+      {
+        "pageId": "m7n-otztnvu9",
+        "sequence": 67,
+        "timestampMs": 10511.699999988079,
+        "timeOriginMs": 1793894304066.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-stale-frame-result-rejected",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+        "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+        "status": "rejected-stale",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+          "acceptedByHost": false,
+          "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3"
+        }
+      },
+      {
+        "pageId": "m7n-otztnvu9",
+        "sequence": 68,
+        "timestampMs": 10887.5,
+        "timeOriginMs": 1793894304066.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-request-accepted",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+        "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+        "status": "accepted",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+          "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1"
+        }
+      },
+      {
+        "pageId": "m7n-otztnvu9",
+        "sequence": 69,
+        "timestampMs": 10899.300000011921,
+        "timeOriginMs": 1793894304066.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-stale-frame-result-rejected",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+        "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+        "status": "rejected-stale",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+          "acceptedByHost": false,
+          "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3"
+        }
+      },
+      {
+        "pageId": "m7n-otztnvu9",
+        "sequence": 70,
+        "timestampMs": 11318.300000011921,
+        "timeOriginMs": 1793894304066.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-stale-frame-result-rejected",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+        "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+        "status": "rejected-stale",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+          "acceptedByHost": false,
+          "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3"
+        }
+      },
+      {
+        "pageId": "m7n-otztnvu9",
+        "sequence": 71,
+        "timestampMs": 11703.300000011921,
+        "timeOriginMs": 1793894304066.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-stale-frame-result-rejected",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+        "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+        "status": "rejected-stale",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+          "acceptedByHost": false,
+          "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3"
+        }
+      },
+      {
+        "pageId": "m7n-otztnvu9",
+        "sequence": 72,
+        "timestampMs": 12091.300000011921,
+        "timeOriginMs": 1793894304066.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-stale-frame-result-rejected",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+        "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+        "status": "rejected-stale",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+          "acceptedByHost": false,
+          "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3"
+        }
+      },
+      {
+        "pageId": "m7n-otztnvu9",
+        "sequence": 73,
+        "timestampMs": 12488,
+        "timeOriginMs": 1793894304066.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-stale-frame-result-rejected",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+        "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+        "status": "rejected-stale",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+          "acceptedByHost": false,
+          "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3"
+        }
+      },
+      {
+        "pageId": "m7n-otztnvu9",
+        "sequence": 74,
+        "timestampMs": 12879.699999988079,
+        "timeOriginMs": 1793894304066.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-stale-frame-result-rejected",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+        "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+        "status": "rejected-stale",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+          "acceptedByHost": false,
+          "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3"
+        }
+      },
+      {
+        "pageId": "m7n-otztnvu9",
+        "sequence": 75,
+        "timestampMs": 13269.900000035763,
+        "timeOriginMs": 1793894304066.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-stale-frame-result-rejected",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+        "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+        "status": "rejected-stale",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+          "acceptedByHost": false,
+          "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3"
+        }
+      },
+      {
+        "pageId": "m7n-otztnvu9",
+        "sequence": 76,
+        "timestampMs": 13662.900000035763,
+        "timeOriginMs": 1793894304066.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-stale-frame-result-rejected",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+        "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+        "status": "rejected-stale",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+          "acceptedByHost": false,
+          "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3"
+        }
+      },
+      {
+        "pageId": "m7n-otztnvu9",
+        "sequence": 77,
+        "timestampMs": 14057,
+        "timeOriginMs": 1793894304066.4,
+        "surface": "ground-glass",
+        "event": "ground-glass-stale-frame-result-rejected",
+        "routeId": null,
+        "sceneId": "architecture-rise",
+        "mountGeneration": "gg-host-_r_d_-cc6vxfb01wa",
+        "rendererGeneration": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+        "status": "rejected-stale",
+        "detail": {
+          "channel": "default",
+          "requestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3",
+          "acceptedByHost": false,
+          "activeGenerationId": "gg-mw3qcnxo-8e22x01tps3-default-generation-1",
+          "activeRequestId": "gg-mw3qcnxo-8e22x01tps3-default-request-3"
+        }
+      }
+    ]
+  },
+  "pageErrors": [],
+  "consoleErrors": [],
+  "failedRequests": [],
+  "relevantResources": [
+    {
+      "resourceType": "script",
+      "path": "/src/components/geometry/OpticalDepthStrip.tsx",
+      "startedAtMs": 271.221125,
+      "completedAtMs": 293.75975,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/scheimpflugSceneSupport.ts",
+      "startedAtMs": 271.23766599999993,
+      "completedAtMs": 294.22525,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/geometry/MirrorShiftTeachingDiagram.tsx",
+      "startedAtMs": 271.233041,
+      "completedAtMs": 294.38624999999996,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/geometry/OpticalSectionDiagram.tsx",
+      "startedAtMs": 271.22770799999995,
+      "completedAtMs": 294.47612499999997,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/geometry/obliqueTabletopTeachingGeometry.ts",
+      "startedAtMs": 271.243083,
+      "completedAtMs": 294.62891599999995,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/controls/ViewOptions.tsx",
+      "startedAtMs": 271.32637500000004,
+      "completedAtMs": 295.15504100000004,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/GroundGlassRenderer.tsx",
+      "startedAtMs": 271.321708,
+      "completedAtMs": 295.22554099999996,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/GuidedLessonProgress.tsx",
+      "startedAtMs": 272.43149999999997,
+      "completedAtMs": 295.235791,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/focusDistributionLayout.ts",
+      "startedAtMs": 271.44275,
+      "completedAtMs": 295.652708,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/core/optics/scheimpflugConstruction.ts",
+      "startedAtMs": 272.555041,
+      "completedAtMs": 296.224541,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/FeedbackPanel.tsx",
+      "startedAtMs": 272.37662499999993,
+      "completedAtMs": 296.299375,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/i18n/guidedTaskMessageKeys.ts",
+      "startedAtMs": 272.362541,
+      "completedAtMs": 296.34029100000004,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/TaskPanel.tsx",
+      "startedAtMs": 272.43699999999995,
+      "completedAtMs": 297.28745799999996,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/SceneRenderer.tsx",
+      "startedAtMs": 273.880875,
+      "completedAtMs": 297.583458,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/groundGlassBlur.ts",
+      "startedAtMs": 272.548833,
+      "completedAtMs": 297.66079099999996,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/observerWebGpuDiagnostic.ts",
+      "startedAtMs": 274.36829099999994,
+      "completedAtMs": 297.71487499999995,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/observerOutputPolicy.ts",
+      "startedAtMs": 274.39574999999996,
+      "completedAtMs": 297.81325,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/SceneOverlayControls.tsx",
+      "startedAtMs": 274.34991599999995,
+      "completedAtMs": 298.490875,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/scenes/focusTargetPresentationMetrics.ts",
+      "startedAtMs": 277.62999999999994,
+      "completedAtMs": 298.770458,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/observerBackend.ts",
+      "startedAtMs": 274.382625,
+      "completedAtMs": 298.87287499999996,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/sceneViewFraming.ts",
+      "startedAtMs": 274.58575,
+      "completedAtMs": 299.07316599999996,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/observerSceneCompatibility.ts",
+      "startedAtMs": 274.566041,
+      "completedAtMs": 303.97499999999997,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/useObserverRendererLifecycle.ts",
+      "startedAtMs": 274.58037499999995,
+      "completedAtMs": 304.17420799999996,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/groundGlassPipeline.ts",
+      "startedAtMs": 277.69358299999993,
+      "completedAtMs": 304.246958,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/groundGlassProjection.ts",
+      "startedAtMs": 277.65241599999996,
+      "completedAtMs": 304.70416600000004,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/core/tasks/calculateGroundGlassFrameBounds.ts",
+      "startedAtMs": 290.23058299999997,
+      "completedAtMs": 304.750875,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/geometry/diagramHelpers.ts",
+      "startedAtMs": 293.14837500000004,
+      "completedAtMs": 305.844583,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/geometry/labelPlacement.ts",
+      "startedAtMs": 294.555625,
+      "completedAtMs": 308.80695799999995,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/GroundGlassStage.tsx",
+      "startedAtMs": 295.38345799999996,
+      "completedAtMs": 312.32725,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/GroundGlassOverlays.tsx",
+      "startedAtMs": 295.49945799999995,
+      "completedAtMs": 312.456166,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/GroundGlassRenderSurface.tsx",
+      "startedAtMs": 295.392708,
+      "completedAtMs": 312.50100000000003,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/geometry/ProjectedCameraConstruction.tsx",
+      "startedAtMs": 294.588333,
+      "completedAtMs": 312.788083,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/scenes/mirrorShiftTeachingGeometry.ts",
+      "startedAtMs": 294.436708,
+      "completedAtMs": 312.872458,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/geometry/sceneGeometryGuides.ts",
+      "startedAtMs": 294.593416,
+      "completedAtMs": 313.19408300000003,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/GroundGlassFocusRing.tsx",
+      "startedAtMs": 295.51720800000004,
+      "completedAtMs": 314.24554099999995,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/groundGlassPhysicalGrid.ts",
+      "startedAtMs": 295.530458,
+      "completedAtMs": 314.81745800000004,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/postprocessing/DepthOfFieldPass.ts",
+      "startedAtMs": 295.539333,
+      "completedAtMs": 314.89108300000004,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/groundGlassFocusLabel.ts",
+      "startedAtMs": 295.54566600000004,
+      "completedAtMs": 315.007041,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/taskHelpers.ts",
+      "startedAtMs": 296.374708,
+      "completedAtMs": 315.01958299999995,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/MacroBellowsExtensionTeachingContent.tsx",
+      "startedAtMs": 296.407166,
+      "completedAtMs": 315.071791,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/MacroDepthOfFieldTeachingContent.tsx",
+      "startedAtMs": 296.41241599999995,
+      "completedAtMs": 315.113666,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/MacroObliquePlaneTeachingContent.tsx",
+      "startedAtMs": 296.468,
+      "completedAtMs": 315.288291,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/sceneLegendHelpers.ts",
+      "startedAtMs": 298.187833,
+      "completedAtMs": 329.531583,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/MacroCompoundMovementsTeachingContent.tsx",
+      "startedAtMs": 296.47499999999997,
+      "completedAtMs": 329.622958,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/scenePlaneOverlayGeometry.ts",
+      "startedAtMs": 298.267708,
+      "completedAtMs": 329.694583,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/imageCircleGeometry.ts",
+      "startedAtMs": 298.19420799999995,
+      "completedAtMs": 329.740916,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/scheimpflugConstructionGeometry.ts",
+      "startedAtMs": 298.27295799999996,
+      "completedAtMs": 333.871458,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/planeOrientation.ts",
+      "startedAtMs": 298.277625,
+      "completedAtMs": 339.140916,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/CameraBodyAssembly.tsx",
+      "startedAtMs": 298.28291599999994,
+      "completedAtMs": 339.158791,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/FocusFundamentalsTeachingCues.tsx",
+      "startedAtMs": 298.294416,
+      "completedAtMs": 339.38012499999996,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/ConceptualViewCamera.tsx",
+      "startedAtMs": 298.28891600000003,
+      "completedAtMs": 339.681208,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/WorldIllumination.tsx",
+      "startedAtMs": 298.380875,
+      "completedAtMs": 346.798958,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/observerWorldEnvironmentStatus.ts",
+      "startedAtMs": 298.38662500000004,
+      "completedAtMs": 346.96079100000003,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/observerRendererInitialization.ts",
+      "startedAtMs": 298.391458,
+      "completedAtMs": 346.97200000000004,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/anatomyMaterialAuditProbe.tsx",
+      "startedAtMs": 298.39616599999994,
+      "completedAtMs": 347.736458,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/AnatomyGpuBlendIntermediateProbe.tsx",
+      "startedAtMs": 298.40074999999996,
+      "completedAtMs": 348.0695,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/components/simulator/sceneOverlayResponsive.ts",
+      "startedAtMs": 298.568375,
+      "completedAtMs": 370.864666,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/observerVisualPipelineCapabilities.ts",
+      "startedAtMs": 298.412083,
+      "completedAtMs": 370.94533299999995,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/core/optics/dofBlurModel.ts",
+      "startedAtMs": 298.479083,
+      "completedAtMs": 371.013041,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/groundGlassStageTransform.ts",
+      "startedAtMs": 312.406541,
+      "completedAtMs": 371.02387500000003,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/ObserverCanvasErrorBoundary.tsx",
+      "startedAtMs": 298.40633299999996,
+      "completedAtMs": 372.517041,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/focusStandardPresentation.ts",
+      "startedAtMs": 339.86670799999996,
+      "completedAtMs": 372.60054099999996,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/anatomyRenderableContribution.ts",
+      "startedAtMs": 347.923208,
+      "completedAtMs": 397.847416,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/anatomyProjectedBounds.ts",
+      "startedAtMs": 347.916083,
+      "completedAtMs": 398.23929100000004,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/conceptualBellowsGeometry.ts",
+      "startedAtMs": 339.929916,
+      "completedAtMs": 398.441,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/WorldEnvironment.tsx",
+      "startedAtMs": 346.88783299999994,
+      "completedAtMs": 398.513583,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/conceptualCameraAnatomyGeometry.ts",
+      "startedAtMs": 339.93725,
+      "completedAtMs": 398.725125,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/anatomyMaterialRoles.ts",
+      "startedAtMs": 347.97599999999994,
+      "completedAtMs": 398.86037500000003,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/anatomyBellowsCompositingIntervention.ts",
+      "startedAtMs": 347.981375,
+      "completedAtMs": 399.244625,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/anatomyBellowsDisposalWitness.ts",
+      "startedAtMs": 347.98608299999995,
+      "completedAtMs": 399.31350000000003,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/anatomyGpuBlendIntermediate.ts",
+      "startedAtMs": 348.144375,
+      "completedAtMs": 399.644375,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/anatomyGpuBlendCalibration.ts",
+      "startedAtMs": 348.15120799999994,
+      "completedAtMs": 400.106958,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/anatomyBellowsDrawMetadataCapture.ts",
+      "startedAtMs": 348.23783299999997,
+      "completedAtMs": 400.524333,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/anatomyBellowsNativePipelineEvidence.ts",
+      "startedAtMs": 348.24395799999996,
+      "completedAtMs": 400.621833,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/anatomyMaterialOutputIntervention.ts",
+      "startedAtMs": 348.255291,
+      "completedAtMs": 400.695541,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/anatomyNativeWebGpuDrawBoundaryCapture.ts",
+      "startedAtMs": 348.249625,
+      "completedAtMs": 401.43683300000004,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/anatomyNativeWebGpuDrawBoundary.ts",
+      "startedAtMs": 401.618,
+      "completedAtMs": 402.30275,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/backend/anatomyNativeFramebufferParity.ts",
+      "startedAtMs": 401.624791,
+      "completedAtMs": 402.48783299999997,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/src/render/observerWorldEnvironmentRig.ts",
+      "startedAtMs": 398.609666,
+      "completedAtMs": 402.5785,
+      "status": 200
+    },
+    {
+      "resourceType": "script",
+      "path": "/node_modules/.vite/deps/three-stdlib.js",
+      "startedAtMs": 298.181041,
+      "completedAtMs": 460.63104100000004,
+      "status": 200
+    }
+  ],
+  "droppedEventCounts": {
+    "pageErrors": 0,
+    "consoleErrors": 0,
+    "failedRequests": 0,
+    "relevantResources": 315
+  },
+  "snapshotRetrievalError": null
+}

@@ -1,0 +1,55 @@
+{
+  "schema": "m7l-playwright-outcomes-v1",
+  "sourceCaptureSha256": "c72c864bb506d1a86dae17826249a00eae7d5cf36c0ade319f2ec22ed42cecc8",
+  "captureKind": "ordinary",
+  "config": {
+    "version": "1.61.1",
+    "workers": 1,
+    "retries": 0,
+    "actualWorkerMetadata": 1,
+    "projectNames": [
+      "chromium",
+      "chromium-renderer-serial"
+    ],
+    "fullyParallel": false
+  },
+  "stats": {
+    "startTime": "2026-11-04T14:49:02.692Z",
+    "duration": 35538.759,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "suites": [
+    {
+      "title": "architecture-foreground-dof.spec.ts",
+      "file": "architecture-foreground-dof.spec.ts",
+      "specs": [
+        {
+          "file": "architecture-foreground-dof.spec.ts",
+          "title": "Architecture + Foreground DOF task starts solved through PR7C and completes with Aperture only",
+          "tests": [
+            {
+              "expectedStatus": "passed",
+              "projectName": "chromium",
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 34752,
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "retry": 0,
+                  "startTime": "2026-11-04T14:49:03.334Z",
+                  "errors": []
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "suites": []
+    }
+  ]
+}

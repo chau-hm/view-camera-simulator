@@ -1,0 +1,2131 @@
+{
+  "schemaVersion": 1,
+  "stage": "exploratory-candidate-discovery",
+  "candidateSearch": {
+    "candidateSceneFamily": "registered Architecture Rise application adapter",
+    "supportedLensMm": 150,
+    "aperture": "f/5.6 (widest public camera setting)",
+    "focusRangeMm": {
+      "min": 3200,
+      "max": 13000,
+      "stepMm": 10
+    },
+    "cropMagnifications": [
+      1,
+      4
+    ],
+    "maximumExploratoryCandidates": 8,
+    "maximumConfirmatoryOpticalStates": 3,
+    "qualityMode": "Full32 for screening only",
+    "scopeClarification": "Only these eight registered Architecture Rise app-adapter states were ranked for M5Q confirmatory selection. Macro/Interior Phase J-L fixture states are enumerated separately in GROUND_GLASS_M5Q_QUALIFICATION_SUMMARY.json.fixtureNativeEvidence.candidateDisposition; they were not ranked against M5Q thresholds and are not pooled into app-adapter Q1-Q7 decisions.",
+    "fixtureEvidenceReference": "GROUND_GLASS_M5Q_QUALIFICATION_SUMMARY.json.fixtureNativeEvidence",
+    "controlledFixture": "No M5Q-thresholded controlled signed-boundary or fractional-Near fixture was added; existing Phase J-L evidence remains separately labeled."
+  },
+  "nativeRuntime": {
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none",
+    "rendererRevision": "r186",
+    "applicationFallback": false
+  },
+  "candidates": [
+    {
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "configuration": {
+        "id": "ar-f3200-f5p6-full-rise0",
+        "focusDistanceMm": 3200,
+        "apertureFNumber": 5.6,
+        "frontRiseMm": 0,
+        "cropMagnification": 1
+      },
+      "evidenceSource": "registered-app-adapter",
+      "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+      "requestId": "gg-mvok2ymz-jkhirb4bijk-default-request-6",
+      "rendererGenerationId": "gg-mvok2ymz-jkhirb4bijk-default-generation-2",
+      "runtime": {
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "rendererRevision": "r186"
+      },
+      "capture": {
+        "captureId": "m5q-explore-ar-f3200-f5p6-full-rise0-1792976783068",
+        "qualityMode": "full32",
+        "sampleCount": 32,
+        "sourceDimensions": {
+          "widthPx": 474,
+          "heightPx": 379
+        },
+        "sampledFilmDimensionsMm": {
+          "widthMm": 127,
+          "heightMm": 101.6
+        },
+        "maximumRadiusPx": 60,
+        "effectiveOpticalRequestFingerprint": "[\"default\",\"[\\\"architecture-rise\\\",[-3900,-1500,-1800],[3900,4050,13000]]\",150,5.6,\"raw\",true,\"high\",474,379,[false,0.5,0.5,1,1],\"middle\",\"{\\\"calibrationStatus\\\":\\\"provisional\\\",\\\"geometryAndOpticsUnits\\\":\\\"millimetres\\\",\\\"subject\\\":{\\\"columns\\\":3,\\\"rows\\\":3,\\\"levels\\\":5,\\\"cubeSizeMm\\\":260,\\\"horizontalGapMm\\\":0,\\\"verticalGapMm\\\":0,\\\"originWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2000},\\\"lowerTargetLevel\\\":0,\\\"middleTargetLevel\\\":2,\\\"upperTargetLevel\\\":4},\\\"optics\\\":{\\\"focalLengthCandidatesMm\\\":[90,105,120,150],\\\"provisionalFocalLengthMm\\\":90,\\\"provisionalFocusDistanceMm\\\":2000},\\\"cameraRig\\\":{\\\"arcPlane\\\":\\\"yz\\\",\\\"arcCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2000},\\\"midRigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"arcRadiusMm\\\":2000,\\\"highLowArcRadiusMm\\\":1520,\\\"lowArcRadiusMm\\\":1520,\\\"highArcAngleDeg\\\":35,\\\"lowArcAngleDeg\\\":-35,\\\"highBodyPitchDeg\\\":34,\\\"lowBodyPitchDeg\\\":-34,\\\"provisionalBasePitchDeg\\\":0,\\\"defaultAnchor\\\":\\\"mid\\\",\\\"anchorMetadata\\\":{\\\"mid\\\":{\\\"identity\\\":\\\"mid\\\",\\\"relativeHeight\\\":\\\"at-mid\\\"},\\\"high\\\":{\\\"identity\\\":\\\"high\\\",\\\"relativeHeight\\\":\\\"above-mid\\\"},\\\"low\\\":{\\\"identity\\\":\\\"low\\\",\\\"relativeHeight\\\":\\\"below-mid\\\"}}},\\\"presentation\\\":{\\\"outerVerticalWeight\\\":3,\\\"outerHorizontalWeight\\\":2,\\\"internalEdgeWeight\\\":1,\\\"internalEdgeOpacity\\\":0.46,\\\"upperRegionColour\\\":\\\"#4ade80\\\",\\\"middleRegionColour\\\":\\\"#d4b000\\\",\\\"lowerRegionColour\\\":\\\"#22d3ee\\\",\\\"inactiveColour\\\":\\\"#64748b\\\",\\\"showReferenceCamera\\\":false,\\\"defaultTargetRegion\\\":\\\"middle\\\"},\\\"subjectGeometryKey\\\":\\\"geometry:{\\\\\\\"columns\\\\\\\":3,\\\\\\\"rows\\\\\\\":3,\\\\\\\"levels\\\\\\\":5,\\\\\\\"cubeSizeMm\\\\\\\":260,\\\\\\\"horizontalGapMm\\\\\\\":0,\\\\\\\"verticalGapMm\\\\\\\":0,\\\\\\\"originWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":2000},\\\\\\\"upperTargetLevel\\\\\\\":4,\\\\\\\"middleTargetLevel\\\\\\\":2,\\\\\\\"lowerTargetLevel\\\\\\\":0}\\\",\\\"presentationKey\\\":\\\"presentation:{\\\\\\\"outerVerticalWeight\\\\\\\":3,\\\\\\\"outerHorizontalWeight\\\\\\\":2,\\\\\\\"internalEdgeWeight\\\\\\\":1,\\\\\\\"internalEdgeOpacity\\\\\\\":0.46,\\\\\\\"upperRegionColour\\\\\\\":\\\\\\\"#4ade80\\\\\\\",\\\\\\\"middleRegionColour\\\\\\\":\\\\\\\"#d4b000\\\\\\\",\\\\\\\"lowerRegionColour\\\\\\\":\\\\\\\"#22d3ee\\\\\\\",\\\\\\\"inactiveColour\\\\\\\":\\\\\\\"#64748b\\\\\\\",\\\\\\\"showReferenceCamera\\\\\\\":false,\\\\\\\"defaultTargetRegion\\\\\\\":\\\\\\\"middle\\\\\\\"}\\\",\\\"opticsKey\\\":\\\"optics:{\\\\\\\"focalLengthCandidatesMm\\\\\\\":[90,105,120,150],\\\\\\\"provisionalFocalLengthMm\\\\\\\":90,\\\\\\\"provisionalFocusDistanceMm\\\\\\\":2000}\\\",\\\"rigKey\\\":\\\"rig:{\\\\\\\"arcPlane\\\\\\\":\\\\\\\"yz\\\\\\\",\\\\\\\"arcCenterWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":2000},\\\\\\\"midRigOriginWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":0},\\\\\\\"arcRadiusMm\\\\\\\":2000,\\\\\\\"highLowArcRadiusMm\\\\\\\":1520,\\\\\\\"lowArcRadiusMm\\\\\\\":1520,\\\\\\\"highArcAngleDeg\\\\\\\":35,\\\\\\\"lowArcAngleDeg\\\\\\\":-35,\\\\\\\"highBodyPitchDeg\\\\\\\":34,\\\\\\\"lowBodyPitchDeg\\\\\\\":-34,\\\\\\\"provisionalBasePitchDeg\\\\\\\":0,\\\\\\\"defaultAnchor\\\\\\\":\\\\\\\"mid\\\\\\\",\\\\\\\"anchorMetadata\\\\\\\":{\\\\\\\"mid\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"mid\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"at-mid\\\\\\\"},\\\\\\\"high\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"high\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"above-mid\\\\\\\"},\\\\\\\"low\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"low\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"below-mid\\\\\\\"}}}\\\",\\\"effectiveKey\\\":\\\"effective:{\\\\\\\"subjectGeometryKey\\\\\\\":\\\\\\\"geometry:{\\\\\\\\\\\\\\\"columns\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"rows\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"levels\\\\\\\\\\\\\\\":5,\\\\\\\\\\\\\\\"cubeSizeMm\\\\\\\\\\\\\\\":260,\\\\\\\\\\\\\\\"horizontalGapMm\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"verticalGapMm\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"originWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":2000},\\\\\\\\\\\\\\\"upperTargetLevel\\\\\\\\\\\\\\\":4,\\\\\\\\\\\\\\\"middleTargetLevel\\\\\\\\\\\\\\\":2,\\\\\\\\\\\\\\\"lowerTargetLevel\\\\\\\\\\\\\\\":0}\\\\\\\",\\\\\\\"presentationKey\\\\\\\":\\\\\\\"presentation:{\\\\\\\\\\\\\\\"outerVerticalWeight\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"outerHorizontalWeight\\\\\\\\\\\\\\\":2,\\\\\\\\\\\\\\\"internalEdgeWeight\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"internalEdgeOpacity\\\\\\\\\\\\\\\":0.46,\\\\\\\\\\\\\\\"upperRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#4ade80\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"middleRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#d4b000\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"lowerRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#22d3ee\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"inactiveColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#64748b\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"showReferenceCamera\\\\\\\\\\\\\\\":false,\\\\\\\\\\\\\\\"defaultTargetRegion\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"middle\\\\\\\\\\\\\\\"}\\\\\\\",\\\\\\\"opticsKey\\\\\\\":\\\\\\\"optics:{\\\\\\\\\\\\\\\"focalLengthCandidatesMm\\\\\\\\\\\\\\\":[90,105,120,150],\\\\\\\\\\\\\\\"provisionalFocalLengthMm\\\\\\\\\\\\\\\":90,\\\\\\\\\\\\\\\"provisionalFocusDistanceMm\\\\\\\\\\\\\\\":2000}\\\\\\\",\\\\\\\"rigKey\\\\\\\":\\\\\\\"rig:{\\\\\\\\\\\\\\\"arcPlane\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"yz\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"arcCenterWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":2000},\\\\\\\\\\\\\\\"midRigOriginWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":0},\\\\\\\\\\\\\\\"arcRadiusMm\\\\\\\\\\\\\\\":2000,\\\\\\\\\\\\\\\"highLowArcRadiusMm\\\\\\\\\\\\\\\":1520,\\\\\\\\\\\\\\\"lowArcRadiusMm\\\\\\\\\\\\\\\":1520,\\\\\\\\\\\\\\\"highArcAngleDeg\\\\\\\\\\\\\\\":35,\\\\\\\\\\\\\\\"lowArcAngleDeg\\\\\\\\\\\\\\\":-35,\\\\\\\\\\\\\\\"highBodyPitchDeg\\\\\\\\\\\\\\\":34,\\\\\\\\\\\\\\\"lowBodyPitchDeg\\\\\\\\\\\\\\\":-34,\\\\\\\\\\\\\\\"provisionalBasePitchDeg\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"defaultAnchor\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"anchorMetadata\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"at-mid\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"high\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"high\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"above-mid\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"low\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"low\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"below-mid\\\\\\\\\\\\\\\"}}}\\\\\\\"}\\\"}\",\"{\\\"cameraRigPlacement\\\":{\\\"kind\\\":\\\"identity\\\",\\\"rigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"basePitchDeg\\\":0},\\\"cameraRigTransform\\\":{\\\"rigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"basePitchDeg\\\":0,\\\"bodyPitchDeg\\\":0,\\\"bodyPitchPivotRigLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0}},\\\"cameraBodyTransform\\\":{\\\"pitchDeg\\\":0,\\\"pivotWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0}},\\\"cameraBodyLocalGeometry\\\":{\\\"lensCenterLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensNormalLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"lensPlaneLocal\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":0},\\\"filmCenterLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"filmNormalLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"filmPlaneLocal\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-157.37704918032787},\\\"filmPlaneCornersLocal\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-157.37704918032787},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-157.37704918032787},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-157.37704918032787},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-157.37704918032787}},\\\"rearStandardFrameLocal\\\":{\\\"centerWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"rightWorld\\\":{\\\"x\\\":1,\\\"y\\\":0,\\\"z\\\":0},\\\"upWorld\\\":{\\\"x\\\":0,\\\"y\\\":1,\\\"z\\\":0},\\\"normalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"plane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-157.37704918032787}}},\\\"cameraBodyPivotWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensDefinition\\\":{\\\"id\\\":\\\"simulator-parametric-150mm\\\",\\\"focalLengthMm\\\":150,\\\"coverage\\\":{\\\"kind\\\":\\\"angular\\\",\\\"fullCoverageAngleDeg\\\":72}},\\\"lensCoverage\\\":{\\\"kind\\\":\\\"angular\\\",\\\"fullCoverageAngleDeg\\\":72,\\\"halfCoverageAngleDeg\\\":36,\\\"imageCircleRadiusMm\\\":114.34111916149942,\\\"imageCircleDiameterMm\\\":228.68223832299884,\\\"imageDistanceMm\\\":157.37704918032787},\\\"groundGlassNaturalIllumination\\\":{\\\"kind\\\":\\\"parallel-cos4\\\",\\\"imageDistanceMm\\\":157.37704918032787,\\\"opticalAxisOffsetXMm\\\":0,\\\"opticalAxisOffsetYMm\\\":0},\\\"groundGlassCoverage\\\":{\\\"kind\\\":\\\"parallel-circle\\\",\\\"imageCircleRadiusMm\\\":114.34111916149942,\\\"opticalAxisOffsetXMm\\\":0,\\\"opticalAxisOffsetYMm\\\":0},\\\"lensCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensNormalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"lensPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":0},\\\"filmCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"filmNormalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"filmPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-157.37704918032787},\\\"filmPlaneCornersWorld\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-157.37704918032787},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-157.37704918032787},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-157.37704918032787},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-157.37704918032787}},\\\"rearStandardFrame\\\":{\\\"centerWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"rightWorld\\\":{\\\"x\\\":1,\\\"y\\\":0,\\\"z\\\":0},\\\"upWorld\\\":{\\\"x\\\":0,\\\"y\\\":1,\\\"z\\\":0},\\\"normalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"plane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-157.37704918032787}},\\\"opticalAxis\\\":{\\\"origin\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"direction\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1}},\\\"lensFilmHingeLine\\\":null,\\\"focusPointWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":3200},\\\"focusPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":3200},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":3200},\\\"depthOfFieldNearPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2975.004116581591},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":2975.004116581591},\\\"depthOfFieldFarPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":3461.812607779268},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":3461.812607779268},\\\"offAxisProjectionInput\\\":{\\\"lensCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"filmCornersWorld\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-157.37704918032787},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-157.37704918032787},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-157.37704918032787},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-157.37704918032787}}},\\\"offAxisProjectionMatrix\\\":[2.4783787272492575,0,0,0,0,3.0979734090615723,0,0,0,0,-1.0004000800160031,-1,0,0,-20.004000800160032,0],\\\"groundGlassProjection\\\":{\\\"invertHorizontal\\\":true,\\\"invertVertical\\\":true,\\\"assistModeEnabled\\\":false},\\\"focusTargets\\\":[{\\\"id\\\":\\\"building-mid-facade\\\",\\\"distanceToFocusPlaneMm\\\":5690,\\\"sharpness\\\":0,\\\"status\\\":\\\"soft\\\",\\\"pointSharpness\\\":0,\\\"pointStatus\\\":\\\"soft\\\",\\\"patchSharpness\\\":0,\\\"patchStatus\\\":\\\"soft\\\",\\\"physicalPointSharpness\\\":0,\\\"physicalPointStatus\\\":\\\"soft\\\",\\\"physicalPatchSharpness\\\":0,\\\"physicalPatchStatus\\\":\\\"soft\\\",\\\"pointEquivalentCoCDiameterMm\\\":0.8431506073450402,\\\"patchEquivalentCoCDiameterMm\\\":0.8431506073450402,\\\"pointNormalizedDefocus\\\":21.733101580796237,\\\"patchNormalizedDefocus\\\":21.733101580796237,\\\"insideDepthOfField\\\":false,\\\"targetRayDistanceMm\\\":8935.44067184154,\\\"nearBoundaryDistanceMm\\\":2990.2106616646975,\\\"focusBoundaryDistanceMm\\\":3216.356597288294,\\\"farBoundaryDistanceMm\\\":3479.5074436270756,\\\"normalizedDefocus\\\":21.733101580796237}],\\\"diagnostics\\\":{\\\"isParallelLensFilm\\\":true,\\\"tiltAngleDeg\\\":0,\\\"swingAngleDeg\\\":0,\\\"focusPlaneModel\\\":\\\"parallel\\\",\\\"depthOfFieldModel\\\":\\\"parallel\\\",\\\"groundGlassDofModel\\\":\\\"parallel-thin-lens\\\",\\\"nearU\\\":2975.004116581591,\\\"farU\\\":3461.812607779268,\\\"farIsInfinite\\\":false,\\\"fallbackApplied\\\":false,\\\"fallbackReason\\\":null,\\\"isInfinityFocus\\\":false,\\\"focusStandard\\\":\\\"front\\\",\\\"requestedFocusStandard\\\":\\\"front\\\",\\\"focusObjectDistanceMm\\\":3200,\\\"imageDistanceMm\\\":157.37704918032787}}\"]",
+        "cameraStateFingerprint": "[[-1,0,0,0,0,1,0,0,0,0,-1,0,0,0,0,1],[-1,0,0,0,0,1,0,0,0,0,-1,0,0,0,0,1],[2.478378727249258,0,0,0,0,3.0979734090615727,0,0,0,0,-1.0007147962830594,-1,0,0,-0.010007147962830594,0],[0.40348958333333335,0,0,0,0,0.3227916666666666,0,0,0,0,0,-99.92857142857143,0,0,-1,100]]",
+        "physicalDataFingerprint": "a13152e1"
+      },
+      "canonicalGeometry": {
+        "lensFocalLengthMm": 150,
+        "focusDistanceMm": 3200,
+        "apertureFNumber": 5.6,
+        "cropMagnification": 1,
+        "frontRiseMm": 0,
+        "points": [
+          {
+            "surfaceId": "foreground-plinth-front",
+            "worldPositionMm": {
+              "x": -520,
+              "y": -1090,
+              "z": 3086
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": -0.048663526904760286,
+              "majorRadiusMm": 0.024331763452380143,
+              "minorRadiusMm": 0.024331763452380143,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  0.09081303839707235,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -0.090765141224922
+                ],
+                "uncappedMaximumRadiusPx": 0.09081303839707235
+              }
+            },
+            "projectedPixel": {
+              "x": 335,
+              "y": 396,
+              "inBounds": false
+            },
+            "reconstructedRasterSample": {
+              "validityCode": null,
+              "storedPhysicalValueMm": null,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "midground-plinth-front",
+            "worldPositionMm": {
+              "x": 760,
+              "y": -1050,
+              "z": 5046
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": 0.4819246074289848,
+              "majorRadiusMm": 0.2409623037144924,
+              "minorRadiusMm": 0.2409623037144924,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  0.8993396217375543,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -0.8988652864940219
+                ],
+                "uncappedMaximumRadiusPx": 0.8993396217375543
+              }
+            },
+            "projectedPixel": {
+              "x": 148,
+              "y": 311,
+              "inBounds": true
+            },
+            "reconstructedRasterSample": {
+              "validityCode": 0,
+              "storedPhysicalValueMm": 0.48095703125,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "facade-front-focus-target",
+            "worldPositionMm": {
+              "x": 0,
+              "y": 900,
+              "z": 8900
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": 0.8436833934163074,
+              "majorRadiusMm": 0.4218416967081537,
+              "minorRadiusMm": 0.4218416967081537,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  1.5744327892886996,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -1.5736023922479356
+                ],
+                "uncappedMaximumRadiusPx": 1.5744327892886996
+              }
+            },
+            "projectedPixel": {
+              "x": 237,
+              "y": 130,
+              "inBounds": true
+            },
+            "reconstructedRasterSample": {
+              "validityCode": 0,
+              "storedPhysicalValueMm": 0.84228515625,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "far-plinth-front",
+            "worldPositionMm": {
+              "x": 1800,
+              "y": -1100,
+              "z": 10446
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": 0.9137827596457907,
+              "majorRadiusMm": 0.45689137982289535,
+              "minorRadiusMm": 0.45689137982289535,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  1.7052481420161605,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -1.7043487495361944
+                ],
+                "uncappedMaximumRadiusPx": 1.7052481420161605
+              }
+            },
+            "projectedPixel": {
+              "x": 135,
+              "y": 251,
+              "inBounds": true
+            },
+            "reconstructedRasterSample": {
+              "validityCode": 0,
+              "storedPhysicalValueMm": 0.865234375,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          }
+        ],
+        "priorSurfaceCorrespondenceEvidence": {
+          "source": "Phase J native Architecture Rise M4 probe",
+          "facadeTargetOffsetMm": 10,
+          "interpretation": "The teaching focus target is 10 mm in front of the canonical facade; raster samples are reconstructed-depth evidence."
+        }
+      },
+      "screeningMetrics": {
+        "population": {
+          "validNearPixels": 434,
+          "validFarPixels": 121753,
+          "validNeutralPixels": 0,
+          "invalidPixels": 57459,
+          "depthEdgePixels": 3903,
+          "signedNearFarPairs": 65
+        },
+        "maximumValidAbsoluteCoCDiameterMm": 0.98779296875,
+        "meanFull32FarSourceRgbDifference": 0.027836475127177695,
+        "validFarSourceDifferencePixelCount": 121753,
+        "meanInteriorFull32FarSourceRgbDifference": 0.02773432285804044,
+        "interiorFarPixelCount": 116730,
+        "meanSourceRgbContrastAtSignedBoundary": 0.027571643277620652,
+        "nearNonzeroPixels": 434,
+        "nearFractionalPixels": 0,
+        "reportedMaximumUncappedRadiusPx": 1.8433616818405512,
+        "reportedCappedPixelCountAtCaptureCap": 0
+      },
+      "selectionInputs": [
+        "canonical signed CoC and pixel ellipse",
+        "valid physical/depth ROI support",
+        "Full32 reference blur signal",
+        "signed boundary/source edge support",
+        "fractional near coverage"
+      ],
+      "candidateQualityOutputConsulted": false,
+      "disposition": "exploratory-only"
+    },
+    {
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "configuration": {
+        "id": "ar-f5200-f5p6-full-rise0",
+        "focusDistanceMm": 5200,
+        "apertureFNumber": 5.6,
+        "frontRiseMm": 0,
+        "cropMagnification": 1
+      },
+      "evidenceSource": "registered-app-adapter",
+      "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+      "requestId": "gg-mvok2ymz-jkhirb4bijk-default-request-7",
+      "rendererGenerationId": "gg-mvok2ymz-jkhirb4bijk-default-generation-2",
+      "runtime": {
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "rendererRevision": "r186"
+      },
+      "capture": {
+        "captureId": "m5q-explore-ar-f5200-f5p6-full-rise0-1792976785410",
+        "qualityMode": "full32",
+        "sampleCount": 32,
+        "sourceDimensions": {
+          "widthPx": 474,
+          "heightPx": 379
+        },
+        "sampledFilmDimensionsMm": {
+          "widthMm": 127,
+          "heightMm": 101.6
+        },
+        "maximumRadiusPx": 60,
+        "effectiveOpticalRequestFingerprint": "[\"default\",\"[\\\"architecture-rise\\\",[-3900,-1500,-1800],[3900,4050,13000]]\",150,5.6,\"raw\",true,\"high\",474,379,[false,0.5,0.5,1,1],\"middle\",\"{\\\"calibrationStatus\\\":\\\"provisional\\\",\\\"geometryAndOpticsUnits\\\":\\\"millimetres\\\",\\\"subject\\\":{\\\"columns\\\":3,\\\"rows\\\":3,\\\"levels\\\":5,\\\"cubeSizeMm\\\":260,\\\"horizontalGapMm\\\":0,\\\"verticalGapMm\\\":0,\\\"originWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2000},\\\"lowerTargetLevel\\\":0,\\\"middleTargetLevel\\\":2,\\\"upperTargetLevel\\\":4},\\\"optics\\\":{\\\"focalLengthCandidatesMm\\\":[90,105,120,150],\\\"provisionalFocalLengthMm\\\":90,\\\"provisionalFocusDistanceMm\\\":2000},\\\"cameraRig\\\":{\\\"arcPlane\\\":\\\"yz\\\",\\\"arcCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2000},\\\"midRigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"arcRadiusMm\\\":2000,\\\"highLowArcRadiusMm\\\":1520,\\\"lowArcRadiusMm\\\":1520,\\\"highArcAngleDeg\\\":35,\\\"lowArcAngleDeg\\\":-35,\\\"highBodyPitchDeg\\\":34,\\\"lowBodyPitchDeg\\\":-34,\\\"provisionalBasePitchDeg\\\":0,\\\"defaultAnchor\\\":\\\"mid\\\",\\\"anchorMetadata\\\":{\\\"mid\\\":{\\\"identity\\\":\\\"mid\\\",\\\"relativeHeight\\\":\\\"at-mid\\\"},\\\"high\\\":{\\\"identity\\\":\\\"high\\\",\\\"relativeHeight\\\":\\\"above-mid\\\"},\\\"low\\\":{\\\"identity\\\":\\\"low\\\",\\\"relativeHeight\\\":\\\"below-mid\\\"}}},\\\"presentation\\\":{\\\"outerVerticalWeight\\\":3,\\\"outerHorizontalWeight\\\":2,\\\"internalEdgeWeight\\\":1,\\\"internalEdgeOpacity\\\":0.46,\\\"upperRegionColour\\\":\\\"#4ade80\\\",\\\"middleRegionColour\\\":\\\"#d4b000\\\",\\\"lowerRegionColour\\\":\\\"#22d3ee\\\",\\\"inactiveColour\\\":\\\"#64748b\\\",\\\"showReferenceCamera\\\":false,\\\"defaultTargetRegion\\\":\\\"middle\\\"},\\\"subjectGeometryKey\\\":\\\"geometry:{\\\\\\\"columns\\\\\\\":3,\\\\\\\"rows\\\\\\\":3,\\\\\\\"levels\\\\\\\":5,\\\\\\\"cubeSizeMm\\\\\\\":260,\\\\\\\"horizontalGapMm\\\\\\\":0,\\\\\\\"verticalGapMm\\\\\\\":0,\\\\\\\"originWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":2000},\\\\\\\"upperTargetLevel\\\\\\\":4,\\\\\\\"middleTargetLevel\\\\\\\":2,\\\\\\\"lowerTargetLevel\\\\\\\":0}\\\",\\\"presentationKey\\\":\\\"presentation:{\\\\\\\"outerVerticalWeight\\\\\\\":3,\\\\\\\"outerHorizontalWeight\\\\\\\":2,\\\\\\\"internalEdgeWeight\\\\\\\":1,\\\\\\\"internalEdgeOpacity\\\\\\\":0.46,\\\\\\\"upperRegionColour\\\\\\\":\\\\\\\"#4ade80\\\\\\\",\\\\\\\"middleRegionColour\\\\\\\":\\\\\\\"#d4b000\\\\\\\",\\\\\\\"lowerRegionColour\\\\\\\":\\\\\\\"#22d3ee\\\\\\\",\\\\\\\"inactiveColour\\\\\\\":\\\\\\\"#64748b\\\\\\\",\\\\\\\"showReferenceCamera\\\\\\\":false,\\\\\\\"defaultTargetRegion\\\\\\\":\\\\\\\"middle\\\\\\\"}\\\",\\\"opticsKey\\\":\\\"optics:{\\\\\\\"focalLengthCandidatesMm\\\\\\\":[90,105,120,150],\\\\\\\"provisionalFocalLengthMm\\\\\\\":90,\\\\\\\"provisionalFocusDistanceMm\\\\\\\":2000}\\\",\\\"rigKey\\\":\\\"rig:{\\\\\\\"arcPlane\\\\\\\":\\\\\\\"yz\\\\\\\",\\\\\\\"arcCenterWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":2000},\\\\\\\"midRigOriginWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":0},\\\\\\\"arcRadiusMm\\\\\\\":2000,\\\\\\\"highLowArcRadiusMm\\\\\\\":1520,\\\\\\\"lowArcRadiusMm\\\\\\\":1520,\\\\\\\"highArcAngleDeg\\\\\\\":35,\\\\\\\"lowArcAngleDeg\\\\\\\":-35,\\\\\\\"highBodyPitchDeg\\\\\\\":34,\\\\\\\"lowBodyPitchDeg\\\\\\\":-34,\\\\\\\"provisionalBasePitchDeg\\\\\\\":0,\\\\\\\"defaultAnchor\\\\\\\":\\\\\\\"mid\\\\\\\",\\\\\\\"anchorMetadata\\\\\\\":{\\\\\\\"mid\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"mid\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"at-mid\\\\\\\"},\\\\\\\"high\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"high\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"above-mid\\\\\\\"},\\\\\\\"low\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"low\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"below-mid\\\\\\\"}}}\\\",\\\"effectiveKey\\\":\\\"effective:{\\\\\\\"subjectGeometryKey\\\\\\\":\\\\\\\"geometry:{\\\\\\\\\\\\\\\"columns\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"rows\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"levels\\\\\\\\\\\\\\\":5,\\\\\\\\\\\\\\\"cubeSizeMm\\\\\\\\\\\\\\\":260,\\\\\\\\\\\\\\\"horizontalGapMm\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"verticalGapMm\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"originWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":2000},\\\\\\\\\\\\\\\"upperTargetLevel\\\\\\\\\\\\\\\":4,\\\\\\\\\\\\\\\"middleTargetLevel\\\\\\\\\\\\\\\":2,\\\\\\\\\\\\\\\"lowerTargetLevel\\\\\\\\\\\\\\\":0}\\\\\\\",\\\\\\\"presentationKey\\\\\\\":\\\\\\\"presentation:{\\\\\\\\\\\\\\\"outerVerticalWeight\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"outerHorizontalWeight\\\\\\\\\\\\\\\":2,\\\\\\\\\\\\\\\"internalEdgeWeight\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"internalEdgeOpacity\\\\\\\\\\\\\\\":0.46,\\\\\\\\\\\\\\\"upperRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#4ade80\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"middleRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#d4b000\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"lowerRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#22d3ee\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"inactiveColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#64748b\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"showReferenceCamera\\\\\\\\\\\\\\\":false,\\\\\\\\\\\\\\\"defaultTargetRegion\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"middle\\\\\\\\\\\\\\\"}\\\\\\\",\\\\\\\"opticsKey\\\\\\\":\\\\\\\"optics:{\\\\\\\\\\\\\\\"focalLengthCandidatesMm\\\\\\\\\\\\\\\":[90,105,120,150],\\\\\\\\\\\\\\\"provisionalFocalLengthMm\\\\\\\\\\\\\\\":90,\\\\\\\\\\\\\\\"provisionalFocusDistanceMm\\\\\\\\\\\\\\\":2000}\\\\\\\",\\\\\\\"rigKey\\\\\\\":\\\\\\\"rig:{\\\\\\\\\\\\\\\"arcPlane\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"yz\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"arcCenterWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":2000},\\\\\\\\\\\\\\\"midRigOriginWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":0},\\\\\\\\\\\\\\\"arcRadiusMm\\\\\\\\\\\\\\\":2000,\\\\\\\\\\\\\\\"highLowArcRadiusMm\\\\\\\\\\\\\\\":1520,\\\\\\\\\\\\\\\"lowArcRadiusMm\\\\\\\\\\\\\\\":1520,\\\\\\\\\\\\\\\"highArcAngleDeg\\\\\\\\\\\\\\\":35,\\\\\\\\\\\\\\\"lowArcAngleDeg\\\\\\\\\\\\\\\":-35,\\\\\\\\\\\\\\\"highBodyPitchDeg\\\\\\\\\\\\\\\":34,\\\\\\\\\\\\\\\"lowBodyPitchDeg\\\\\\\\\\\\\\\":-34,\\\\\\\\\\\\\\\"provisionalBasePitchDeg\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"defaultAnchor\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"anchorMetadata\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"at-mid\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"high\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"high\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"above-mid\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"low\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"low\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"below-mid\\\\\\\\\\\\\\\"}}}\\\\\\\"}\\\"}\",\"{\\\"cameraRigPlacement\\\":{\\\"kind\\\":\\\"identity\\\",\\\"rigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"basePitchDeg\\\":0},\\\"cameraRigTransform\\\":{\\\"rigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"basePitchDeg\\\":0,\\\"bodyPitchDeg\\\":0,\\\"bodyPitchPivotRigLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0}},\\\"cameraBodyTransform\\\":{\\\"pitchDeg\\\":0,\\\"pivotWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0}},\\\"cameraBodyLocalGeometry\\\":{\\\"lensCenterLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensNormalLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"lensPlaneLocal\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":0},\\\"filmCenterLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-154.45544554455446},\\\"filmNormalLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"filmPlaneLocal\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-154.45544554455446},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-154.45544554455446},\\\"filmPlaneCornersLocal\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-154.45544554455446},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-154.45544554455446},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-154.45544554455446},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-154.45544554455446}},\\\"rearStandardFrameLocal\\\":{\\\"centerWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-154.45544554455446},\\\"rightWorld\\\":{\\\"x\\\":1,\\\"y\\\":0,\\\"z\\\":0},\\\"upWorld\\\":{\\\"x\\\":0,\\\"y\\\":1,\\\"z\\\":0},\\\"normalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"plane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-154.45544554455446},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-154.45544554455446}}},\\\"cameraBodyPivotWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensDefinition\\\":{\\\"id\\\":\\\"simulator-parametric-150mm\\\",\\\"focalLengthMm\\\":150,\\\"coverage\\\":{\\\"kind\\\":\\\"angular\\\",\\\"fullCoverageAngleDeg\\\":72}},\\\"lensCoverage\\\":{\\\"kind\\\":\\\"angular\\\",\\\"fullCoverageAngleDeg\\\":72,\\\"halfCoverageAngleDeg\\\":36,\\\"imageCircleRadiusMm\\\":112.21844987013496,\\\"imageCircleDiameterMm\\\":224.43689974026992,\\\"imageDistanceMm\\\":154.45544554455446},\\\"groundGlassNaturalIllumination\\\":{\\\"kind\\\":\\\"parallel-cos4\\\",\\\"imageDistanceMm\\\":154.45544554455446,\\\"opticalAxisOffsetXMm\\\":0,\\\"opticalAxisOffsetYMm\\\":0},\\\"groundGlassCoverage\\\":{\\\"kind\\\":\\\"parallel-circle\\\",\\\"imageCircleRadiusMm\\\":112.21844987013496,\\\"opticalAxisOffsetXMm\\\":0,\\\"opticalAxisOffsetYMm\\\":0},\\\"lensCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensNormalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"lensPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":0},\\\"filmCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-154.45544554455446},\\\"filmNormalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"filmPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-154.45544554455446},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-154.45544554455446},\\\"filmPlaneCornersWorld\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-154.45544554455446},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-154.45544554455446},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-154.45544554455446},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-154.45544554455446}},\\\"rearStandardFrame\\\":{\\\"centerWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-154.45544554455446},\\\"rightWorld\\\":{\\\"x\\\":1,\\\"y\\\":0,\\\"z\\\":0},\\\"upWorld\\\":{\\\"x\\\":0,\\\"y\\\":1,\\\"z\\\":0},\\\"normalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"plane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-154.45544554455446},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-154.45544554455446}},\\\"opticalAxis\\\":{\\\"origin\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"direction\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1}},\\\"lensFilmHingeLine\\\":null,\\\"focusPointWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":5200},\\\"focusPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":5200},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":5200},\\\"depthOfFieldNearPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":4621.312765622541},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":4621.312765622541},\\\"depthOfFieldFarPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":5944.361206722008},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":5944.361206722008},\\\"offAxisProjectionInput\\\":{\\\"lensCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"filmCornersWorld\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-154.45544554455446},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-154.45544554455446},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-154.45544554455446},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-154.45544554455446}}},\\\"offAxisProjectionMatrix\\\":[2.432369221174086,0,0,0,0,3.040461526467608,0,0,0,0,-1.0004000800160031,-1,0,0,-20.004000800160032,0],\\\"groundGlassProjection\\\":{\\\"invertHorizontal\\\":true,\\\"invertVertical\\\":true,\\\"assistModeEnabled\\\":false},\\\"focusTargets\\\":[{\\\"id\\\":\\\"building-mid-facade\\\",\\\"distanceToFocusPlaneMm\\\":3690,\\\"sharpness\\\":0,\\\"status\\\":\\\"soft\\\",\\\"pointSharpness\\\":0,\\\"pointStatus\\\":\\\"soft\\\",\\\"patchSharpness\\\":0,\\\"patchStatus\\\":\\\"soft\\\",\\\"physicalPointSharpness\\\":0,\\\"physicalPointStatus\\\":\\\"soft\\\",\\\"physicalPatchSharpness\\\":0,\\\"physicalPatchStatus\\\":\\\"soft\\\",\\\"pointEquivalentCoCDiameterMm\\\":0.3302385115580485,\\\"patchEquivalentCoCDiameterMm\\\":0.3302385115580485,\\\"pointNormalizedDefocus\\\":4.957270699597432,\\\"patchNormalizedDefocus\\\":4.957270699597432,\\\"insideDepthOfField\\\":false,\\\"targetRayDistanceMm\\\":8935.44067184154,\\\"nearBoundaryDistanceMm\\\":4644.934313075834,\\\"focusBoundaryDistanceMm\\\":5226.579470593478,\\\"farBoundaryDistanceMm\\\":5974.745432470292,\\\"normalizedDefocus\\\":4.957270699597432}],\\\"diagnostics\\\":{\\\"isParallelLensFilm\\\":true,\\\"tiltAngleDeg\\\":0,\\\"swingAngleDeg\\\":0,\\\"focusPlaneModel\\\":\\\"parallel\\\",\\\"depthOfFieldModel\\\":\\\"parallel\\\",\\\"groundGlassDofModel\\\":\\\"parallel-thin-lens\\\",\\\"nearU\\\":4621.312765622541,\\\"farU\\\":5944.361206722008,\\\"farIsInfinite\\\":false,\\\"fallbackApplied\\\":false,\\\"fallbackReason\\\":null,\\\"isInfinityFocus\\\":false,\\\"focusStandard\\\":\\\"front\\\",\\\"requestedFocusStandard\\\":\\\"front\\\",\\\"focusObjectDistanceMm\\\":5200,\\\"imageDistanceMm\\\":154.45544554455446}}\"]",
+        "cameraStateFingerprint": "[[-1,0,0,0,0,1,0,0,0,0,-1,0,0,0,0,1],[-1,0,0,0,0,1,0,0,0,0,-1,0,0,0,0,1],[2.432369221174086,0,0,0,0,3.040461526467608,0,0,0,0,-1.0007147962830594,-1,0,0,-0.010007147962830594,0],[0.4111217948717948,0,0,0,0,0.3288974358974358,0,0,0,0,0,-99.92857142857142,0,0,-1,99.99999999999999]]",
+        "physicalDataFingerprint": "9586c313"
+      },
+      "canonicalGeometry": {
+        "lensFocalLengthMm": 150,
+        "focusDistanceMm": 5200,
+        "apertureFNumber": 5.6,
+        "cropMagnification": 1,
+        "frontRiseMm": 0,
+        "points": [
+          {
+            "surfaceId": "foreground-plinth-front",
+            "worldPositionMm": {
+              "x": -520,
+              "y": -1090,
+              "z": 3086
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": -0.5450196672291954,
+              "majorRadiusMm": 0.2725098336145977,
+              "minorRadiusMm": 0.2725098336145977,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  1.017083945931648,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -1.0165475092513043
+                ],
+                "uncappedMaximumRadiusPx": 1.017083945931648
+              }
+            },
+            "projectedPixel": {
+              "x": 334,
+              "y": 393,
+              "inBounds": false
+            },
+            "reconstructedRasterSample": {
+              "validityCode": null,
+              "storedPhysicalValueMm": null,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "midground-plinth-front",
+            "worldPositionMm": {
+              "x": 760,
+              "y": -1050,
+              "z": 5046
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": -0.024281560141743513,
+              "majorRadiusMm": 0.012140780070871757,
+              "minorRadiusMm": 0.012140780070871757,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  0.04531283270545837,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -0.045288933532090514
+                ],
+                "uncappedMaximumRadiusPx": 0.04531283270545837
+              }
+            },
+            "projectedPixel": {
+              "x": 150,
+              "y": 309,
+              "inBounds": true
+            },
+            "reconstructedRasterSample": {
+              "validityCode": 0,
+              "storedPhysicalValueMm": -0.02508544921875,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "facade-front-focus-target",
+            "worldPositionMm": {
+              "x": 0,
+              "y": 900,
+              "z": 8900
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": 0.330761406798786,
+              "majorRadiusMm": 0.165380703399393,
+              "minorRadiusMm": 0.165380703399393,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  0.6172476646560022,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -0.6169221120902554
+                ],
+                "uncappedMaximumRadiusPx": 0.6172476646560022
+              }
+            },
+            "projectedPixel": {
+              "x": 237,
+              "y": 131,
+              "inBounds": true
+            },
+            "reconstructedRasterSample": {
+              "validityCode": 0,
+              "storedPhysicalValueMm": 0.32958984375,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "far-plinth-front",
+            "worldPositionMm": {
+              "x": 1800,
+              "y": -1100,
+              "z": 10446
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": 0.39955942340767575,
+              "majorRadiusMm": 0.19977971170383788,
+              "minorRadiusMm": 0.19977971170383788,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  0.7456345145481823,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -0.7452412473991591
+                ],
+                "uncappedMaximumRadiusPx": 0.7456345145481823
+              }
+            },
+            "projectedPixel": {
+              "x": 137,
+              "y": 250,
+              "inBounds": true
+            },
+            "reconstructedRasterSample": {
+              "validityCode": 0,
+              "storedPhysicalValueMm": 0.35205078125,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          }
+        ],
+        "priorSurfaceCorrespondenceEvidence": {
+          "source": "Phase J native Architecture Rise M4 probe",
+          "facadeTargetOffsetMm": 10,
+          "interpretation": "The teaching focus target is 10 mm in front of the canonical facade; raster samples are reconstructed-depth evidence."
+        }
+      },
+      "screeningMetrics": {
+        "population": {
+          "validNearPixels": 28500,
+          "validFarPixels": 92383,
+          "validNeutralPixels": 0,
+          "invalidPixels": 58763,
+          "depthEdgePixels": 3904,
+          "signedNearFarPairs": 540
+        },
+        "maximumValidAbsoluteCoCDiameterMm": 0.54296875,
+        "meanFull32FarSourceRgbDifference": 0.003995720155729082,
+        "validFarSourceDifferencePixelCount": 92383,
+        "meanInteriorFull32FarSourceRgbDifference": 0.004028962953638875,
+        "interiorFarPixelCount": 89923,
+        "meanSourceRgbContrastAtSignedBoundary": 0.023839265200090998,
+        "nearNonzeroPixels": 28500,
+        "nearFractionalPixels": 0,
+        "reportedMaximumUncappedRadiusPx": 0.881587952140748,
+        "reportedCappedPixelCountAtCaptureCap": 0
+      },
+      "selectionInputs": [
+        "canonical signed CoC and pixel ellipse",
+        "valid physical/depth ROI support",
+        "Full32 reference blur signal",
+        "signed boundary/source edge support",
+        "fractional near coverage"
+      ],
+      "candidateQualityOutputConsulted": false,
+      "disposition": "exploratory-only"
+    },
+    {
+      "opticalStateId": "ar-f8890-f5p6-full-rise0",
+      "configuration": {
+        "id": "ar-f8890-f5p6-full-rise0",
+        "focusDistanceMm": 8890,
+        "apertureFNumber": 5.6,
+        "frontRiseMm": 0,
+        "cropMagnification": 1
+      },
+      "evidenceSource": "registered-app-adapter",
+      "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+      "requestId": "gg-mvok2ymz-jkhirb4bijk-default-request-8",
+      "rendererGenerationId": "gg-mvok2ymz-jkhirb4bijk-default-generation-2",
+      "runtime": {
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "rendererRevision": "r186"
+      },
+      "capture": {
+        "captureId": "m5q-explore-ar-f8890-f5p6-full-rise0-1792976787728",
+        "qualityMode": "full32",
+        "sampleCount": 32,
+        "sourceDimensions": {
+          "widthPx": 474,
+          "heightPx": 379
+        },
+        "sampledFilmDimensionsMm": {
+          "widthMm": 127,
+          "heightMm": 101.6
+        },
+        "maximumRadiusPx": 60,
+        "effectiveOpticalRequestFingerprint": "[\"default\",\"[\\\"architecture-rise\\\",[-3900,-1500,-1800],[3900,4050,13000]]\",150,5.6,\"raw\",true,\"high\",474,379,[false,0.5,0.5,1,1],\"middle\",\"{\\\"calibrationStatus\\\":\\\"provisional\\\",\\\"geometryAndOpticsUnits\\\":\\\"millimetres\\\",\\\"subject\\\":{\\\"columns\\\":3,\\\"rows\\\":3,\\\"levels\\\":5,\\\"cubeSizeMm\\\":260,\\\"horizontalGapMm\\\":0,\\\"verticalGapMm\\\":0,\\\"originWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2000},\\\"lowerTargetLevel\\\":0,\\\"middleTargetLevel\\\":2,\\\"upperTargetLevel\\\":4},\\\"optics\\\":{\\\"focalLengthCandidatesMm\\\":[90,105,120,150],\\\"provisionalFocalLengthMm\\\":90,\\\"provisionalFocusDistanceMm\\\":2000},\\\"cameraRig\\\":{\\\"arcPlane\\\":\\\"yz\\\",\\\"arcCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2000},\\\"midRigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"arcRadiusMm\\\":2000,\\\"highLowArcRadiusMm\\\":1520,\\\"lowArcRadiusMm\\\":1520,\\\"highArcAngleDeg\\\":35,\\\"lowArcAngleDeg\\\":-35,\\\"highBodyPitchDeg\\\":34,\\\"lowBodyPitchDeg\\\":-34,\\\"provisionalBasePitchDeg\\\":0,\\\"defaultAnchor\\\":\\\"mid\\\",\\\"anchorMetadata\\\":{\\\"mid\\\":{\\\"identity\\\":\\\"mid\\\",\\\"relativeHeight\\\":\\\"at-mid\\\"},\\\"high\\\":{\\\"identity\\\":\\\"high\\\",\\\"relativeHeight\\\":\\\"above-mid\\\"},\\\"low\\\":{\\\"identity\\\":\\\"low\\\",\\\"relativeHeight\\\":\\\"below-mid\\\"}}},\\\"presentation\\\":{\\\"outerVerticalWeight\\\":3,\\\"outerHorizontalWeight\\\":2,\\\"internalEdgeWeight\\\":1,\\\"internalEdgeOpacity\\\":0.46,\\\"upperRegionColour\\\":\\\"#4ade80\\\",\\\"middleRegionColour\\\":\\\"#d4b000\\\",\\\"lowerRegionColour\\\":\\\"#22d3ee\\\",\\\"inactiveColour\\\":\\\"#64748b\\\",\\\"showReferenceCamera\\\":false,\\\"defaultTargetRegion\\\":\\\"middle\\\"},\\\"subjectGeometryKey\\\":\\\"geometry:{\\\\\\\"columns\\\\\\\":3,\\\\\\\"rows\\\\\\\":3,\\\\\\\"levels\\\\\\\":5,\\\\\\\"cubeSizeMm\\\\\\\":260,\\\\\\\"horizontalGapMm\\\\\\\":0,\\\\\\\"verticalGapMm\\\\\\\":0,\\\\\\\"originWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":2000},\\\\\\\"upperTargetLevel\\\\\\\":4,\\\\\\\"middleTargetLevel\\\\\\\":2,\\\\\\\"lowerTargetLevel\\\\\\\":0}\\\",\\\"presentationKey\\\":\\\"presentation:{\\\\\\\"outerVerticalWeight\\\\\\\":3,\\\\\\\"outerHorizontalWeight\\\\\\\":2,\\\\\\\"internalEdgeWeight\\\\\\\":1,\\\\\\\"internalEdgeOpacity\\\\\\\":0.46,\\\\\\\"upperRegionColour\\\\\\\":\\\\\\\"#4ade80\\\\\\\",\\\\\\\"middleRegionColour\\\\\\\":\\\\\\\"#d4b000\\\\\\\",\\\\\\\"lowerRegionColour\\\\\\\":\\\\\\\"#22d3ee\\\\\\\",\\\\\\\"inactiveColour\\\\\\\":\\\\\\\"#64748b\\\\\\\",\\\\\\\"showReferenceCamera\\\\\\\":false,\\\\\\\"defaultTargetRegion\\\\\\\":\\\\\\\"middle\\\\\\\"}\\\",\\\"opticsKey\\\":\\\"optics:{\\\\\\\"focalLengthCandidatesMm\\\\\\\":[90,105,120,150],\\\\\\\"provisionalFocalLengthMm\\\\\\\":90,\\\\\\\"provisionalFocusDistanceMm\\\\\\\":2000}\\\",\\\"rigKey\\\":\\\"rig:{\\\\\\\"arcPlane\\\\\\\":\\\\\\\"yz\\\\\\\",\\\\\\\"arcCenterWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":2000},\\\\\\\"midRigOriginWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":0},\\\\\\\"arcRadiusMm\\\\\\\":2000,\\\\\\\"highLowArcRadiusMm\\\\\\\":1520,\\\\\\\"lowArcRadiusMm\\\\\\\":1520,\\\\\\\"highArcAngleDeg\\\\\\\":35,\\\\\\\"lowArcAngleDeg\\\\\\\":-35,\\\\\\\"highBodyPitchDeg\\\\\\\":34,\\\\\\\"lowBodyPitchDeg\\\\\\\":-34,\\\\\\\"provisionalBasePitchDeg\\\\\\\":0,\\\\\\\"defaultAnchor\\\\\\\":\\\\\\\"mid\\\\\\\",\\\\\\\"anchorMetadata\\\\\\\":{\\\\\\\"mid\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"mid\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"at-mid\\\\\\\"},\\\\\\\"high\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"high\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"above-mid\\\\\\\"},\\\\\\\"low\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"low\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"below-mid\\\\\\\"}}}\\\",\\\"effectiveKey\\\":\\\"effective:{\\\\\\\"subjectGeometryKey\\\\\\\":\\\\\\\"geometry:{\\\\\\\\\\\\\\\"columns\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"rows\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"levels\\\\\\\\\\\\\\\":5,\\\\\\\\\\\\\\\"cubeSizeMm\\\\\\\\\\\\\\\":260,\\\\\\\\\\\\\\\"horizontalGapMm\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"verticalGapMm\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"originWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":2000},\\\\\\\\\\\\\\\"upperTargetLevel\\\\\\\\\\\\\\\":4,\\\\\\\\\\\\\\\"middleTargetLevel\\\\\\\\\\\\\\\":2,\\\\\\\\\\\\\\\"lowerTargetLevel\\\\\\\\\\\\\\\":0}\\\\\\\",\\\\\\\"presentationKey\\\\\\\":\\\\\\\"presentation:{\\\\\\\\\\\\\\\"outerVerticalWeight\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"outerHorizontalWeight\\\\\\\\\\\\\\\":2,\\\\\\\\\\\\\\\"internalEdgeWeight\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"internalEdgeOpacity\\\\\\\\\\\\\\\":0.46,\\\\\\\\\\\\\\\"upperRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#4ade80\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"middleRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#d4b000\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"lowerRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#22d3ee\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"inactiveColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#64748b\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"showReferenceCamera\\\\\\\\\\\\\\\":false,\\\\\\\\\\\\\\\"defaultTargetRegion\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"middle\\\\\\\\\\\\\\\"}\\\\\\\",\\\\\\\"opticsKey\\\\\\\":\\\\\\\"optics:{\\\\\\\\\\\\\\\"focalLengthCandidatesMm\\\\\\\\\\\\\\\":[90,105,120,150],\\\\\\\\\\\\\\\"provisionalFocalLengthMm\\\\\\\\\\\\\\\":90,\\\\\\\\\\\\\\\"provisionalFocusDistanceMm\\\\\\\\\\\\\\\":2000}\\\\\\\",\\\\\\\"rigKey\\\\\\\":\\\\\\\"rig:{\\\\\\\\\\\\\\\"arcPlane\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"yz\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"arcCenterWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":2000},\\\\\\\\\\\\\\\"midRigOriginWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":0},\\\\\\\\\\\\\\\"arcRadiusMm\\\\\\\\\\\\\\\":2000,\\\\\\\\\\\\\\\"highLowArcRadiusMm\\\\\\\\\\\\\\\":1520,\\\\\\\\\\\\\\\"lowArcRadiusMm\\\\\\\\\\\\\\\":1520,\\\\\\\\\\\\\\\"highArcAngleDeg\\\\\\\\\\\\\\\":35,\\\\\\\\\\\\\\\"lowArcAngleDeg\\\\\\\\\\\\\\\":-35,\\\\\\\\\\\\\\\"highBodyPitchDeg\\\\\\\\\\\\\\\":34,\\\\\\\\\\\\\\\"lowBodyPitchDeg\\\\\\\\\\\\\\\":-34,\\\\\\\\\\\\\\\"provisionalBasePitchDeg\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"defaultAnchor\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"anchorMetadata\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"at-mid\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"high\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"high\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"above-mid\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"low\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"low\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"below-mid\\\\\\\\\\\\\\\"}}}\\\\\\\"}\\\"}\",\"{\\\"cameraRigPlacement\\\":{\\\"kind\\\":\\\"identity\\\",\\\"rigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"basePitchDeg\\\":0},\\\"cameraRigTransform\\\":{\\\"rigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"basePitchDeg\\\":0,\\\"bodyPitchDeg\\\":0,\\\"bodyPitchPivotRigLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0}},\\\"cameraBodyTransform\\\":{\\\"pitchDeg\\\":0,\\\"pivotWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0}},\\\"cameraBodyLocalGeometry\\\":{\\\"lensCenterLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensNormalLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"lensPlaneLocal\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":0},\\\"filmCenterLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"filmNormalLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"filmPlaneLocal\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-152.57437070938215},\\\"filmPlaneCornersLocal\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-152.57437070938215},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-152.57437070938215},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-152.57437070938215},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-152.57437070938215}},\\\"rearStandardFrameLocal\\\":{\\\"centerWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"rightWorld\\\":{\\\"x\\\":1,\\\"y\\\":0,\\\"z\\\":0},\\\"upWorld\\\":{\\\"x\\\":0,\\\"y\\\":1,\\\"z\\\":0},\\\"normalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"plane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-152.57437070938215}}},\\\"cameraBodyPivotWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensDefinition\\\":{\\\"id\\\":\\\"simulator-parametric-150mm\\\",\\\"focalLengthMm\\\":150,\\\"coverage\\\":{\\\"kind\\\":\\\"angular\\\",\\\"fullCoverageAngleDeg\\\":72}},\\\"lensCoverage\\\":{\\\"kind\\\":\\\"angular\\\",\\\"fullCoverageAngleDeg\\\":72,\\\"halfCoverageAngleDeg\\\":36,\\\"imageCircleRadiusMm\\\":110.85176900402159,\\\"imageCircleDiameterMm\\\":221.70353800804318,\\\"imageDistanceMm\\\":152.57437070938215},\\\"groundGlassNaturalIllumination\\\":{\\\"kind\\\":\\\"parallel-cos4\\\",\\\"imageDistanceMm\\\":152.57437070938215,\\\"opticalAxisOffsetXMm\\\":0,\\\"opticalAxisOffsetYMm\\\":0},\\\"groundGlassCoverage\\\":{\\\"kind\\\":\\\"parallel-circle\\\",\\\"imageCircleRadiusMm\\\":110.85176900402159,\\\"opticalAxisOffsetXMm\\\":0,\\\"opticalAxisOffsetYMm\\\":0},\\\"lensCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensNormalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"lensPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":0},\\\"filmCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"filmNormalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"filmPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-152.57437070938215},\\\"filmPlaneCornersWorld\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-152.57437070938215},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-152.57437070938215},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-152.57437070938215},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-152.57437070938215}},\\\"rearStandardFrame\\\":{\\\"centerWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"rightWorld\\\":{\\\"x\\\":1,\\\"y\\\":0,\\\"z\\\":0},\\\"upWorld\\\":{\\\"x\\\":0,\\\"y\\\":1,\\\"z\\\":0},\\\"normalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"plane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-152.57437070938215}},\\\"opticalAxis\\\":{\\\"origin\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"direction\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1}},\\\"lensFilmHingeLine\\\":null,\\\"focusPointWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":8890},\\\"focusPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":8890},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":8890},\\\"depthOfFieldNearPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":7306.530220100151},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":7306.530220100151},\\\"depthOfFieldFarPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":11349.706041968162},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":11349.706041968162},\\\"offAxisProjectionInput\\\":{\\\"lensCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"filmCornersWorld\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-152.57437070938215},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-152.57437070938215},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-152.57437070938215},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-152.57437070938215}}},\\\"offAxisProjectionMatrix\\\":[2.402745995423341,0,0,0,0,3.0034324942791764,0,0,0,0,-1.0004000800160031,-1,0,0,-20.004000800160032,0],\\\"groundGlassProjection\\\":{\\\"invertHorizontal\\\":true,\\\"invertVertical\\\":true,\\\"assistModeEnabled\\\":false},\\\"focusTargets\\\":[{\\\"id\\\":\\\"building-mid-facade\\\",\\\"distanceToFocusPlaneMm\\\":0,\\\"sharpness\\\":0.9999999999999989,\\\"status\\\":\\\"sharp\\\",\\\"pointSharpness\\\":0.9999999999999989,\\\"pointStatus\\\":\\\"sharp\\\",\\\"patchSharpness\\\":0.9999999999999989,\\\"patchStatus\\\":\\\"sharp\\\",\\\"physicalPointSharpness\\\":1,\\\"physicalPointStatus\\\":\\\"sharp\\\",\\\"physicalPatchSharpness\\\":1,\\\"physicalPatchStatus\\\":\\\"sharp\\\",\\\"pointEquivalentCoCDiameterMm\\\":0,\\\"patchEquivalentCoCDiameterMm\\\":0,\\\"pointNormalizedDefocus\\\":1.142894585089246e-15,\\\"patchNormalizedDefocus\\\":1.142894585089246e-15,\\\"insideDepthOfField\\\":true,\\\"targetRayDistanceMm\\\":8935.44067184154,\\\"nearBoundaryDistanceMm\\\":7343.877086470441,\\\"focusBoundaryDistanceMm\\\":8935.440671841541,\\\"farBoundaryDistanceMm\\\":11407.71934542722,\\\"normalizedDefocus\\\":1.142894585089246e-15}],\\\"diagnostics\\\":{\\\"isParallelLensFilm\\\":true,\\\"tiltAngleDeg\\\":0,\\\"swingAngleDeg\\\":0,\\\"focusPlaneModel\\\":\\\"parallel\\\",\\\"depthOfFieldModel\\\":\\\"parallel\\\",\\\"groundGlassDofModel\\\":\\\"parallel-thin-lens\\\",\\\"nearU\\\":7306.530220100151,\\\"farU\\\":11349.706041968162,\\\"farIsInfinite\\\":false,\\\"fallbackApplied\\\":false,\\\"fallbackReason\\\":null,\\\"isInfinityFocus\\\":false,\\\"focusStandard\\\":\\\"front\\\",\\\"requestedFocusStandard\\\":\\\"front\\\",\\\"focusObjectDistanceMm\\\":8890,\\\"imageDistanceMm\\\":152.57437070938215}}\"]",
+        "cameraStateFingerprint": "[[-1,0,0,0,0,1,0,0,0,0,-1,0,0,0,0,1],[-1,0,0,0,0,1,0,0,0,0,-1,0,0,0,0,1],[2.4027459954233406,0,0,0,0,3.0034324942791764,0,0,0,0,-1.0007147962830594,-1,0,0,-0.010007147962830594,0],[0.4161904761904762,0,0,0,0,0.33295238095238094,0,0,0,0,0,-99.92857142857142,0,0,-1,100]]",
+        "physicalDataFingerprint": "0e88c3fb"
+      },
+      "canonicalGeometry": {
+        "lensFocalLengthMm": 150,
+        "focusDistanceMm": 8890,
+        "apertureFNumber": 5.6,
+        "cropMagnification": 1,
+        "frontRiseMm": 0,
+        "points": [
+          {
+            "surfaceId": "foreground-plinth-front",
+            "worldPositionMm": {
+              "x": -520,
+              "y": -1090,
+              "z": 3086
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": -0.8645986249684037,
+              "majorRadiusMm": 0.43229931248420184,
+              "minorRadiusMm": 0.43229931248420184,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  1.6134635757284383,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -1.6126125928298476
+                ],
+                "uncappedMaximumRadiusPx": 1.6134635757284383
+              }
+            },
+            "projectedPixel": {
+              "x": 332,
+              "y": 390,
+              "inBounds": false
+            },
+            "reconstructedRasterSample": {
+              "validityCode": null,
+              "storedPhysicalValueMm": null,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "midground-plinth-front",
+            "worldPositionMm": {
+              "x": 760,
+              "y": -1050,
+              "z": 5046
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": -0.350202459050486,
+              "majorRadiusMm": 0.175101229525243,
+              "minorRadiusMm": 0.175101229525243,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  0.653527423582403,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -0.6531827361227077
+                ],
+                "uncappedMaximumRadiusPx": 0.653527423582403
+              }
+            },
+            "projectedPixel": {
+              "x": 151,
+              "y": 307,
+              "inBounds": true
+            },
+            "reconstructedRasterSample": {
+              "validityCode": 0,
+              "storedPhysicalValueMm": -0.350830078125,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "facade-front-focus-target",
+            "worldPositionMm": {
+              "x": 0,
+              "y": 900,
+              "z": 8900
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": 0.0005165270283634196,
+              "majorRadiusMm": 0.0002582635141817098,
+              "minorRadiusMm": 0.0002582635141817098,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  0.0009639126434813421,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -0.00096340425073689
+                ],
+                "uncappedMaximumRadiusPx": 0.0009639126434813421
+              }
+            },
+            "projectedPixel": {
+              "x": 237,
+              "y": 131,
+              "inBounds": true
+            },
+            "reconstructedRasterSample": {
+              "validityCode": 0,
+              "storedPhysicalValueMm": -0.0004260540008544922,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "far-plinth-front",
+            "worldPositionMm": {
+              "x": 1800,
+              "y": -1100,
+              "z": 10446
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": 0.06847666953513552,
+              "majorRadiusMm": 0.03423833476756776,
+              "minorRadiusMm": 0.03423833476756776,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  0.12778717070730014,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -0.1277197724105136
+                ],
+                "uncappedMaximumRadiusPx": 0.12778717070730014
+              }
+            },
+            "projectedPixel": {
+              "x": 138,
+              "y": 249,
+              "inBounds": true
+            },
+            "reconstructedRasterSample": {
+              "validityCode": 0,
+              "storedPhysicalValueMm": 0.021575927734375,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          }
+        ],
+        "priorSurfaceCorrespondenceEvidence": {
+          "source": "Phase J native Architecture Rise M4 probe",
+          "facadeTargetOffsetMm": 10,
+          "interpretation": "The teaching focus target is 10 mm in front of the canonical facade; raster samples are reconstructed-depth evidence."
+        }
+      },
+      "screeningMetrics": {
+        "population": {
+          "validNearPixels": 83247,
+          "validFarPixels": 37383,
+          "validNeutralPixels": 0,
+          "invalidPixels": 59016,
+          "depthEdgePixels": 3892,
+          "signedNearFarPairs": 5213
+        },
+        "maximumValidAbsoluteCoCDiameterMm": 0.9033203125,
+        "meanFull32FarSourceRgbDifference": 0.00008605473637521788,
+        "validFarSourceDifferencePixelCount": 37383,
+        "meanInteriorFull32FarSourceRgbDifference": 0.00008612992885949504,
+        "interiorFarPixelCount": 36893,
+        "meanSourceRgbContrastAtSignedBoundary": 0.20851893369733798,
+        "nearNonzeroPixels": 83247,
+        "nearFractionalPixels": 0,
+        "reportedMaximumUncappedRadiusPx": 0.2658431886687992,
+        "reportedCappedPixelCountAtCaptureCap": 0
+      },
+      "selectionInputs": [
+        "canonical signed CoC and pixel ellipse",
+        "valid physical/depth ROI support",
+        "Full32 reference blur signal",
+        "signed boundary/source edge support",
+        "fractional near coverage"
+      ],
+      "candidateQualityOutputConsulted": false,
+      "disposition": "exploratory-only"
+    },
+    {
+      "opticalStateId": "ar-f8890-f5p6-full-rise20",
+      "configuration": {
+        "id": "ar-f8890-f5p6-full-rise20",
+        "focusDistanceMm": 8890,
+        "apertureFNumber": 5.6,
+        "frontRiseMm": 20,
+        "cropMagnification": 1
+      },
+      "evidenceSource": "registered-app-adapter",
+      "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+      "requestId": "gg-mvok2ymz-jkhirb4bijk-default-request-9",
+      "rendererGenerationId": "gg-mvok2ymz-jkhirb4bijk-default-generation-2",
+      "runtime": {
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "rendererRevision": "r186"
+      },
+      "capture": {
+        "captureId": "m5q-explore-ar-f8890-f5p6-full-rise20-1792976789909",
+        "qualityMode": "full32",
+        "sampleCount": 32,
+        "sourceDimensions": {
+          "widthPx": 474,
+          "heightPx": 379
+        },
+        "sampledFilmDimensionsMm": {
+          "widthMm": 127,
+          "heightMm": 101.6
+        },
+        "maximumRadiusPx": 60,
+        "effectiveOpticalRequestFingerprint": "[\"default\",\"[\\\"architecture-rise\\\",[-3900,-1500,-1800],[3900,4050,13000]]\",150,5.6,\"raw\",true,\"high\",474,379,[false,0.5,0.5,1,1],\"middle\",\"{\\\"calibrationStatus\\\":\\\"provisional\\\",\\\"geometryAndOpticsUnits\\\":\\\"millimetres\\\",\\\"subject\\\":{\\\"columns\\\":3,\\\"rows\\\":3,\\\"levels\\\":5,\\\"cubeSizeMm\\\":260,\\\"horizontalGapMm\\\":0,\\\"verticalGapMm\\\":0,\\\"originWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2000},\\\"lowerTargetLevel\\\":0,\\\"middleTargetLevel\\\":2,\\\"upperTargetLevel\\\":4},\\\"optics\\\":{\\\"focalLengthCandidatesMm\\\":[90,105,120,150],\\\"provisionalFocalLengthMm\\\":90,\\\"provisionalFocusDistanceMm\\\":2000},\\\"cameraRig\\\":{\\\"arcPlane\\\":\\\"yz\\\",\\\"arcCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2000},\\\"midRigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"arcRadiusMm\\\":2000,\\\"highLowArcRadiusMm\\\":1520,\\\"lowArcRadiusMm\\\":1520,\\\"highArcAngleDeg\\\":35,\\\"lowArcAngleDeg\\\":-35,\\\"highBodyPitchDeg\\\":34,\\\"lowBodyPitchDeg\\\":-34,\\\"provisionalBasePitchDeg\\\":0,\\\"defaultAnchor\\\":\\\"mid\\\",\\\"anchorMetadata\\\":{\\\"mid\\\":{\\\"identity\\\":\\\"mid\\\",\\\"relativeHeight\\\":\\\"at-mid\\\"},\\\"high\\\":{\\\"identity\\\":\\\"high\\\",\\\"relativeHeight\\\":\\\"above-mid\\\"},\\\"low\\\":{\\\"identity\\\":\\\"low\\\",\\\"relativeHeight\\\":\\\"below-mid\\\"}}},\\\"presentation\\\":{\\\"outerVerticalWeight\\\":3,\\\"outerHorizontalWeight\\\":2,\\\"internalEdgeWeight\\\":1,\\\"internalEdgeOpacity\\\":0.46,\\\"upperRegionColour\\\":\\\"#4ade80\\\",\\\"middleRegionColour\\\":\\\"#d4b000\\\",\\\"lowerRegionColour\\\":\\\"#22d3ee\\\",\\\"inactiveColour\\\":\\\"#64748b\\\",\\\"showReferenceCamera\\\":false,\\\"defaultTargetRegion\\\":\\\"middle\\\"},\\\"subjectGeometryKey\\\":\\\"geometry:{\\\\\\\"columns\\\\\\\":3,\\\\\\\"rows\\\\\\\":3,\\\\\\\"levels\\\\\\\":5,\\\\\\\"cubeSizeMm\\\\\\\":260,\\\\\\\"horizontalGapMm\\\\\\\":0,\\\\\\\"verticalGapMm\\\\\\\":0,\\\\\\\"originWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":2000},\\\\\\\"upperTargetLevel\\\\\\\":4,\\\\\\\"middleTargetLevel\\\\\\\":2,\\\\\\\"lowerTargetLevel\\\\\\\":0}\\\",\\\"presentationKey\\\":\\\"presentation:{\\\\\\\"outerVerticalWeight\\\\\\\":3,\\\\\\\"outerHorizontalWeight\\\\\\\":2,\\\\\\\"internalEdgeWeight\\\\\\\":1,\\\\\\\"internalEdgeOpacity\\\\\\\":0.46,\\\\\\\"upperRegionColour\\\\\\\":\\\\\\\"#4ade80\\\\\\\",\\\\\\\"middleRegionColour\\\\\\\":\\\\\\\"#d4b000\\\\\\\",\\\\\\\"lowerRegionColour\\\\\\\":\\\\\\\"#22d3ee\\\\\\\",\\\\\\\"inactiveColour\\\\\\\":\\\\\\\"#64748b\\\\\\\",\\\\\\\"showReferenceCamera\\\\\\\":false,\\\\\\\"defaultTargetRegion\\\\\\\":\\\\\\\"middle\\\\\\\"}\\\",\\\"opticsKey\\\":\\\"optics:{\\\\\\\"focalLengthCandidatesMm\\\\\\\":[90,105,120,150],\\\\\\\"provisionalFocalLengthMm\\\\\\\":90,\\\\\\\"provisionalFocusDistanceMm\\\\\\\":2000}\\\",\\\"rigKey\\\":\\\"rig:{\\\\\\\"arcPlane\\\\\\\":\\\\\\\"yz\\\\\\\",\\\\\\\"arcCenterWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":2000},\\\\\\\"midRigOriginWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":0},\\\\\\\"arcRadiusMm\\\\\\\":2000,\\\\\\\"highLowArcRadiusMm\\\\\\\":1520,\\\\\\\"lowArcRadiusMm\\\\\\\":1520,\\\\\\\"highArcAngleDeg\\\\\\\":35,\\\\\\\"lowArcAngleDeg\\\\\\\":-35,\\\\\\\"highBodyPitchDeg\\\\\\\":34,\\\\\\\"lowBodyPitchDeg\\\\\\\":-34,\\\\\\\"provisionalBasePitchDeg\\\\\\\":0,\\\\\\\"defaultAnchor\\\\\\\":\\\\\\\"mid\\\\\\\",\\\\\\\"anchorMetadata\\\\\\\":{\\\\\\\"mid\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"mid\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"at-mid\\\\\\\"},\\\\\\\"high\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"high\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"above-mid\\\\\\\"},\\\\\\\"low\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"low\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"below-mid\\\\\\\"}}}\\\",\\\"effectiveKey\\\":\\\"effective:{\\\\\\\"subjectGeometryKey\\\\\\\":\\\\\\\"geometry:{\\\\\\\\\\\\\\\"columns\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"rows\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"levels\\\\\\\\\\\\\\\":5,\\\\\\\\\\\\\\\"cubeSizeMm\\\\\\\\\\\\\\\":260,\\\\\\\\\\\\\\\"horizontalGapMm\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"verticalGapMm\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"originWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":2000},\\\\\\\\\\\\\\\"upperTargetLevel\\\\\\\\\\\\\\\":4,\\\\\\\\\\\\\\\"middleTargetLevel\\\\\\\\\\\\\\\":2,\\\\\\\\\\\\\\\"lowerTargetLevel\\\\\\\\\\\\\\\":0}\\\\\\\",\\\\\\\"presentationKey\\\\\\\":\\\\\\\"presentation:{\\\\\\\\\\\\\\\"outerVerticalWeight\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"outerHorizontalWeight\\\\\\\\\\\\\\\":2,\\\\\\\\\\\\\\\"internalEdgeWeight\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"internalEdgeOpacity\\\\\\\\\\\\\\\":0.46,\\\\\\\\\\\\\\\"upperRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#4ade80\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"middleRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#d4b000\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"lowerRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#22d3ee\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"inactiveColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#64748b\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"showReferenceCamera\\\\\\\\\\\\\\\":false,\\\\\\\\\\\\\\\"defaultTargetRegion\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"middle\\\\\\\\\\\\\\\"}\\\\\\\",\\\\\\\"opticsKey\\\\\\\":\\\\\\\"optics:{\\\\\\\\\\\\\\\"focalLengthCandidatesMm\\\\\\\\\\\\\\\":[90,105,120,150],\\\\\\\\\\\\\\\"provisionalFocalLengthMm\\\\\\\\\\\\\\\":90,\\\\\\\\\\\\\\\"provisionalFocusDistanceMm\\\\\\\\\\\\\\\":2000}\\\\\\\",\\\\\\\"rigKey\\\\\\\":\\\\\\\"rig:{\\\\\\\\\\\\\\\"arcPlane\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"yz\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"arcCenterWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":2000},\\\\\\\\\\\\\\\"midRigOriginWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":0},\\\\\\\\\\\\\\\"arcRadiusMm\\\\\\\\\\\\\\\":2000,\\\\\\\\\\\\\\\"highLowArcRadiusMm\\\\\\\\\\\\\\\":1520,\\\\\\\\\\\\\\\"lowArcRadiusMm\\\\\\\\\\\\\\\":1520,\\\\\\\\\\\\\\\"highArcAngleDeg\\\\\\\\\\\\\\\":35,\\\\\\\\\\\\\\\"lowArcAngleDeg\\\\\\\\\\\\\\\":-35,\\\\\\\\\\\\\\\"highBodyPitchDeg\\\\\\\\\\\\\\\":34,\\\\\\\\\\\\\\\"lowBodyPitchDeg\\\\\\\\\\\\\\\":-34,\\\\\\\\\\\\\\\"provisionalBasePitchDeg\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"defaultAnchor\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"anchorMetadata\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"at-mid\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"high\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"high\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"above-mid\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"low\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"low\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"below-mid\\\\\\\\\\\\\\\"}}}\\\\\\\"}\\\"}\",\"{\\\"cameraRigPlacement\\\":{\\\"kind\\\":\\\"identity\\\",\\\"rigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"basePitchDeg\\\":0},\\\"cameraRigTransform\\\":{\\\"rigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"basePitchDeg\\\":0,\\\"bodyPitchDeg\\\":0,\\\"bodyPitchPivotRigLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0}},\\\"cameraBodyTransform\\\":{\\\"pitchDeg\\\":0,\\\"pivotWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0}},\\\"cameraBodyLocalGeometry\\\":{\\\"lensCenterLocal\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":0},\\\"lensNormalLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"lensPlaneLocal\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":0},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":0},\\\"filmCenterLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"filmNormalLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"filmPlaneLocal\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-152.57437070938215},\\\"filmPlaneCornersLocal\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-152.57437070938215},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-152.57437070938215},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-152.57437070938215},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-152.57437070938215}},\\\"rearStandardFrameLocal\\\":{\\\"centerWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"rightWorld\\\":{\\\"x\\\":1,\\\"y\\\":0,\\\"z\\\":0},\\\"upWorld\\\":{\\\"x\\\":0,\\\"y\\\":1,\\\"z\\\":0},\\\"normalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"plane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-152.57437070938215}}},\\\"cameraBodyPivotWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensDefinition\\\":{\\\"id\\\":\\\"simulator-parametric-150mm\\\",\\\"focalLengthMm\\\":150,\\\"coverage\\\":{\\\"kind\\\":\\\"angular\\\",\\\"fullCoverageAngleDeg\\\":72}},\\\"lensCoverage\\\":{\\\"kind\\\":\\\"angular\\\",\\\"fullCoverageAngleDeg\\\":72,\\\"halfCoverageAngleDeg\\\":36,\\\"imageCircleRadiusMm\\\":110.85176900402159,\\\"imageCircleDiameterMm\\\":221.70353800804318,\\\"imageDistanceMm\\\":152.57437070938215},\\\"groundGlassNaturalIllumination\\\":{\\\"kind\\\":\\\"parallel-cos4\\\",\\\"imageDistanceMm\\\":152.57437070938215,\\\"opticalAxisOffsetXMm\\\":0,\\\"opticalAxisOffsetYMm\\\":20},\\\"groundGlassCoverage\\\":{\\\"kind\\\":\\\"parallel-circle\\\",\\\"imageCircleRadiusMm\\\":110.85176900402159,\\\"opticalAxisOffsetXMm\\\":0,\\\"opticalAxisOffsetYMm\\\":20},\\\"lensCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":0},\\\"lensNormalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"lensPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":0},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":0},\\\"filmCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"filmNormalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"filmPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-152.57437070938215},\\\"filmPlaneCornersWorld\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-152.57437070938215},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-152.57437070938215},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-152.57437070938215},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-152.57437070938215}},\\\"rearStandardFrame\\\":{\\\"centerWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"rightWorld\\\":{\\\"x\\\":1,\\\"y\\\":0,\\\"z\\\":0},\\\"upWorld\\\":{\\\"x\\\":0,\\\"y\\\":1,\\\"z\\\":0},\\\"normalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"plane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-152.57437070938215}},\\\"opticalAxis\\\":{\\\"origin\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":0},\\\"direction\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1}},\\\"lensFilmHingeLine\\\":null,\\\"focusPointWorld\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":8890},\\\"focusPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":8890},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":8890},\\\"depthOfFieldNearPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":7306.530220100151},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":7306.530220100151},\\\"depthOfFieldFarPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":11349.706041968162},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":11349.706041968162},\\\"offAxisProjectionInput\\\":{\\\"lensCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":0},\\\"filmCornersWorld\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-152.57437070938215},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-152.57437070938215},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-152.57437070938215},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-152.57437070938215}}},\\\"offAxisProjectionMatrix\\\":[2.402745995423341,0,0,0,0,3.0034324942791764,0,0,0,-0.3937007874015748,-1.0004000800160031,-1,0,0,-20.004000800160032,0],\\\"groundGlassProjection\\\":{\\\"invertHorizontal\\\":true,\\\"invertVertical\\\":true,\\\"assistModeEnabled\\\":false},\\\"focusTargets\\\":[{\\\"id\\\":\\\"building-mid-facade\\\",\\\"distanceToFocusPlaneMm\\\":0,\\\"sharpness\\\":0.9999999999999992,\\\"status\\\":\\\"sharp\\\",\\\"pointSharpness\\\":0.9999999999999992,\\\"pointStatus\\\":\\\"sharp\\\",\\\"patchSharpness\\\":0.9999999999999992,\\\"patchStatus\\\":\\\"sharp\\\",\\\"physicalPointSharpness\\\":1,\\\"physicalPointStatus\\\":\\\"sharp\\\",\\\"physicalPatchSharpness\\\":1,\\\"physicalPatchStatus\\\":\\\"sharp\\\",\\\"pointEquivalentCoCDiameterMm\\\":0,\\\"patchEquivalentCoCDiameterMm\\\":0,\\\"pointNormalizedDefocus\\\":7.359182782245392e-16,\\\"patchNormalizedDefocus\\\":7.359182782245392e-16,\\\"insideDepthOfField\\\":true,\\\"targetRayDistanceMm\\\":8933.448382343742,\\\"nearBoundaryDistanceMm\\\":7342.239659763706,\\\"focusBoundaryDistanceMm\\\":8933.44838234374,\\\"farBoundaryDistanceMm\\\":11405.175824600388,\\\"normalizedDefocus\\\":7.359182782245392e-16}],\\\"diagnostics\\\":{\\\"isParallelLensFilm\\\":true,\\\"tiltAngleDeg\\\":0,\\\"swingAngleDeg\\\":0,\\\"focusPlaneModel\\\":\\\"parallel\\\",\\\"depthOfFieldModel\\\":\\\"parallel\\\",\\\"groundGlassDofModel\\\":\\\"parallel-thin-lens\\\",\\\"nearU\\\":7306.530220100151,\\\"farU\\\":11349.706041968162,\\\"farIsInfinite\\\":false,\\\"fallbackApplied\\\":false,\\\"fallbackReason\\\":null,\\\"isInfinityFocus\\\":false,\\\"focusStandard\\\":\\\"front\\\",\\\"requestedFocusStandard\\\":\\\"front\\\",\\\"focusObjectDistanceMm\\\":8890,\\\"imageDistanceMm\\\":152.57437070938215}}\"]",
+        "cameraStateFingerprint": "[[-1,0,0,0,0,1,0,0,0,0,-1,0,0,0.02,0,1],[-1,0,0,0,0,1,0,0,0,0,-1,0,0,-0.02,0,1],[2.4027459954233406,0,0,0,0,3.003432494279176,0,0,0,0.3937007874015748,-1.0007147962830594,-1,0,0,-0.010007147962830594,0],[0.4161904761904762,0,0,0,0,0.332952380952381,0,0,0,0,0,-99.92857142857142,0,0.1310836145481815,-1,100]]",
+        "physicalDataFingerprint": "19e83879"
+      },
+      "canonicalGeometry": {
+        "lensFocalLengthMm": 150,
+        "focusDistanceMm": 8890,
+        "apertureFNumber": 5.6,
+        "cropMagnification": 1,
+        "frontRiseMm": 20,
+        "points": [
+          {
+            "surfaceId": "foreground-plinth-front",
+            "worldPositionMm": {
+              "x": -520,
+              "y": -1090,
+              "z": 3086
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": -0.8645986249684037,
+              "majorRadiusMm": 0.43229931248420184,
+              "minorRadiusMm": 0.43229931248420184,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  1.6134635757284383,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -1.6126125928298476
+                ],
+                "uncappedMaximumRadiusPx": 1.6134635757284383
+              }
+            },
+            "projectedPixel": {
+              "x": 332,
+              "y": 468,
+              "inBounds": false
+            },
+            "reconstructedRasterSample": {
+              "validityCode": null,
+              "storedPhysicalValueMm": null,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "midground-plinth-front",
+            "worldPositionMm": {
+              "x": 760,
+              "y": -1050,
+              "z": 5046
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": -0.350202459050486,
+              "majorRadiusMm": 0.175101229525243,
+              "minorRadiusMm": 0.175101229525243,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  0.653527423582403,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -0.6531827361227077
+                ],
+                "uncappedMaximumRadiusPx": 0.653527423582403
+              }
+            },
+            "projectedPixel": {
+              "x": 151,
+              "y": 384,
+              "inBounds": false
+            },
+            "reconstructedRasterSample": {
+              "validityCode": null,
+              "storedPhysicalValueMm": null,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "facade-front-focus-target",
+            "worldPositionMm": {
+              "x": 0,
+              "y": 900,
+              "z": 8900
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": 0.0005165270283634196,
+              "majorRadiusMm": 0.0002582635141817098,
+              "minorRadiusMm": 0.0002582635141817098,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  0.0009639126434813421,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -0.00096340425073689
+                ],
+                "uncappedMaximumRadiusPx": 0.0009639126434813421
+              }
+            },
+            "projectedPixel": {
+              "x": 237,
+              "y": 207,
+              "inBounds": true
+            },
+            "reconstructedRasterSample": {
+              "validityCode": 0,
+              "storedPhysicalValueMm": -0.0004260540008544922,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "far-plinth-front",
+            "worldPositionMm": {
+              "x": 1800,
+              "y": -1100,
+              "z": 10446
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": 0.06847666953513552,
+              "majorRadiusMm": 0.03423833476756776,
+              "minorRadiusMm": 0.03423833476756776,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  0.12778717070730014,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -0.1277197724105136
+                ],
+                "uncappedMaximumRadiusPx": 0.12778717070730014
+              }
+            },
+            "projectedPixel": {
+              "x": 138,
+              "y": 325,
+              "inBounds": true
+            },
+            "reconstructedRasterSample": {
+              "validityCode": 0,
+              "storedPhysicalValueMm": 0.021575927734375,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          }
+        ],
+        "priorSurfaceCorrespondenceEvidence": {
+          "source": "Phase J native Architecture Rise M4 probe",
+          "facadeTargetOffsetMm": 10,
+          "interpretation": "The teaching focus target is 10 mm in front of the canonical facade; raster samples are reconstructed-depth evidence."
+        }
+      },
+      "screeningMetrics": {
+        "population": {
+          "validNearPixels": 56586,
+          "validFarPixels": 37705,
+          "validNeutralPixels": 0,
+          "invalidPixels": 85355,
+          "depthEdgePixels": 2601,
+          "signedNearFarPairs": 5851
+        },
+        "maximumValidAbsoluteCoCDiameterMm": 0.350830078125,
+        "meanFull32FarSourceRgbDifference": 0.00008476349532851138,
+        "validFarSourceDifferencePixelCount": 37705,
+        "meanInteriorFull32FarSourceRgbDifference": 0.00008470479287981758,
+        "interiorFarPixelCount": 37348,
+        "meanSourceRgbContrastAtSignedBoundary": 0.20912397382603384,
+        "nearNonzeroPixels": 56586,
+        "nearFractionalPixels": 0,
+        "reportedMaximumUncappedRadiusPx": 0.2603759765625,
+        "reportedCappedPixelCountAtCaptureCap": 0
+      },
+      "selectionInputs": [
+        "canonical signed CoC and pixel ellipse",
+        "valid physical/depth ROI support",
+        "Full32 reference blur signal",
+        "signed boundary/source edge support",
+        "fractional near coverage"
+      ],
+      "candidateQualityOutputConsulted": false,
+      "disposition": "exploratory-only"
+    },
+    {
+      "opticalStateId": "ar-f13000-f5p6-full-rise20",
+      "configuration": {
+        "id": "ar-f13000-f5p6-full-rise20",
+        "focusDistanceMm": 13000,
+        "apertureFNumber": 5.6,
+        "frontRiseMm": 20,
+        "cropMagnification": 1
+      },
+      "evidenceSource": "registered-app-adapter",
+      "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+      "requestId": "gg-mvok2ymz-jkhirb4bijk-default-request-10",
+      "rendererGenerationId": "gg-mvok2ymz-jkhirb4bijk-default-generation-2",
+      "runtime": {
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "rendererRevision": "r186"
+      },
+      "capture": {
+        "captureId": "m5q-explore-ar-f13000-f5p6-full-rise20-1792976792193",
+        "qualityMode": "full32",
+        "sampleCount": 32,
+        "sourceDimensions": {
+          "widthPx": 474,
+          "heightPx": 379
+        },
+        "sampledFilmDimensionsMm": {
+          "widthMm": 127,
+          "heightMm": 101.6
+        },
+        "maximumRadiusPx": 60,
+        "effectiveOpticalRequestFingerprint": "[\"default\",\"[\\\"architecture-rise\\\",[-3900,-1500,-1800],[3900,4050,13000]]\",150,5.6,\"raw\",true,\"high\",474,379,[false,0.5,0.5,1,1],\"middle\",\"{\\\"calibrationStatus\\\":\\\"provisional\\\",\\\"geometryAndOpticsUnits\\\":\\\"millimetres\\\",\\\"subject\\\":{\\\"columns\\\":3,\\\"rows\\\":3,\\\"levels\\\":5,\\\"cubeSizeMm\\\":260,\\\"horizontalGapMm\\\":0,\\\"verticalGapMm\\\":0,\\\"originWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2000},\\\"lowerTargetLevel\\\":0,\\\"middleTargetLevel\\\":2,\\\"upperTargetLevel\\\":4},\\\"optics\\\":{\\\"focalLengthCandidatesMm\\\":[90,105,120,150],\\\"provisionalFocalLengthMm\\\":90,\\\"provisionalFocusDistanceMm\\\":2000},\\\"cameraRig\\\":{\\\"arcPlane\\\":\\\"yz\\\",\\\"arcCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2000},\\\"midRigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"arcRadiusMm\\\":2000,\\\"highLowArcRadiusMm\\\":1520,\\\"lowArcRadiusMm\\\":1520,\\\"highArcAngleDeg\\\":35,\\\"lowArcAngleDeg\\\":-35,\\\"highBodyPitchDeg\\\":34,\\\"lowBodyPitchDeg\\\":-34,\\\"provisionalBasePitchDeg\\\":0,\\\"defaultAnchor\\\":\\\"mid\\\",\\\"anchorMetadata\\\":{\\\"mid\\\":{\\\"identity\\\":\\\"mid\\\",\\\"relativeHeight\\\":\\\"at-mid\\\"},\\\"high\\\":{\\\"identity\\\":\\\"high\\\",\\\"relativeHeight\\\":\\\"above-mid\\\"},\\\"low\\\":{\\\"identity\\\":\\\"low\\\",\\\"relativeHeight\\\":\\\"below-mid\\\"}}},\\\"presentation\\\":{\\\"outerVerticalWeight\\\":3,\\\"outerHorizontalWeight\\\":2,\\\"internalEdgeWeight\\\":1,\\\"internalEdgeOpacity\\\":0.46,\\\"upperRegionColour\\\":\\\"#4ade80\\\",\\\"middleRegionColour\\\":\\\"#d4b000\\\",\\\"lowerRegionColour\\\":\\\"#22d3ee\\\",\\\"inactiveColour\\\":\\\"#64748b\\\",\\\"showReferenceCamera\\\":false,\\\"defaultTargetRegion\\\":\\\"middle\\\"},\\\"subjectGeometryKey\\\":\\\"geometry:{\\\\\\\"columns\\\\\\\":3,\\\\\\\"rows\\\\\\\":3,\\\\\\\"levels\\\\\\\":5,\\\\\\\"cubeSizeMm\\\\\\\":260,\\\\\\\"horizontalGapMm\\\\\\\":0,\\\\\\\"verticalGapMm\\\\\\\":0,\\\\\\\"originWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":2000},\\\\\\\"upperTargetLevel\\\\\\\":4,\\\\\\\"middleTargetLevel\\\\\\\":2,\\\\\\\"lowerTargetLevel\\\\\\\":0}\\\",\\\"presentationKey\\\":\\\"presentation:{\\\\\\\"outerVerticalWeight\\\\\\\":3,\\\\\\\"outerHorizontalWeight\\\\\\\":2,\\\\\\\"internalEdgeWeight\\\\\\\":1,\\\\\\\"internalEdgeOpacity\\\\\\\":0.46,\\\\\\\"upperRegionColour\\\\\\\":\\\\\\\"#4ade80\\\\\\\",\\\\\\\"middleRegionColour\\\\\\\":\\\\\\\"#d4b000\\\\\\\",\\\\\\\"lowerRegionColour\\\\\\\":\\\\\\\"#22d3ee\\\\\\\",\\\\\\\"inactiveColour\\\\\\\":\\\\\\\"#64748b\\\\\\\",\\\\\\\"showReferenceCamera\\\\\\\":false,\\\\\\\"defaultTargetRegion\\\\\\\":\\\\\\\"middle\\\\\\\"}\\\",\\\"opticsKey\\\":\\\"optics:{\\\\\\\"focalLengthCandidatesMm\\\\\\\":[90,105,120,150],\\\\\\\"provisionalFocalLengthMm\\\\\\\":90,\\\\\\\"provisionalFocusDistanceMm\\\\\\\":2000}\\\",\\\"rigKey\\\":\\\"rig:{\\\\\\\"arcPlane\\\\\\\":\\\\\\\"yz\\\\\\\",\\\\\\\"arcCenterWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":2000},\\\\\\\"midRigOriginWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":0},\\\\\\\"arcRadiusMm\\\\\\\":2000,\\\\\\\"highLowArcRadiusMm\\\\\\\":1520,\\\\\\\"lowArcRadiusMm\\\\\\\":1520,\\\\\\\"highArcAngleDeg\\\\\\\":35,\\\\\\\"lowArcAngleDeg\\\\\\\":-35,\\\\\\\"highBodyPitchDeg\\\\\\\":34,\\\\\\\"lowBodyPitchDeg\\\\\\\":-34,\\\\\\\"provisionalBasePitchDeg\\\\\\\":0,\\\\\\\"defaultAnchor\\\\\\\":\\\\\\\"mid\\\\\\\",\\\\\\\"anchorMetadata\\\\\\\":{\\\\\\\"mid\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"mid\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"at-mid\\\\\\\"},\\\\\\\"high\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"high\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"above-mid\\\\\\\"},\\\\\\\"low\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"low\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"below-mid\\\\\\\"}}}\\\",\\\"effectiveKey\\\":\\\"effective:{\\\\\\\"subjectGeometryKey\\\\\\\":\\\\\\\"geometry:{\\\\\\\\\\\\\\\"columns\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"rows\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"levels\\\\\\\\\\\\\\\":5,\\\\\\\\\\\\\\\"cubeSizeMm\\\\\\\\\\\\\\\":260,\\\\\\\\\\\\\\\"horizontalGapMm\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"verticalGapMm\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"originWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":2000},\\\\\\\\\\\\\\\"upperTargetLevel\\\\\\\\\\\\\\\":4,\\\\\\\\\\\\\\\"middleTargetLevel\\\\\\\\\\\\\\\":2,\\\\\\\\\\\\\\\"lowerTargetLevel\\\\\\\\\\\\\\\":0}\\\\\\\",\\\\\\\"presentationKey\\\\\\\":\\\\\\\"presentation:{\\\\\\\\\\\\\\\"outerVerticalWeight\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"outerHorizontalWeight\\\\\\\\\\\\\\\":2,\\\\\\\\\\\\\\\"internalEdgeWeight\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"internalEdgeOpacity\\\\\\\\\\\\\\\":0.46,\\\\\\\\\\\\\\\"upperRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#4ade80\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"middleRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#d4b000\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"lowerRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#22d3ee\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"inactiveColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#64748b\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"showReferenceCamera\\\\\\\\\\\\\\\":false,\\\\\\\\\\\\\\\"defaultTargetRegion\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"middle\\\\\\\\\\\\\\\"}\\\\\\\",\\\\\\\"opticsKey\\\\\\\":\\\\\\\"optics:{\\\\\\\\\\\\\\\"focalLengthCandidatesMm\\\\\\\\\\\\\\\":[90,105,120,150],\\\\\\\\\\\\\\\"provisionalFocalLengthMm\\\\\\\\\\\\\\\":90,\\\\\\\\\\\\\\\"provisionalFocusDistanceMm\\\\\\\\\\\\\\\":2000}\\\\\\\",\\\\\\\"rigKey\\\\\\\":\\\\\\\"rig:{\\\\\\\\\\\\\\\"arcPlane\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"yz\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"arcCenterWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":2000},\\\\\\\\\\\\\\\"midRigOriginWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":0},\\\\\\\\\\\\\\\"arcRadiusMm\\\\\\\\\\\\\\\":2000,\\\\\\\\\\\\\\\"highLowArcRadiusMm\\\\\\\\\\\\\\\":1520,\\\\\\\\\\\\\\\"lowArcRadiusMm\\\\\\\\\\\\\\\":1520,\\\\\\\\\\\\\\\"highArcAngleDeg\\\\\\\\\\\\\\\":35,\\\\\\\\\\\\\\\"lowArcAngleDeg\\\\\\\\\\\\\\\":-35,\\\\\\\\\\\\\\\"highBodyPitchDeg\\\\\\\\\\\\\\\":34,\\\\\\\\\\\\\\\"lowBodyPitchDeg\\\\\\\\\\\\\\\":-34,\\\\\\\\\\\\\\\"provisionalBasePitchDeg\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"defaultAnchor\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"anchorMetadata\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"at-mid\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"high\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"high\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"above-mid\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"low\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"low\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"below-mid\\\\\\\\\\\\\\\"}}}\\\\\\\"}\\\"}\",\"{\\\"cameraRigPlacement\\\":{\\\"kind\\\":\\\"identity\\\",\\\"rigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"basePitchDeg\\\":0},\\\"cameraRigTransform\\\":{\\\"rigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"basePitchDeg\\\":0,\\\"bodyPitchDeg\\\":0,\\\"bodyPitchPivotRigLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0}},\\\"cameraBodyTransform\\\":{\\\"pitchDeg\\\":0,\\\"pivotWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0}},\\\"cameraBodyLocalGeometry\\\":{\\\"lensCenterLocal\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":0},\\\"lensNormalLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"lensPlaneLocal\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":0},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":0},\\\"filmCenterLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-151.75097276264592},\\\"filmNormalLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"filmPlaneLocal\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-151.75097276264592},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-151.75097276264592},\\\"filmPlaneCornersLocal\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-151.75097276264592},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-151.75097276264592},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-151.75097276264592},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-151.75097276264592}},\\\"rearStandardFrameLocal\\\":{\\\"centerWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-151.75097276264592},\\\"rightWorld\\\":{\\\"x\\\":1,\\\"y\\\":0,\\\"z\\\":0},\\\"upWorld\\\":{\\\"x\\\":0,\\\"y\\\":1,\\\"z\\\":0},\\\"normalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"plane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-151.75097276264592},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-151.75097276264592}}},\\\"cameraBodyPivotWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensDefinition\\\":{\\\"id\\\":\\\"simulator-parametric-150mm\\\",\\\"focalLengthMm\\\":150,\\\"coverage\\\":{\\\"kind\\\":\\\"angular\\\",\\\"fullCoverageAngleDeg\\\":72}},\\\"lensCoverage\\\":{\\\"kind\\\":\\\"angular\\\",\\\"fullCoverageAngleDeg\\\":72,\\\"halfCoverageAngleDeg\\\":36,\\\"imageCircleRadiusMm\\\":110.25353537824543,\\\"imageCircleDiameterMm\\\":220.50707075649086,\\\"imageDistanceMm\\\":151.75097276264592},\\\"groundGlassNaturalIllumination\\\":{\\\"kind\\\":\\\"parallel-cos4\\\",\\\"imageDistanceMm\\\":151.75097276264592,\\\"opticalAxisOffsetXMm\\\":0,\\\"opticalAxisOffsetYMm\\\":20},\\\"groundGlassCoverage\\\":{\\\"kind\\\":\\\"parallel-circle\\\",\\\"imageCircleRadiusMm\\\":110.25353537824543,\\\"opticalAxisOffsetXMm\\\":0,\\\"opticalAxisOffsetYMm\\\":20},\\\"lensCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":0},\\\"lensNormalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"lensPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":0},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":0},\\\"filmCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-151.75097276264592},\\\"filmNormalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"filmPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-151.75097276264592},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-151.75097276264592},\\\"filmPlaneCornersWorld\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-151.75097276264592},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-151.75097276264592},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-151.75097276264592},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-151.75097276264592}},\\\"rearStandardFrame\\\":{\\\"centerWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-151.75097276264592},\\\"rightWorld\\\":{\\\"x\\\":1,\\\"y\\\":0,\\\"z\\\":0},\\\"upWorld\\\":{\\\"x\\\":0,\\\"y\\\":1,\\\"z\\\":0},\\\"normalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"plane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-151.75097276264592},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-151.75097276264592}},\\\"opticalAxis\\\":{\\\"origin\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":0},\\\"direction\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1}},\\\"lensFilmHingeLine\\\":null,\\\"focusPointWorld\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":13000},\\\"focusPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":13000},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":13000},\\\"depthOfFieldNearPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":9858.697112155809},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":9858.697112155809},\\\"depthOfFieldFarPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":19079.282557837276},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":19079.282557837276},\\\"offAxisProjectionInput\\\":{\\\"lensCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":0},\\\"filmCornersWorld\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-151.75097276264592},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-151.75097276264592},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-151.75097276264592},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-151.75097276264592}}},\\\"offAxisProjectionMatrix\\\":[2.389779098624345,0,0,0,0,2.9872238732804313,0,0,0,-0.39370078740157477,-1.0004000800160031,-1,0,0,-20.004000800160032,0],\\\"groundGlassProjection\\\":{\\\"invertHorizontal\\\":true,\\\"invertVertical\\\":true,\\\"assistModeEnabled\\\":false},\\\"focusTargets\\\":[{\\\"id\\\":\\\"building-mid-facade\\\",\\\"distanceToFocusPlaneMm\\\":4110,\\\"sharpness\\\":0,\\\"status\\\":\\\"soft\\\",\\\"pointSharpness\\\":0,\\\"pointStatus\\\":\\\"soft\\\",\\\"patchSharpness\\\":0,\\\"patchStatus\\\":\\\"soft\\\",\\\"physicalPointSharpness\\\":0,\\\"physicalPointStatus\\\":\\\"soft\\\",\\\"physicalPatchSharpness\\\":0,\\\"physicalPatchStatus\\\":\\\"soft\\\",\\\"pointEquivalentCoCDiameterMm\\\":0.14455443625411132,\\\"patchEquivalentCoCDiameterMm\\\":0.14455443625411132,\\\"pointNormalizedDefocus\\\":1.308374310514388,\\\"patchNormalizedDefocus\\\":1.308374310514388,\\\"insideDepthOfField\\\":false,\\\"targetRayDistanceMm\\\":8933.448382343742,\\\"nearBoundaryDistanceMm\\\":9906.879838988214,\\\"focusBoundaryDistanceMm\\\":13063.535317263062,\\\"farBoundaryDistanceMm\\\":19172.529347872955,\\\"normalizedDefocus\\\":1.308374310514388}],\\\"diagnostics\\\":{\\\"isParallelLensFilm\\\":true,\\\"tiltAngleDeg\\\":0,\\\"swingAngleDeg\\\":0,\\\"focusPlaneModel\\\":\\\"parallel\\\",\\\"depthOfFieldModel\\\":\\\"parallel\\\",\\\"groundGlassDofModel\\\":\\\"parallel-thin-lens\\\",\\\"nearU\\\":9858.697112155809,\\\"farU\\\":19079.282557837276,\\\"farIsInfinite\\\":false,\\\"fallbackApplied\\\":false,\\\"fallbackReason\\\":null,\\\"isInfinityFocus\\\":false,\\\"focusStandard\\\":\\\"front\\\",\\\"requestedFocusStandard\\\":\\\"front\\\",\\\"focusObjectDistanceMm\\\":13000,\\\"imageDistanceMm\\\":151.75097276264592}}\"]",
+        "cameraStateFingerprint": "[[-1,0,0,0,0,1,0,0,0,0,-1,0,0,0.02,0,1],[-1,0,0,0,0,1,0,0,0,0,-1,0,0,-0.02,0,1],[2.3897790986243455,0,0,0,0,2.9872238732804317,0,0,0,0.3937007874015749,-1.0007147962830594,-1,0,0,-0.010007147962830594,0],[0.4184487179487179,0,0,0,0,0.33475897435897434,0,0,0,0,0,-99.92857142857143,0,0.13179487179487182,-1,100]]",
+        "physicalDataFingerprint": "f922c35e"
+      },
+      "canonicalGeometry": {
+        "lensFocalLengthMm": 150,
+        "focusDistanceMm": 13000,
+        "apertureFNumber": 5.6,
+        "cropMagnification": 1,
+        "frontRiseMm": 20,
+        "points": [
+          {
+            "surfaceId": "foreground-plinth-front",
+            "worldPositionMm": {
+              "x": -520,
+              "y": -1090,
+              "z": 3086
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": -1.0044870827279637,
+              "majorRadiusMm": 0.5022435413639819,
+              "minorRadiusMm": 0.5022435413639819,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  1.874515264618326,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -1.8735265962298144
+                ],
+                "uncappedMaximumRadiusPx": 1.874515264618326
+              }
+            },
+            "projectedPixel": {
+              "x": 332,
+              "y": 467,
+              "inBounds": false
+            },
+            "reconstructedRasterSample": {
+              "validityCode": null,
+              "storedPhysicalValueMm": null,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "midground-plinth-front",
+            "worldPositionMm": {
+              "x": 760,
+              "y": -1050,
+              "z": 5046
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": -0.49286695806033104,
+              "majorRadiusMm": 0.24643347903016552,
+              "minorRadiusMm": 0.24643347903016552,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  0.9197595988999878,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -0.9192744936263064
+                ],
+                "uncappedMaximumRadiusPx": 0.9197595988999878
+              }
+            },
+            "projectedPixel": {
+              "x": 151,
+              "y": 384,
+              "inBounds": false
+            },
+            "reconstructedRasterSample": {
+              "validityCode": null,
+              "storedPhysicalValueMm": null,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "facade-front-focus-target",
+            "worldPositionMm": {
+              "x": 0,
+              "y": 900,
+              "z": 8900
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": -0.14404069676661865,
+              "majorRadiusMm": 0.07202034838330933,
+              "minorRadiusMm": 0.07202034838330933,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  0.268800355383375,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -0.2686585830440378
+                ],
+                "uncappedMaximumRadiusPx": 0.268800355383375
+              }
+            },
+            "projectedPixel": {
+              "x": 237,
+              "y": 208,
+              "inBounds": true
+            },
+            "reconstructedRasterSample": {
+              "validityCode": 0,
+              "storedPhysicalValueMm": -0.1448974609375,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "far-plinth-front",
+            "worldPositionMm": {
+              "x": 1800,
+              "y": -1100,
+              "z": 10446
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": -0.07644731468979539,
+              "majorRadiusMm": 0.038223657344897695,
+              "minorRadiusMm": 0.038223657344897695,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  0.1426615242636339,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -0.14258628084366365
+                ],
+                "uncappedMaximumRadiusPx": 0.1426615242636339
+              }
+            },
+            "projectedPixel": {
+              "x": 139,
+              "y": 324,
+              "inBounds": true
+            },
+            "reconstructedRasterSample": {
+              "validityCode": 0,
+              "storedPhysicalValueMm": -0.123046875,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          }
+        ],
+        "priorSurfaceCorrespondenceEvidence": {
+          "source": "Phase J native Architecture Rise M4 probe",
+          "facadeTargetOffsetMm": 10,
+          "interpretation": "The teaching focus target is 10 mm in front of the canonical facade; raster samples are reconstructed-depth evidence."
+        }
+      },
+      "screeningMetrics": {
+        "population": {
+          "validNearPixels": 94086,
+          "validFarPixels": 0,
+          "validNeutralPixels": 0,
+          "invalidPixels": 85560,
+          "depthEdgePixels": 2175,
+          "signedNearFarPairs": 0
+        },
+        "maximumValidAbsoluteCoCDiameterMm": 0.49365234375,
+        "meanFull32FarSourceRgbDifference": null,
+        "validFarSourceDifferencePixelCount": 0,
+        "meanInteriorFull32FarSourceRgbDifference": null,
+        "interiorFarPixelCount": 0,
+        "meanSourceRgbContrastAtSignedBoundary": null,
+        "nearNonzeroPixels": 94086,
+        "nearFractionalPixels": 0,
+        "reportedMaximumUncappedRadiusPx": 0,
+        "reportedCappedPixelCountAtCaptureCap": 0
+      },
+      "selectionInputs": [
+        "canonical signed CoC and pixel ellipse",
+        "valid physical/depth ROI support",
+        "Full32 reference blur signal",
+        "signed boundary/source edge support",
+        "fractional near coverage"
+      ],
+      "candidateQualityOutputConsulted": false,
+      "disposition": "exploratory-only"
+    },
+    {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "configuration": {
+        "id": "ar-f3200-f5p6-loupe4-rise0",
+        "focusDistanceMm": 3200,
+        "apertureFNumber": 5.6,
+        "frontRiseMm": 0,
+        "cropMagnification": 4
+      },
+      "evidenceSource": "registered-app-adapter",
+      "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+      "requestId": "gg-mvok2ymz-jkhirb4bijk-default-request-13",
+      "rendererGenerationId": "gg-mvok2ymz-jkhirb4bijk-default-generation-2",
+      "runtime": {
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "rendererRevision": "r186"
+      },
+      "capture": {
+        "captureId": "m5q-explore-ar-f3200-f5p6-loupe4-rise0-1792976794366",
+        "qualityMode": "full32",
+        "sampleCount": 32,
+        "sourceDimensions": {
+          "widthPx": 474,
+          "heightPx": 379
+        },
+        "sampledFilmDimensionsMm": {
+          "widthMm": 31.75,
+          "heightMm": 25.4
+        },
+        "maximumRadiusPx": 60,
+        "effectiveOpticalRequestFingerprint": "[\"default\",\"[\\\"architecture-rise\\\",[-3900,-1500,-1800],[3900,4050,13000]]\",150,5.6,\"raw\",true,\"high\",474,379,[true,0.5,0.5,0.25,0.25],\"middle\",\"{\\\"calibrationStatus\\\":\\\"provisional\\\",\\\"geometryAndOpticsUnits\\\":\\\"millimetres\\\",\\\"subject\\\":{\\\"columns\\\":3,\\\"rows\\\":3,\\\"levels\\\":5,\\\"cubeSizeMm\\\":260,\\\"horizontalGapMm\\\":0,\\\"verticalGapMm\\\":0,\\\"originWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2000},\\\"lowerTargetLevel\\\":0,\\\"middleTargetLevel\\\":2,\\\"upperTargetLevel\\\":4},\\\"optics\\\":{\\\"focalLengthCandidatesMm\\\":[90,105,120,150],\\\"provisionalFocalLengthMm\\\":90,\\\"provisionalFocusDistanceMm\\\":2000},\\\"cameraRig\\\":{\\\"arcPlane\\\":\\\"yz\\\",\\\"arcCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2000},\\\"midRigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"arcRadiusMm\\\":2000,\\\"highLowArcRadiusMm\\\":1520,\\\"lowArcRadiusMm\\\":1520,\\\"highArcAngleDeg\\\":35,\\\"lowArcAngleDeg\\\":-35,\\\"highBodyPitchDeg\\\":34,\\\"lowBodyPitchDeg\\\":-34,\\\"provisionalBasePitchDeg\\\":0,\\\"defaultAnchor\\\":\\\"mid\\\",\\\"anchorMetadata\\\":{\\\"mid\\\":{\\\"identity\\\":\\\"mid\\\",\\\"relativeHeight\\\":\\\"at-mid\\\"},\\\"high\\\":{\\\"identity\\\":\\\"high\\\",\\\"relativeHeight\\\":\\\"above-mid\\\"},\\\"low\\\":{\\\"identity\\\":\\\"low\\\",\\\"relativeHeight\\\":\\\"below-mid\\\"}}},\\\"presentation\\\":{\\\"outerVerticalWeight\\\":3,\\\"outerHorizontalWeight\\\":2,\\\"internalEdgeWeight\\\":1,\\\"internalEdgeOpacity\\\":0.46,\\\"upperRegionColour\\\":\\\"#4ade80\\\",\\\"middleRegionColour\\\":\\\"#d4b000\\\",\\\"lowerRegionColour\\\":\\\"#22d3ee\\\",\\\"inactiveColour\\\":\\\"#64748b\\\",\\\"showReferenceCamera\\\":false,\\\"defaultTargetRegion\\\":\\\"middle\\\"},\\\"subjectGeometryKey\\\":\\\"geometry:{\\\\\\\"columns\\\\\\\":3,\\\\\\\"rows\\\\\\\":3,\\\\\\\"levels\\\\\\\":5,\\\\\\\"cubeSizeMm\\\\\\\":260,\\\\\\\"horizontalGapMm\\\\\\\":0,\\\\\\\"verticalGapMm\\\\\\\":0,\\\\\\\"originWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":2000},\\\\\\\"upperTargetLevel\\\\\\\":4,\\\\\\\"middleTargetLevel\\\\\\\":2,\\\\\\\"lowerTargetLevel\\\\\\\":0}\\\",\\\"presentationKey\\\":\\\"presentation:{\\\\\\\"outerVerticalWeight\\\\\\\":3,\\\\\\\"outerHorizontalWeight\\\\\\\":2,\\\\\\\"internalEdgeWeight\\\\\\\":1,\\\\\\\"internalEdgeOpacity\\\\\\\":0.46,\\\\\\\"upperRegionColour\\\\\\\":\\\\\\\"#4ade80\\\\\\\",\\\\\\\"middleRegionColour\\\\\\\":\\\\\\\"#d4b000\\\\\\\",\\\\\\\"lowerRegionColour\\\\\\\":\\\\\\\"#22d3ee\\\\\\\",\\\\\\\"inactiveColour\\\\\\\":\\\\\\\"#64748b\\\\\\\",\\\\\\\"showReferenceCamera\\\\\\\":false,\\\\\\\"defaultTargetRegion\\\\\\\":\\\\\\\"middle\\\\\\\"}\\\",\\\"opticsKey\\\":\\\"optics:{\\\\\\\"focalLengthCandidatesMm\\\\\\\":[90,105,120,150],\\\\\\\"provisionalFocalLengthMm\\\\\\\":90,\\\\\\\"provisionalFocusDistanceMm\\\\\\\":2000}\\\",\\\"rigKey\\\":\\\"rig:{\\\\\\\"arcPlane\\\\\\\":\\\\\\\"yz\\\\\\\",\\\\\\\"arcCenterWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":2000},\\\\\\\"midRigOriginWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":0},\\\\\\\"arcRadiusMm\\\\\\\":2000,\\\\\\\"highLowArcRadiusMm\\\\\\\":1520,\\\\\\\"lowArcRadiusMm\\\\\\\":1520,\\\\\\\"highArcAngleDeg\\\\\\\":35,\\\\\\\"lowArcAngleDeg\\\\\\\":-35,\\\\\\\"highBodyPitchDeg\\\\\\\":34,\\\\\\\"lowBodyPitchDeg\\\\\\\":-34,\\\\\\\"provisionalBasePitchDeg\\\\\\\":0,\\\\\\\"defaultAnchor\\\\\\\":\\\\\\\"mid\\\\\\\",\\\\\\\"anchorMetadata\\\\\\\":{\\\\\\\"mid\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"mid\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"at-mid\\\\\\\"},\\\\\\\"high\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"high\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"above-mid\\\\\\\"},\\\\\\\"low\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"low\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"below-mid\\\\\\\"}}}\\\",\\\"effectiveKey\\\":\\\"effective:{\\\\\\\"subjectGeometryKey\\\\\\\":\\\\\\\"geometry:{\\\\\\\\\\\\\\\"columns\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"rows\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"levels\\\\\\\\\\\\\\\":5,\\\\\\\\\\\\\\\"cubeSizeMm\\\\\\\\\\\\\\\":260,\\\\\\\\\\\\\\\"horizontalGapMm\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"verticalGapMm\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"originWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":2000},\\\\\\\\\\\\\\\"upperTargetLevel\\\\\\\\\\\\\\\":4,\\\\\\\\\\\\\\\"middleTargetLevel\\\\\\\\\\\\\\\":2,\\\\\\\\\\\\\\\"lowerTargetLevel\\\\\\\\\\\\\\\":0}\\\\\\\",\\\\\\\"presentationKey\\\\\\\":\\\\\\\"presentation:{\\\\\\\\\\\\\\\"outerVerticalWeight\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"outerHorizontalWeight\\\\\\\\\\\\\\\":2,\\\\\\\\\\\\\\\"internalEdgeWeight\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"internalEdgeOpacity\\\\\\\\\\\\\\\":0.46,\\\\\\\\\\\\\\\"upperRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#4ade80\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"middleRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#d4b000\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"lowerRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#22d3ee\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"inactiveColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#64748b\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"showReferenceCamera\\\\\\\\\\\\\\\":false,\\\\\\\\\\\\\\\"defaultTargetRegion\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"middle\\\\\\\\\\\\\\\"}\\\\\\\",\\\\\\\"opticsKey\\\\\\\":\\\\\\\"optics:{\\\\\\\\\\\\\\\"focalLengthCandidatesMm\\\\\\\\\\\\\\\":[90,105,120,150],\\\\\\\\\\\\\\\"provisionalFocalLengthMm\\\\\\\\\\\\\\\":90,\\\\\\\\\\\\\\\"provisionalFocusDistanceMm\\\\\\\\\\\\\\\":2000}\\\\\\\",\\\\\\\"rigKey\\\\\\\":\\\\\\\"rig:{\\\\\\\\\\\\\\\"arcPlane\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"yz\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"arcCenterWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":2000},\\\\\\\\\\\\\\\"midRigOriginWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":0},\\\\\\\\\\\\\\\"arcRadiusMm\\\\\\\\\\\\\\\":2000,\\\\\\\\\\\\\\\"highLowArcRadiusMm\\\\\\\\\\\\\\\":1520,\\\\\\\\\\\\\\\"lowArcRadiusMm\\\\\\\\\\\\\\\":1520,\\\\\\\\\\\\\\\"highArcAngleDeg\\\\\\\\\\\\\\\":35,\\\\\\\\\\\\\\\"lowArcAngleDeg\\\\\\\\\\\\\\\":-35,\\\\\\\\\\\\\\\"highBodyPitchDeg\\\\\\\\\\\\\\\":34,\\\\\\\\\\\\\\\"lowBodyPitchDeg\\\\\\\\\\\\\\\":-34,\\\\\\\\\\\\\\\"provisionalBasePitchDeg\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"defaultAnchor\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"anchorMetadata\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"at-mid\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"high\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"high\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"above-mid\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"low\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"low\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"below-mid\\\\\\\\\\\\\\\"}}}\\\\\\\"}\\\"}\",\"{\\\"cameraRigPlacement\\\":{\\\"kind\\\":\\\"identity\\\",\\\"rigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"basePitchDeg\\\":0},\\\"cameraRigTransform\\\":{\\\"rigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"basePitchDeg\\\":0,\\\"bodyPitchDeg\\\":0,\\\"bodyPitchPivotRigLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0}},\\\"cameraBodyTransform\\\":{\\\"pitchDeg\\\":0,\\\"pivotWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0}},\\\"cameraBodyLocalGeometry\\\":{\\\"lensCenterLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensNormalLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"lensPlaneLocal\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":0},\\\"filmCenterLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"filmNormalLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"filmPlaneLocal\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-157.37704918032787},\\\"filmPlaneCornersLocal\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-157.37704918032787},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-157.37704918032787},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-157.37704918032787},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-157.37704918032787}},\\\"rearStandardFrameLocal\\\":{\\\"centerWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"rightWorld\\\":{\\\"x\\\":1,\\\"y\\\":0,\\\"z\\\":0},\\\"upWorld\\\":{\\\"x\\\":0,\\\"y\\\":1,\\\"z\\\":0},\\\"normalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"plane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-157.37704918032787}}},\\\"cameraBodyPivotWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensDefinition\\\":{\\\"id\\\":\\\"simulator-parametric-150mm\\\",\\\"focalLengthMm\\\":150,\\\"coverage\\\":{\\\"kind\\\":\\\"angular\\\",\\\"fullCoverageAngleDeg\\\":72}},\\\"lensCoverage\\\":{\\\"kind\\\":\\\"angular\\\",\\\"fullCoverageAngleDeg\\\":72,\\\"halfCoverageAngleDeg\\\":36,\\\"imageCircleRadiusMm\\\":114.34111916149942,\\\"imageCircleDiameterMm\\\":228.68223832299884,\\\"imageDistanceMm\\\":157.37704918032787},\\\"groundGlassNaturalIllumination\\\":{\\\"kind\\\":\\\"parallel-cos4\\\",\\\"imageDistanceMm\\\":157.37704918032787,\\\"opticalAxisOffsetXMm\\\":0,\\\"opticalAxisOffsetYMm\\\":0},\\\"groundGlassCoverage\\\":{\\\"kind\\\":\\\"parallel-circle\\\",\\\"imageCircleRadiusMm\\\":114.34111916149942,\\\"opticalAxisOffsetXMm\\\":0,\\\"opticalAxisOffsetYMm\\\":0},\\\"lensCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensNormalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"lensPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":0},\\\"filmCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"filmNormalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"filmPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-157.37704918032787},\\\"filmPlaneCornersWorld\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-157.37704918032787},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-157.37704918032787},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-157.37704918032787},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-157.37704918032787}},\\\"rearStandardFrame\\\":{\\\"centerWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"rightWorld\\\":{\\\"x\\\":1,\\\"y\\\":0,\\\"z\\\":0},\\\"upWorld\\\":{\\\"x\\\":0,\\\"y\\\":1,\\\"z\\\":0},\\\"normalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"plane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-157.37704918032787},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-157.37704918032787}},\\\"opticalAxis\\\":{\\\"origin\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"direction\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1}},\\\"lensFilmHingeLine\\\":null,\\\"focusPointWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":3200},\\\"focusPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":3200},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":3200},\\\"depthOfFieldNearPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2975.004116581591},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":2975.004116581591},\\\"depthOfFieldFarPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":3461.812607779268},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":3461.812607779268},\\\"offAxisProjectionInput\\\":{\\\"lensCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"filmCornersWorld\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-157.37704918032787},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-157.37704918032787},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-157.37704918032787},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-157.37704918032787}}},\\\"offAxisProjectionMatrix\\\":[2.4783787272492575,0,0,0,0,3.0979734090615723,0,0,0,0,-1.0004000800160031,-1,0,0,-20.004000800160032,0],\\\"groundGlassProjection\\\":{\\\"invertHorizontal\\\":true,\\\"invertVertical\\\":true,\\\"assistModeEnabled\\\":false},\\\"focusTargets\\\":[{\\\"id\\\":\\\"building-mid-facade\\\",\\\"distanceToFocusPlaneMm\\\":5690,\\\"sharpness\\\":0,\\\"status\\\":\\\"soft\\\",\\\"pointSharpness\\\":0,\\\"pointStatus\\\":\\\"soft\\\",\\\"patchSharpness\\\":0,\\\"patchStatus\\\":\\\"soft\\\",\\\"physicalPointSharpness\\\":0,\\\"physicalPointStatus\\\":\\\"soft\\\",\\\"physicalPatchSharpness\\\":0,\\\"physicalPatchStatus\\\":\\\"soft\\\",\\\"pointEquivalentCoCDiameterMm\\\":0.8431506073450402,\\\"patchEquivalentCoCDiameterMm\\\":0.8431506073450402,\\\"pointNormalizedDefocus\\\":21.733101580796237,\\\"patchNormalizedDefocus\\\":21.733101580796237,\\\"insideDepthOfField\\\":false,\\\"targetRayDistanceMm\\\":8935.44067184154,\\\"nearBoundaryDistanceMm\\\":2990.2106616646975,\\\"focusBoundaryDistanceMm\\\":3216.356597288294,\\\"farBoundaryDistanceMm\\\":3479.5074436270756,\\\"normalizedDefocus\\\":21.733101580796237}],\\\"diagnostics\\\":{\\\"isParallelLensFilm\\\":true,\\\"tiltAngleDeg\\\":0,\\\"swingAngleDeg\\\":0,\\\"focusPlaneModel\\\":\\\"parallel\\\",\\\"depthOfFieldModel\\\":\\\"parallel\\\",\\\"groundGlassDofModel\\\":\\\"parallel-thin-lens\\\",\\\"nearU\\\":2975.004116581591,\\\"farU\\\":3461.812607779268,\\\"farIsInfinite\\\":false,\\\"fallbackApplied\\\":false,\\\"fallbackReason\\\":null,\\\"isInfinityFocus\\\":false,\\\"focusStandard\\\":\\\"front\\\",\\\"requestedFocusStandard\\\":\\\"front\\\",\\\"focusObjectDistanceMm\\\":3200,\\\"imageDistanceMm\\\":157.37704918032787}}\"]",
+        "cameraStateFingerprint": "[[-1,0,0,0,0,1,0,0,0,0,-1,0,0,0,0,1],[-1,0,0,0,0,1,0,0,0,0,-1,0,0,0,0,1],[9.913514908997032,0,0,0,0,12.391893636246287,0,0,0,0,-1.0007147962830594,-1,0,0,-0.010007147962830594,0],[0.10087239583333332,0,0,0,0,0.08069791666666666,0,0,0,0,0,-99.92857142857142,0,0,-1,99.99999999999999]]",
+        "physicalDataFingerprint": "6c292917"
+      },
+      "canonicalGeometry": {
+        "lensFocalLengthMm": 150,
+        "focusDistanceMm": 3200,
+        "apertureFNumber": 5.6,
+        "cropMagnification": 4,
+        "frontRiseMm": 0,
+        "points": [
+          {
+            "surfaceId": "foreground-plinth-front",
+            "worldPositionMm": {
+              "x": -520,
+              "y": -1090,
+              "z": 3086
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": -0.048663526904760286,
+              "majorRadiusMm": 0.024331763452380143,
+              "minorRadiusMm": 0.024331763452380143,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  0.3632521535882894,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -0.363060564899688
+                ],
+                "uncappedMaximumRadiusPx": 0.3632521535882894
+              }
+            },
+            "projectedPixel": {
+              "x": 632,
+              "y": 1018,
+              "inBounds": false
+            },
+            "reconstructedRasterSample": {
+              "validityCode": null,
+              "storedPhysicalValueMm": null,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "midground-plinth-front",
+            "worldPositionMm": {
+              "x": 760,
+              "y": -1050,
+              "z": 5046
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": 0.4819246074289848,
+              "majorRadiusMm": 0.2409623037144924,
+              "minorRadiusMm": 0.2409623037144924,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  3.5973584869502173,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -3.5954611459760875
+                ],
+                "uncappedMaximumRadiusPx": 3.5973584869502173
+              }
+            },
+            "projectedPixel": {
+              "x": -117,
+              "y": 678,
+              "inBounds": false
+            },
+            "reconstructedRasterSample": {
+              "validityCode": null,
+              "storedPhysicalValueMm": null,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "facade-front-focus-target",
+            "worldPositionMm": {
+              "x": 0,
+              "y": 900,
+              "z": 8900
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": 0.8436833934163074,
+              "majorRadiusMm": 0.4218416967081537,
+              "minorRadiusMm": 0.4218416967081537,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  6.297731157154798,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -6.2944095689917425
+                ],
+                "uncappedMaximumRadiusPx": 6.297731157154798
+              }
+            },
+            "projectedPixel": {
+              "x": 237,
+              "y": -48,
+              "inBounds": false
+            },
+            "reconstructedRasterSample": {
+              "validityCode": null,
+              "storedPhysicalValueMm": null,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "far-plinth-front",
+            "worldPositionMm": {
+              "x": 1800,
+              "y": -1100,
+              "z": 10446
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": 0.9137827596457907,
+              "majorRadiusMm": 0.45689137982289535,
+              "minorRadiusMm": 0.45689137982289535,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  6.820992568064642,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -6.817394998144778
+                ],
+                "uncappedMaximumRadiusPx": 6.820992568064642
+              }
+            },
+            "projectedPixel": {
+              "x": -168,
+              "y": 436,
+              "inBounds": false
+            },
+            "reconstructedRasterSample": {
+              "validityCode": null,
+              "storedPhysicalValueMm": null,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          }
+        ],
+        "priorSurfaceCorrespondenceEvidence": {
+          "source": "Phase J native Architecture Rise M4 probe",
+          "facadeTargetOffsetMm": 10,
+          "interpretation": "The teaching focus target is 10 mm in front of the canonical facade; raster samples are reconstructed-depth evidence."
+        }
+      },
+      "screeningMetrics": {
+        "population": {
+          "validNearPixels": 0,
+          "validFarPixels": 179646,
+          "validNeutralPixels": 0,
+          "invalidPixels": 0,
+          "depthEdgePixels": 0,
+          "signedNearFarPairs": 0
+        },
+        "maximumValidAbsoluteCoCDiameterMm": 0.84326171875,
+        "meanFull32FarSourceRgbDifference": 0.036743058409358535,
+        "validFarSourceDifferencePixelCount": 179646,
+        "meanInteriorFull32FarSourceRgbDifference": 0.03631934642940017,
+        "interiorFarPixelCount": 176250,
+        "meanSourceRgbContrastAtSignedBoundary": null,
+        "nearNonzeroPixels": 0,
+        "nearFractionalPixels": 0,
+        "reportedMaximumUncappedRadiusPx": 6.294583538385827,
+        "reportedCappedPixelCountAtCaptureCap": 0
+      },
+      "selectionInputs": [
+        "canonical signed CoC and pixel ellipse",
+        "valid physical/depth ROI support",
+        "Full32 reference blur signal",
+        "signed boundary/source edge support",
+        "fractional near coverage"
+      ],
+      "candidateQualityOutputConsulted": false,
+      "disposition": "exploratory-only"
+    },
+    {
+      "opticalStateId": "ar-f5200-f5p6-loupe4-rise0",
+      "configuration": {
+        "id": "ar-f5200-f5p6-loupe4-rise0",
+        "focusDistanceMm": 5200,
+        "apertureFNumber": 5.6,
+        "frontRiseMm": 0,
+        "cropMagnification": 4
+      },
+      "evidenceSource": "registered-app-adapter",
+      "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+      "requestId": "gg-mvok2ymz-jkhirb4bijk-default-request-14",
+      "rendererGenerationId": "gg-mvok2ymz-jkhirb4bijk-default-generation-2",
+      "runtime": {
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "rendererRevision": "r186"
+      },
+      "capture": {
+        "captureId": "m5q-explore-ar-f5200-f5p6-loupe4-rise0-1792976796860",
+        "qualityMode": "full32",
+        "sampleCount": 32,
+        "sourceDimensions": {
+          "widthPx": 474,
+          "heightPx": 379
+        },
+        "sampledFilmDimensionsMm": {
+          "widthMm": 31.75,
+          "heightMm": 25.4
+        },
+        "maximumRadiusPx": 60,
+        "effectiveOpticalRequestFingerprint": "[\"default\",\"[\\\"architecture-rise\\\",[-3900,-1500,-1800],[3900,4050,13000]]\",150,5.6,\"raw\",true,\"high\",474,379,[true,0.5,0.5,0.25,0.25],\"middle\",\"{\\\"calibrationStatus\\\":\\\"provisional\\\",\\\"geometryAndOpticsUnits\\\":\\\"millimetres\\\",\\\"subject\\\":{\\\"columns\\\":3,\\\"rows\\\":3,\\\"levels\\\":5,\\\"cubeSizeMm\\\":260,\\\"horizontalGapMm\\\":0,\\\"verticalGapMm\\\":0,\\\"originWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2000},\\\"lowerTargetLevel\\\":0,\\\"middleTargetLevel\\\":2,\\\"upperTargetLevel\\\":4},\\\"optics\\\":{\\\"focalLengthCandidatesMm\\\":[90,105,120,150],\\\"provisionalFocalLengthMm\\\":90,\\\"provisionalFocusDistanceMm\\\":2000},\\\"cameraRig\\\":{\\\"arcPlane\\\":\\\"yz\\\",\\\"arcCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2000},\\\"midRigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"arcRadiusMm\\\":2000,\\\"highLowArcRadiusMm\\\":1520,\\\"lowArcRadiusMm\\\":1520,\\\"highArcAngleDeg\\\":35,\\\"lowArcAngleDeg\\\":-35,\\\"highBodyPitchDeg\\\":34,\\\"lowBodyPitchDeg\\\":-34,\\\"provisionalBasePitchDeg\\\":0,\\\"defaultAnchor\\\":\\\"mid\\\",\\\"anchorMetadata\\\":{\\\"mid\\\":{\\\"identity\\\":\\\"mid\\\",\\\"relativeHeight\\\":\\\"at-mid\\\"},\\\"high\\\":{\\\"identity\\\":\\\"high\\\",\\\"relativeHeight\\\":\\\"above-mid\\\"},\\\"low\\\":{\\\"identity\\\":\\\"low\\\",\\\"relativeHeight\\\":\\\"below-mid\\\"}}},\\\"presentation\\\":{\\\"outerVerticalWeight\\\":3,\\\"outerHorizontalWeight\\\":2,\\\"internalEdgeWeight\\\":1,\\\"internalEdgeOpacity\\\":0.46,\\\"upperRegionColour\\\":\\\"#4ade80\\\",\\\"middleRegionColour\\\":\\\"#d4b000\\\",\\\"lowerRegionColour\\\":\\\"#22d3ee\\\",\\\"inactiveColour\\\":\\\"#64748b\\\",\\\"showReferenceCamera\\\":false,\\\"defaultTargetRegion\\\":\\\"middle\\\"},\\\"subjectGeometryKey\\\":\\\"geometry:{\\\\\\\"columns\\\\\\\":3,\\\\\\\"rows\\\\\\\":3,\\\\\\\"levels\\\\\\\":5,\\\\\\\"cubeSizeMm\\\\\\\":260,\\\\\\\"horizontalGapMm\\\\\\\":0,\\\\\\\"verticalGapMm\\\\\\\":0,\\\\\\\"originWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":2000},\\\\\\\"upperTargetLevel\\\\\\\":4,\\\\\\\"middleTargetLevel\\\\\\\":2,\\\\\\\"lowerTargetLevel\\\\\\\":0}\\\",\\\"presentationKey\\\":\\\"presentation:{\\\\\\\"outerVerticalWeight\\\\\\\":3,\\\\\\\"outerHorizontalWeight\\\\\\\":2,\\\\\\\"internalEdgeWeight\\\\\\\":1,\\\\\\\"internalEdgeOpacity\\\\\\\":0.46,\\\\\\\"upperRegionColour\\\\\\\":\\\\\\\"#4ade80\\\\\\\",\\\\\\\"middleRegionColour\\\\\\\":\\\\\\\"#d4b000\\\\\\\",\\\\\\\"lowerRegionColour\\\\\\\":\\\\\\\"#22d3ee\\\\\\\",\\\\\\\"inactiveColour\\\\\\\":\\\\\\\"#64748b\\\\\\\",\\\\\\\"showReferenceCamera\\\\\\\":false,\\\\\\\"defaultTargetRegion\\\\\\\":\\\\\\\"middle\\\\\\\"}\\\",\\\"opticsKey\\\":\\\"optics:{\\\\\\\"focalLengthCandidatesMm\\\\\\\":[90,105,120,150],\\\\\\\"provisionalFocalLengthMm\\\\\\\":90,\\\\\\\"provisionalFocusDistanceMm\\\\\\\":2000}\\\",\\\"rigKey\\\":\\\"rig:{\\\\\\\"arcPlane\\\\\\\":\\\\\\\"yz\\\\\\\",\\\\\\\"arcCenterWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":2000},\\\\\\\"midRigOriginWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":0},\\\\\\\"arcRadiusMm\\\\\\\":2000,\\\\\\\"highLowArcRadiusMm\\\\\\\":1520,\\\\\\\"lowArcRadiusMm\\\\\\\":1520,\\\\\\\"highArcAngleDeg\\\\\\\":35,\\\\\\\"lowArcAngleDeg\\\\\\\":-35,\\\\\\\"highBodyPitchDeg\\\\\\\":34,\\\\\\\"lowBodyPitchDeg\\\\\\\":-34,\\\\\\\"provisionalBasePitchDeg\\\\\\\":0,\\\\\\\"defaultAnchor\\\\\\\":\\\\\\\"mid\\\\\\\",\\\\\\\"anchorMetadata\\\\\\\":{\\\\\\\"mid\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"mid\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"at-mid\\\\\\\"},\\\\\\\"high\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"high\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"above-mid\\\\\\\"},\\\\\\\"low\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"low\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"below-mid\\\\\\\"}}}\\\",\\\"effectiveKey\\\":\\\"effective:{\\\\\\\"subjectGeometryKey\\\\\\\":\\\\\\\"geometry:{\\\\\\\\\\\\\\\"columns\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"rows\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"levels\\\\\\\\\\\\\\\":5,\\\\\\\\\\\\\\\"cubeSizeMm\\\\\\\\\\\\\\\":260,\\\\\\\\\\\\\\\"horizontalGapMm\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"verticalGapMm\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"originWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":2000},\\\\\\\\\\\\\\\"upperTargetLevel\\\\\\\\\\\\\\\":4,\\\\\\\\\\\\\\\"middleTargetLevel\\\\\\\\\\\\\\\":2,\\\\\\\\\\\\\\\"lowerTargetLevel\\\\\\\\\\\\\\\":0}\\\\\\\",\\\\\\\"presentationKey\\\\\\\":\\\\\\\"presentation:{\\\\\\\\\\\\\\\"outerVerticalWeight\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"outerHorizontalWeight\\\\\\\\\\\\\\\":2,\\\\\\\\\\\\\\\"internalEdgeWeight\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"internalEdgeOpacity\\\\\\\\\\\\\\\":0.46,\\\\\\\\\\\\\\\"upperRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#4ade80\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"middleRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#d4b000\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"lowerRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#22d3ee\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"inactiveColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#64748b\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"showReferenceCamera\\\\\\\\\\\\\\\":false,\\\\\\\\\\\\\\\"defaultTargetRegion\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"middle\\\\\\\\\\\\\\\"}\\\\\\\",\\\\\\\"opticsKey\\\\\\\":\\\\\\\"optics:{\\\\\\\\\\\\\\\"focalLengthCandidatesMm\\\\\\\\\\\\\\\":[90,105,120,150],\\\\\\\\\\\\\\\"provisionalFocalLengthMm\\\\\\\\\\\\\\\":90,\\\\\\\\\\\\\\\"provisionalFocusDistanceMm\\\\\\\\\\\\\\\":2000}\\\\\\\",\\\\\\\"rigKey\\\\\\\":\\\\\\\"rig:{\\\\\\\\\\\\\\\"arcPlane\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"yz\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"arcCenterWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":2000},\\\\\\\\\\\\\\\"midRigOriginWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":0},\\\\\\\\\\\\\\\"arcRadiusMm\\\\\\\\\\\\\\\":2000,\\\\\\\\\\\\\\\"highLowArcRadiusMm\\\\\\\\\\\\\\\":1520,\\\\\\\\\\\\\\\"lowArcRadiusMm\\\\\\\\\\\\\\\":1520,\\\\\\\\\\\\\\\"highArcAngleDeg\\\\\\\\\\\\\\\":35,\\\\\\\\\\\\\\\"lowArcAngleDeg\\\\\\\\\\\\\\\":-35,\\\\\\\\\\\\\\\"highBodyPitchDeg\\\\\\\\\\\\\\\":34,\\\\\\\\\\\\\\\"lowBodyPitchDeg\\\\\\\\\\\\\\\":-34,\\\\\\\\\\\\\\\"provisionalBasePitchDeg\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"defaultAnchor\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"anchorMetadata\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"at-mid\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"high\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"high\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"above-mid\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"low\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"low\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"below-mid\\\\\\\\\\\\\\\"}}}\\\\\\\"}\\\"}\",\"{\\\"cameraRigPlacement\\\":{\\\"kind\\\":\\\"identity\\\",\\\"rigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"basePitchDeg\\\":0},\\\"cameraRigTransform\\\":{\\\"rigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"basePitchDeg\\\":0,\\\"bodyPitchDeg\\\":0,\\\"bodyPitchPivotRigLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0}},\\\"cameraBodyTransform\\\":{\\\"pitchDeg\\\":0,\\\"pivotWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0}},\\\"cameraBodyLocalGeometry\\\":{\\\"lensCenterLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensNormalLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"lensPlaneLocal\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":0},\\\"filmCenterLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-154.45544554455446},\\\"filmNormalLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"filmPlaneLocal\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-154.45544554455446},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-154.45544554455446},\\\"filmPlaneCornersLocal\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-154.45544554455446},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-154.45544554455446},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-154.45544554455446},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-154.45544554455446}},\\\"rearStandardFrameLocal\\\":{\\\"centerWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-154.45544554455446},\\\"rightWorld\\\":{\\\"x\\\":1,\\\"y\\\":0,\\\"z\\\":0},\\\"upWorld\\\":{\\\"x\\\":0,\\\"y\\\":1,\\\"z\\\":0},\\\"normalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"plane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-154.45544554455446},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-154.45544554455446}}},\\\"cameraBodyPivotWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensDefinition\\\":{\\\"id\\\":\\\"simulator-parametric-150mm\\\",\\\"focalLengthMm\\\":150,\\\"coverage\\\":{\\\"kind\\\":\\\"angular\\\",\\\"fullCoverageAngleDeg\\\":72}},\\\"lensCoverage\\\":{\\\"kind\\\":\\\"angular\\\",\\\"fullCoverageAngleDeg\\\":72,\\\"halfCoverageAngleDeg\\\":36,\\\"imageCircleRadiusMm\\\":112.21844987013496,\\\"imageCircleDiameterMm\\\":224.43689974026992,\\\"imageDistanceMm\\\":154.45544554455446},\\\"groundGlassNaturalIllumination\\\":{\\\"kind\\\":\\\"parallel-cos4\\\",\\\"imageDistanceMm\\\":154.45544554455446,\\\"opticalAxisOffsetXMm\\\":0,\\\"opticalAxisOffsetYMm\\\":0},\\\"groundGlassCoverage\\\":{\\\"kind\\\":\\\"parallel-circle\\\",\\\"imageCircleRadiusMm\\\":112.21844987013496,\\\"opticalAxisOffsetXMm\\\":0,\\\"opticalAxisOffsetYMm\\\":0},\\\"lensCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensNormalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"lensPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":0},\\\"filmCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-154.45544554455446},\\\"filmNormalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"filmPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-154.45544554455446},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-154.45544554455446},\\\"filmPlaneCornersWorld\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-154.45544554455446},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-154.45544554455446},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-154.45544554455446},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-154.45544554455446}},\\\"rearStandardFrame\\\":{\\\"centerWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-154.45544554455446},\\\"rightWorld\\\":{\\\"x\\\":1,\\\"y\\\":0,\\\"z\\\":0},\\\"upWorld\\\":{\\\"x\\\":0,\\\"y\\\":1,\\\"z\\\":0},\\\"normalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"plane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-154.45544554455446},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-154.45544554455446}},\\\"opticalAxis\\\":{\\\"origin\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"direction\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1}},\\\"lensFilmHingeLine\\\":null,\\\"focusPointWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":5200},\\\"focusPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":5200},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":5200},\\\"depthOfFieldNearPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":4621.312765622541},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":4621.312765622541},\\\"depthOfFieldFarPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":5944.361206722008},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":5944.361206722008},\\\"offAxisProjectionInput\\\":{\\\"lensCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"filmCornersWorld\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-154.45544554455446},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-154.45544554455446},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-154.45544554455446},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-154.45544554455446}}},\\\"offAxisProjectionMatrix\\\":[2.432369221174086,0,0,0,0,3.040461526467608,0,0,0,0,-1.0004000800160031,-1,0,0,-20.004000800160032,0],\\\"groundGlassProjection\\\":{\\\"invertHorizontal\\\":true,\\\"invertVertical\\\":true,\\\"assistModeEnabled\\\":false},\\\"focusTargets\\\":[{\\\"id\\\":\\\"building-mid-facade\\\",\\\"distanceToFocusPlaneMm\\\":3690,\\\"sharpness\\\":0,\\\"status\\\":\\\"soft\\\",\\\"pointSharpness\\\":0,\\\"pointStatus\\\":\\\"soft\\\",\\\"patchSharpness\\\":0,\\\"patchStatus\\\":\\\"soft\\\",\\\"physicalPointSharpness\\\":0,\\\"physicalPointStatus\\\":\\\"soft\\\",\\\"physicalPatchSharpness\\\":0,\\\"physicalPatchStatus\\\":\\\"soft\\\",\\\"pointEquivalentCoCDiameterMm\\\":0.3302385115580485,\\\"patchEquivalentCoCDiameterMm\\\":0.3302385115580485,\\\"pointNormalizedDefocus\\\":4.957270699597432,\\\"patchNormalizedDefocus\\\":4.957270699597432,\\\"insideDepthOfField\\\":false,\\\"targetRayDistanceMm\\\":8935.44067184154,\\\"nearBoundaryDistanceMm\\\":4644.934313075834,\\\"focusBoundaryDistanceMm\\\":5226.579470593478,\\\"farBoundaryDistanceMm\\\":5974.745432470292,\\\"normalizedDefocus\\\":4.957270699597432}],\\\"diagnostics\\\":{\\\"isParallelLensFilm\\\":true,\\\"tiltAngleDeg\\\":0,\\\"swingAngleDeg\\\":0,\\\"focusPlaneModel\\\":\\\"parallel\\\",\\\"depthOfFieldModel\\\":\\\"parallel\\\",\\\"groundGlassDofModel\\\":\\\"parallel-thin-lens\\\",\\\"nearU\\\":4621.312765622541,\\\"farU\\\":5944.361206722008,\\\"farIsInfinite\\\":false,\\\"fallbackApplied\\\":false,\\\"fallbackReason\\\":null,\\\"isInfinityFocus\\\":false,\\\"focusStandard\\\":\\\"front\\\",\\\"requestedFocusStandard\\\":\\\"front\\\",\\\"focusObjectDistanceMm\\\":5200,\\\"imageDistanceMm\\\":154.45544554455446}}\"]",
+        "cameraStateFingerprint": "[[-1,0,0,0,0,1,0,0,0,0,-1,0,0,0,0,1],[-1,0,0,0,0,1,0,0,0,0,-1,0,0,0,0,1],[9.729476884696345,0,0,0,0,12.16184610587043,0,0,0,0,-1.0007147962830594,-1,0,0,-0.010007147962830594,0],[0.1027804487179487,0,0,0,0,0.08222435897435897,0,0,0,0,0,-99.92857142857142,0,0,-1,99.99999999999999]]",
+        "physicalDataFingerprint": "4ece42fc"
+      },
+      "canonicalGeometry": {
+        "lensFocalLengthMm": 150,
+        "focusDistanceMm": 5200,
+        "apertureFNumber": 5.6,
+        "cropMagnification": 4,
+        "frontRiseMm": 0,
+        "points": [
+          {
+            "surfaceId": "foreground-plinth-front",
+            "worldPositionMm": {
+              "x": -520,
+              "y": -1090,
+              "z": 3086
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": -0.5450196672291954,
+              "majorRadiusMm": 0.2725098336145977,
+              "minorRadiusMm": 0.2725098336145977,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  4.068335783726592,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -4.066190037005217
+                ],
+                "uncappedMaximumRadiusPx": 4.068335783726592
+              }
+            },
+            "projectedPixel": {
+              "x": 625,
+              "y": 1003,
+              "inBounds": false
+            },
+            "reconstructedRasterSample": {
+              "validityCode": null,
+              "storedPhysicalValueMm": null,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "midground-plinth-front",
+            "worldPositionMm": {
+              "x": 760,
+              "y": -1050,
+              "z": 5046
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": -0.024281560141743513,
+              "majorRadiusMm": 0.012140780070871757,
+              "minorRadiusMm": 0.012140780070871757,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  0.18125133082183348,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -0.18115573412836206
+                ],
+                "uncappedMaximumRadiusPx": 0.18125133082183348
+              }
+            },
+            "projectedPixel": {
+              "x": -111,
+              "y": 669,
+              "inBounds": false
+            },
+            "reconstructedRasterSample": {
+              "validityCode": null,
+              "storedPhysicalValueMm": null,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "facade-front-focus-target",
+            "worldPositionMm": {
+              "x": 0,
+              "y": 900,
+              "z": 8900
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": 0.330761406798786,
+              "majorRadiusMm": 0.165380703399393,
+              "minorRadiusMm": 0.165380703399393,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  2.468990658624009,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -2.4676884483610215
+                ],
+                "uncappedMaximumRadiusPx": 2.468990658624009
+              }
+            },
+            "projectedPixel": {
+              "x": 237,
+              "y": -44,
+              "inBounds": false
+            },
+            "reconstructedRasterSample": {
+              "validityCode": null,
+              "storedPhysicalValueMm": null,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "far-plinth-front",
+            "worldPositionMm": {
+              "x": 1800,
+              "y": -1100,
+              "z": 10446
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": 0.39955942340767575,
+              "majorRadiusMm": 0.19977971170383788,
+              "minorRadiusMm": 0.19977971170383788,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  2.982538058192729,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -2.9809649895966364
+                ],
+                "uncappedMaximumRadiusPx": 2.982538058192729
+              }
+            },
+            "projectedPixel": {
+              "x": -161,
+              "y": 432,
+              "inBounds": false
+            },
+            "reconstructedRasterSample": {
+              "validityCode": null,
+              "storedPhysicalValueMm": null,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          }
+        ],
+        "priorSurfaceCorrespondenceEvidence": {
+          "source": "Phase J native Architecture Rise M4 probe",
+          "facadeTargetOffsetMm": 10,
+          "interpretation": "The teaching focus target is 10 mm in front of the canonical facade; raster samples are reconstructed-depth evidence."
+        }
+      },
+      "screeningMetrics": {
+        "population": {
+          "validNearPixels": 0,
+          "validFarPixels": 179646,
+          "validNeutralPixels": 0,
+          "invalidPixels": 0,
+          "depthEdgePixels": 0,
+          "signedNearFarPairs": 0
+        },
+        "maximumValidAbsoluteCoCDiameterMm": 0.33056640625,
+        "meanFull32FarSourceRgbDifference": 0.017644982526804347,
+        "validFarSourceDifferencePixelCount": 179646,
+        "meanInteriorFull32FarSourceRgbDifference": 0.017653639474164064,
+        "interiorFarPixelCount": 176250,
+        "meanSourceRgbContrastAtSignedBoundary": null,
+        "nearNonzeroPixels": 0,
+        "nearFractionalPixels": 0,
+        "reportedMaximumUncappedRadiusPx": 2.467535063976378,
+        "reportedCappedPixelCountAtCaptureCap": 0
+      },
+      "selectionInputs": [
+        "canonical signed CoC and pixel ellipse",
+        "valid physical/depth ROI support",
+        "Full32 reference blur signal",
+        "signed boundary/source edge support",
+        "fractional near coverage"
+      ],
+      "candidateQualityOutputConsulted": false,
+      "disposition": "exploratory-only"
+    },
+    {
+      "opticalStateId": "ar-f8890-f5p6-loupe4-rise20",
+      "configuration": {
+        "id": "ar-f8890-f5p6-loupe4-rise20",
+        "focusDistanceMm": 8890,
+        "apertureFNumber": 5.6,
+        "frontRiseMm": 20,
+        "cropMagnification": 4
+      },
+      "evidenceSource": "registered-app-adapter",
+      "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+      "requestId": "gg-mvok2ymz-jkhirb4bijk-default-request-16",
+      "rendererGenerationId": "gg-mvok2ymz-jkhirb4bijk-default-generation-2",
+      "runtime": {
+        "rendererFamily": "webgpu-renderer",
+        "actualExecutionApi": "webgpu",
+        "internalFallback": "none",
+        "rendererRevision": "r186"
+      },
+      "capture": {
+        "captureId": "m5q-explore-ar-f8890-f5p6-loupe4-rise20-1792976799360",
+        "qualityMode": "full32",
+        "sampleCount": 32,
+        "sourceDimensions": {
+          "widthPx": 474,
+          "heightPx": 379
+        },
+        "sampledFilmDimensionsMm": {
+          "widthMm": 31.75,
+          "heightMm": 25.4
+        },
+        "maximumRadiusPx": 60,
+        "effectiveOpticalRequestFingerprint": "[\"default\",\"[\\\"architecture-rise\\\",[-3900,-1500,-1800],[3900,4050,13000]]\",150,5.6,\"raw\",true,\"high\",474,379,[true,0.5,0.5,0.25,0.25],\"middle\",\"{\\\"calibrationStatus\\\":\\\"provisional\\\",\\\"geometryAndOpticsUnits\\\":\\\"millimetres\\\",\\\"subject\\\":{\\\"columns\\\":3,\\\"rows\\\":3,\\\"levels\\\":5,\\\"cubeSizeMm\\\":260,\\\"horizontalGapMm\\\":0,\\\"verticalGapMm\\\":0,\\\"originWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2000},\\\"lowerTargetLevel\\\":0,\\\"middleTargetLevel\\\":2,\\\"upperTargetLevel\\\":4},\\\"optics\\\":{\\\"focalLengthCandidatesMm\\\":[90,105,120,150],\\\"provisionalFocalLengthMm\\\":90,\\\"provisionalFocusDistanceMm\\\":2000},\\\"cameraRig\\\":{\\\"arcPlane\\\":\\\"yz\\\",\\\"arcCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":2000},\\\"midRigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"arcRadiusMm\\\":2000,\\\"highLowArcRadiusMm\\\":1520,\\\"lowArcRadiusMm\\\":1520,\\\"highArcAngleDeg\\\":35,\\\"lowArcAngleDeg\\\":-35,\\\"highBodyPitchDeg\\\":34,\\\"lowBodyPitchDeg\\\":-34,\\\"provisionalBasePitchDeg\\\":0,\\\"defaultAnchor\\\":\\\"mid\\\",\\\"anchorMetadata\\\":{\\\"mid\\\":{\\\"identity\\\":\\\"mid\\\",\\\"relativeHeight\\\":\\\"at-mid\\\"},\\\"high\\\":{\\\"identity\\\":\\\"high\\\",\\\"relativeHeight\\\":\\\"above-mid\\\"},\\\"low\\\":{\\\"identity\\\":\\\"low\\\",\\\"relativeHeight\\\":\\\"below-mid\\\"}}},\\\"presentation\\\":{\\\"outerVerticalWeight\\\":3,\\\"outerHorizontalWeight\\\":2,\\\"internalEdgeWeight\\\":1,\\\"internalEdgeOpacity\\\":0.46,\\\"upperRegionColour\\\":\\\"#4ade80\\\",\\\"middleRegionColour\\\":\\\"#d4b000\\\",\\\"lowerRegionColour\\\":\\\"#22d3ee\\\",\\\"inactiveColour\\\":\\\"#64748b\\\",\\\"showReferenceCamera\\\":false,\\\"defaultTargetRegion\\\":\\\"middle\\\"},\\\"subjectGeometryKey\\\":\\\"geometry:{\\\\\\\"columns\\\\\\\":3,\\\\\\\"rows\\\\\\\":3,\\\\\\\"levels\\\\\\\":5,\\\\\\\"cubeSizeMm\\\\\\\":260,\\\\\\\"horizontalGapMm\\\\\\\":0,\\\\\\\"verticalGapMm\\\\\\\":0,\\\\\\\"originWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":2000},\\\\\\\"upperTargetLevel\\\\\\\":4,\\\\\\\"middleTargetLevel\\\\\\\":2,\\\\\\\"lowerTargetLevel\\\\\\\":0}\\\",\\\"presentationKey\\\":\\\"presentation:{\\\\\\\"outerVerticalWeight\\\\\\\":3,\\\\\\\"outerHorizontalWeight\\\\\\\":2,\\\\\\\"internalEdgeWeight\\\\\\\":1,\\\\\\\"internalEdgeOpacity\\\\\\\":0.46,\\\\\\\"upperRegionColour\\\\\\\":\\\\\\\"#4ade80\\\\\\\",\\\\\\\"middleRegionColour\\\\\\\":\\\\\\\"#d4b000\\\\\\\",\\\\\\\"lowerRegionColour\\\\\\\":\\\\\\\"#22d3ee\\\\\\\",\\\\\\\"inactiveColour\\\\\\\":\\\\\\\"#64748b\\\\\\\",\\\\\\\"showReferenceCamera\\\\\\\":false,\\\\\\\"defaultTargetRegion\\\\\\\":\\\\\\\"middle\\\\\\\"}\\\",\\\"opticsKey\\\":\\\"optics:{\\\\\\\"focalLengthCandidatesMm\\\\\\\":[90,105,120,150],\\\\\\\"provisionalFocalLengthMm\\\\\\\":90,\\\\\\\"provisionalFocusDistanceMm\\\\\\\":2000}\\\",\\\"rigKey\\\":\\\"rig:{\\\\\\\"arcPlane\\\\\\\":\\\\\\\"yz\\\\\\\",\\\\\\\"arcCenterWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":2000},\\\\\\\"midRigOriginWorld\\\\\\\":{\\\\\\\"x\\\\\\\":0,\\\\\\\"y\\\\\\\":0,\\\\\\\"z\\\\\\\":0},\\\\\\\"arcRadiusMm\\\\\\\":2000,\\\\\\\"highLowArcRadiusMm\\\\\\\":1520,\\\\\\\"lowArcRadiusMm\\\\\\\":1520,\\\\\\\"highArcAngleDeg\\\\\\\":35,\\\\\\\"lowArcAngleDeg\\\\\\\":-35,\\\\\\\"highBodyPitchDeg\\\\\\\":34,\\\\\\\"lowBodyPitchDeg\\\\\\\":-34,\\\\\\\"provisionalBasePitchDeg\\\\\\\":0,\\\\\\\"defaultAnchor\\\\\\\":\\\\\\\"mid\\\\\\\",\\\\\\\"anchorMetadata\\\\\\\":{\\\\\\\"mid\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"mid\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"at-mid\\\\\\\"},\\\\\\\"high\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"high\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"above-mid\\\\\\\"},\\\\\\\"low\\\\\\\":{\\\\\\\"identity\\\\\\\":\\\\\\\"low\\\\\\\",\\\\\\\"relativeHeight\\\\\\\":\\\\\\\"below-mid\\\\\\\"}}}\\\",\\\"effectiveKey\\\":\\\"effective:{\\\\\\\"subjectGeometryKey\\\\\\\":\\\\\\\"geometry:{\\\\\\\\\\\\\\\"columns\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"rows\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"levels\\\\\\\\\\\\\\\":5,\\\\\\\\\\\\\\\"cubeSizeMm\\\\\\\\\\\\\\\":260,\\\\\\\\\\\\\\\"horizontalGapMm\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"verticalGapMm\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"originWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":2000},\\\\\\\\\\\\\\\"upperTargetLevel\\\\\\\\\\\\\\\":4,\\\\\\\\\\\\\\\"middleTargetLevel\\\\\\\\\\\\\\\":2,\\\\\\\\\\\\\\\"lowerTargetLevel\\\\\\\\\\\\\\\":0}\\\\\\\",\\\\\\\"presentationKey\\\\\\\":\\\\\\\"presentation:{\\\\\\\\\\\\\\\"outerVerticalWeight\\\\\\\\\\\\\\\":3,\\\\\\\\\\\\\\\"outerHorizontalWeight\\\\\\\\\\\\\\\":2,\\\\\\\\\\\\\\\"internalEdgeWeight\\\\\\\\\\\\\\\":1,\\\\\\\\\\\\\\\"internalEdgeOpacity\\\\\\\\\\\\\\\":0.46,\\\\\\\\\\\\\\\"upperRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#4ade80\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"middleRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#d4b000\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"lowerRegionColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#22d3ee\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"inactiveColour\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"#64748b\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"showReferenceCamera\\\\\\\\\\\\\\\":false,\\\\\\\\\\\\\\\"defaultTargetRegion\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"middle\\\\\\\\\\\\\\\"}\\\\\\\",\\\\\\\"opticsKey\\\\\\\":\\\\\\\"optics:{\\\\\\\\\\\\\\\"focalLengthCandidatesMm\\\\\\\\\\\\\\\":[90,105,120,150],\\\\\\\\\\\\\\\"provisionalFocalLengthMm\\\\\\\\\\\\\\\":90,\\\\\\\\\\\\\\\"provisionalFocusDistanceMm\\\\\\\\\\\\\\\":2000}\\\\\\\",\\\\\\\"rigKey\\\\\\\":\\\\\\\"rig:{\\\\\\\\\\\\\\\"arcPlane\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"yz\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"arcCenterWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":2000},\\\\\\\\\\\\\\\"midRigOriginWorld\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"x\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"y\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"z\\\\\\\\\\\\\\\":0},\\\\\\\\\\\\\\\"arcRadiusMm\\\\\\\\\\\\\\\":2000,\\\\\\\\\\\\\\\"highLowArcRadiusMm\\\\\\\\\\\\\\\":1520,\\\\\\\\\\\\\\\"lowArcRadiusMm\\\\\\\\\\\\\\\":1520,\\\\\\\\\\\\\\\"highArcAngleDeg\\\\\\\\\\\\\\\":35,\\\\\\\\\\\\\\\"lowArcAngleDeg\\\\\\\\\\\\\\\":-35,\\\\\\\\\\\\\\\"highBodyPitchDeg\\\\\\\\\\\\\\\":34,\\\\\\\\\\\\\\\"lowBodyPitchDeg\\\\\\\\\\\\\\\":-34,\\\\\\\\\\\\\\\"provisionalBasePitchDeg\\\\\\\\\\\\\\\":0,\\\\\\\\\\\\\\\"defaultAnchor\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"anchorMetadata\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"mid\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"at-mid\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"high\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"high\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"above-mid\\\\\\\\\\\\\\\"},\\\\\\\\\\\\\\\"low\\\\\\\\\\\\\\\":{\\\\\\\\\\\\\\\"identity\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"low\\\\\\\\\\\\\\\",\\\\\\\\\\\\\\\"relativeHeight\\\\\\\\\\\\\\\":\\\\\\\\\\\\\\\"below-mid\\\\\\\\\\\\\\\"}}}\\\\\\\"}\\\"}\",\"{\\\"cameraRigPlacement\\\":{\\\"kind\\\":\\\"identity\\\",\\\"rigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"basePitchDeg\\\":0},\\\"cameraRigTransform\\\":{\\\"rigOriginWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"basePitchDeg\\\":0,\\\"bodyPitchDeg\\\":0,\\\"bodyPitchPivotRigLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0}},\\\"cameraBodyTransform\\\":{\\\"pitchDeg\\\":0,\\\"pivotWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0}},\\\"cameraBodyLocalGeometry\\\":{\\\"lensCenterLocal\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":0},\\\"lensNormalLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"lensPlaneLocal\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":0},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":0},\\\"filmCenterLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"filmNormalLocal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"filmPlaneLocal\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-152.57437070938215},\\\"filmPlaneCornersLocal\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-152.57437070938215},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-152.57437070938215},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-152.57437070938215},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-152.57437070938215}},\\\"rearStandardFrameLocal\\\":{\\\"centerWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"rightWorld\\\":{\\\"x\\\":1,\\\"y\\\":0,\\\"z\\\":0},\\\"upWorld\\\":{\\\"x\\\":0,\\\"y\\\":1,\\\"z\\\":0},\\\"normalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"plane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-152.57437070938215}}},\\\"cameraBodyPivotWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":0},\\\"lensDefinition\\\":{\\\"id\\\":\\\"simulator-parametric-150mm\\\",\\\"focalLengthMm\\\":150,\\\"coverage\\\":{\\\"kind\\\":\\\"angular\\\",\\\"fullCoverageAngleDeg\\\":72}},\\\"lensCoverage\\\":{\\\"kind\\\":\\\"angular\\\",\\\"fullCoverageAngleDeg\\\":72,\\\"halfCoverageAngleDeg\\\":36,\\\"imageCircleRadiusMm\\\":110.85176900402159,\\\"imageCircleDiameterMm\\\":221.70353800804318,\\\"imageDistanceMm\\\":152.57437070938215},\\\"groundGlassNaturalIllumination\\\":{\\\"kind\\\":\\\"parallel-cos4\\\",\\\"imageDistanceMm\\\":152.57437070938215,\\\"opticalAxisOffsetXMm\\\":0,\\\"opticalAxisOffsetYMm\\\":20},\\\"groundGlassCoverage\\\":{\\\"kind\\\":\\\"parallel-circle\\\",\\\"imageCircleRadiusMm\\\":110.85176900402159,\\\"opticalAxisOffsetXMm\\\":0,\\\"opticalAxisOffsetYMm\\\":20},\\\"lensCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":0},\\\"lensNormalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"lensPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":0},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":0},\\\"filmCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"filmNormalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"filmPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-152.57437070938215},\\\"filmPlaneCornersWorld\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-152.57437070938215},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-152.57437070938215},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-152.57437070938215},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-152.57437070938215}},\\\"rearStandardFrame\\\":{\\\"centerWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"rightWorld\\\":{\\\"x\\\":1,\\\"y\\\":0,\\\"z\\\":0},\\\"upWorld\\\":{\\\"x\\\":0,\\\"y\\\":1,\\\"z\\\":0},\\\"normalWorld\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"plane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":-152.57437070938215},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":-152.57437070938215}},\\\"opticalAxis\\\":{\\\"origin\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":0},\\\"direction\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1}},\\\"lensFilmHingeLine\\\":null,\\\"focusPointWorld\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":8890},\\\"focusPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":8890},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":8890},\\\"depthOfFieldNearPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":7306.530220100151},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":7306.530220100151},\\\"depthOfFieldFarPlane\\\":{\\\"point\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":11349.706041968162},\\\"normal\\\":{\\\"x\\\":0,\\\"y\\\":0,\\\"z\\\":1},\\\"distance\\\":11349.706041968162},\\\"offAxisProjectionInput\\\":{\\\"lensCenterWorld\\\":{\\\"x\\\":0,\\\"y\\\":20,\\\"z\\\":0},\\\"filmCornersWorld\\\":{\\\"topLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":50.8,\\\"z\\\":-152.57437070938215},\\\"topRight\\\":{\\\"x\\\":63.5,\\\"y\\\":50.8,\\\"z\\\":-152.57437070938215},\\\"bottomLeft\\\":{\\\"x\\\":-63.5,\\\"y\\\":-50.8,\\\"z\\\":-152.57437070938215},\\\"bottomRight\\\":{\\\"x\\\":63.5,\\\"y\\\":-50.8,\\\"z\\\":-152.57437070938215}}},\\\"offAxisProjectionMatrix\\\":[2.402745995423341,0,0,0,0,3.0034324942791764,0,0,0,-0.3937007874015748,-1.0004000800160031,-1,0,0,-20.004000800160032,0],\\\"groundGlassProjection\\\":{\\\"invertHorizontal\\\":true,\\\"invertVertical\\\":true,\\\"assistModeEnabled\\\":false},\\\"focusTargets\\\":[{\\\"id\\\":\\\"building-mid-facade\\\",\\\"distanceToFocusPlaneMm\\\":0,\\\"sharpness\\\":0.9999999999999992,\\\"status\\\":\\\"sharp\\\",\\\"pointSharpness\\\":0.9999999999999992,\\\"pointStatus\\\":\\\"sharp\\\",\\\"patchSharpness\\\":0.9999999999999992,\\\"patchStatus\\\":\\\"sharp\\\",\\\"physicalPointSharpness\\\":1,\\\"physicalPointStatus\\\":\\\"sharp\\\",\\\"physicalPatchSharpness\\\":1,\\\"physicalPatchStatus\\\":\\\"sharp\\\",\\\"pointEquivalentCoCDiameterMm\\\":0,\\\"patchEquivalentCoCDiameterMm\\\":0,\\\"pointNormalizedDefocus\\\":7.359182782245392e-16,\\\"patchNormalizedDefocus\\\":7.359182782245392e-16,\\\"insideDepthOfField\\\":true,\\\"targetRayDistanceMm\\\":8933.448382343742,\\\"nearBoundaryDistanceMm\\\":7342.239659763706,\\\"focusBoundaryDistanceMm\\\":8933.44838234374,\\\"farBoundaryDistanceMm\\\":11405.175824600388,\\\"normalizedDefocus\\\":7.359182782245392e-16}],\\\"diagnostics\\\":{\\\"isParallelLensFilm\\\":true,\\\"tiltAngleDeg\\\":0,\\\"swingAngleDeg\\\":0,\\\"focusPlaneModel\\\":\\\"parallel\\\",\\\"depthOfFieldModel\\\":\\\"parallel\\\",\\\"groundGlassDofModel\\\":\\\"parallel-thin-lens\\\",\\\"nearU\\\":7306.530220100151,\\\"farU\\\":11349.706041968162,\\\"farIsInfinite\\\":false,\\\"fallbackApplied\\\":false,\\\"fallbackReason\\\":null,\\\"isInfinityFocus\\\":false,\\\"focusStandard\\\":\\\"front\\\",\\\"requestedFocusStandard\\\":\\\"front\\\",\\\"focusObjectDistanceMm\\\":8890,\\\"imageDistanceMm\\\":152.57437070938215}}\"]",
+        "cameraStateFingerprint": "[[-1,0,0,0,0,1,0,0,0,0,-1,0,0,0.02,0,1],[-1,0,0,0,0,1,0,0,0,0,-1,0,0,-0.02,0,1],[9.610983981693362,0,0,0,0,12.013729977116704,0,0,0,1.5748031496062993,-1.0007147962830594,-1,0,0,-0.010007147962830594,0],[0.10404761904761906,0,0,0,0,0.08323809523809525,0,0,0,0,0,-99.92857142857142,0,0.1310836145481815,-1,100]]",
+        "physicalDataFingerprint": "ceeb9053"
+      },
+      "canonicalGeometry": {
+        "lensFocalLengthMm": 150,
+        "focusDistanceMm": 8890,
+        "apertureFNumber": 5.6,
+        "cropMagnification": 4,
+        "frontRiseMm": 20,
+        "points": [
+          {
+            "surfaceId": "foreground-plinth-front",
+            "worldPositionMm": {
+              "x": -520,
+              "y": -1090,
+              "z": 3086
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": -0.8645986249684037,
+              "majorRadiusMm": 0.43229931248420184,
+              "minorRadiusMm": 0.43229931248420184,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  6.453854302913753,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -6.45045037131939
+                ],
+                "uncappedMaximumRadiusPx": 6.453854302913753
+              }
+            },
+            "projectedPixel": {
+              "x": 620,
+              "y": 1306,
+              "inBounds": false
+            },
+            "reconstructedRasterSample": {
+              "validityCode": null,
+              "storedPhysicalValueMm": null,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "midground-plinth-front",
+            "worldPositionMm": {
+              "x": 760,
+              "y": -1050,
+              "z": 5046
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": -0.350202459050486,
+              "majorRadiusMm": 0.175101229525243,
+              "minorRadiusMm": 0.175101229525243,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  2.614109694329612,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -2.612730944490831
+                ],
+                "uncappedMaximumRadiusPx": 2.614109694329612
+              }
+            },
+            "projectedPixel": {
+              "x": -107,
+              "y": 970,
+              "inBounds": false
+            },
+            "reconstructedRasterSample": {
+              "validityCode": null,
+              "storedPhysicalValueMm": null,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "facade-front-focus-target",
+            "worldPositionMm": {
+              "x": 0,
+              "y": 900,
+              "z": 8900
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": 0.0005165270283634196,
+              "majorRadiusMm": 0.0002582635141817098,
+              "minorRadiusMm": 0.0002582635141817098,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  0.0038556505739253686,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -0.00385361700294756
+                ],
+                "uncappedMaximumRadiusPx": 0.0038556505739253686
+              }
+            },
+            "projectedPixel": {
+              "x": 237,
+              "y": 262,
+              "inBounds": true
+            },
+            "reconstructedRasterSample": {
+              "validityCode": 0,
+              "storedPhysicalValueMm": -0.0004260540008544922,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          },
+          {
+            "surfaceId": "far-plinth-front",
+            "worldPositionMm": {
+              "x": 1800,
+              "y": -1100,
+              "z": 10446
+            },
+            "canonical": {
+              "valid": true,
+              "signedCoCDiameterMm": 0.06847666953513552,
+              "majorRadiusMm": 0.03423833476756776,
+              "minorRadiusMm": 0.03423833476756776,
+              "orientationRad": 0,
+              "sourcePixelEllipse": {
+                "majorAxisPx": [
+                  0.5111486828292006,
+                  0
+                ],
+                "minorAxisPx": [
+                  0,
+                  -0.5108790896420544
+                ],
+                "uncappedMaximumRadiusPx": 0.5111486828292006
+              }
+            },
+            "projectedPixel": {
+              "x": -156,
+              "y": 732,
+              "inBounds": false
+            },
+            "reconstructedRasterSample": {
+              "validityCode": null,
+              "storedPhysicalValueMm": null,
+              "signedCoCDiameterMm": null,
+              "signedCoCAbsoluteErrorMm": null,
+              "signMatches": null,
+              "depthValue": null
+            }
+          }
+        ],
+        "priorSurfaceCorrespondenceEvidence": {
+          "source": "Phase J native Architecture Rise M4 probe",
+          "facadeTargetOffsetMm": 10,
+          "interpretation": "The teaching focus target is 10 mm in front of the canonical facade; raster samples are reconstructed-depth evidence."
+        }
+      },
+      "screeningMetrics": {
+        "population": {
+          "validNearPixels": 106902,
+          "validFarPixels": 72744,
+          "validNeutralPixels": 0,
+          "invalidPixels": 0,
+          "depthEdgePixels": 0,
+          "signedNearFarPairs": 4834
+        },
+        "maximumValidAbsoluteCoCDiameterMm": 0.005069732666015625,
+        "meanFull32FarSourceRgbDifference": 0.00009683916044664651,
+        "validFarSourceDifferencePixelCount": 72744,
+        "meanInteriorFull32FarSourceRgbDifference": 0.00009687703863515898,
+        "interiorFarPixelCount": 71500,
+        "meanSourceRgbContrastAtSignedBoundary": 0.2438503498609138,
+        "nearNonzeroPixels": 106902,
+        "nearFractionalPixels": 0,
+        "reportedMaximumUncappedRadiusPx": 0.0031963258277712845,
+        "reportedCappedPixelCountAtCaptureCap": 0
+      },
+      "selectionInputs": [
+        "canonical signed CoC and pixel ellipse",
+        "valid physical/depth ROI support",
+        "Full32 reference blur signal",
+        "signed boundary/source edge support",
+        "fractional near coverage"
+      ],
+      "candidateQualityOutputConsulted": false,
+      "disposition": "exploratory-only"
+    }
+  ],
+  "selection": {
+    "policy": "Geometry and signal support only; Full32 is used as an expected-blur signal. B0/B1 quality, fallback error, and confirmatory thresholds are not consulted.",
+    "Q1_Q6": {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "reason": "Largest measured Full32/source interior far signal (0.03631934642940017) with 176250 pixels; quality metrics are not used.",
+      "support": {
+        "population": {
+          "validNearPixels": 0,
+          "validFarPixels": 179646,
+          "validNeutralPixels": 0,
+          "invalidPixels": 0,
+          "depthEdgePixels": 0,
+          "signedNearFarPairs": 0
+        },
+        "maximumValidAbsoluteCoCDiameterMm": 0.84326171875,
+        "meanFull32FarSourceRgbDifference": 0.036743058409358535,
+        "validFarSourceDifferencePixelCount": 179646,
+        "meanInteriorFull32FarSourceRgbDifference": 0.03631934642940017,
+        "interiorFarPixelCount": 176250,
+        "meanSourceRgbContrastAtSignedBoundary": null,
+        "nearNonzeroPixels": 0,
+        "nearFractionalPixels": 0,
+        "reportedMaximumUncappedRadiusPx": 6.294583538385827,
+        "reportedCappedPixelCountAtCaptureCap": 0
+      }
+    },
+    "Q2_Q7": {
+      "opticalStateId": "ar-f3200-f5p6-full-rise0",
+      "reason": "Strong Full32/source interior far signal (0.02773432285804044) with 3903 reconstructed-depth edge pixels and 65 valid signed-boundary pairs; fallback and profile quality remain unexamined.",
+      "support": {
+        "population": {
+          "validNearPixels": 434,
+          "validFarPixels": 121753,
+          "validNeutralPixels": 0,
+          "invalidPixels": 57459,
+          "depthEdgePixels": 3903,
+          "signedNearFarPairs": 65
+        },
+        "maximumValidAbsoluteCoCDiameterMm": 0.98779296875,
+        "meanFull32FarSourceRgbDifference": 0.027836475127177695,
+        "validFarSourceDifferencePixelCount": 121753,
+        "meanInteriorFull32FarSourceRgbDifference": 0.02773432285804044,
+        "interiorFarPixelCount": 116730,
+        "meanSourceRgbContrastAtSignedBoundary": 0.027571643277620652,
+        "nearNonzeroPixels": 434,
+        "nearFractionalPixels": 0,
+        "reportedMaximumUncappedRadiusPx": 1.8433616818405512,
+        "reportedCappedPixelCountAtCaptureCap": 0
+      }
+    },
+    "Q3_Q4": {
+      "opticalStateId": "ar-f5200-f5p6-full-rise0",
+      "reason": "The selected 5,200 mm full-film state has 540 valid signed pairs and interior Full32/source signal 0.004028962953638875. The 8,890 mm full-film alternatives have more signed pairs (5213 and 5851) and about 0.209 boundary contrast, but their canonical façade point is only 0.000517 mm from focus and their interior Full32/source signal is about 0.000086 (about 47x weaker). The 8,890 mm 4x-crop alternative has 4834 signed pairs and 0.2438503498609138 boundary contrast, but zero reconstructed-depth edge pixels and an interior Full32/source signal of 0.000097. Q3 therefore prioritizes canonical sign separation, measurable expected blur and depth-edge support over maximum raster pair count; no B0/B1 quality score is used for selection. Canonical signs are foreground -0.545020 mm, midground -0.024282 mm, façade 0.330761 mm, and far 0.399559 mm. Raster point correspondence remains separately reported.",
+      "tradeoffAgainstHigherBoundarySupportAlternatives": [
+        {
+          "opticalStateId": "ar-f8890-f5p6-full-rise0",
+          "signedNearFarPairs": 5213,
+          "meanSourceRgbContrastAtSignedBoundary": 0.20851893369733798,
+          "meanInteriorFull32FarSourceRgbDifference": 0.00008612992885949504,
+          "canonicalFacadeSignedCoCDiameterMm": 0.0005165270283634196
+        },
+        {
+          "opticalStateId": "ar-f8890-f5p6-full-rise20",
+          "signedNearFarPairs": 5851,
+          "meanSourceRgbContrastAtSignedBoundary": 0.20912397382603384,
+          "meanInteriorFull32FarSourceRgbDifference": 0.00008470479287981758,
+          "canonicalFacadeSignedCoCDiameterMm": 0.0005165270283634196
+        },
+        {
+          "opticalStateId": "ar-f8890-f5p6-loupe4-rise20",
+          "signedNearFarPairs": 4834,
+          "meanSourceRgbContrastAtSignedBoundary": 0.2438503498609138,
+          "meanInteriorFull32FarSourceRgbDifference": 0.00009687703863515898,
+          "canonicalFacadeSignedCoCDiameterMm": 0.0005165270283634196
+        }
+      ],
+      "canonicalSignEvidence": [
+        {
+          "surfaceId": "foreground-plinth-front",
+          "valid": true,
+          "signedCoCDiameterMm": -0.5450196672291954,
+          "rasterValidityCode": null,
+          "rasterSignedCoCDiameterMm": null
+        },
+        {
+          "surfaceId": "midground-plinth-front",
+          "valid": true,
+          "signedCoCDiameterMm": -0.024281560141743513,
+          "rasterValidityCode": 0,
+          "rasterSignedCoCDiameterMm": null
+        },
+        {
+          "surfaceId": "facade-front-focus-target",
+          "valid": true,
+          "signedCoCDiameterMm": 0.330761406798786,
+          "rasterValidityCode": 0,
+          "rasterSignedCoCDiameterMm": null
+        },
+        {
+          "surfaceId": "far-plinth-front",
+          "valid": true,
+          "signedCoCDiameterMm": 0.39955942340767575,
+          "rasterValidityCode": 0,
+          "rasterSignedCoCDiameterMm": null
+        }
+      ],
+      "support": {
+        "population": {
+          "validNearPixels": 28500,
+          "validFarPixels": 92383,
+          "validNeutralPixels": 0,
+          "invalidPixels": 58763,
+          "depthEdgePixels": 3904,
+          "signedNearFarPairs": 540
+        },
+        "maximumValidAbsoluteCoCDiameterMm": 0.54296875,
+        "meanFull32FarSourceRgbDifference": 0.003995720155729082,
+        "validFarSourceDifferencePixelCount": 92383,
+        "meanInteriorFull32FarSourceRgbDifference": 0.004028962953638875,
+        "interiorFarPixelCount": 89923,
+        "meanSourceRgbContrastAtSignedBoundary": 0.023839265200090998,
+        "nearNonzeroPixels": 28500,
+        "nearFractionalPixels": 0,
+        "reportedMaximumUncappedRadiusPx": 0.881587952140748,
+        "reportedCappedPixelCountAtCaptureCap": 0
+      }
+    },
+    "Q5": {
+      "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+      "reason": "Largest uncapped raster radius observed in the mounted app catalog (6.294583538385827px); paired stress-cap confirmation is still required.",
+      "support": {
+        "population": {
+          "validNearPixels": 0,
+          "validFarPixels": 179646,
+          "validNeutralPixels": 0,
+          "invalidPixels": 0,
+          "depthEdgePixels": 0,
+          "signedNearFarPairs": 0
+        },
+        "maximumValidAbsoluteCoCDiameterMm": 0.84326171875,
+        "meanFull32FarSourceRgbDifference": 0.036743058409358535,
+        "validFarSourceDifferencePixelCount": 179646,
+        "meanInteriorFull32FarSourceRgbDifference": 0.03631934642940017,
+        "interiorFarPixelCount": 176250,
+        "meanSourceRgbContrastAtSignedBoundary": null,
+        "nearNonzeroPixels": 0,
+        "nearFractionalPixels": 0,
+        "reportedMaximumUncappedRadiusPx": 6.294583538385827,
+        "reportedCappedPixelCountAtCaptureCap": 0
+      }
+    },
+    "dispositions": [
+      {
+        "opticalStateId": "ar-f3200-f5p6-loupe4-rise0",
+        "status": "selected",
+        "dimensions": [
+          "Q1",
+          "Q5",
+          "Q6"
+        ]
+      },
+      {
+        "opticalStateId": "ar-f3200-f5p6-full-rise0",
+        "status": "selected",
+        "dimensions": [
+          "Q2",
+          "Q7"
+        ]
+      },
+      {
+        "opticalStateId": "ar-f5200-f5p6-full-rise0",
+        "status": "selected",
+        "dimensions": [
+          "Q3",
+          "Q4"
+        ]
+      },
+      {
+        "opticalStateId": "ar-f8890-f5p6-full-rise0",
+        "status": "not-selected",
+        "reason": "Has 5213 valid signed pairs and boundary contrast 0.20851893369733798, but was not selected for Q3: the canonical façade point is only 0.000517 mm from focus and the interior Full32/source signal (0.00008612992885949504) is much weaker than the selected 5,200 mm state."
+      },
+      {
+        "opticalStateId": "ar-f8890-f5p6-full-rise20",
+        "status": "not-selected",
+        "reason": "Has 5851 valid signed pairs and boundary contrast 0.20912397382603384, but was not selected for Q3: the canonical façade point is only 0.000517 mm from focus and the interior Full32/source signal (0.00008470479287981758) is much weaker than the selected 5,200 mm state."
+      },
+      {
+        "opticalStateId": "ar-f13000-f5p6-full-rise20",
+        "status": "not-selected",
+        "reason": "No valid interior-far signal was measured."
+      },
+      {
+        "opticalStateId": "ar-f5200-f5p6-loupe4-rise0",
+        "status": "not-selected",
+        "reason": "Signed-boundary support (0 pairs) is below the frozen 100-pair floor for Q3."
+      },
+      {
+        "opticalStateId": "ar-f8890-f5p6-loupe4-rise20",
+        "status": "not-selected",
+        "reason": "Has 4834 valid signed pairs and boundary contrast 0.2438503498609138, but zero reconstructed-depth edge pixels in this crop; its interior Full32/source signal (0.00009687703863515898) is also much weaker than the selected 5,200 mm state."
+      }
+    ]
+  },
+  "candidateQualityMetricsConsulted": false,
+  "limitations": [
+    "Exploratory Full32 outputs are finite-sample expected-blur signals, not photographic ground truth or B1 quality results.",
+    "Canonical point CoC is computed from registered scene geometry; raster CoC and depth remain reconstructed-depth evidence. Point-to-raster correspondence uncertainty is reported per point.",
+    "No confirmatory threshold or Q dimension is decided by this catalog."
+  ]
+}

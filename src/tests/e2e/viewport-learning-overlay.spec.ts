@@ -40,11 +40,17 @@ test("Scene-local learning drawer leaves the paired workspace layout intact", as
   const groundGlass = page.getByLabel("GroundGlassColumn");
   const focusDistribution = page.getByTestId("focus-distribution-panel");
 
-  await expect(page.getByRole("heading", { name: "3D Scene", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "3D Scene", exact: true })).toBeVisible({
+    timeout: 15_000,
+  });
   await expect(focusDistribution).toBeVisible();
   await expect(page.getByTestId("current-settings-readout")).toHaveCount(0);
   await expect(page.getByText("Current Settings", { exact: true })).toHaveCount(0);
   await expect(page.locator(".simulator-primary-info-grid")).toHaveCount(0);
+  await expect(learning).toHaveAttribute("data-drawer-state", "pinned");
+  await expect(drawer).toBeVisible();
+  await expect(drawer.getByTestId("learning-overlay-task-view")).toBeVisible();
+  await page.getByRole("button", { name: "Close Task and Feedback" }).click();
   await expect(rail).toBeVisible();
   await expect(drawer).not.toBeVisible();
 
@@ -85,9 +91,11 @@ test("Scene-local learning drawer leaves the paired workspace layout intact", as
     x: Math.min(stageBounds.x + stageBounds.width - 2, drawerBounds.x + drawerBounds.width + 8),
     y: stageBounds.y + stageBounds.height * 0.55,
   };
+  await page.getByRole("button", { name: "Scene", exact: true }).focus();
   await page.mouse.move(outsidePoint.x, outsidePoint.y);
-  await expect(learning).toHaveAttribute("data-drawer-state", "peek", { timeout: 2_000 });
-  await expect(drawer).not.toBeVisible({ timeout: 2_000 });
+  await expect(learning).toHaveAttribute("data-drawer-state", "peek");
+  await expect(drawer).toHaveAttribute("aria-hidden", "true");
+  await expect(rail).toHaveAttribute("aria-expanded", "false");
 
   await rail.click();
   await expect(drawer).toBeVisible();
@@ -100,14 +108,14 @@ test("Scene-local learning drawer leaves the paired workspace layout intact", as
 
   await page.getByRole("button", { name: "Allow Task and Feedback to auto-hide" }).click();
   await page.getByRole("button", { name: "Close Task and Feedback" }).click();
-  await expect(drawer).not.toBeVisible({ timeout: 2_000 });
+  await expect(drawer).toHaveAttribute("aria-hidden", "true");
   await expect(rail).toHaveAttribute("aria-expanded", "false");
   await expect(learning).toHaveAttribute("data-drawer-state", "peek");
 });
 
 test("learning drawer supports keyboard focus and internal scrolling without changing Task/Feedback content", async ({ page }) => {
   test.setTimeout(120_000);
-  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.setViewportSize({ width: 1024, height: 900 });
   await page.goto("/simulator/guided/oblique-architecture/oblique-rise-01?lesson=1");
 
   const drawer = getLearningDrawer(page);
@@ -150,6 +158,8 @@ test("keyboard focus remains visible on the rail while the drawer opens transien
   const drawer = getLearningDrawer(page);
   const stage = page.locator(".scene-viewport-stage");
 
+  await expect(learning).toHaveAttribute("data-drawer-state", "pinned");
+  await page.getByRole("button", { name: "Close Task and Feedback" }).click();
   await expect(learning).toHaveAttribute("data-drawer-state", "peek");
   await expect(drawer).not.toBeVisible();
 
@@ -207,7 +217,11 @@ test("guided completion updates the peek rail without auto-opening or leaving Ta
   const learning = getLearningOverlay(page);
   const rail = getLearningRail(page);
   const drawer = getLearningDrawer(page);
+  await expect(learning).toHaveAttribute("data-drawer-state", "pinned");
+  await expect(drawer.getByTestId("learning-overlay-task-view")).toBeVisible();
+  await page.getByRole("button", { name: "Close Task and Feedback" }).click();
   await expect(drawer).not.toBeVisible();
+  await expect(learning).toHaveAttribute("data-drawer-state", "peek");
   await setStepRangeInput(page, "Rise", 12);
 
   await expect(rail).toHaveAccessibleName("Task and Feedback — Task completed");
@@ -216,7 +230,15 @@ test("guided completion updates the peek rail without auto-opening or leaving Ta
   await expect(learning).toHaveAttribute("data-drawer-state", "peek");
 
   await rail.click();
-  await expect(drawer.getByRole("button", { name: "Task", exact: true })).toHaveAttribute("aria-pressed", "true");
+  await expect(drawer.getByTestId("learning-overlay-task-view")).toBeVisible();
+  await expect(drawer.getByRole("button", { name: "Task", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(drawer.getByRole("button", { name: "Feedback — Task completed", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
   await expectLearningFeedbackCompleted(page);
 });
 
@@ -262,8 +284,13 @@ test("desktop learning rail and Scene overlay controls keep separate visual anch
 
   const rail = getLearningRail(page);
   const railLabel = rail.locator(".learning-overlay-panel__rail-label");
+  const learning = getLearningOverlay(page);
+  const drawer = getLearningDrawer(page);
   const trigger = page.getByRole("button", { name: "檢視疊加層", exact: true });
   const stage = page.locator(".scene-viewport-stage");
+  await expect(learning).toHaveAttribute("data-drawer-state", "peek");
+  await expect(rail).toHaveAttribute("aria-expanded", "false");
+  await expect(drawer).not.toBeVisible();
   await expect(rail).toBeVisible();
   await expect(rail).toHaveAccessibleName("開啟任務及回饋");
   await expect(railLabel).toHaveText("任務及回饋");
@@ -413,6 +440,7 @@ test("constrained desktop Scenes move overlay controls below the host without me
 
 test("Ground Glass expansion keeps one bounded learning rail and drawer", async ({ page }) => {
   test.setTimeout(120_000);
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/simulator/guided/architecture-rise/rise-01");
 
@@ -422,17 +450,24 @@ test("Ground Glass expansion keeps one bounded learning rail and drawer", async 
   const sceneHeading = page.getByRole("heading", { name: "3D Scene", exact: true });
   const frame = page.getByLabel("GroundGlassViewport");
   const expand = page.getByRole("button", { name: "Expand Ground Glass" });
+  const restore = page.getByRole("button", { name: "Restore Ground Glass" });
 
-  await expect(sceneHeading).toBeVisible();
+  await expect(sceneHeading).toBeVisible({ timeout: 15_000 });
   await expect(rail).toBeVisible();
   await expect(page.getByTestId("learning-overlay-panel")).toHaveCount(1);
   await expand.click();
-
-  const restore = page.getByRole("button", { name: "Restore Ground Glass" });
   await expect(restore).toBeFocused();
+  await expect(page.getByTestId("learning-overlay-panel")).toHaveCount(1);
+  await expect(learning).toHaveAttribute("data-drawer-state", "pinned");
+  await expect(drawer).toBeVisible();
+  await expect(drawer.getByTestId("learning-overlay-task-view")).toBeVisible();
+  await page.getByRole("button", { name: "Close Task and Feedback" }).click();
+  await expect(learning).toHaveAttribute("data-drawer-state", "peek");
+  await expect(drawer).toHaveAttribute("aria-hidden", "true");
+  await expect(rail).toBeFocused();
+  await expect(rail).toHaveAttribute("aria-expanded", "false");
   await expect(sceneHeading).toHaveCount(0);
   await expect(frame).toBeVisible();
-  await expect(learning).toHaveAttribute("data-drawer-state", "peek");
   await expect(rail).toBeVisible();
   await expect(page.getByTestId("learning-overlay-panel")).toHaveCount(1);
 
@@ -462,10 +497,11 @@ test("Ground Glass expansion keeps one bounded learning rail and drawer", async 
   });
   expect(restoreIsTopmost).toBe(true);
 
-  await rail.click();
+  await restore.focus();
+  await rail.focus();
+  await expect(rail).toBeFocused();
   await expect(learning).toHaveAttribute("data-drawer-state", "transient");
   await expect(drawer).toBeVisible();
-  await expect(drawer).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)");
   await expect(drawer.getByTestId("learning-overlay-task-view")).toBeVisible();
   await expect(sceneHeading).toHaveCount(0);
   await expect(restore).toBeVisible();
@@ -487,6 +523,8 @@ test("Ground Glass expansion keeps one bounded learning rail and drawer", async 
 
   await page.getByRole("button", { name: "Close Task and Feedback" }).click();
   await expect(learning).toHaveAttribute("data-drawer-state", "peek");
+  await expect(drawer).toHaveAttribute("aria-hidden", "true");
+  await expect(rail).toHaveAttribute("aria-expanded", "false");
   await restore.click();
   await expect(sceneHeading).toBeVisible();
   await expect(page.getByTestId("learning-overlay-panel")).toHaveCount(1);

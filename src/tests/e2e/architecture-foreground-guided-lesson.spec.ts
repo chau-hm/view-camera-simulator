@@ -4,7 +4,9 @@ import { readFocusDistributionScores } from "./helpers/focusDistribution";
 import {
   expectLearningFeedbackCompleted,
   expectLearningFeedbackNotCompleted,
+  getLearningDrawer,
   getLearningOverlay,
+  openPinnedLearningDrawer,
   openLearningFeedback,
 } from "./helpers/learningOverlay";
 import { setRangeDirect } from "./helpers/rangeInput";
@@ -31,6 +33,9 @@ const assertFiniteGroundGlass = async (page: Page) => {
 };
 
 const expectLessonStage = async (page: Page, step: string, label: string) => {
+  const drawer = getLearningDrawer(page);
+  await expect(drawer).toContainText(step);
+  await openPinnedLearningDrawer(page);
   const progress = page.getByRole("region", { name: "Guided lesson progress" });
   await expect(progress).toBeVisible();
   await expect(progress).toContainText(step);
@@ -194,6 +199,7 @@ test("Architecture + Foreground lesson entry resets after Free Practice and dire
 
   await page.goto("/simulator/guided/architecture-foreground/architecture-foreground-dof-01");
   await expect(page.getByRole("region", { name: "Guided lesson progress" })).not.toBeVisible();
+  await openPinnedLearningDrawer(page);
   await expect(page.getByRole("heading", { name: "Extend the Depth of Field" })).toBeVisible();
   await expect(page.getByRole("slider", { name: "Rise" })).toBeDisabled();
   await expect(page.getByRole("radiogroup", { name: "Aperture" })).toHaveAttribute("data-selected-aperture", "11");

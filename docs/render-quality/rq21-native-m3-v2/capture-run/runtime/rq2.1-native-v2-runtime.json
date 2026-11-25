@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "rq2.1-native-m3-v2-runtime-v1",
+  "captureSourceSha": "887930d73315d9cc64cf37c66385a8a7ddfe4296",
+  "test": {
+    "title": "RQ2.1 v2 native M3 Raw runs in the application and cleans up on scene transition",
+    "status": "passed",
+    "expectedStatus": "passed"
+  },
+  "invocation": "npm run test:e2e -- --config=playwright.rq21.config.ts --project=chrome-native-webgpu --workers=1 --retries=0 scripts/render-quality/rq2.1-native-m3.spec.ts",
+  "environment": {
+    "testProject": "chrome-native-webgpu",
+    "browserName": "chromium",
+    "browserVersion": "157.0.8103.40",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Safari/537.36",
+    "operatingSystem": {
+      "platform": "darwin",
+      "release": "27.0.0",
+      "architecture": "arm64",
+      "nodeVersion": "v24.3.0"
+    },
+    "threeRevision": "187"
+  },
+  "runtime": {
+    "selectedBackend": "webgpu",
+    "rendererFamily": "webgpu-renderer",
+    "executionApi": "webgpu",
+    "rendererRevision": "r187",
+    "sceneSourceRevision": "architecture-rise-raw-rtt-v2",
+    "policyEvidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v2",
+    "mountedEvidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v2",
+    "applicationFallback": "not-observed",
+    "internalFallback": "none",
+    "sceneId": "architecture-rise",
+    "channelId": "default",
+    "generationId": "gg-mw9y6ahi-f974y613f1-default-generation-2",
+    "requestId": "gg-mw9y6ahi-f974y613f1-default-request-7",
+    "lastCompletedRequestId": "gg-mw9y6ahi-f974y613f1-default-request-7",
+    "frameStatus": "completed",
+    "rawContentful": "true",
+    "finalContentful": "true"
+  },
+  "cameraState": {
+    "focalLengthMm": 150,
+    "focusDistanceMm": 8900,
+    "apertureFNumber": 8,
+    "frontRiseMm": 20
+  },
+  "changes": {
+    "focus": true,
+    "aperture": true,
+    "frontRise": true
+  },
+  "acceptedFrame": {
+    "kind": "host-frame-result",
+    "attemptId": "[\"default\",\"gg-mw9y6ahi-f974y613f1-default-generation-2\"]",
+    "channelId": "default",
+    "hostId": "gg-host-_r_d_-zsiodwf5lwa",
+    "generationId": "gg-mw9y6ahi-f974y613f1-default-generation-2",
+    "requestId": "gg-mw9y6ahi-f974y613f1-default-request-7",
+    "sceneId": "architecture-rise",
+    "frameStatus": "completed",
+    "acceptedByHost": true,
+    "latestAcceptedRequestId": "gg-mw9y6ahi-f974y613f1-default-request-7",
+    "latestAcceptedSceneId": "architecture-rise",
+    "activeGenerationId": "gg-mw9y6ahi-f974y613f1-default-generation-2",
+    "activeRendererFamily": "webgpu-renderer",
+    "sequence": 59
+  },
+  "cleanup": {
+    "kind": "cleanup-acknowledged",
+    "channelId": "default",
+    "hostId": "gg-host-_r_d_-zsiodwf5lwa",
+    "generationId": "gg-mw9y6ahi-f974y613f1-default-generation-2",
+    "outcome": "confirmed",
+    "reason": null,
+    "sequence": 62
+  },
+  "nextSceneRenderer": "webgl-renderer",
+  "limitations": [
+    "One headed Chrome/macOS environment; hardware acceleration and other platforms are not qualified."
+  ]
+}

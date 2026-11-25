@@ -1,0 +1,49 @@
+{
+  "cleanupEvent": {
+    "kind": "cleanup",
+    "attemptId": "[\"default\",\"gg-mvwpavjv-99ouzs15e5q-default-generation-2\"]",
+    "generationId": "gg-mvwpavjv-99ouzs15e5q-default-generation-2",
+    "outcome": "confirmed",
+    "wallClockMs": 84.89999999850988,
+    "sequence": 91
+  },
+  "m5LifecycleCapture": {
+    "nativeRunId": "1793469232731-57086",
+    "status": "passed",
+    "rendererRevision": "r187",
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none",
+    "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+    "sourceCommitSha": "9382217c7820be87a596124fd78c28239d416653",
+    "testInvocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH GROUND_GLASS_NATIVE_WEBGPU_REQUIRED=1 GROUND_GLASS_WEBGPU_APERTURE_GATHER_RESEARCH=1 GROUND_GLASS_WEBGPU_APERTURE_GATHER_R187_QUALIFICATION=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=1 GROUND_GLASS_WEBGPU_PHYSICAL_COC_R187_QUALIFICATION=1 VITE_GROUND_GLASS_WEBGPU_RAW_PILOT=true VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH=true VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true GROUND_GLASS_M7E_EVIDENCE_DIR=docs/architecture/ground-glass-m7e-r187-gather-b1 PLAYWRIGHT_WEB_SERVER_PORT=4173 npx playwright test src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts --project=chrome-native-webgpu --workers=1 --grep 'M7E native r187 requalifies|M7E r187 isolates optional M5 failures|native M5 rejects stale captures and recovers from a local gather failure'",
+    "runtime": {
+      "browserVersion": "156.0.8078.76",
+      "operatingSystem": "darwin arm64",
+      "nodeVersion": "v24.3.0"
+    },
+    "acceptedFrame": {
+      "requestId": "gg-mvwpavjv-99ouzs15e5q-default-request-5",
+      "lastCompletedRequestId": "gg-mvwpavjv-99ouzs15e5q-default-request-5",
+      "status": "completed",
+      "rendererGenerationId": "gg-mvwpavjv-99ouzs15e5q-default-generation-2",
+      "rendererFamily": "webgpu-renderer",
+      "actualExecutionApi": "webgpu"
+    },
+    "acceptedCapture": {
+      "requestId": "gg-mvwpavjv-99ouzs15e5q-default-request-5",
+      "channelId": "default",
+      "rendererGenerationId": "gg-mvwpavjv-99ouzs15e5q-default-generation-2"
+    },
+    "sourceScene": "architecture-rise",
+    "heldReadbackRequestId": "gg-mvwpavjv-99ouzs15e5q-default-request-12",
+    "resizeRetiredRequestId": "gg-mvwpavjv-99ouzs15e5q-default-request-11",
+    "resizeLatestRequestId": "gg-mvwpavjv-99ouzs15e5q-default-request-12",
+    "resizeStaleReadbackPublished": false,
+    "retiredGenerationId": "gg-mvwpavjv-99ouzs15e5q-default-generation-2",
+    "cleanupOutcome": "confirmed",
+    "unmountedBeforeReadbackRelease": true,
+    "staleReadbackPublished": false,
+    "evidenceBoundary": "M5 diagnostics only; M7C remains host lifecycle authority"
+  }
+}

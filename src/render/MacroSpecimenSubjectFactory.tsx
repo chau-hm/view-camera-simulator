@@ -32,9 +32,10 @@ export function createMacroSpecimenGroup({
   ].map(toWorld) as [number, number, number]);
   const bronze = createMacroMaterial({
     color: "#b47a3d",
-    roughness: 0.4,
-    // Bare fabricated bronze: roughness carries the handled/machined finish.
-    metalness: 0.82,
+    roughness: 0.52,
+    // A satin bronze finish keeps diffuse form shading visible under the
+    // bounded teaching-light rig while retaining a clear metallic response.
+    metalness: 0.48,
     seed: 11,
     roughnessVariation: 0.18,
     repeat: [6, 6],
@@ -42,9 +43,9 @@ export function createMacroSpecimenGroup({
   });
   const bright = createMacroMaterial({
     color: "#f0ce8b",
-    roughness: 0.32,
-    // Bare polished relief metal, with a slightly tighter highlight response.
-    metalness: 0.86,
+    roughness: 0.42,
+    // Satin relief broadens highlights and retains local form under teaching lights.
+    metalness: 0.58,
     seed: 17,
     roughnessVariation: 0.16,
     repeat: [8, 8],
@@ -61,9 +62,9 @@ export function createMacroSpecimenGroup({
   });
   const copper = createMacroMaterial({
     color: "#d88645",
-    roughness: 0.45,
-    // Bare copper accent; the higher roughness suggests machined handling.
-    metalness: 0.84,
+    roughness: 0.52,
+    // The lightly oxidized satin finish keeps small copper details legible.
+    metalness: 0.5,
     seed: 29,
     roughnessVariation: 0.16,
     repeat: [5, 5],

@@ -1,0 +1,144 @@
+{
+  "schemaVersion": "rq1-visual-states-v1",
+  "acceptedBaselineCommit": "41a78eaed941bf559ea361bdd2aed4a4ec55cc8c",
+  "sceneId": "architecture-rise",
+  "route": "/simulator/free/architecture-rise?rttDiagnostics=1",
+  "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+  "rendererRevision": "r187",
+  "renderQuality": "standard",
+  "previewMode": "raw",
+  "viewOptions": {
+    "grid": false
+  },
+  "viewport": {
+    "width": 1280,
+    "height": 900,
+    "devicePixelRatio": 1
+  },
+  "groundGlassOutputSizeCss": {
+    "width": 450,
+    "height": 360
+  },
+  "cameraPresetIdentity": "architecture-rise-canonical-public-preset",
+  "cameraPresetSource": "src/scenes/definitions/architecture-rise.ts and src/utils/constants.ts",
+  "cameraState": {
+    "focalLengthMm": 150,
+    "focusDistanceMm": 8900,
+    "apertureFNumber": 8,
+    "frontRiseMm": 0,
+    "frontShiftMm": 0,
+    "frontTiltDeg": 0,
+    "frontSwingDeg": 0,
+    "rearRiseMm": 0,
+    "rearShiftMm": 0,
+    "rearTiltDeg": 0,
+    "rearSwingDeg": 0
+  },
+  "states": [
+    {
+      "stateId": "architecture-rise-neutral",
+      "name": "Neutral scene reference",
+      "cameraState": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 8900,
+        "apertureFNumber": 8,
+        "frontRiseMm": 0,
+        "frontShiftMm": 0,
+        "frontTiltDeg": 0,
+        "frontSwingDeg": 0,
+        "rearRiseMm": 0,
+        "rearShiftMm": 0,
+        "rearTiltDeg": 0,
+        "rearSwingDeg": 0
+      },
+      "captures": [
+        {
+          "captureId": "architecture-rise-neutral-webgl-raw",
+          "path": "ground-glass/neutral/webgl-raw.png",
+          "rendererFamily": "webgl-renderer",
+          "executionApi": "webgl2",
+          "previewMode": "raw",
+          "rawDebug": true,
+          "pipelineStage": "webgl-raw-debug-display",
+          "referenceRole": "bounded-raw-display-comparison"
+        },
+        {
+          "captureId": "architecture-rise-neutral-webgpu-raw",
+          "path": "ground-glass/neutral/webgpu-raw.png",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu",
+          "feature": "raw-rtt",
+          "featureEvidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v1",
+          "previewMode": "raw",
+          "rawDebug": true,
+          "pipelineStage": "m3-raw-rtt-display",
+          "referenceRole": "bounded-raw-display-comparison"
+        }
+      ]
+    },
+    {
+      "stateId": "architecture-rise-front-rise",
+      "name": "Front Rise composition",
+      "cameraState": {
+        "focalLengthMm": 150,
+        "focusDistanceMm": 8900,
+        "apertureFNumber": 8,
+        "frontRiseMm": 20,
+        "frontShiftMm": 0,
+        "frontTiltDeg": 0,
+        "frontSwingDeg": 0,
+        "rearRiseMm": 0,
+        "rearShiftMm": 0,
+        "rearTiltDeg": 0,
+        "rearSwingDeg": 0
+      },
+      "captures": [
+        {
+          "captureId": "architecture-rise-front-rise-webgl-raw",
+          "path": "ground-glass/front-rise/webgl-raw.png",
+          "rendererFamily": "webgl-renderer",
+          "executionApi": "webgl2",
+          "previewMode": "raw",
+          "rawDebug": true,
+          "pipelineStage": "webgl-raw-debug-display",
+          "referenceRole": "bounded-raw-display-comparison"
+        },
+        {
+          "captureId": "architecture-rise-front-rise-webgpu-raw",
+          "path": "ground-glass/front-rise/webgpu-raw.png",
+          "rendererFamily": "webgpu-renderer",
+          "executionApi": "webgpu",
+          "feature": "raw-rtt",
+          "featureEvidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v1",
+          "previewMode": "raw",
+          "rawDebug": true,
+          "pipelineStage": "m3-raw-rtt-display",
+          "referenceRole": "bounded-raw-display-comparison"
+        }
+      ]
+    }
+  ],
+  "additionalReferences": [
+    {
+      "captureId": "architecture-rise-processed-webgl-reference",
+      "path": "ground-glass/processed/webgl-processed.png",
+      "rendererFamily": "webgl-renderer",
+      "executionApi": "webgl2",
+      "stateId": "architecture-rise-neutral",
+      "previewMode": "raw",
+      "rawDebug": false,
+      "pipelineStage": "webgl-photographic-ground-glass",
+      "referenceRole": "processed-webgl-regression-reference"
+    }
+  ],
+  "observerReference": {
+    "sourcePilot": "scripts/dream-loop/pilots/architecture-rise.json",
+    "command": "npm run dream-loop:capture -- --pilot architecture-rise",
+    "files": [
+      "observer/observer-clean.png",
+      "observer/observer-teaching.png"
+    ],
+    "stateHandling": "Record the actual state produced by the existing Dream Loop pilot. It is an independent Observer appearance/teaching reference and is not assumed to be optically matched to the Ground Glass states."
+  },
+  "comparisonLimit": "WebGL Raw Debug and native M3 Raw display use distinct composite/display implementations. Compare these as bounded Raw display references, not strict pixel parity or a diagnosis of lighting/color defects. Processed WebGL is a separate regression reference."
+}

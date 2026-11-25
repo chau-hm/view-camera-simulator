@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type { CameraMovementPresentationRegion } from "../scenes/cameraMovementSceneCalibration";
 import type { DerivedOpticsState, Bounds3 } from "../types/optics";
 import type { SceneDefinition } from "../types/scene";
+import type { SceneVariationDescriptor } from "../types/sceneVariation";
 import {
   updateMirrorShiftCameraReflection,
 } from "./MirrorShiftSubjectFactory";
@@ -16,7 +17,6 @@ import {
   createRegisteredRttSubject,
   disposeRegisteredRttSubject,
   getSceneSubjectRegistration,
-  type SceneSubjectRttLighting,
   type SceneSubjectRttOptions,
 } from "./sceneSubjectRegistry";
 import { configureTeachingShadowParticipation } from "./TeachingLighting";
@@ -26,6 +26,7 @@ export type GroundGlassSceneProfileContext = Readonly<{
   scene: SceneDefinition;
   cameraMovementPresentation: CameraMovementLatticePresentation;
   presentationRegion: CameraMovementPresentationRegion;
+  variationDescriptor?: SceneVariationDescriptor;
 }>;
 
 export type GroundGlassSceneProfileUpdateContext =
@@ -42,9 +43,8 @@ export type MountedGroundGlassSceneSubject = Readonly<{
 }>;
 
 export type GroundGlassSceneProfile = Readonly<{
-  resolveRttLighting: (
-    context: GroundGlassSceneProfileContext,
-  ) => SceneSubjectRttLighting | undefined;
+  /** Optional subject identity included in development render-sanity diagnostics. */
+  renderSanityIdentity?: string;
   configureRttShadowParticipation: (group: THREE.Group) => void;
   mountSubject: (
     scene: THREE.Scene,
@@ -65,14 +65,6 @@ type GroundGlassSceneProfileDefinition = Readonly<{
   configureRttShadowParticipation?: (group: THREE.Group) => void;
   resolveRenderBounds?: (context: GroundGlassSceneProfileContext) => Bounds3;
 }>;
-
-const resolveRegisteredRttLighting = (
-  context: GroundGlassSceneProfileContext,
-  options: SceneSubjectRttOptions | undefined,
-): SceneSubjectRttLighting | undefined => {
-  const registration = getSceneSubjectRegistration(context.scene.id);
-  return registration?.resolveRttLighting?.(options) ?? registration?.rttLighting;
-};
 
 const mountRegisteredSubject = (
   scene: THREE.Scene,
@@ -95,17 +87,15 @@ const mountRegisteredSubject = (
 const createProfile = (
   definition: GroundGlassSceneProfileDefinition = {},
 ): GroundGlassSceneProfile => ({
-  resolveRttLighting: (context) =>
-    resolveRegisteredRttLighting(
-      context,
-      definition.resolveSubjectOptions?.(context),
-    ),
   configureRttShadowParticipation: (group) => {
     configureTeachingShadowParticipation(group);
     definition.configureRttShadowParticipation?.(group);
   },
   mountSubject: (scene, context) => {
-    const options = definition.resolveSubjectOptions?.(context);
+    const resolvedOptions = definition.resolveSubjectOptions?.(context);
+    const options = context.variationDescriptor
+      ? { ...resolvedOptions, variationDescriptor: context.variationDescriptor }
+      : resolvedOptions;
     if (definition.mountSubject) {
       return definition.mountSubject(scene, context, options);
     }

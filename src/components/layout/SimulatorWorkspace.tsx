@@ -13,6 +13,10 @@ import { getPublicSceneEntryById } from "../../app/publicScenes";
 import { evaluateTask } from "../../core/tasks/evaluateTask";
 import { getTaskById } from "../../core/tasks/taskRegistry";
 import { getSceneById } from "../../scenes/definitions";
+import {
+  resolveSceneVariationDescriptor,
+  supportsSceneVariationSchemaVersion,
+} from "../../scenes/sceneVariation";
 import { architectureRiseScene } from "../../scenes/definitions/architecture-rise";
 import { useAppStore } from "../../state/appStore";
 import {
@@ -45,9 +49,11 @@ import { LearningOverlayPanel } from "../simulator/LearningOverlayPanel";
 import { resolveLearnerReadoutPolicy } from "../simulator/learnerReadoutPolicy";
 import { OpticalDebugPanel } from "../simulator/OpticalDebugPanel";
 import { SceneViewport } from "../simulator/SceneViewport";
+import { SceneVariationControls } from "../simulator/SceneVariationControls";
 import { AnatomyLessonPanel } from "../simulator/AnatomyLessonPanel";
 import { AnatomyControlTeachingPanel } from "../simulator/AnatomyControlTeachingPanel";
 import { resolvePhysicalFocusTargetPresentationMetric } from "../../render/postprocessing/FocusAssistPass";
+import { initialGroundGlassRawDebugForTest } from "../../render/webgpu/groundGlassWebGpuTestSeam";
 import {
   projectSceneFocusTargetsToGroundGlass,
   resolveGroundGlassPreviewMode,
@@ -62,6 +68,10 @@ import type {
   GroundGlassRttRuntimeInfoChangeHandler,
 } from "../../render/groundGlassRttDimensions";
 import type { SceneGraphCapacityMetrics } from "../../render/sceneCapacityProfiling";
+import {
+  recordRendererLifecycleEvent,
+  rendererLifecycleTraceEnabled,
+} from "../../render/testing/m7nRendererLifecycleTrace";
 import { CameraMovementCalibrationWorkbench } from "../simulator/CameraMovementCalibrationWorkbench";
 import { resolveMacroBellowsExtensionTeaching } from "../../scenes/macroBellowsExtensionTeaching";
 import { resolveMacroDepthOfFieldTeaching } from "../../scenes/macroDepthOfFieldTeaching";
@@ -81,6 +91,8 @@ type SimulatorWorkspaceProps = {
   guidedLessonEnabled?: boolean;
   anatomyLessonEnabled?: boolean;
   calibrationEnabled?: boolean;
+  /** Only used by the isolated development E2E verification fixture. */
+  developmentArchitectureRiseWebGpuVerification?: boolean;
   simulateAssetFailure: boolean;
 };
 
@@ -93,6 +105,7 @@ export const SimulatorWorkspace = ({
   guidedLessonEnabled = false,
   anatomyLessonEnabled = false,
   calibrationEnabled = false,
+  developmentArchitectureRiseWebGpuVerification = false,
   simulateAssetFailure,
 }: SimulatorWorkspaceProps) => {
   const { t } = useTranslation();
@@ -116,6 +129,8 @@ export const SimulatorWorkspace = ({
     useState<SceneGraphCapacityMetrics | null>(null);
   const setGeometryView = useAppStore((state) => state.setGeometryView);
   const targetRegion = useAppStore((state) => state.scene.targetRegion);
+  const sceneVariantIdentity = useAppStore((state) => state.sceneVariantIdentity);
+  const sceneVariantRouteStatus = useAppStore((state) => state.sceneVariantRouteStatus);
   const calibrationSession = useAppStore(
     (state) => state.cameraMovementCalibrationSession,
   );
@@ -146,6 +161,28 @@ export const SimulatorWorkspace = ({
   );
 
   useEffect(() => {
+    const routeId = rendererLifecycleTraceEnabled
+      ? `/simulator/${mode}/${sceneId}${taskId ? `/${taskId}` : ""}`
+      : null;
+    const workspaceMountIdentity = rendererLifecycleTraceEnabled
+      ? `${mode}:${sceneId}:${taskId ?? "free"}`
+      : null;
+    if (rendererLifecycleTraceEnabled) {
+      recordRendererLifecycleEvent({
+        surface: "simulator",
+        event: "simulator-workspace-committed",
+        routeId,
+        sceneId,
+        mountGeneration: workspaceMountIdentity,
+      });
+      recordRendererLifecycleEvent({
+        surface: "simulator",
+        event: "scene-route-initialization-started",
+        routeId,
+        sceneId,
+        mountGeneration: workspaceMountIdentity,
+      });
+    }
     // initialize route: apply scene presets (free) or task initialCameraState (guided) once when route changes
     const initRoute = (modeParam: SimulatorMode, sceneParam: string, taskParam: string | null | undefined) => {
       const initializeSimulatorRoute = useAppStore.getState().initializeSimulatorRoute;
@@ -166,6 +203,23 @@ export const SimulatorWorkspace = ({
     };
 
     initRoute(mode, sceneId, taskId);
+    if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
+      surface: "simulator",
+      event: "scene-route-initialization-requested",
+      routeId,
+      sceneId,
+      mountGeneration: workspaceMountIdentity,
+    });
+
+    return () => {
+      if (rendererLifecycleTraceEnabled) recordRendererLifecycleEvent({
+        surface: "simulator",
+        event: "simulator-workspace-effect-cleanup",
+        routeId,
+        sceneId,
+        mountGeneration: workspaceMountIdentity,
+      });
+    };
   }, [
     calibrationEnabled,
     anatomyLessonEnabled,
@@ -249,6 +303,30 @@ export const SimulatorWorkspace = ({
 
   const scene = getSceneById(camera.activeSceneId);
   const safeScene = scene ?? architectureRiseScene;
+  const sceneVariationEligible =
+    mode === "free" &&
+    task === null &&
+    !guidedLessonEnabled &&
+    !anatomyLessonEnabled &&
+    !calibrationEnabled &&
+    Boolean(safeScene.sceneVariation?.enabled);
+  const sceneVariationDescriptor = useMemo(() => {
+    const capability = safeScene.sceneVariation;
+    if (
+      !sceneVariationEligible ||
+      !capability?.enabled ||
+      sceneVariantRouteStatus !== "resolved" ||
+      !sceneVariantIdentity ||
+      sceneVariantIdentity.sceneId !== safeScene.id ||
+      !supportsSceneVariationSchemaVersion(capability, sceneVariantIdentity.schemaVersion)
+    ) return undefined;
+    return resolveSceneVariationDescriptor(safeScene, sceneVariantIdentity) ?? undefined;
+  }, [
+    safeScene,
+    sceneVariationEligible,
+    sceneVariantIdentity,
+    sceneVariantRouteStatus,
+  ]);
   useEffect(() => {
     setViewportSubjectCapacity(null);
   }, [safeScene.id]);
@@ -449,7 +527,7 @@ export const SimulatorWorkspace = ({
     mode === "guided" && task?.enabledControls.includes("aperture") === true;
   const apertureLocked = controlPolicy.aperture === "fixed" && !taskCanChangeAperture;
   const infinityResetHidden = controlPolicy.infinityReset === false;
-  const [rawRttDebug, setRawRttDebug] = useState(false);
+  const [rawRttDebug, setRawRttDebug] = useState(initialGroundGlassRawDebugForTest);
   const showPublicTeachingControls =
     sceneId === "understanding-camera-movements" &&
     mode === "free" &&
@@ -725,11 +803,24 @@ export const SimulatorWorkspace = ({
                   <span className="material-symbols-outlined" aria-hidden="true">view_in_ar</span>
                 </div>
                 <h2 className="simulator-card-title">{t(simulatorMessageKeys.viewport.sceneTitle)}</h2>
+                {sceneVariationEligible ? (
+                  <SceneVariationControls
+                    scene={safeScene}
+                    identity={sceneVariantIdentity}
+                    routeStatus={sceneVariantRouteStatus}
+                    eligible={sceneVariationEligible}
+                  />
+                ) : null}
               </div>
 
               <SceneViewport
                 overlayMenuResetGeneration={overlayMenuResetGeneration}
                 scene={safeScene}
+                variationDescriptor={sceneVariationDescriptor}
+                routeSceneId={sceneId}
+                developmentArchitectureRiseWebGpuVerification={
+                  developmentArchitectureRiseWebGpuVerification
+                }
                 opticsState={opticsState}
                 renderQuality={renderQuality}
                 setRenderQuality={setRenderQuality}
@@ -772,6 +863,7 @@ export const SimulatorWorkspace = ({
               <GroundGlassViewport
                 opticsState={opticsState}
                 scene={safeScene}
+                variationDescriptor={sceneVariationDescriptor}
                 runtimeInfoByChannel={groundGlassRuntimeInfoByChannel}
                 onRuntimeInfoChange={onGroundGlassRuntimeInfoChange}
                 groundGlassAssistEnabled={camera.groundGlassAssistEnabled}

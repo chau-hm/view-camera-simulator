@@ -2,11 +2,13 @@ import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 
 import { useTranslation } from "react-i18next";
 import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 import { resolveGroundGlassPreviewMode } from "../../render/groundGlassTargetProjection";
+import { isGroundGlassM6bCalibrationFixtureEnabledForScene } from "../../render/webgpu/groundGlassWebGpuTestSeam";
 import { ViewOptions } from "../controls/ViewOptions";
 import "../../i18n";
 import { simulatorMessageKeys } from "../../i18n/simulatorMessageKeys";
 import type { ApertureValue } from "../../types/camera";
 import type { DerivedOpticsState } from "../../types/optics";
+import type { SceneVariationDescriptor } from "../../types/sceneVariation";
 import type { SceneDefinition } from "../../types/scene";
 import type { RenderQualityProfile } from "../../types/ui";
 import type { CameraMovementGroundGlassComparison } from "../../scenes/cameraMovementGroundGlassComparison";
@@ -43,6 +45,7 @@ const useNarrowLayout = (): boolean => {
 type GroundGlassViewportProps = {
   opticsState: DerivedOpticsState;
   scene: SceneDefinition;
+  variationDescriptor?: SceneVariationDescriptor;
   runtimeInfoByChannel: GroundGlassRttRuntimeInfoByChannel;
   onRuntimeInfoChange: GroundGlassRttRuntimeInfoChangeHandler;
   groundGlassAssistEnabled: boolean;
@@ -78,6 +81,7 @@ type GroundGlassViewportProps = {
 export const GroundGlassViewport = ({
   opticsState,
   scene,
+  variationDescriptor,
   groundGlassAssistEnabled,
   onGroundGlassAssistEnabledChange,
   gridEnabled,
@@ -110,6 +114,8 @@ export const GroundGlassViewport = ({
   const { t } = useTranslation();
   const sceneId = scene.id;
   const previewMode = resolveGroundGlassPreviewMode(groundGlassAssistEnabled);
+  const preservesFocusLoupeOnPreviewChange = import.meta.env.DEV && !rawRttDebug &&
+    isGroundGlassM6bCalibrationFixtureEnabledForScene(scene);
   const narrowLayout = useNarrowLayout();
 
   const [zoomEnabled, setZoomEnabled] = useState(false);
@@ -167,6 +173,7 @@ export const GroundGlassViewport = ({
         </p>
           <GroundGlassRenderer
           scene={scene}
+          variationDescriptor={variationDescriptor}
           opticsState={layer.opticsState}
           assistEnabled={layer.opticsState.groundGlassProjection.assistModeEnabled}
           gridEnabled={gridEnabled}
@@ -183,7 +190,7 @@ export const GroundGlassViewport = ({
           focusMetric={focusMetric}
           zoomEnabled={layerZoomEnabled}
           onZoomChange={onLayerZoomChange}
-          interactionResetKey={`${interactionResetKey ?? sceneId}:${previewMode}:${resetSuffix}`}
+          interactionResetKey={`${interactionResetKey ?? sceneId}:${preservesFocusLoupeOnPreviewChange ? "m6" : previewMode}:${resetSuffix}`}
           cameraState={layer.camera}
           channel={label === "Original" ? "camera-movement-original" : "camera-movement-current"}
           presentationRegion={layer.presentationTargetRegion}
@@ -199,7 +206,7 @@ export const GroundGlassViewport = ({
         />
       </section>
     ),
-    [comparisonLabels, currentStageLabel, effectiveCameraMovementCalibration, focusMetric, focusLoupeLabel, gridEnabled, interactionResetKey, onRuntimeInfoChange, originalStageLabel, panLabel, previewMode, rawRttDebug, renderQuality, resetActionLabel, resetViewLabel, runtimeInfoByChannel, scene, sceneId, t],
+    [comparisonLabels, currentStageLabel, effectiveCameraMovementCalibration, focusMetric, focusLoupeLabel, gridEnabled, interactionResetKey, onRuntimeInfoChange, originalStageLabel, panLabel, preservesFocusLoupeOnPreviewChange, previewMode, rawRttDebug, renderQuality, resetActionLabel, resetViewLabel, runtimeInfoByChannel, scene, sceneId, t, variationDescriptor],
   );
 
   useEffect(() => {
@@ -312,6 +319,7 @@ export const GroundGlassViewport = ({
             {/* Expanded presentation intentionally keeps the existing logical RTT size; container-aware RTT sizing is a renderer-focused follow-up. */}
             <GroundGlassRenderer
               scene={scene}
+              variationDescriptor={variationDescriptor}
               opticsState={opticsState}
               assistEnabled={opticsState.groundGlassProjection.assistModeEnabled}
               gridEnabled={gridEnabled}
@@ -331,7 +339,7 @@ export const GroundGlassViewport = ({
               focusMetric={focusMetric}
               zoomEnabled={zoomEnabled}
               onZoomChange={handleZoomChange}
-              interactionResetKey={`${interactionResetKey ?? sceneId}:${previewMode}`}
+              interactionResetKey={`${interactionResetKey ?? sceneId}:${preservesFocusLoupeOnPreviewChange ? "m6" : previewMode}`}
               accessibleLabel={singleViewAccessibleLabel}
               stageLabel={singleViewAccessibleLabel}
               zoomInLabel={focusLoupeLabel}

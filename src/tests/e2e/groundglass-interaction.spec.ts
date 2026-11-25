@@ -5,6 +5,19 @@ import { clickStageAt, readFreshElementBounds, readStageTransform } from './help
 // convenience factory for dynamic transformed-layer locator
 const transformedLayerFor = (viewport: Locator) => () => viewport.locator('.groundglass-stage');
 
+const readStageClientBox = (stage: Locator) => stage.evaluate((element) => {
+  const panel = element as HTMLElement;
+  const rect = panel.getBoundingClientRect();
+  const scaleX = panel.offsetWidth > 0 ? rect.width / panel.offsetWidth : 1;
+  const scaleY = panel.offsetHeight > 0 ? rect.height / panel.offsetHeight : 1;
+  return {
+    left: rect.left + panel.clientLeft * scaleX,
+    top: rect.top + panel.clientTop * scaleY,
+    width: panel.clientWidth * scaleX,
+    height: panel.clientHeight * scaleY,
+  };
+});
+
 test.describe('Ground Glass interaction', () => {
   test('Architecture Rise: Reset view preserves the contentful RTT resource graph', async ({ page }) => {
     test.setTimeout(180_000);
@@ -34,6 +47,16 @@ test.describe('Ground Glass interaction', () => {
       await expect(rtt).toHaveAttribute('data-rtt-final-contentful', 'true', { timeout: 120_000 });
       expect(await rtt.getAttribute('data-rtt-sanity-error')).toBeNull();
     };
+    const expectCurrentRequestPublished = async () => {
+      await expect.poll(async () => {
+        const requestId = await rtt.getAttribute('data-frame-request-id');
+        const completedRequestId = await rtt.getAttribute('data-last-completed-request-id');
+        const status = await rtt.getAttribute('data-frame-result-status');
+        return Boolean(requestId && requestId === completedRequestId && status === 'completed');
+      }, { timeout: 120_000 }).toBe(true);
+      await expect(rtt).toHaveAttribute('data-mounted-renderer-family', 'webgl-renderer');
+      await expect(rtt).toHaveAttribute('data-actual-execution-api', /^webgl2?$/);
+    };
     const expectSameCanvas = async (canvasHandle: NonNullable<Awaited<ReturnType<typeof canvas.elementHandle>>>) => {
       await expect
         .poll(() =>
@@ -50,11 +73,16 @@ test.describe('Ground Glass interaction', () => {
     await expect(viewport).toBeVisible();
     await expect(canvas).toHaveCount(1);
     await expectContentfulRtt();
+    await expectCurrentRequestPublished();
     const canvasHandle = await canvas.elementHandle();
     if (!canvasHandle) throw new Error('Ground Glass Canvas element was not mounted');
     const initialGeneration = await rtt.getAttribute('data-rtt-resource-generation');
+    const initialHostGeneration = await rtt.getAttribute('data-renderer-generation');
+    const initialRequestId = await rtt.getAttribute('data-frame-request-id');
     const initialSanityState = await rtt.getAttribute('data-rtt-sanity-state');
     expect(initialGeneration).toBeTruthy();
+    expect(initialHostGeneration).toBeTruthy();
+    expect(initialRequestId).toBeTruthy();
     expect(initialSanityState).toBeTruthy();
 
     await viewport
@@ -67,6 +95,9 @@ test.describe('Ground Glass interaction', () => {
     await expect(stage).toHaveAttribute('data-focus-loupe-window-width', '0.25');
     await expect(stage).toHaveAttribute('data-focus-loupe-window-height', '0.25');
     await expect.poll(() => rtt.getAttribute('data-rtt-sampled-film-width-mm'), { timeout: 120_000 }).toBe('31.75');
+    await expect.poll(() => rtt.getAttribute('data-frame-request-id'), { timeout: 120_000 }).not.toBe(initialRequestId);
+    await expectCurrentRequestPublished();
+    expect(await rtt.getAttribute('data-renderer-generation')).toBe(initialHostGeneration);
     await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).not.toBe(initialSanityState);
     await expectContentfulRtt();
     const stableLoupeSanityState = await rtt.getAttribute('data-rtt-sanity-state');
@@ -84,6 +115,8 @@ test.describe('Ground Glass interaction', () => {
       const panY = Number(await stage.getAttribute('data-inspection-pan-y'));
       return Math.abs(panX) > 0 || Math.abs(panY) > 0;
     }).toBe(true);
+    await expectCurrentRequestPublished();
+    expect(await rtt.getAttribute('data-renderer-generation')).toBe(initialHostGeneration);
 
     await viewport
       .getByRole('button', { name: 'Reset Ground Glass view', exact: true })
@@ -98,6 +131,8 @@ test.describe('Ground Glass interaction', () => {
     await expect(stage).toHaveAttribute('data-pointer-active', 'false');
     await expect(stage).toHaveAttribute('data-pointer-captured', 'false');
     await expect(transformedLayer).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
+    await expectCurrentRequestPublished();
+    expect(await rtt.getAttribute('data-renderer-generation')).toBe(initialHostGeneration);
     await expect.poll(() => rtt.getAttribute('data-rtt-sanity-state'), { timeout: 120_000 }).toBe(initialSanityState);
     expect(await rtt.getAttribute('data-rtt-resource-generation')).toBe(initialGeneration);
     await expectSameCanvas(canvasHandle);
@@ -138,6 +173,9 @@ test.describe('Ground Glass interaction', () => {
 
     const viewport = page.getByLabel('GroundGlassViewport');
     await expect(viewport).toBeVisible();
+    const rtt = viewport.getByTestId('ground-glass-rtt');
+    await expect(rtt).toHaveAttribute('data-renderer-generation', /generation-\d+$/, { timeout: 60_000 });
+    const initialHostGeneration = await rtt.getAttribute('data-renderer-generation');
 
     const stage = viewport.locator('[data-zoomed]');
     await expect(stage).toBeVisible();
@@ -145,13 +183,12 @@ test.describe('Ground Glass interaction', () => {
 
     const transformedLayer = transformedLayerFor(viewport);
 
-    // obtain bounding box and click at 25% left, 25% top
-    const box = await readFreshElementBounds(stage);
-    const clickX = Math.round(box.width * 0.25);
-    const clickY = Math.round(box.height * 0.25);
-
-    // perform real click with offset coordinates relative to stage
-    await stage.click({ position: { x: clickX, y: clickY } });
+    // Place the pointer at a known fraction of the actual image/client box.
+    // The measured DOM content coordinates are an independent browser oracle.
+    const clientBox = await readStageClientBox(stage);
+    const clickX = clientBox.left + clientBox.width * 0.25;
+    const clickY = clientBox.top + clientBox.height * 0.25;
+    await page.mouse.click(clickX, clickY);
 
     // state change
     await expect(stage).toHaveAttribute('data-zoomed', 'true');
@@ -159,6 +196,8 @@ test.describe('Ground Glass interaction', () => {
     await expect(stage).toHaveAttribute('role', 'region');
     await expect(viewport.getByRole('region', { name: 'Pan Ground Glass', exact: true })).toHaveCount(1);
     await expect(viewport.getByRole('button', { name: 'Pan Ground Glass', exact: true })).toHaveCount(0);
+    await expect.poll(async () => Number(await stage.getAttribute('data-normalized-pan-x'))).toBeCloseTo(0.5, 5);
+    await expect.poll(async () => Number(await stage.getAttribute('data-normalized-pan-y'))).toBeCloseTo(0.5, 5);
 
     // RTT loupe keeps the CSS image at identity; the physical crop is exposed
     // through the inspection-window diagnostics instead.
@@ -211,6 +250,23 @@ test.describe('Ground Glass interaction', () => {
     expect(await readStageTransform(transformedLayer())).toEqual(beforeShortClick);
 
     // The explicit reset control is the only zoom-out affordance.
+    await viewport.getByRole('button', { name: 'Reset Ground Glass view', exact: true }).click();
+    await expect(stage).toHaveAttribute('data-zoomed', 'false');
+
+    // A resized responsive stage maps the same relative pointer location to
+    // the same normalized pan using its new client-box dimensions.
+    await page.setViewportSize({ width: 900, height: 900 });
+    await expect(stage).toBeVisible();
+    expect(await rtt.getAttribute('data-renderer-generation')).toBe(initialHostGeneration);
+    await stage.scrollIntoViewIfNeeded();
+    const resizedClientBox = await readStageClientBox(stage);
+    await page.mouse.click(
+      resizedClientBox.left + resizedClientBox.width * 0.3,
+      resizedClientBox.top + resizedClientBox.height * 0.6,
+    );
+    await expect(stage).toHaveAttribute('data-zoomed', 'true');
+    await expect.poll(async () => Number(await stage.getAttribute('data-normalized-pan-x'))).toBeCloseTo(0.4, 5);
+    await expect.poll(async () => Number(await stage.getAttribute('data-normalized-pan-y'))).toBeCloseTo(-0.2, 5);
     await viewport.getByRole('button', { name: 'Reset Ground Glass view', exact: true }).click();
     await expect(stage).toHaveAttribute('data-zoomed', 'false');
 

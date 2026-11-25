@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "ground-glass-m7c-r187-unit-validation-v4",
+  "captureSourceSha": "e4c9f1d2b4875bd9c5dfe21841f061b42fde2f06",
+  "invocation": "PATH=/Users/homan/.nvm/versions/node/v24.3.0/bin:$PATH npm test -- --reporter=json --outputFile=/tmp/m7c-r187-captures/unit-validation-final.json --run src/tests/unit/groundGlassM7bLifecycleEvidence.test.ts src/tests/unit/groundGlassM7cR187LifecycleEvidence.test.ts src/tests/unit/GroundGlassRenderHost.test.tsx src/tests/unit/groundGlassBackendPolicy.test.ts src/tests/unit/groundGlassApertureGatherPolicy.test.ts src/tests/unit/groundGlassM6Presentation.test.ts",
+  "result": {
+    "status": "passed",
+    "testFiles": 6,
+    "passedTestFiles": 6,
+    "failedTestFiles": 0,
+    "tests": 150,
+    "passedTests": 150,
+    "failedTests": 0
+  },
+  "files": [
+    {
+      "file": "GroundGlassRenderHost.test.tsx",
+      "status": "passed",
+      "tests": 32,
+      "passed": 32,
+      "failed": 0
+    },
+    {
+      "file": "groundGlassApertureGatherPolicy.test.ts",
+      "status": "passed",
+      "tests": 9,
+      "passed": 9,
+      "failed": 0
+    },
+    {
+      "file": "groundGlassBackendPolicy.test.ts",
+      "status": "passed",
+      "tests": 29,
+      "passed": 29,
+      "failed": 0
+    },
+    {
+      "file": "groundGlassM6Presentation.test.ts",
+      "status": "passed",
+      "tests": 26,
+      "passed": 26,
+      "failed": 0
+    },
+    {
+      "file": "groundGlassM7bLifecycleEvidence.test.ts",
+      "status": "passed",
+      "tests": 34,
+      "passed": 34,
+      "failed": 0
+    },
+    {
+      "file": "groundGlassM7cR187LifecycleEvidence.test.ts",
+      "status": "passed",
+      "tests": 20,
+      "passed": 20,
+      "failed": 0
+    }
+  ],
+  "evaluatorMutationValidation": {
+    "file": "src/tests/unit/groundGlassM7cR187LifecycleEvidence.test.ts",
+    "tests": 20,
+    "positiveControls": 1,
+    "rejectionMutations": 19,
+    "result": "passed"
+  }
+}

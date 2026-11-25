@@ -1,0 +1,49 @@
+{
+  "captureMethod": "Playwright Chromium browser-level CDP SystemInfo.getInfo",
+  "capturedAtLocal": "2026-11-03",
+  "browserVersion": "149.0.7827.55",
+  "headless": {
+    "executable": "chrome-headless-shell",
+    "launchMode": "headless",
+    "commandLineObserved": [
+      "--enable-unsafe-swiftshader",
+      "--use-gl=angle",
+      "--use-angle=swiftshader-webgl"
+    ],
+    "gpuDevice": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver-5.0.0)",
+    "displayType": "ANGLE_SWIFTSHADER",
+    "glImplementation": "(gl=egl-angle,angle=swiftshader)",
+    "featureStatus": {
+      "gpu_compositing": "disabled_software",
+      "webgl": "unavailable_software",
+      "webgpu": "unavailable_software"
+    }
+  },
+  "headedControl": {
+    "launchMode": "headed",
+    "gpuDevice": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Version 27.0.1 (Build 26A434))",
+    "displayType": "ANGLE_METAL",
+    "glImplementation": "(gl=egl-angle,angle=metal)",
+    "featureStatus": {
+      "gpu_compositing": "enabled",
+      "webgl": "enabled",
+      "webgpu": "enabled"
+    },
+    "qualificationNote": "This was a browser graphics-path observation only; no native WebGPU application test or qualification was performed."
+  },
+  "host": {
+    "os": "macOS 27.0.1 (26A434)",
+    "architecture": "arm64",
+    "model": "Apple M4 Pro",
+    "onlineCpuCount": 14,
+    "memoryBytes": null,
+    "memoryAvailability": "sysctl hw.memsize was denied by the host permission boundary",
+    "processCpuAndGpuMetrics": null,
+    "processMetricsAvailability": "macOS denied process sampling with ps; no GPU utilization metric was available"
+  },
+  "applicationRendererEvidence": {
+    "testPageTelemetry": "data-observer-renderer-family=webgl-renderer and data-observer-execution-backend=webgl2",
+    "systemInfoInterpretation": "The headless command line selects SwiftShader software WebGL. The application reports the WebGL2 API backend; it does not report hardware acceleration.",
+    "gpuUtilization": null
+  }
+}

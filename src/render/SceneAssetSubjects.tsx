@@ -1,9 +1,11 @@
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
+import { useThree } from "@react-three/fiber";
 import type * as THREE from "three";
 import {
   ARCHITECTURE_RISE_ASSET_KEY,
   ARCHITECTURE_FOREGROUND_ASSET_KEY,
   INTERIOR_CORNER_ASSET_KEY,
+  STILL_LIFE_STUDIO_ASSET_KEY,
   OBLIQUE_TABLETOP_ASSET_KEY,
   OBLIQUE_ARCHITECTURE_ASSET_KEY,
   SHELF_SWING_ASSET_KEY,
@@ -15,6 +17,7 @@ import {
   MACRO_DEPTH_OF_FIELD_ASSET_KEY,
   MACRO_OBLIQUE_PLANE_ASSET_KEY,
   MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+  FRINGE_CLUB_RUNTIME_ASSET_KEY,
   createRegisteredSceneAsset,
   disposeRegisteredSceneAsset,
 } from "./assets/sceneAssetRegistry";
@@ -29,6 +32,8 @@ import { TABLE_TILT_PRESENTATION } from "../scenes/presentation/tableTilt";
 import { SHELF_SWING_PRESENTATION } from "../scenes/presentation/shelfSwing";
 import { ARCHITECTURE_FOREGROUND_PRESENTATION } from "../scenes/presentation/architectureForeground";
 import { INTERIOR_CORNER_PRESENTATION } from "../scenes/presentation/interiorCorner";
+import { STILL_LIFE_STUDIO_PRESENTATION } from "../scenes/presentation/stillLifeStudio";
+import type { SceneVariationDescriptor } from "../types/sceneVariation";
 import { OBLIQUE_TABLETOP_PRESENTATION } from "../scenes/presentation/obliqueTabletop";
 import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../scenes/presentation/focusFundamentals";
 import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../scenes/presentation/viewCameraAnatomy";
@@ -60,7 +65,108 @@ const RegisteredSceneAsset = <K extends SceneAssetKey,>({
     if (group) refreshShadowParticipation();
   }, [group, refreshShadowParticipation]);
 
-  return group ? <primitive object={group} dispose={null} /> : null;
+  return group ? (
+    <>
+      <primitive object={group} dispose={null} />
+      {import.meta.env.DEV && assetKey === VIEW_CAMERA_ANATOMY_ASSET_KEY
+        ? <AnatomyVisibilityVerificationHook group={group} />
+        : null}
+      {import.meta.env.DEV && assetKey === ARCHITECTURE_RISE_ASSET_KEY
+        ? <ArchitectureRiseVisibilityVerificationHook group={group} />
+        : null}
+    </>
+  ) : null;
+};
+
+/** Test-only control for the actual registered Architecture Rise asset root. */
+const ArchitectureRiseVisibilityVerificationHook = ({ group }: { group: THREE.Group }) => {
+  useLayoutEffect(() => {
+    if (group.name !== "architecture-rise-subject") return;
+    if (typeof document === "undefined") return;
+    const container = document.querySelector<HTMLElement>(
+      '[data-testid="scene-canvas"][data-observer-verification-scene="architecture-rise"]',
+    );
+    if (!container) return;
+
+    const originalVisibility = group.visible;
+    const setVisibility = (event: Event) => {
+      const visible = (event as CustomEvent<unknown>).detail;
+      if (typeof visible !== "boolean") return;
+      group.visible = visible;
+      container.setAttribute(
+        "data-observer-test-architecture-rise-subject-visible",
+        String(visible),
+      );
+    };
+
+    container.addEventListener(
+      "vcs:observer-verification:architecture-rise-subject",
+      setVisibility,
+    );
+    container.setAttribute("data-observer-test-architecture-rise-visibility-hook", "ready");
+    container.setAttribute(
+      "data-observer-test-architecture-rise-subject-visible",
+      String(originalVisibility),
+    );
+
+    return () => {
+      group.visible = originalVisibility;
+      container.removeEventListener(
+        "vcs:observer-verification:architecture-rise-subject",
+        setVisibility,
+      );
+      container.removeAttribute("data-observer-test-architecture-rise-visibility-hook");
+      container.removeAttribute("data-observer-test-architecture-rise-subject-visible");
+    };
+  }, [group]);
+
+  return null;
+};
+
+/** Development-only subject visibility seam used by the PR #248 framebuffer negative control. */
+const AnatomyVisibilityVerificationHook = ({ group }: { group: THREE.Group }) => {
+  const { gl } = useThree();
+
+  useLayoutEffect(() => {
+    if (group.name !== "view-camera-anatomy-subject") return;
+
+    const container = gl.domElement.closest<HTMLElement>(
+      '[data-testid="scene-canvas"]',
+    );
+    const originalVisibility = group.visible;
+    const setVisibility = (event: Event) => {
+      const visible = (event as CustomEvent<unknown>).detail;
+      if (typeof visible === "boolean") {
+        group.visible = visible;
+        container?.setAttribute(
+          "data-observer-test-anatomy-subject-visible",
+          String(group.visible),
+        );
+      }
+    };
+
+    container?.addEventListener(
+      "vcs:observer-verification:anatomy-visibility",
+      setVisibility,
+    );
+    container?.setAttribute("data-observer-test-anatomy-visibility-hook", "ready");
+    container?.setAttribute(
+      "data-observer-test-anatomy-subject-visible",
+      String(originalVisibility),
+    );
+
+    return () => {
+      group.visible = originalVisibility;
+      container?.removeEventListener(
+        "vcs:observer-verification:anatomy-visibility",
+        setVisibility,
+      );
+      container?.removeAttribute("data-observer-test-anatomy-visibility-hook");
+      container?.removeAttribute("data-observer-test-anatomy-subject-visible");
+    };
+  }, [gl.domElement, group]);
+
+  return null;
 };
 
 const architectureRiseRequest = Object.freeze({
@@ -76,6 +182,9 @@ const architectureForegroundRequest = Object.freeze({
 });
 const interiorCornerRequest = Object.freeze({
   presentation: INTERIOR_CORNER_PRESENTATION,
+});
+const stillLifeStudioRequest = Object.freeze({
+  presentation: STILL_LIFE_STUDIO_PRESENTATION,
 });
 const obliqueTabletopRequest = Object.freeze({
   presentation: OBLIQUE_TABLETOP_PRESENTATION,
@@ -106,12 +215,22 @@ const mirrorShiftViewportRequest: SceneAssetRequestMap[
 });
 
 /** Interactive scene consumers share the exact registered factories used by RTT. */
-export const ArchitectureRiseSubject = () => (
-  <RegisteredSceneAsset
-    assetKey={ARCHITECTURE_RISE_ASSET_KEY}
-    request={architectureRiseRequest}
-  />
-);
+export const ArchitectureRiseSubject = ({
+  variationDescriptor,
+}: {
+  variationDescriptor?: SceneVariationDescriptor;
+}) => {
+  const request = useMemo(
+    () => ({ ...architectureRiseRequest, variationDescriptor }),
+    [variationDescriptor],
+  );
+  return (
+    <RegisteredSceneAsset
+      assetKey={ARCHITECTURE_RISE_ASSET_KEY}
+      request={request}
+    />
+  );
+};
 
 export const ObliqueArchitectureSubject = () => (
   <RegisteredSceneAsset
@@ -124,9 +243,19 @@ export const TableTiltSubject = () => (
   <RegisteredSceneAsset assetKey={TABLE_TILT_ASSET_KEY} request={tableTiltRequest} />
 );
 
-export const ShelfSwingSubject = () => (
-  <RegisteredSceneAsset assetKey={SHELF_SWING_ASSET_KEY} request={shelfSwingRequest} />
-);
+export const ShelfSwingSubject = ({
+  variationDescriptor,
+}: {
+  variationDescriptor?: SceneVariationDescriptor;
+}) => {
+  const request = useMemo(
+    () => ({ ...shelfSwingRequest, variationDescriptor }),
+    [variationDescriptor],
+  );
+  return (
+    <RegisteredSceneAsset assetKey={SHELF_SWING_ASSET_KEY} request={request} />
+  );
+};
 
 export const ArchitectureForegroundSubject = () => (
   <RegisteredSceneAsset
@@ -135,12 +264,22 @@ export const ArchitectureForegroundSubject = () => (
   />
 );
 
-export const InteriorCornerSubject = () => (
-  <RegisteredSceneAsset
-    assetKey={INTERIOR_CORNER_ASSET_KEY}
-    request={interiorCornerRequest}
-  />
-);
+export const InteriorCornerSubject = ({
+  variationDescriptor,
+}: {
+  variationDescriptor?: SceneVariationDescriptor;
+}) => {
+  const request = useMemo(
+    () => ({ ...interiorCornerRequest, variationDescriptor }),
+    [variationDescriptor],
+  );
+  return (
+    <RegisteredSceneAsset
+      assetKey={INTERIOR_CORNER_ASSET_KEY}
+      request={request}
+    />
+  );
+};
 
 export const ObliqueTabletopSubject = () => (
   <RegisteredSceneAsset
@@ -148,6 +287,20 @@ export const ObliqueTabletopSubject = () => (
     request={obliqueTabletopRequest}
   />
 );
+
+export const StillLifeStudioSubject = ({
+  variationDescriptor,
+}: {
+  variationDescriptor?: SceneVariationDescriptor;
+}) => {
+  const request = useMemo(
+    () => ({ ...stillLifeStudioRequest, variationDescriptor }),
+    [variationDescriptor],
+  );
+  return (
+    <RegisteredSceneAsset assetKey={STILL_LIFE_STUDIO_ASSET_KEY} request={request} />
+  );
+};
 
 export const FocusFundamentalsSubject = () => (
   <RegisteredSceneAsset
@@ -195,5 +348,17 @@ export const MirrorShiftSubject = () => (
   <RegisteredSceneAsset
     assetKey={MIRROR_SHIFT_ASSET_KEY}
     request={mirrorShiftViewportRequest}
+  />
+);
+
+/** Development fixture consumer; deliberately absent from sceneSubjectRegistry. */
+export const FringeClubRuntimeSubject = ({
+  request,
+}: {
+  request: SceneAssetRequestMap[typeof FRINGE_CLUB_RUNTIME_ASSET_KEY];
+}) => (
+  <RegisteredSceneAsset
+    assetKey={FRINGE_CLUB_RUNTIME_ASSET_KEY}
+    request={request}
   />
 );

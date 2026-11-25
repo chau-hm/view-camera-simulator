@@ -1,0 +1,300 @@
+{
+  "schemaVersion": 1,
+  "reportRevision": "m6d-opaque-presentation-v1",
+  "sourceCommit": "b5fc75513797707f969813dbcbe89fc892626c23",
+  "predecessorMerge": "ee8c465d881837bcc136f7b849fa4fcddfa1f8ae",
+  "m6bPredecessorMerge": "310dc0770b46f103ada68b5872258306f2b048e9",
+  "contractRevision": "m6d-opaque-presentation-v1",
+  "alternativesEvaluated": [
+    {
+      "id": "opaque-final-presentation",
+      "fit": "M5 consumes Near coverage into completed RGB and outputs alpha one; the current M6 material and visible canvas are opaque; no existing downstream consumer requires transparency.",
+      "decision": "selected"
+    },
+    {
+      "id": "source-alpha-preserving-presentation",
+      "fit": "The M6 TSL intermediate carries source.a, but the normal M5 composite is already opaque and no current consumer needs that alpha.",
+      "decision": "rejected-until-a-concrete-transparent-consumer-and-reviewed-rgb-safe-material-design-exist",
+      "evidence": "The investigated NoBlending variant changed an M6B partial-alpha RGB patch by maximum 87 eight-bit codes and RMSE 12.9577."
+    }
+  ],
+  "selectedContract": "opaque-final-presentation",
+  "stageAlphaOwnership": {
+    "m3Scene": "RGBA scene color; the supported Architecture Rise scene uses an opaque clear and opaque materials. Optical physical/depth/validity meaning is carried in separate data. This is not a claim about unqualified scenes/materials.",
+    "m5Far": "RGB Far estimate with alpha one; alpha does not carry Near coverage.",
+    "m5Near": "RGB Near estimate with alpha carrying optical Near coverage until the M5 composite consumes it.",
+    "m5ResearchComposite": "Completed linear RGB after applying Near coverage exactly once; alpha one.",
+    "m6Presentation": "Samples only the completed M5 research composite. Orientation/crop and throughput, natural-illumination, and Image Circle gains affect RGB. Opaque material output alpha is one.",
+    "visibleCanvas": "Opaque browser canvas; alpha is not a downstream transparency interface."
+  },
+  "m3SourceContract": {
+    "architectureRiseSceneId": "architecture-rise",
+    "sourceTargetFormat": "rgba8unorm",
+    "clearAlpha": 1,
+    "supportedSceneMaterialContract": "opaque scene input",
+    "separateOpticalData": ["physical", "depth", "validity"],
+    "limitation": "No general transparent-scene claim is made for scenes or materials outside the exact M6 pilot."
+  },
+  "m5FarContract": {
+    "rgb": "Far reconstruction output",
+    "alpha": 1,
+    "evidence": "Current gather/B1 implementation emits vec4(selectedFarRgb, 1); registered Native M5 target format is rgba16float."
+  },
+  "m5NearContract": {
+    "alphaMeaning": "optical Near coverage",
+    "coverageRange": [0, 1],
+    "consumer": "M5 research composite only",
+    "finalDisplayTransparency": false
+  },
+  "m5CompositeContract": {
+    "sourceIdentity": "m5-research-composite",
+    "linearRgbEquation": "Far.rgb * (1 - clamp(Near.a, 0, 1)) + Near.rgb * clamp(Near.a, 0, 1)",
+    "alpha": 1,
+    "nearCoverageConsumptionCount": 1,
+    "targetFormat": "rgba16float"
+  },
+  "m6PresentationContract": {
+    "inputSource": "m5-research-composite",
+    "nearCoverageReadByM6": false,
+    "nearBlendByM6": false,
+    "rgbOperations": ["Raw/Upright mapping", "Focus Loupe crop", "throughput", "natural illumination", "Image Circle coverage"],
+    "rgbOperationsChangeAlpha": false,
+    "preMaterialTslAlpha": "source.a; retained as the intermediate expression value",
+    "finalTargetAlpha": 1,
+    "referenceSemantics": {
+      "outputLinearRgba": "pre-material TSL output; may retain source alpha",
+      "expectedOpaqueTargetLinearRgba": "CPU expectation for opaque material target; not GPU readback"
+    }
+  },
+  "actualMaterialState": {
+    "type": "MeshBasicNodeMaterial",
+    "threeRevision": "r186",
+    "transparent": false,
+    "opacity": 1,
+    "blending": "NormalBlending",
+    "alphaTest": 0,
+    "premultipliedAlpha": false,
+    "nodeExpressionChanged": false,
+    "materialChanged": false
+  },
+  "visibleCanvasContract": {
+    "webgpuRendererAlpha": false,
+    "alphaMode": "opaque",
+    "outputColorSpace": "srgb",
+    "toneMapping": "disabled",
+    "alphaPreservationConsumer": "none in the current Ground Glass presentation path"
+  },
+  "m5ToM6SourceIdentity": {
+    "registeredM6": {
+      "sourceCommit": "b5fc75513797707f969813dbcbe89fc892626c23",
+      "sceneId": "architecture-rise",
+      "requestId": "gg-mvtrvyyr-e4cawlbq4ls-default-request-16",
+      "rendererGenerationId": "gg-mvtrvyyr-e4cawlbq4ls-default-generation-1",
+      "presentationSource": "m5-research-composite",
+      "presentationStatus": "completed"
+    },
+    "registeredM5CompositeProbe": {
+      "captureId": "m6d-composite-contract-1793292264979",
+      "requestId": "gg-mvtrwudl-xmemr6os8b-default-request-4",
+      "channelId": "default",
+      "sceneId": "architecture-rise",
+      "rendererGenerationId": "gg-mvtrwudl-xmemr6os8b-default-generation-2",
+      "completedPass": "researchComposite",
+      "targetFormat": "rgba16float"
+    },
+    "identityBoundary": "The synthetic Far/Near control probe shares the registered M5 capture's exact request/channel/scene/generation. The separate registered M6 suite confirms that accepted M6 presentation uses m5-research-composite and completes on its own current request."
+  },
+  "nearCoverageOwnershipEvidence": {
+    "sourceCommit": "b5fc75513797707f969813dbcbe89fc892626c23",
+    "method": "Native WebGPU readback from the production M5 research-composite TSL node using known RGBA16F Far/Near inputs.",
+    "coverageSamples": [0, 0.25, 0.5, 0.75, 1],
+    "measuredCompositeRgba": [
+      [0.75, 0.5, 0.25, 1],
+      [0.625, 0.5625, 0.3125, 1],
+      [0.5, 0.625, 0.375, 1],
+      [0.375, 0.6875, 0.4375, 1],
+      [0.25, 0.75, 0.5, 1]
+    ],
+    "expectedValuesMatchExactly": true,
+    "rendererStateRestored": true
+  },
+  "noDoubleBlendEvidence": {
+    "m6Source": "m5-research-composite",
+    "m6NearCoverageRead": false,
+    "unitNegativeControl": "Applying Near coverage to the completed RGB a second time differs from the expected 0.5-coverage composite by 0.125 maximum channel value and is rejected by the comparison control.",
+    "nativeProbeNegativeControls": {
+      "ignoredCoverage": "fails RGB comparison",
+      "secondNearBlend": "fails RGB comparison",
+      "rawNearOutput": "fails RGB comparison",
+      "nonOpaqueCompositeAlpha": "fails the alpha-one assertion"
+    }
+  },
+  "finalRgbEvidence": {
+    "m6dCompositeProbe": {
+      "caseCount": 5,
+      "maximumRgbError": 0,
+      "exactCoverageCases": [0, 0.25, 0.5, 0.75, 1]
+    },
+    "m6bFinalCanvasOracleHistorical": {
+      "cases": 9,
+      "samples": 206,
+      "maximumChannelError8Bit": 1,
+      "worstRgbRmse8Bit": 0.2041241452319315,
+      "declaredLimits": {"maximumChannelError8Bit": 4, "rgbRmse8Bit": 2.5}
+    },
+    "interpretation": "M6D preserves RGB behavior and the existing M6B independent oracle. The controlled M5 probe verifies coverage composition and does not claim photographic blur accuracy."
+  },
+  "finalAlphaEvidence": {
+    "contract": "final stored output alpha is one",
+    "m6dNativeCompositeProbe": {"samples": 5, "allMeasuredAlphaOne": true},
+    "m6cHistorical": {
+      "revision": "m6c-alpha-rgba8-r2",
+      "captures": 13,
+      "samples": 195,
+      "expectedOpaqueStoredAlpha": 1,
+      "measuredStoredAlpha": 1,
+      "targetStorageMaximumError": 0,
+      "targetStorageRmse": 0,
+      "sourceAlphaPreservationMaximumError": 1,
+      "sourceAlphaPreservationRmse": 0.6453784431632674,
+      "rgbMaximumError": 0,
+      "rgbRmse": 0,
+      "sourceAlphaDecision": "alpha-observable-contract-different",
+      "rgbDecision": "rgb-regression-passed"
+    },
+    "historicalSourceAlphaDecisionPreserved": true
+  },
+  "rawUprightEvidence": {
+    "status": "preserved-and-passed",
+    "reference": "GROUND_GLASS_M6_PRESENTATION.md and GROUND_GLASS_M6B_REVIEW_FIX_1_REPORT.json",
+    "negativeControl": "Expected 180-degree correspondence mean RGB error 3.59 versus 44.06 horizontal-only and 52.39 vertical-only.",
+    "changedByM6d": false
+  },
+  "focusLoupeEvidence": {
+    "status": "preserved-and-passed",
+    "coverage": ["centered", "panned", "crop limits", "reset"],
+    "m6ResizeDisplayedPx": [394, 315],
+    "m6ResizeInternalTargetPx": [256, 205],
+    "m6cAlphaResizeSourcePx": [334, 267],
+    "m6cAlphaResizeTargetPx": [437, 349],
+    "staleRequestAndGenerationControls": "passed in existing M6/M6C Native suites",
+    "changedByM6d": false
+  },
+  "resizeEvidence": {
+    "actualM6Resize": {"displayPx": [394, 315], "internalTargetPx": [256, 205]},
+    "m6cTargetResize": {"sourcePx": [334, 267], "targetPx": [437, 349]},
+    "staleRequestRejected": true,
+    "retiredGenerationRejected": true
+  },
+  "negativeControls": {
+    "N1_nearAlphaIgnored": {"result": "detected", "evidence": "M6D unit and Native production-node comparison"},
+    "N2_nearAlphaAppliedTwice": {"result": "detected", "evidence": "M6D unit and Native production-node comparison"},
+    "N3_rawNearOutput": {"result": "detected", "evidence": "M6D unit and Native production-node comparison"},
+    "N4_nonOpaqueComposite": {"result": "detected", "evidence": "M6D unit and Native alpha-one assertion"},
+    "N5_M6SecondBlend": {"result": "detected", "evidence": "M6 source identity and M6D double-blend control"},
+    "N6_M6SourceChangedToM3Raw": {"result": "detected", "evidence": "Registered-app M6 source identity assertion requires m5-research-composite"},
+    "N7_imageCircleMultipliesFinalAlpha": {"result": "detected", "evidence": "M6D pure reference test checks alpha remains one at zero Image Circle RGB gain"},
+    "N8_naturalIlluminationMultipliesFinalAlpha": {"result": "detected", "evidence": "M6D pure reference test checks natural RGB gain does not alter target alpha"},
+    "N9_throughputMultipliesFinalAlpha": {"result": "detected", "evidence": "M6D pure reference test checks throughput RGB gain does not alter target alpha"},
+    "N10_partialSourceAlphaReportedAsOpaqueInput": {"result": "detected", "evidence": "M6D finalizer and pre-material/opaque-target reference distinction"},
+    "N11_diagnosticMaterialSubstitution": {"result": "detected", "evidence": "M6C actual material-equivalence evidence gate"},
+    "N12_NoBlendingWithoutRgbConformance": {"result": "rejected", "evidence": "Historical M6B NoBlending experiment failed RGB: max 87 codes, RMSE 12.9577"},
+    "N13_premultiplicationOrBlendingRgbChange": {"result": "detected", "evidence": "M6B final-canvas RGB oracle and historical NoBlending regression"},
+    "N14_doubleSrgbEncoding": {"result": "detected", "evidence": "Existing M6 presentation color-transfer tests"},
+    "N15_missingSrgbConversion": {"result": "detected", "evidence": "Existing M6 presentation color-transfer tests"},
+    "N16_imageCircleRepositionedByCrop": {"result": "detected", "evidence": "M6B per-capture physical-overlay mapping gate"},
+    "N17_rawHorizontalOrVerticalFlip": {"result": "detected", "evidence": "Existing orientation negative controls and Native Raw/Upright evidence"},
+    "N18_staleResizeRequestPublishes": {"result": "detected", "evidence": "M6 request/generation and M6C held stale-readback controls"},
+    "N19_sourceAlphaFailureRelabeledAsPass": {"result": "detected", "evidence": "M6D tests keep pre-material source alpha distinct; M6C report retains alpha-observable-contract-different"},
+    "N20_opaquePassPromotesPhotographicQuality": {"result": "rejected", "evidence": "M5Q qualification regression retains frozen Q1-Q7; M6 quality decision remains quality-unqualified"},
+    "N21_opaquePassEnablesProductionWebGPU": {"result": "rejected", "evidence": "Backend policy and production-preview isolation tests; production decision remains disabled"},
+    "N22_contractWithoutRegisteredIntegration": {"result": "rejected", "evidence": "M6 architecture decision requires the current registered-app Native M6 suite and completed M4/M5/M6 identities"}
+  },
+  "registeredAppIntegration": {
+    "sceneId": "architecture-rise",
+    "registeredM6Suite": "8/8 passed on native Chrome WebGPU",
+    "m4M5M6Completion": "passed",
+    "presentationSource": "m5-research-composite",
+    "rawUpright": "passed",
+    "focusLoupeCenterPanResize": "passed",
+    "rawFirstAndLifecycle": "passed",
+    "staleRequestAndGeneration": "rejected as stale",
+    "fallback": "none on authorized positive captures"
+  },
+  "controlledFixtureEvidence": {
+    "fixtureScope": "M6D Far/Near vectors are synthetic test inputs rendered through the production M5 composite TSL node; M6B uses the actual presentation node/shared Stage for physical landmark calibration; M6C uses controlled partial-alpha sources to inspect the actual material.",
+    "fixtureIsRegisteredScenePixels": false,
+    "fixtureIsPhotographicQualityEvidence": false,
+    "registeredArchitectureRisePhysicalGrid": "not provided; its displayed grid is decorative CSS"
+  },
+  "nativeRuntime": {
+    "browser": "Chrome 156",
+    "operatingSystem": "macOS",
+    "threeRevision": "186",
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none",
+    "applicationFallback": false,
+    "m6dProbeSourceCommit": "b5fc75513797707f969813dbcbe89fc892626c23"
+  },
+  "historicalEvidenceReferences": {
+    "m6bSpatialRevision": "m6b-spatial-gate-r1",
+    "m6bSpatial": {"captures": 14, "measuredLandmarks": 77, "outsideCrop": 105, "unsupported": 0, "maximumErrorPx": 1.5492044700919514, "maximumPerCaptureRmsPx": 0.7301107934845426, "limits": {"maximumErrorPx": 2, "perCaptureRmsPx": 1.25}},
+    "m6bFinalRgb": {"cases": 9, "samples": 206, "maximumChannelError8Bit": 1, "worstRgbRmse8Bit": 0.2041241452319315},
+    "m6cAlphaRevision": "m6c-alpha-rgba8-r2",
+    "m6cReport": "GROUND_GLASS_M6C_ALPHA_CONFORMANCE_REPORT.json",
+    "m6bReport": "GROUND_GLASS_M6B_PHYSICAL_OVERLAY_CONFORMANCE_REPORT.json"
+  },
+  "materialOutputDecision": "opaque-presentation-contract-conformant",
+  "finalOutputDecision": "final-output-conformant",
+  "m6ArchitectureDecision": {
+    "status": "architecture-implemented",
+    "scope": "exact registered development-only Architecture Rise pilot and supported presentation contracts",
+    "notClaimed": ["all scenes", "all materials", "multi-device compatibility", "production parity", "photographic blur quality"]
+  },
+  "m6QualityDecision": "quality-unqualified",
+  "productionDecision": "production-webgpu-disabled",
+  "m5qQualification": {
+    "revision": "m5q-architecture-rise-r186-v3",
+    "Q1": "reference-not-converged",
+    "Q2": "insufficient-support",
+    "Q3": "bounded-qualified",
+    "Q4": "insufficient-support",
+    "Q5": "reference-not-converged",
+    "Q6": "reference-not-converged",
+    "Q7": "reference-not-converged",
+    "changed": false
+  },
+  "m7Readiness": "May begin only after M6D review and merge; no M7 implementation is included here.",
+  "validation": {
+    "focusedUnitAndIntegration": "passed; the M6D contract suite and related M5/M6/M6B/M6C/backend/lifecycle unit and integration suites passed",
+    "fullUnitIntegration": "299 files / 3052 tests passed",
+    "typecheck": "passed",
+    "lint": "passed",
+    "cssStructure": "passed",
+    "productionBuild": "passed; built assets contain no M6D contract revision or test-probe module string",
+    "nativeChromeR186WebGPU": {
+      "m6dCompositeProbe": "1/1 passed",
+      "registeredM6AndLifecycle": "8/8 passed",
+      "m6bPhysicalAndRgb": "1/1 passed",
+      "m6cAlphaAndStaleReadback": "3/3 passed",
+      "m5M6dProbeM5qAndAdapter": "3/3 passed"
+    },
+    "productionPreviewIsolation": "2/2 passed; production preview used WebGL and loaded no WebGPU module",
+    "broadLocalE2e": {
+      "result": "blocked-at-first-unrelated-baseline-failure",
+      "command": "npm run ci:local:e2e",
+      "currentOriginMain": "ee8c465d881837bcc136f7b849fa4fcddfa1f8ae",
+      "failure": "architecture-foreground-compound.spec.ts cannot find the expected heading Complete the Photograph",
+      "baseReproduction": "The same isolated spec fails on a clean archive of the exact current origin/main commit with the same missing heading. Later broad E2E specs were not run.",
+      "unrelatedSceneUiChanged": false
+    },
+    "hostedCi": "Must be verified on the final PR head; GitHub check results are authoritative external evidence and are recorded in the PR handoff."
+  },
+  "remainingLimitations": [
+    "The registered Architecture Rise scene has only a decorative CSS grid; M6B physical alignment remains controlled-fixture scoped.",
+    "The M6D Far/Near inputs are synthetic known vectors, not a new photographic or blur-quality reference.",
+    "Source-alpha preservation remains false by the M6C measured test; a future transparent consumer would require a new reviewed contract and RGB-safe material design.",
+    "Other scenes/materials, browser/GPU combinations, production parity, M7 lifecycle/recovery, and M8 quality/performance qualification are outside this PR."
+  ]
+}

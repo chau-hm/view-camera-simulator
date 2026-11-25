@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "executionSourceCommitSha": "17a4ccb9f4ae08069defaa9a1eac9938833412ae",
+  "publicAttachmentExportNormalization": "trailing horizontal whitespace was removed from Playwright error-context markdown exports to satisfy repository diff hygiene; assertions, outcomes, timestamps, identities, worker metadata, screenshot bytes, and other attachment content were not changed",
+  "captures": {
+    "ordinary": {
+      "publicReportPath": "docs/architecture/ground-glass-m7w-qualification/capture/ordinary/raw/ordinary-playwright.public.json",
+      "originalRawSha256": "9afa218df8f4e7d19de9f19b0ba2ff7ef0686f690709c3106bca5331067c45f7",
+      "originalRawBytes": 9122417,
+      "originalRawRetainedInRepository": false,
+      "executionMode": "complete chromium project; 201 mandatory identities projected from 276 discovered results",
+      "configuredWorkers": 4,
+      "retries": 0,
+      "port": 4179,
+      "startedAt": "2026-11-08T12:31:53.033Z",
+      "durationMs": 2825933.262
+    },
+    "representativeSingle": {
+      "publicReportPath": "docs/architecture/ground-glass-m7w-qualification/capture/ordinary/reproductions/representative-single/raw/representative-playwright.public.json",
+      "originalRawSha256": "95d3ae106b12be2b69a51abd1245164cb2aaef209abb1b435f080943834f9e5c",
+      "originalRawBytes": 12428,
+      "originalRawRetainedInRepository": false,
+      "executionMode": "four preselected failures, isolated one-worker reproduction",
+      "configuredWorkers": 1,
+      "retries": 0,
+      "port": 4181,
+      "startedAt": "2026-11-08T13:29:14.209Z",
+      "durationMs": 199516.266
+    },
+    "rendererSerial": {
+      "publicReportPath": "docs/architecture/ground-glass-m7w-qualification/capture/renderer-serial/raw/renderer-serial-playwright.public.json",
+      "originalRawSha256": "4fbb60dfe680314e8fec108f56c3694d39bd9c224a19acef74738c53708e168a",
+      "originalRawBytes": 11978,
+      "originalRawRetainedInRepository": false,
+      "executionMode": "required renderer-serial project with no-deps",
+      "configuredWorkers": 1,
+      "retries": 0,
+      "port": 4180,
+      "startedAt": "2026-11-08T13:19:58.161Z",
+      "durationMs": 246967.673
+    }
+  },
+  "environment": {
+    "node": "v24.3.0",
+    "npm": "11.12.0",
+    "playwright": "1.61.1",
+    "chromium": "149.0.7827.55",
+    "three": "0.187.0",
+    "threeRevision": "187",
+    "platform": "darwin arm64",
+    "osRelease": "27.0.0",
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/149.0.7827.55 Safari/537.36",
+    "webgl2Available": true,
+    "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "webglRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)",
+    "webglVendor": "Google Inc.",
+    "hardwareAcceleration": "unconfirmed; browser probe reported SwiftShader software rendering",
+    "applicationRendererPolicy": "application-default WebGL; no native WebGPU runtime flags",
+    "explicitlyFalseBuildFlags": [
+      "VITE_GROUND_GLASS_WEBGPU_RAW_PILOT",
+      "VITE_GROUND_GLASS_WEBGPU_TEST_SEAM",
+      "VITE_GROUND_GLASS_WEBGPU_PHYSICAL_COC_RESEARCH",
+      "VITE_GROUND_GLASS_WEBGPU_GATHER_RESEARCH",
+      "VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION",
+      "VITE_GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION"
+    ],
+    "nativeRuntimeFlags": "unset",
+    "serverReuse": "disabled with CI=1 and strict isolated ports 4179, 4180, and 4181"
+  }
+}

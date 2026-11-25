@@ -50,10 +50,17 @@ describe("macro specimen physical renderer contract", () => {
       expect(object && object instanceof THREE.Mesh ? object.material : null).toBeInstanceOf(THREE.MeshStandardMaterial);
       return (object as THREE.Mesh).material as THREE.MeshStandardMaterial;
     };
-    expect(materialFor("body").metalness).toBeGreaterThan(0.8);
-    expect(materialFor("central-relief").metalness).toBeGreaterThan(0.8);
-    expect(materialFor("edge-knurl-0").metalness).toBeGreaterThan(0.8);
-    expect(materialFor("face-inset").metalness).toBeLessThan(0.2);
+    const bodyMaterial = materialFor("body");
+    const reliefMaterial = materialFor("central-relief");
+    const copperMaterial = materialFor("edge-knurl-0");
+    const insetMaterial = materialFor("face-inset");
+    expect(bodyMaterial.metalness).toBeLessThan(0.7);
+    expect(reliefMaterial.metalness).toBeGreaterThan(bodyMaterial.metalness);
+    expect(copperMaterial.metalness).toBeGreaterThan(bodyMaterial.metalness);
+    expect(bodyMaterial.roughness).toBeGreaterThan(reliefMaterial.roughness);
+    expect(copperMaterial.roughness).toBeGreaterThan(reliefMaterial.roughness);
+    expect(insetMaterial.metalness).toBeLessThan(0.2);
+    expect([bodyMaterial, reliefMaterial, copperMaterial].every(({ emissiveIntensity }) => emissiveIntensity <= 0.16)).toBe(true);
 
     const roughnessData = (material: THREE.MeshStandardMaterial): Uint8Array => {
       expect(material.roughnessMap).toBeInstanceOf(THREE.DataTexture);

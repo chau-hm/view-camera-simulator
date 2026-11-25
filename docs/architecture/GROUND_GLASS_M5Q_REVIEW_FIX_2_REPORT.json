@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "title": "M5Q Review-Fix Round 2 — Signed-Boundary Side-Population Correction",
+  "stage": "independent-native-confirmatory-matrices",
+  "evaluatorRevision": "m5q-r3-review-fix-2",
+  "historicalEvidence": {
+    "originalConfirmatoryReportPreserved": true,
+    "reviewFix1ReportPreserved": true,
+    "previousQ3Decision": "bounded-qualified",
+    "previousSideFieldsWereDepthEdgeCounts": {
+      "signedNearSidePixels": 3024,
+      "signedFarSidePixels": 3118,
+      "depthEdgeTotalPixels": 6142,
+      "signedBoundaryTotalPixels": 1072
+    }
+  },
+  "thresholdContract": {
+    "revision": "m5q-architecture-rise-r186-v3",
+    "frozenBeforeConfirmatory": true,
+    "minimumSignedBoundaryPairs": 100,
+    "minimumSignedBoundarySidePixels": 100,
+    "numericThresholdsChanged": false,
+    "eligibilitySemanticsRevision": "m5q-r3-review-fix-2"
+  },
+  "nativeRuntime": {
+    "rendererFamily": "webgpu-renderer",
+    "actualExecutionApi": "webgpu",
+    "internalFallback": "none",
+    "applicationFallback": false,
+    "rendererRevision": "r186",
+    "sceneSourceRevision": "architecture-rise-raw-rtt-v1",
+    "sourceDimensions": [474, 379],
+    "evidenceSource": "registered-app-adapter"
+  },
+  "confirmatoryCaptureCount": 12,
+  "q3": {
+    "opticalStateId": "ar-f5200-f5p6-full-rise0",
+    "focusMm": 5200,
+    "aperture": "f/5.6",
+    "cropMagnification": 1,
+    "frontRiseMm": 0,
+    "evaluatorRevision": "m5q-r3-review-fix-2",
+    "frozenThresholdRevision": "m5q-architecture-rise-r186-v3",
+    "evidenceSource": "registered-app-adapter",
+    "captureIds": {
+      "half32": "m5q-q3-signed-q4-near60-half32-1793019434215",
+      "full32": "m5q-q3-signed-q4-near60-full32-1793019434889",
+      "full64": "m5q-q3-signed-q4-near60-full64-1793019437062"
+    },
+    "signedBoundaryPairCount": 540,
+    "signedBoundaryPixelCount": 1072,
+    "signedBoundaryTotalPixels": 1072,
+    "signedBoundaryNearSidePixelCount": 536,
+    "signedBoundaryFarSidePixelCount": 536,
+    "signedBoundaryNearSidePixels": 536,
+    "signedBoundaryFarSidePixels": 536,
+    "depthEdgePixelCount": 6142,
+    "depthEdgeTotalPixels": 6142,
+    "depthEdgeNearSidePixelCount": 3024,
+    "depthEdgeFarSidePixelCount": 3118,
+    "depthEdgeNearSidePixels": 3024,
+    "depthEdgeFarSidePixels": 3118,
+    "signedBoundaryReferenceRmse": 0,
+    "signedBoundaryReferenceMaximumChannelError": 0,
+    "signedBoundaryB1Rmse": 0.06270786018850183,
+    "requiredNearSidePixelMinimum": 100,
+    "requiredFarSidePixelMinimum": 100,
+    "sidePopulationInvariantPassed": true,
+    "previousDecision": "bounded-qualified",
+    "correctedDecision": "bounded-qualified",
+    "failedCriteria": [],
+    "runtime": {
+      "rendererFamily": "webgpu-renderer",
+      "actualExecutionApi": "webgpu",
+      "internalFallback": "none",
+      "applicationFallback": false,
+      "rendererRevision": "r186"
+    },
+    "remainingLimitations": [
+      "Q3 qualifies only the exact signed-boundary ROI and this optical state.",
+      "General depth-edge B1 quality remains separate and unqualified.",
+      "No universal B1 quality, production authorization, or M6 presentation-quality claim follows."
+    ]
+  },
+  "confirmatoryCaptureIds": [
+    "m5q-q5-cap2-half32-1793019411667",
+    "m5q-q5-cap2-full32-1793019412470",
+    "m5q-q5-cap2-full64-1793019414899",
+    "m5q-q1-control60-half32-1793019419165",
+    "m5q-q1-control60-full32-1793019419976",
+    "m5q-q1-control60-full64-1793019422360",
+    "m5q-q2-fallback-q7-profile60-half32-1793019426908",
+    "m5q-q2-fallback-q7-profile60-full32-1793019427591",
+    "m5q-q2-fallback-q7-profile60-full64-1793019429819",
+    "m5q-q3-signed-q4-near60-half32-1793019434215",
+    "m5q-q3-signed-q4-near60-full32-1793019434889",
+    "m5q-q3-signed-q4-near60-full64-1793019437062"
+  ],
+  "qualificationMatrix": {
+    "Q1": {
+      "status": "reference-not-converged",
+      "failedCriteria": ["interior-far-rmse", "interior-far-maximum-channel-error", "reference-convergence-status"],
+      "interiorFarReferenceRmse": 0.007851049626122295,
+      "interiorFarReferenceMaximumChannelError": 0.11865234375
+    },
+    "Q2": {
+      "status": "insufficient-support",
+      "failedCriteria": ["fallback-with-meaningful-blur", "fallback-reference-converged", "fallback-boundary-gradient-error"],
+      "meaningfulBlurFallbackPixels": 6,
+      "fallbackBoundaryPairs": 1436,
+      "fallbackBoundaryGradientRelativeError": 20.059458886239685
+    },
+    "Q3": {"status": "bounded-qualified", "failedCriteria": []},
+    "Q4": {
+      "status": "insufficient-support",
+      "failedCriteria": ["fractional-near-coverage"],
+      "fractionalNearCoveragePixels": 0,
+      "requiredFractionalNearCoveragePixels": 32
+    },
+    "Q5": {
+      "status": "reference-not-converged",
+      "failedCriteria": ["same-cap-reference-convergence"],
+      "stressedCapFullFrameReferenceRmse": 0.004614243444292041,
+      "stressedCapInteriorFarReferenceRmse": 0.0045775551196341226
+    },
+    "Q6": {
+      "status": "reference-not-converged",
+      "failedCriteria": ["interior-far-rmse", "interior-far-maximum-channel-error", "reference-convergence-status"],
+      "interiorFarReferenceRmse": 0.007851049626122295,
+      "interiorFarReferenceMaximumChannelError": 0.11865234375
+    },
+    "Q7": {
+      "status": "reference-not-converged",
+      "failedCriteria": ["full-frame-reference-rmse", "full-frame-reference-maximum-channel-error", "interior-far-reference-rmse", "interior-far-reference-maximum-channel-error", "depth-edge-reference-rmse", "depth-edge-reference-maximum-channel-error", "reference-convergence-status", "half32-b1-full-frame-rmse", "half32-b1-vs-full64-rmse", "half32-b1-depth-edge-rmse"],
+      "half32B1FullFrameRmse": 0.05572244346546434,
+      "half32B1InteriorFarRmse": 0.042238311935484864,
+      "half32B1DepthEdgeRmse": 0.182795035835988
+    }
+  },
+  "otherDimensionsUnchangedFromReviewFix1": true,
+  "productionIsolation": {
+    "productionRendererChanges": false,
+    "m5GatherOrB1Changes": false,
+    "nativeAdapterLifecycleChanges": false,
+    "publicWebGpuActivation": false,
+    "m6CompositeImplemented": false
+  }
+}

@@ -1,0 +1,45 @@
+
+> view-camera-simulator@0.0.0 test:e2e
+> playwright test --project=chromium --workers=2 --retries=0 --reporter=list,json --grep=(camera control rows keep useful rendered tracks across rail widths|M7J renderer-heavy companion page held beside one target) src/tests/e2e/camera-controls-compact.spec.ts src/tests/e2e/m7j-contention-companion.spec.ts
+
+[WebServer] (node:23312) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 2 workers
+
+(node:23313) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:23314) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] 8:02:35 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 8:02:35 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 8:02:35 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+[WebServer] 8:02:35 AM [vite] (client) [console.warn] THREE.Clock: This module has been deprecated. Please use THREE.Timer instead.
+  ✘  2 [chromium] › src/tests/e2e/camera-controls-compact.spec.ts:106:1 › camera control rows keep useful rendered tracks across rail widths (2.0m)
+  ✓  1 [chromium] › src/tests/e2e/m7j-contention-companion.spec.ts:11:1 › M7J renderer-heavy companion page held beside one target (2.2m)
+
+
+  1) [chromium] › src/tests/e2e/camera-controls-compact.spec.ts:106:1 › camera control rows keep useful rendered tracks across rail widths
+
+    Test timeout of 120000ms exceeded.
+
+    Error: locator.press: Test timeout of 120000ms exceeded.
+    Call log:
+      - waiting for getByRole('region', { name: 'Camera Controls' }).getByRole('slider', { name: 'Tilt' })
+        - locator resolved to <input max="10" min="-10" step="0.1" id="_r_i_" value="0.9" type="range" aria-label="Tilt" class="range-slider compact-range-row__slider"/>
+
+
+      170 |     const tiltBefore = await tilt.inputValue();
+      171 |     await tilt.focus();
+    > 172 |     await tilt.press("ArrowRight");
+          |                ^
+      173 |     await expect(tilt).not.toHaveValue(tiltBefore);
+      174 |
+      175 |     const aperture = controls.getByRole("radiogroup", { name: "Aperture" });
+        at /Users/homan/repo/view-camera-simulator/.worktrees/ground-glass-m7j-four-worker-stability/src/tests/e2e/camera-controls-compact.spec.ts:172:16
+
+    Error Context: test-results/camera-controls-compact-ca-40688-d-tracks-across-rail-widths-chromium/error-context.md
+
+  1 failed
+    [chromium] › src/tests/e2e/camera-controls-compact.spec.ts:106:1 › camera control rows keep useful rendered tracks across rail widths
+  1 passed (2.2m)

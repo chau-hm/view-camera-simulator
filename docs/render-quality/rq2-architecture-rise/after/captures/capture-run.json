@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "rq1-capture-run-v2",
+  "captureProfile": "rq2",
+  "captureRunId": "9ca5487b-7725-41b5-925b-8b652b7c1ad5",
+  "sourceCommit": "29947360228f761e6eacbb04e4095532f25086be",
+  "sourceTree": {
+    "status": "clean",
+    "commitReproducible": true,
+    "dirtyPaths": []
+  },
+  "observerCaptureMode": "dream-loop-captured",
+  "observerSourceCommits": [
+    "29947360228f761e6eacbb04e4095532f25086be"
+  ],
+  "status": "native-not-evaluated",
+  "capturedCaptureIds": [
+    "architecture-rise-observer-clean",
+    "architecture-rise-observer-teaching",
+    "architecture-rise-neutral-webgl-raw",
+    "architecture-rise-front-rise-webgl-raw",
+    "architecture-rise-processed-webgl-reference"
+  ],
+  "webglStatus": "captured",
+  "nativeStatus": "not-evaluated",
+  "nativeReasonClass": "source-revision-unverified"
+}

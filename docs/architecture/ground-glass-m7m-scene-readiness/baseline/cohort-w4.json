@@ -1,0 +1,225 @@
+{
+  "schema": "m7m-playwright-outcomes-v1",
+  "normalizerRevision": "m7m-playwright-normalizer-v1",
+  "captureId": "cohort-w4",
+  "executionSourceCommitSha": "0c32f113c1e3d16a8fd42e7748c64909366c6ae8",
+  "rawCapture": {
+    "sha256": "cc3611e166ff77cc8ab1d7dc8a29d6eac56274efb82f0973738b0ab65a8b357e",
+    "bytes": 51150,
+    "retention": "private-local-only",
+    "offlineReplayAvailable": false
+  },
+  "config": {
+    "projectNames": [
+      "chromium",
+      "chromium-renderer-serial"
+    ],
+    "configuredWorkers": 4,
+    "configuredRetries": 0,
+    "testSeam": "controlled-webgl-failure-recovery"
+  },
+  "stats": {
+    "discovered": 12,
+    "passed": 4,
+    "failed": 8,
+    "skipped": 0,
+    "flaky": 0,
+    "incomplete": 0,
+    "retries": 0,
+    "maxConcurrentTests": 4,
+    "actualWorkerIndices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "durationMs": 152914
+  },
+  "tests": [
+    {
+      "identity": "architecture-rise-focus-range.spec.ts::Architecture Rise focus control stays within scene depth and preserves thin-lens extension",
+      "status": "unexpected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "workerIndex": 0,
+          "startOffsetMs": 744,
+          "durationMs": 7316,
+          "failureSignature": "scene-canvas-mounted-without-canvas"
+        }
+      ]
+    },
+    {
+      "identity": "macro-bellows-extension.spec.ts::Macro 1 keeps Ground Glass and scene rendering stable through auxiliary interactions",
+      "status": "unexpected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "timedOut",
+          "retry": 0,
+          "workerIndex": 1,
+          "startOffsetMs": 741,
+          "durationMs": 75056,
+          "failureSignature": "test-timeout"
+        }
+      ]
+    },
+    {
+      "identity": "macro-compound-movements.spec.ts::Macro 4 teaches compound Tilt + Swing + Focus through the public route",
+      "status": "unexpected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "timedOut",
+          "retry": 0,
+          "workerIndex": 2,
+          "startOffsetMs": 753,
+          "durationMs": 120274,
+          "failureSignature": "test-timeout"
+        }
+      ]
+    },
+    {
+      "identity": "mirror-shift-rig-lateral.spec.ts::Mirror Shift Camera focus follows the rig while Scene focus stays fixed",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 3,
+          "startOffsetMs": 753,
+          "durationMs": 70911,
+          "failureSignature": null
+        }
+      ]
+    },
+    {
+      "identity": "observer-webgpu-pilot.spec.ts::Architecture Rise restores standard output after a controlled material-aware module failure",
+      "status": "unexpected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "workerIndex": 4,
+          "startOffsetMs": 8906,
+          "durationMs": 25017,
+          "failureSignature": "assertion-failed"
+        }
+      ]
+    },
+    {
+      "identity": "phase13-guided-tasks.spec.ts::TST-E2E-002: user can open Architecture Rise from the Scenes page",
+      "status": "unexpected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "workerIndex": 5,
+          "startOffsetMs": 34686,
+          "durationMs": 5496,
+          "failureSignature": "three-d-scene-heading-not-visible"
+        }
+      ]
+    },
+    {
+      "identity": "scene-view-focus.spec.ts::Architecture + Foreground Camera focus uses the physical camera anchor",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 8,
+          "startOffsetMs": 131668,
+          "durationMs": 8323,
+          "failureSignature": null
+        }
+      ]
+    },
+    {
+      "identity": "scene-view-focus.spec.ts::SPA scene switching discards the previous Camera target and returns to Scene focus",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 8,
+          "startOffsetMs": 140072,
+          "durationMs": 12802,
+          "failureSignature": null
+        }
+      ]
+    },
+    {
+      "identity": "scene-view-focus.spec.ts::Understanding Camera Movements Camera focus follows continuous viewpoint changes",
+      "status": "unexpected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "timedOut",
+          "retry": 0,
+          "workerIndex": 6,
+          "startOffsetMs": 40958,
+          "durationMs": 90254,
+          "failureSignature": "test-timeout"
+        }
+      ]
+    },
+    {
+      "identity": "scene-viewport-expansion.spec.ts::simulator viewports expand in main without replacing their active canvases",
+      "status": "unexpected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "workerIndex": 3,
+          "startOffsetMs": 71777,
+          "durationMs": 8222,
+          "failureSignature": "scene-canvas-mounted-without-canvas"
+        }
+      ]
+    },
+    {
+      "identity": "secondary-workspace-pairing.spec.ts::normal desktop pairs Geometry with Scene and Focus Distribution with Ground Glass",
+      "status": "expected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "passed",
+          "retry": 0,
+          "workerIndex": 7,
+          "startOffsetMs": 76385,
+          "durationMs": 737,
+          "failureSignature": null
+        }
+      ]
+    },
+    {
+      "identity": "viewport-learning-overlay.spec.ts::Scene-local learning drawer leaves the paired workspace layout intact",
+      "status": "unexpected",
+      "projectName": "chromium",
+      "attempts": [
+        {
+          "status": "failed",
+          "retry": 0,
+          "workerIndex": 7,
+          "startOffsetMs": 77289,
+          "durationMs": 38835,
+          "failureSignature": "assertion-failed"
+        }
+      ]
+    }
+  ]
+}

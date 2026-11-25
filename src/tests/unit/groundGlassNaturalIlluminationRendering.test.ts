@@ -64,7 +64,7 @@ describe("Ground Glass natural-illumination render contract", () => {
     expect(debug.geometry).toEqual(state);
   });
 
-  it("keeps non-parallel optics neutral in the render adapter", () => {
+  it("keeps unqualified/non-geometric neutral states fail-safe in the render adapter", () => {
     const uniforms = resolveGroundGlassNaturalIlluminationRenderState({
       state: { kind: "neutral", reason: "non-parallel-lens-film" },
       rawDebug: false,
@@ -75,6 +75,44 @@ describe("Ground Glass natural-illumination render contract", () => {
 
     expect(uniforms.enabled).toBe(false);
     expect(uniforms.geometry).toEqual({ kind: "neutral", reason: "non-parallel-lens-film" });
+  });
+
+  it("enables non-parallel geometry only for the explicitly authorized WebGL composite", () => {
+    const nonparallel = {
+      kind: "nonparallel-geometric" as const,
+      referenceImageDistanceMm: 150,
+      referenceFilmIncidenceCosine: Math.cos(Math.PI / 36),
+      lensToFilmCenterLocalMm: [0, 13.073, -149.429] as const,
+      imageSideAxisLocal: [0, Math.sin(Math.PI / 36), -Math.cos(Math.PI / 36)] as const,
+      filmNormalTowardLensSign: 1 as const,
+    };
+    const developmentDefault = resolveGroundGlassNaturalIlluminationRenderState({
+      state: nonparallel,
+      rawDebug: false,
+      filmWidthMm: 127,
+      filmHeightMm: 101.6,
+      inspectionWindow: FULL_GROUND_GLASS_INSPECTION_WINDOW,
+    });
+    const webgl = resolveGroundGlassNaturalIlluminationRenderState({
+      state: nonparallel,
+      rawDebug: false,
+      filmWidthMm: 127,
+      filmHeightMm: 101.6,
+      inspectionWindow: FULL_GROUND_GLASS_INSPECTION_WINDOW,
+      allowNonparallelGeometric: true,
+    });
+    const rawDebug = resolveGroundGlassNaturalIlluminationRenderState({
+      state: nonparallel,
+      rawDebug: true,
+      filmWidthMm: 127,
+      filmHeightMm: 101.6,
+      inspectionWindow: FULL_GROUND_GLASS_INSPECTION_WINDOW,
+      allowNonparallelGeometric: true,
+    });
+
+    expect(developmentDefault.enabled).toBe(false);
+    expect(webgl.enabled).toBe(true);
+    expect(rawDebug.enabled).toBe(false);
   });
 
   it("keeps an asymmetric rise centre aligned across source, Raw, and Upright contracts", () => {
