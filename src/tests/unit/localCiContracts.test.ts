@@ -1,4 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import { access, chmod, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -37,7 +38,14 @@ async function writeFixtureFile(root: string, relativePath: string, contents: st
   if (executable) await chmod(target, 0o755);
 }
 
-async function makeLocalCiRunnerFixture() {
+async function resolveCheckedInOwnerSelection(changedPaths: string[], pathExists: (file: string) => boolean = (file) => existsSync(file)) {
+  const manifest: { owners: Parameters<typeof resolveOwnerSelection>[1] } = JSON.parse(
+    await readFile(path.join(process.cwd(), "scripts/local-ci/owners.json"), "utf8"),
+  );
+  return resolveOwnerSelection(changedPaths, manifest.owners, pathExists);
+}
+
+async function makeLocalCiRunnerFixture(changedPaths = ["src/core/optics/newModel.ts"]) {
   const root = await makeTemporaryDirectory();
   const repositoryRoot = process.cwd();
   const sourceFiles = [
@@ -58,11 +66,11 @@ async function makeLocalCiRunnerFixture() {
 
   const manifest: { owners: { id: string; tests?: string[]; e2eSpecs?: string[] }[] } =
     JSON.parse(await readFile(path.join(root, "scripts/local-ci/owners.json"), "utf8"));
-  const opticsOwner = manifest.owners.find((owner) => owner.id === "canonical-optics");
-  if (!opticsOwner) throw new Error("Local CI fixture has no canonical-optics owner");
-  for (const testFile of opticsOwner.tests ?? []) await writeFixtureFile(root, testFile, "export {}\n");
+  const testFiles = new Set(manifest.owners.flatMap((owner) => owner.tests ?? []));
+  const specFiles = new Set(manifest.owners.flatMap((owner) => owner.e2eSpecs ?? []));
+  for (const testFile of testFiles) await writeFixtureFile(root, testFile, "export {}\n");
   for (const specFile of [
-    ...(opticsOwner.e2eSpecs ?? []),
+    ...specFiles,
     "src/tests/e2e/smoke.spec.ts",
     "src/tests/e2e/architecture-rise-webgpu-production.spec.ts",
     "src/tests/unit/focused.test.ts",
@@ -78,13 +86,32 @@ async function makeLocalCiRunnerFixture() {
     scripts: {
       test: "node ./fake-vitest.mjs",
       "test:e2e": "node ./fake-playwright.mjs",
+      lint: "node ./fake-ok.mjs",
+      typecheck: "node ./fake-ok.mjs",
+      "check:css": "node ./fake-ok.mjs",
+      build: "node ./fake-ok.mjs",
     },
   }, null, 2));
   await writeFixtureFile(root, "fake-vitest.mjs", `
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 const output = process.argv.find((argument) => argument.startsWith("--outputFile="))?.slice("--outputFile=".length);
-const files = process.argv.slice(2).filter((argument) => /\\.test\\.tsx?$/.test(argument));
+const requested = process.argv.slice(2).filter((argument) => /^src\\/tests\\/(unit|integration)\\/.*\\.test\\.tsx?$/.test(argument));
+async function discover(directory) {
+  let entries;
+  try { entries = await readdir(directory, { withFileTypes: true }); } catch { return []; }
+  const files = [];
+  for (const entry of entries) {
+    const target = path.join(directory, entry.name);
+    if (entry.isDirectory()) files.push(...await discover(target));
+    else if (entry.isFile() && /\\.test\\.tsx?$/.test(entry.name)) files.push(path.relative(process.cwd(), target).split(path.sep).join("/"));
+  }
+  return files;
+}
+const files = requested.length > 0 ? requested : [
+  ...await discover(path.join(process.cwd(), "src/tests/unit")),
+  ...await discover(path.join(process.cwd(), "src/tests/integration")),
+];
 if (!output || files.length === 0) process.exit(2);
 const testResults = files.map((file) => ({ name: path.resolve(process.cwd(), file) }));
 const count = testResults.length;
@@ -104,6 +131,7 @@ await writeFile(destination, JSON.stringify({
   testResults,
 }));
 `);
+  await writeFixtureFile(root, "fake-ok.mjs", "process.exit(0);\n");
   await writeFixtureFile(root, "fake-playwright.mjs", `
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -151,6 +179,14 @@ if (result === "fail") process.exitCode = 1;
 
   await writeFixtureFile(root, "node_modules/.bin/vitest", "#!/bin/sh\nexit 0\n", true);
   await writeFixtureFile(root, "node_modules/vitest/package.json", JSON.stringify({ name: "vitest", version: "3.2.7" }));
+  for (const tool of [
+    { packageName: "eslint", executable: "eslint" },
+    { packageName: "typescript", executable: "tsc" },
+    { packageName: "vite", executable: "vite" },
+  ]) {
+    await writeFixtureFile(root, `node_modules/${tool.packageName}/package.json`, JSON.stringify({ name: tool.packageName, version: "0.0.0-fixture" }));
+    await writeFixtureFile(root, `node_modules/.bin/${tool.executable}`, "#!/bin/sh\nexit 0\n", true);
+  }
   await writeFixtureFile(root, "node_modules/@playwright/test/package.json", JSON.stringify({
     name: "@playwright/test",
     version: "1.61.1",
@@ -170,9 +206,9 @@ export const chromium = { executablePath: () => fileURLToPath(new URL("./fake-ch
   git(["add", "-A"]);
   git(["commit", "--quiet", "-m", "fixture base"]);
   const base = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
-  await writeFixtureFile(root, "src/core/optics/newModel.ts", "export const changed = true;\n");
-  git(["add", "src/core/optics/newModel.ts"]);
-  git(["commit", "--quiet", "-m", "change optics"]);
+  for (const changedPath of changedPaths) await writeFixtureFile(root, changedPath, "export const changed = true;\n");
+  git(["add", ...changedPaths]);
+  git(["commit", "--quiet", "-m", "change source"]);
   return { root, base };
 }
 
@@ -343,6 +379,184 @@ describe("Local CI argument and ownership contracts", () => {
       expect(/^src\/tests\/(unit|integration)\/.*\.test\.tsx?$/.test(candidate)).toBe(true);
       await expect(access(path.join(process.cwd(), candidate))).resolves.toBeUndefined();
     }
+  });
+
+  it("keeps every checked-in owner test and browser path present", async () => {
+    const manifest: { owners: { tests?: string[]; e2eSpecs?: string[] }[] } =
+      JSON.parse(await readFile(path.join(process.cwd(), "scripts/local-ci/owners.json"), "utf8"));
+    const testFiles = [...new Set(manifest.owners.flatMap((owner) => owner.tests ?? []))];
+    const specFiles = [...new Set(manifest.owners.flatMap((owner) => owner.e2eSpecs ?? []))];
+    for (const file of [...testFiles, ...specFiles]) {
+      expect(existsSync(path.join(process.cwd(), file)), file).toBe(true);
+    }
+  });
+
+  it("maps Table Tilt furnishing and geometry inputs to mounted-scene contracts", async () => {
+    const manifest: { owners: { id: string; tests?: string[] }[] } =
+      JSON.parse(await readFile(path.join(process.cwd(), "scripts/local-ci/owners.json"), "utf8"));
+    const tableTiltOwner = manifest.owners.find((owner) => owner.id === "table-tilt-mounted-geometry");
+    expect(tableTiltOwner?.tests).toContain("src/tests/unit/tableTiltMountedVisibility.test.ts");
+    expect(tableTiltOwner?.tests).toContain("src/tests/unit/tableTiltGeometry.test.ts");
+
+    const furnishing = await resolveCheckedInOwnerSelection([
+      "src/render/table-tilt/TableTiltStudioFurnishings.ts",
+    ]);
+    expect(furnishing.ownerIds).toContain("table-tilt-mounted-geometry");
+    expect(furnishing.e2eSpecs).toContain("src/tests/e2e/table-tilt.spec.ts");
+    expect(furnishing.ownerIds).not.toContain("webgpu-lifecycle");
+    expect(furnishing.fullVitest).toBe(true);
+    expect(furnishing.provisionalPaths).toEqual(["src/render/table-tilt/TableTiltStudioFurnishings.ts"]);
+    expect(furnishing.incomplete).toBe(true);
+    expect(furnishing.incompleteReasons.some((item) => item.owner === "table-tilt-mounted-geometry"))
+      .toBe(true);
+
+    const sceneGeometry = await resolveCheckedInOwnerSelection([
+      "src/scenes/tableTiltGeometry.ts",
+    ]);
+    expect(sceneGeometry.ownerIds).toContain("table-tilt-mounted-geometry");
+    expect(sceneGeometry.ownerIds).toContain("scene-implementation-incomplete");
+    expect(sceneGeometry.tests).toContain("src/tests/unit/tableTiltMountedVisibility.test.ts");
+    expect(sceneGeometry.incomplete).toBe(true);
+    expect(sceneGeometry.incompleteReasons.some((item) => item.owner === "scene-implementation-incomplete")).toBe(true);
+
+    const assetFactory = await resolveCheckedInOwnerSelection([
+      "src/render/TableTiltSubjectFactory.tsx",
+    ]);
+    expect(assetFactory.ownerIds).toContain("table-tilt-mounted-geometry");
+    expect(assetFactory.e2eSpecs).toContain("src/tests/e2e/table-tilt.spec.ts");
+    expect(assetFactory.fullVitest).toBe(true);
+    expect(assetFactory.incomplete).toBe(true);
+  });
+
+  it("selects direct Ground Glass frame-request, execution, and renderer-lifecycle contracts", async () => {
+    const request = await resolveCheckedInOwnerSelection([
+      "src/render/groundGlassFrameRequest.ts",
+    ]);
+    expect(request.ownerIds).toContain("renderer-lifecycle");
+    expect(request.tests).toContain("src/tests/unit/groundGlassFrameRequest.test.ts");
+    expect(request.tests).toContain("src/tests/unit/GroundGlassRTT.test.ts");
+    expect(request.e2eSpecs).toContain("src/tests/e2e/scene-switching.spec.ts");
+    expect(request.incomplete).toBe(false);
+
+    const execution = await resolveCheckedInOwnerSelection([
+      "src/render/groundGlassFrameExecution.ts",
+    ]);
+    expect(execution.ownerIds).toContain("renderer-lifecycle");
+    expect(execution.tests).toContain("src/tests/unit/groundGlassFrameExecution.test.ts");
+    expect(execution.tests).toContain("src/tests/unit/GroundGlassRTT.test.ts");
+    expect(execution.tests).toContain("src/tests/unit/groundGlassRttResources.test.ts");
+    expect(execution.incomplete).toBe(false);
+
+    const host = await resolveCheckedInOwnerSelection(["src/render/GroundGlassRenderHost.tsx"]);
+    expect(host.tests).toContain("src/tests/unit/GroundGlassRenderHost.test.tsx");
+    expect(host.tests).toContain("src/tests/unit/groundGlassFrameRequest.test.ts");
+    expect(host.tests).toContain("src/tests/unit/groundGlassFrameExecution.test.ts");
+  });
+
+  it("maps scene subject and asset registries to their separate registry, resource, route, and browser owners", async () => {
+    const registry = await resolveCheckedInOwnerSelection([
+      "src/render/sceneSubjectRegistry.tsx",
+      "src/render/assets/sceneAssetRegistry.ts",
+    ]);
+    expect(registry.ownerIds).toContain("scene-subject-registry");
+    expect(registry.tests).toContain("src/tests/unit/sceneSubjectRegistry.test.tsx");
+    expect(registry.tests).toContain("src/tests/unit/sceneAssetRegistry.test.ts");
+    expect(registry.tests).toContain("src/tests/unit/sharedSceneResourceLifecycle.test.ts");
+    expect(registry.tests).toContain("src/tests/unit/tableTiltMountedVisibility.test.ts");
+    expect(registry.tests).toContain("src/tests/integration/scene-publication-gate.test.tsx");
+    expect(registry.e2eSpecs).toContain("src/tests/e2e/scene-switching.spec.ts");
+    expect(registry.tests.filter((file) => file === "src/tests/unit/sceneSubjectRegistry.test.tsx")).toHaveLength(1);
+    expect(registry.incomplete).toBe(false);
+  });
+
+  it("retains asymmetric Raw/Upright coordinate proof for orientation changes", async () => {
+    const selection = await resolveCheckedInOwnerSelection([
+      "src/render/groundGlassRttOrientation.ts",
+    ]);
+    expect(selection.ownerIds).toContain("ground-glass-coordinates");
+    expect(selection.tests).toContain("src/tests/unit/groundGlassRttOrientation.test.ts");
+    expect(selection.tests).toContain("src/tests/unit/groundGlassCoordinateContract.test.ts");
+    expect(selection.e2eSpecs).toContain("src/tests/e2e/groundglass-interaction.spec.ts");
+    expect(selection.incomplete).toBe(false);
+  });
+
+  it("maps active evaluator, routing, and exact-source provenance changes to active Unit contracts", async () => {
+    const evaluator = await resolveCheckedInOwnerSelection([
+      "scripts/evaluateM7mSceneReadiness.ts",
+    ]);
+    expect(evaluator.ownerIds).toContain("historical-active-unit-contracts");
+    expect(evaluator.tests).toContain("src/tests/unit/groundGlassM7mSceneReadiness.test.ts");
+    expect(evaluator.fullLocalCi).toBe(true);
+    expect(evaluator.incomplete).toBe(false);
+
+    const routing = await resolveCheckedInOwnerSelection([
+      "scripts/historical-evidence-routing.mjs",
+    ]);
+    expect(routing.tests).toContain("src/tests/unit/historicalEvidenceRouting.test.ts");
+    expect(routing.tests).toContain("src/tests/unit/m7kCaptureWorkflow.test.ts");
+
+    const provenance = await resolveCheckedInOwnerSelection([
+      "scripts/fetch-m7k-execution-source.mjs",
+    ]);
+    expect(provenance.tests).toContain("src/tests/unit/m7kCaptureWorkflow.test.ts");
+    expect(provenance.tests).toContain("src/tests/unit/groundGlassM7mSceneReadiness.test.ts");
+
+    const normalizer = await resolveCheckedInOwnerSelection([
+      "scripts/normalizeM7nRendererLifecycleCapture.mjs",
+    ]);
+    expect(normalizer.ownerIds).toContain("historical-active-unit-contracts");
+    expect(normalizer.tests).toContain("src/tests/unit/m7nRendererLifecycleEvidence.test.ts");
+    expect(normalizer.fullLocalCi).toBe(true);
+    expect(normalizer.incomplete).toBe(false);
+  });
+
+  it("does not let broad renderer or infrastructure matches establish complete affected ownership", async () => {
+    const renderer = await resolveCheckedInOwnerSelection(["src/render/newSharedSurface.ts"]);
+    expect(renderer.ownerIds).toEqual(["render-source-supplement"]);
+    expect(renderer.provisionalPaths).toEqual(["src/render/newSharedSurface.ts"]);
+    expect(renderer.fullVitest).toBe(true);
+    expect(renderer.incomplete).toBe(true);
+    expect(renderer.tests).toEqual([]);
+
+    const script = await resolveCheckedInOwnerSelection(["scripts/sharedEvidenceHelper.mjs"]);
+    expect(script.ownerIds).toEqual(["ci-and-test-infrastructure"]);
+    expect(script.provisionalPaths).toEqual(["scripts/sharedEvidenceHelper.mjs"]);
+    expect(script.fullLocalCi).toBe(true);
+    expect(script.fullVitest).toBe(true);
+    expect(script.incomplete).toBe(true);
+  });
+
+  it("combines owners without duplicate tests and fails closed on stale test references", async () => {
+    const mappedUnion = await resolveCheckedInOwnerSelection([
+      "src/render/groundGlassFrameExecution.ts",
+      "scripts/evaluateM7mSceneReadiness.ts",
+    ]);
+    expect(new Set(mappedUnion.tests).size).toBe(mappedUnion.tests.length);
+    expect(mappedUnion.tests).toContain("src/tests/unit/groundGlassFrameExecution.test.ts");
+    expect(mappedUnion.tests).toContain("src/tests/unit/groundGlassM7mSceneReadiness.test.ts");
+
+    const combined = await resolveCheckedInOwnerSelection([
+      "src/render/table-tilt/TableTiltStudioFurnishings.ts",
+      "src/render/groundGlassFrameExecution.ts",
+      "scripts/evaluateM7mSceneReadiness.ts",
+    ]);
+    expect(combined.ownerIds).toEqual(expect.arrayContaining([
+      "table-tilt-mounted-geometry",
+      "renderer-lifecycle",
+      "historical-active-unit-contracts",
+    ]));
+    expect(combined.provisionalPaths).toContain("src/render/table-tilt/TableTiltStudioFurnishings.ts");
+    expect(combined.fullVitest).toBe(true);
+    expect(combined.incomplete).toBe(true);
+    expect(combined.tests).toEqual([]);
+
+    const stale = await resolveCheckedInOwnerSelection(
+      ["src/render/table-tilt/TableTiltStudioFurnishings.ts"],
+      (file) => file !== "src/tests/unit/tableTiltMountedVisibility.test.ts" && existsSync(path.join(process.cwd(), file)),
+    );
+    expect(stale.staleTests).toContain("src/tests/unit/tableTiltMountedVisibility.test.ts");
+    expect(stale.fullVitest).toBe(true);
+    expect(stale.incomplete).toBe(true);
   });
 
   it("keeps every maintained owner test and browser target on an existing repository path", async () => {
@@ -702,6 +916,112 @@ describe("Local CI runner evidence contracts", () => {
 });
 
 describe("Local CI emitted report integration", () => {
+  it("reports Table Tilt mounted coverage and missing browser proof from an actual affected runner report", async () => {
+    const furnishing = "src/render/table-tilt/TableTiltStudioFurnishings.ts";
+    const fixture = await makeLocalCiRunnerFixture([furnishing]);
+    const result = await executeLocalCi(fixture, ["--mode=affected", "--base", fixture.base]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.report.status).toBe("INCOMPLETE");
+    expect(result.report.execution.completeForRequestedScope).toBe(false);
+    expect(result.report.execution.changedFiles).toEqual([furnishing]);
+    expect(result.report.execution.owners).toContain("table-tilt-mounted-geometry");
+    expect(result.report.execution.selectedTestFiles).toEqual(["Vitest configured discovery"]);
+    expect(result.report.steps.find((step: { runner: string }) => step.runner === "vitest").counts.files)
+      .toContain("src/tests/unit/tableTiltMountedVisibility.test.ts");
+    expect(result.report.execution.e2eCoverage.required).toEqual([{
+      file: "src/tests/e2e/table-tilt.spec.ts",
+      owners: ["table-tilt-mounted-geometry"],
+    }]);
+    expect(result.report.execution.e2eCoverage.scheduled).toEqual([]);
+    expect(result.report.execution.e2eCoverage.verified).toEqual([]);
+    expect(result.report.execution.e2eCoverage.missingRequired.map((contract: { file: string }) => contract.file))
+      .toEqual(["src/tests/e2e/table-tilt.spec.ts"]);
+  });
+
+  it("keeps Table Tilt affected coverage incomplete after browser proof while furnishing layout remains provisional", async () => {
+    const furnishing = "src/render/table-tilt/TableTiltStudioFurnishings.ts";
+    const fixture = await makeLocalCiRunnerFixture([furnishing]);
+    const result = await executeLocalCi(fixture, [
+      "--mode=affected",
+      "--base",
+      fixture.base,
+      "--with-e2e",
+    ]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.report.status).toBe("INCOMPLETE");
+    expect(result.report.execution.completeForRequestedScope).toBe(false);
+    expect(result.report.execution.changedFiles).toEqual([furnishing]);
+    expect(result.report.execution.owners).toContain("table-tilt-mounted-geometry");
+    expect(result.report.execution.fallback).toMatchObject({
+      kind: "full-vitest",
+      provisionalPaths: [furnishing],
+    });
+    expect(result.report.execution.selectedTestFiles).toEqual(["Vitest configured discovery"]);
+    expect(result.report.steps.find((step: { runner: string }) => step.runner === "vitest").status).toBe("PASS");
+    expect(result.report.steps.find((step: { runner: string }) => step.runner === "vitest").counts.files)
+      .toContain("src/tests/unit/tableTiltMountedVisibility.test.ts");
+    expect(result.report.execution.e2eCoverage).toMatchObject({
+      required: [{ file: "src/tests/e2e/table-tilt.spec.ts" }],
+      scheduled: ["src/tests/e2e/table-tilt.spec.ts"],
+      executed: ["src/tests/e2e/table-tilt.spec.ts"],
+      verified: ["src/tests/e2e/table-tilt.spec.ts"],
+      missingRequired: [],
+      status: "PASS",
+    });
+  });
+
+  it("keeps an unmapped renderer source incomplete after broad fallback Vitest passes", async () => {
+    const changed = "src/render/newSharedSurface.ts";
+    const fixture = await makeLocalCiRunnerFixture([changed]);
+    const result = await executeLocalCi(fixture, ["--mode=affected", "--base", fixture.base]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.report.status).toBe("INCOMPLETE");
+    expect(result.report.execution.completeForRequestedScope).toBe(false);
+    expect(result.report.execution.changedFiles).toEqual([changed]);
+    expect(result.report.execution.owners).toEqual(["render-source-supplement"]);
+    expect(result.report.execution.fallback).toMatchObject({
+      kind: "full-vitest",
+      provisionalPaths: [changed],
+      unknownPaths: [],
+    });
+    expect(result.report.steps).toHaveLength(1);
+    expect(result.report.steps[0]).toMatchObject({
+      runner: "vitest",
+      mode: "full",
+      status: "PASS",
+      testFilesSelected: ["Vitest configured discovery"],
+    });
+    expect(result.report.limitations.join(" ")).toContain("Only provisional ownership matched");
+  });
+
+  it("keeps active historical Unit contracts visible in the full Local CI report", async () => {
+    const changed = "scripts/evaluateM7mSceneReadiness.ts";
+    const fixture = await makeLocalCiRunnerFixture([changed]);
+    const result = await executeLocalCi(fixture, ["--mode=affected", "--base", fixture.base]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.report.status).toBe("PASS");
+    expect(result.report.execution.completeForRequestedScope).toBe(true);
+    expect(result.report.execution.owners).toEqual(expect.arrayContaining([
+      "historical-active-unit-contracts",
+      "ci-and-test-infrastructure",
+    ]));
+    expect(result.report.execution.repositoryCoverage).toBe("full-local-ci");
+    expect(result.report.execution.selectedTestFiles).toEqual(["Vitest configured discovery"]);
+    expect(result.report.steps.map((step: { id: string; status: string }) => [step.id, step.status])).toEqual([
+      ["css-structure", "PASS"],
+      ["lint", "PASS"],
+      ["typecheck", "PASS"],
+      ["full-vitest", "PASS"],
+      ["application-build", "PASS"],
+    ]);
+    expect(result.report.steps.find((step: { runner: string }) => step.runner === "vitest").counts.files)
+      .toContain("src/tests/unit/groundGlassM7mSceneReadiness.test.ts");
+  });
+
   it("reports affected browser contracts as incomplete when only an unrelated explicit smoke spec passes", async () => {
     const fixture = await makeLocalCiRunnerFixture();
     const smoke = "src/tests/e2e/smoke.spec.ts";
@@ -896,7 +1216,9 @@ describe("Local CI source state", () => {
     git(["config", "user.name", "Local CI test"]);
     const baseContents = Array.from({ length: 10 }, (_, index) => `stable line ${index}`).join("\n") + "\n";
     await writeFile(path.join(directory, "tracked.txt"), baseContents);
-    git(["add", "tracked.txt"]);
+    await writeFile(path.join(directory, "deleted-source.ts"), "export const removed = true;\n");
+    await writeFixtureFile(directory, "src/render/table-tilt/OldFurnishing.ts", "export const furnishing = true;\n");
+    git(["add", "tracked.txt", "deleted-source.ts", "src/render/table-tilt/OldFurnishing.ts"]);
     git(["commit", "--quiet", "-m", "base"]);
     const base = resolveCommit(directory, "HEAD");
     expect(() => resolveCommit(directory, "missing-ref")).toThrow();
@@ -905,12 +1227,32 @@ describe("Local CI source state", () => {
 
     await writeFile(path.join(directory, "tracked.txt"), baseContents.replace("stable line 3", "changed line 3"));
     git(["mv", "tracked.txt", "renamed.txt"]);
+    git(["mv", "src/render/table-tilt/OldFurnishing.ts", "src/render/table-tilt/NewFurnishing.ts"]);
+    git(["rm", "deleted-source.ts"]);
     await writeFile(path.join(directory, "new-source.ts"), "export const value = 1;\n");
+    await writeFixtureFile(directory, "src/render/table-tilt/AddedFurnishing.ts", "export const added = true;\n");
     const changed = await snapshotSourceState(directory);
     expect(changed.clean).toBe(false);
-    expect(changed.untracked).toEqual(["new-source.ts"]);
+    expect(changed.untracked).toEqual(["new-source.ts", "src/render/table-tilt/AddedFurnishing.ts"]);
     expect(changed.fingerprint).not.toBe(clean.fingerprint);
-    expect(listChangedPaths(directory, base)).toEqual(["new-source.ts", "renamed.txt", "tracked.txt"]);
+    const changedPaths = listChangedPaths(directory, base);
+    expect(changedPaths).toEqual([
+      "deleted-source.ts",
+      "new-source.ts",
+      "renamed.txt",
+      "src/render/table-tilt/AddedFurnishing.ts",
+      "src/render/table-tilt/NewFurnishing.ts",
+      "src/render/table-tilt/OldFurnishing.ts",
+      "tracked.txt",
+    ]);
+    const renameSelection = await resolveCheckedInOwnerSelection(changedPaths);
+    expect(renameSelection.reasons).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: "src/render/table-tilt/OldFurnishing.ts", owner: "table-tilt-mounted-geometry" }),
+      expect.objectContaining({ path: "src/render/table-tilt/NewFurnishing.ts", owner: "table-tilt-mounted-geometry" }),
+      expect.objectContaining({ path: "src/render/table-tilt/AddedFurnishing.ts", owner: "table-tilt-mounted-geometry" }),
+    ]));
+    expect(renameSelection.incomplete).toBe(true);
+    expect(renameSelection.unknownPaths).toContain("deleted-source.ts");
 
     await writeFile(path.join(directory, "new-source.ts"), "export const value = 2;\n");
     const editedUntracked = await snapshotSourceState(directory);

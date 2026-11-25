@@ -43,7 +43,14 @@
     {
       "id": "ground-glass-coordinates",
       "label": "Ground Glass coordinates and calibration",
-      "paths": ["src/render/**", "src/core/optics/calculateGroundGlassProjection.ts"],
+      "paths": [
+        "src/render/groundGlassRttOrientation.ts",
+        "src/render/groundGlassFilmPlaneProjection.ts",
+        "src/render/groundGlassFootprintCoordinates.ts",
+        "src/render/groundGlassPhysicalGrid.ts",
+        "src/render/planeOrientation.ts",
+        "src/core/optics/calculateGroundGlassProjection.ts"
+      ],
       "tests": [
         "src/tests/unit/groundGlassCoordinateContract.test.ts",
         "src/tests/unit/groundGlassFilmPlaneProjection.test.ts",
@@ -57,27 +64,100 @@
       "reason": "Renderer and film-plane changes can affect asymmetric physical-side and Raw/Upright output contracts."
     },
     {
+      "id": "render-source-supplement",
+      "label": "Broad renderer source with provisional coordinate coverage",
+      "paths": ["src/render/**"],
+      "coverage": "provisional",
+      "tests": [
+        "src/tests/unit/groundGlassCoordinateContract.test.ts",
+        "src/tests/unit/groundGlassFilmPlaneProjection.test.ts",
+        "src/tests/unit/groundGlassFootprintCoordinates.test.ts",
+        "src/tests/unit/groundGlassPhysicalGrid.test.ts",
+        "src/tests/unit/groundGlassPhysicalScale.test.ts",
+        "src/tests/unit/groundGlassRttOrientation.test.ts"
+      ],
+      "reason": "These coordinate checks are useful supplementary coverage for renderer changes, but a broad src/render match alone does not establish which renderer contract changed."
+    },
+    {
       "id": "renderer-lifecycle",
       "label": "WebGL RTT, frame freshness, and renderer lifecycle",
       "paths": [
         "src/render/GroundGlassRenderHost.tsx",
+        "src/render/GroundGlassRTT.tsx",
         "src/render/SceneRenderer.tsx",
         "src/render/SceneRenderer.ts",
-        "src/render/testing/**",
+        "src/render/groundGlassFrameRequest.ts",
+        "src/render/groundGlassFrameExecution.ts",
         "src/components/simulator/**"
       ],
       "tests": [
         "src/tests/unit/GroundGlassRenderHost.test.tsx",
+        "src/tests/unit/GroundGlassRTT.test.ts",
         "src/tests/unit/SceneRenderer.test.tsx",
         "src/tests/unit/observerRendererLifecycle.test.tsx",
         "src/tests/unit/groundGlassFrameRequest.test.ts",
         "src/tests/unit/groundGlassFrameExecution.test.ts",
         "src/tests/unit/groundGlassRttResources.test.ts",
-        "src/tests/unit/groundGlassRenderer.test.tsx"
+        "src/tests/unit/groundGlassRenderer.test.tsx",
+        "src/tests/unit/groundGlassApertureGatherPolicy.test.ts",
+        "src/tests/unit/groundGlassM6Presentation.test.ts"
       ],
       "e2eSpecs": ["src/tests/e2e/scene-switching.spec.ts"],
       "requiresE2E": true,
       "reason": "Unit lifecycle ownership is distinct from SPA navigation, detach, and real frame-delivery behavior."
+    },
+    {
+      "id": "scene-subject-registry",
+      "label": "Scene subject registration and shared asset/resource ownership",
+      "paths": [
+        "src/render/sceneSubjectRegistry.tsx",
+        "src/render/assets/sceneAssetRegistry.ts"
+      ],
+      "tests": [
+        "src/tests/unit/sceneSubjectRegistry.test.tsx",
+        "src/tests/unit/sceneAssetRegistry.test.ts",
+        "src/tests/unit/sceneAssetMigration.test.ts",
+        "src/tests/unit/sharedSceneResourceLifecycle.test.ts",
+        "src/tests/unit/publicScenes.test.ts",
+        "src/tests/unit/sceneDefinitions.test.ts",
+        "src/tests/unit/simulatorRouteValidation.test.ts",
+        "src/tests/integration/scene-publication-gate.test.tsx",
+        "src/tests/integration/simulator-route-availability.test.tsx",
+        "src/tests/integration/sceneVariationRoute.test.tsx",
+        "src/tests/unit/tableTiltMountedVisibility.test.ts"
+      ],
+      "e2eSpecs": ["src/tests/e2e/scene-switching.spec.ts"],
+      "requiresE2E": true,
+      "reason": "Registry consistency, public scene availability, unique resource disposal, mounted asset construction, and SPA scene switching are separate contracts. This owner validates registry behavior, not every scene's geometry or materials."
+    },
+    {
+      "id": "table-tilt-mounted-geometry",
+      "label": "Table Tilt mounted geometry and scene inputs",
+      "paths": [
+        "src/render/TableTiltSubjectFactory.tsx",
+        "src/render/table-tilt/**",
+        "src/scenes/definitions/table-tilt.ts",
+        "src/scenes/presentation/tableTilt.ts",
+        "src/scenes/tableTiltGeometry.ts"
+      ],
+      "coverage": "provisional",
+      "tests": [
+        "src/tests/unit/tableTiltMountedVisibility.test.ts",
+        "src/tests/unit/tableTiltGeometry.test.ts",
+        "src/tests/unit/tableTiltOptics.test.ts",
+        "src/tests/unit/tableTiltTaskContent.test.ts",
+        "src/tests/unit/physicalTaskEvaluation.test.ts",
+        "src/tests/unit/focusLegibilitySurfaceDetail.test.ts",
+        "src/tests/unit/scheimpflugConstruction.test.ts",
+        "src/tests/unit/scheimpflugConstructionGeometry.test.ts",
+        "src/tests/unit/scheimpflugPhysicalFocusPropagation.test.ts",
+        "src/tests/unit/opticalSectionProjection.test.ts",
+        "src/tests/unit/sceneRichnessCoreFoundation.test.ts",
+        "src/tests/unit/geometryViewport.matrix.test.tsx"
+      ],
+      "e2eSpecs": ["src/tests/e2e/table-tilt.spec.ts"],
+      "requiresE2E": true,
+      "reason": "Table Tilt furnishing and mounted-asset inputs select their registered-scene visibility proof, geometry/optics and task consumers, plus the public browser flow. A mounted-camera height mutation is detected, but an exploratory sideboard horizontal-anchor mutation survived; until that furnishing position has an independent reference, this owner cannot alone establish complete coverage. Scene-tree changes also retain the separate incomplete scene-implementation owner."
     },
     {
       "id": "webgpu-lifecycle",
@@ -151,11 +231,12 @@
         "scripts/historical-qualification-ci-gate.mjs",
         "scripts/run-m7r-evidence.mjs",
         "scripts/run-m7v-qualification.mjs",
-        "scripts/fetch-m7k-execution-source.mjs",
-        "src/render/testing/**"
+        "scripts/fetch-m7k-execution-source.mjs"
       ],
       "tests": [
         "src/tests/unit/historicalQualificationGate.test.ts",
+        "src/tests/unit/m7kCaptureWorkflow.test.ts",
+        "src/tests/unit/groundGlassM7mSceneReadiness.test.ts",
         "src/tests/unit/m7nRendererLifecycleEvidence.test.ts",
         "src/tests/unit/m7nRendererLifecycleTrace.test.ts",
         "src/tests/unit/m7rBroadE2eRecoveryEvidence.test.ts",
@@ -163,6 +244,57 @@
         "src/tests/unit/m7wQualificationEvidence.test.ts"
       ],
       "reason": "Current qualification decisions and provenance contracts are separate from frozen replay and application behavior."
+    },
+    {
+      "id": "historical-active-unit-contracts",
+      "label": "Active M7 evaluator, normalizer, replay, and provenance Unit contracts",
+      "paths": [
+        "scripts/evaluateM7*",
+        "scripts/normalizeM7*",
+        "scripts/run-m7*",
+        "scripts/m7*",
+        "scripts/replayM7*",
+        "scripts/migrateM7*",
+        "scripts/fetch-m7k-execution-source.mjs",
+        "scripts/historical-evidence-routing.mjs",
+        "scripts/historical-evidence-routing.d.mts",
+        "scripts/historical-evidence-manifest.json",
+        "src/render/groundGlassM7*",
+        "src/render/webgpu/groundGlassM7*",
+        "src/render/testing/groundGlassM7*",
+        "src/render/testing/m7nRendererLifecycleTrace.ts"
+      ],
+      "tests": [
+        "src/tests/unit/groundGlassM7bLifecycleEvidence.test.ts",
+        "src/tests/unit/groundGlassM7cR187LifecycleEvidence.test.ts",
+        "src/tests/unit/groundGlassM7dPhysicalCocEvidence.test.ts",
+        "src/tests/unit/groundGlassM7eArtifactReplay.test.ts",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts",
+        "src/tests/unit/groundGlassM7eLosslessEvidenceJson.test.ts",
+        "src/tests/unit/groundGlassM7fPresentationEvidence.test.ts",
+        "src/tests/unit/groundGlassM7fReplayCli.test.ts",
+        "src/tests/unit/groundGlassM7gConsolidatedEvidence.test.ts",
+        "src/tests/unit/groundGlassM7hBroadE2eTriage.test.ts",
+        "src/tests/unit/groundGlassM7hCompareCli.test.ts",
+        "src/tests/unit/groundGlassM7iBroadE2eRemediation.test.ts",
+        "src/tests/unit/groundGlassM7jFourWorkerStability.test.ts",
+        "src/tests/unit/groundGlassM7kBroadE2eQualification.test.ts",
+        "src/tests/unit/groundGlassM7lLearningDrawerRemediation.test.ts",
+        "src/tests/unit/groundGlassM7mSceneReadiness.test.ts",
+        "src/tests/unit/m7gReplayOrchestration.test.ts",
+        "src/tests/unit/m7kCaptureWorkflow.test.ts",
+        "src/tests/unit/m7nRendererLifecycleEvidence.test.ts",
+        "src/tests/unit/m7nRendererLifecycleTrace.test.ts",
+        "src/tests/unit/m7oCanvasAssertionTimingEvidence.test.ts",
+        "src/tests/unit/m7pAssertionSchedulingEvidence.test.ts",
+        "src/tests/unit/m7qLightPeerTraceAbEvidence.test.ts",
+        "src/tests/unit/m7rBroadE2eRecoveryEvidence.test.ts",
+        "src/tests/unit/m7vE2eQualificationPolicy.test.ts",
+        "src/tests/unit/m7wQualificationEvidence.test.ts",
+        "src/tests/unit/historicalEvidenceRouting.test.ts",
+        "src/tests/unit/historicalQualificationGate.test.ts"
+      ],
+      "reason": "These active Unit tests import or execute the checked-in M7 evaluator, normalizer, replay, capture, source-fetch, routing, and policy implementations. They remain current contracts independent of archived replay qualification."
     },
     {
       "id": "ui-and-layout",
@@ -189,6 +321,7 @@
     {
       "id": "ci-and-test-infrastructure",
       "label": "CI, test runner, package, and validation infrastructure",
+      "coverage": "provisional",
       "paths": [
         ".github/workflows/**",
         "scripts/**",
@@ -202,6 +335,20 @@
       "tests": [],
       "fullLocalCi": true,
       "reason": "Shared validation infrastructure changes require full local checks and the full Vitest suite."
+    },
+    {
+      "id": "local-ci-runner-contracts",
+      "label": "Local CI selection and reporting implementation",
+      "paths": [
+        "scripts/ci-local.mjs",
+        "scripts/e2e-spec-policy.mjs",
+        "scripts/local-ci/**"
+      ],
+      "tests": [
+        "src/tests/unit/localCiContracts.test.ts",
+        "src/tests/unit/e2eSpecPolicy.test.ts"
+      ],
+      "reason": "Local CI routing, runner execution, report completeness, and E2E policy have direct contract tests."
     }
   ]
 }
