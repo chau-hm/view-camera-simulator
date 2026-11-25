@@ -46,6 +46,8 @@ let observerRequestSequence = 0;
 let observerGenerationSequence = 0;
 const HDR_FIELDS = { "0.1": [0.1, 0.1, 0.1], "0.5": [0.5, 0.5, 0.5], "1": [1, 1, 1], "2": [2, 2, 2], "4": [4, 4, 4], "8": [8, 8, 8], mixed: [0.1, 2, 8] };
 const focusStageEnabled = new URLSearchParams(window.location.search).get("focusStage") === "1";
+const comparisonCaptureTestSeamEnabled = import.meta.env.DEV &&
+  new URLSearchParams(window.location.search).get("roomCaptureTest") === "1";
 const sceneDefinition = roomCameraScene;
 const roomBounds = roomCameraScene.bounds;
 const ROOM_RANGE_ROW_STYLE = {
@@ -174,6 +176,10 @@ class RenderBoundary extends React.Component {
       this.props.children
     );
   }
+}
+function ComparisonCaptureTestFailureProbe({ active }) {
+  if (active) throw new Error("Deterministic A/B Ground Glass renderer failure");
+  return null;
 }
 class ObserverBoundary extends React.Component {
   constructor(props) {
@@ -359,11 +365,20 @@ function App() {
   const [comparisonStatus, setComparisonStatus] = useState("A/B captures stay in memory until replaced or cleared.");
   const [comparisonImages, setComparisonImages] = useState({ A: null, B: null });
   const [comparisonZoom, setComparisonZoom] = useState(1);
+  const [comparisonTestRendererFailure, setComparisonTestRendererFailure] = useState(false);
   const comparisonIntentRef = useRef(null);
   const comparisonCommittedRef = useRef(null);
   const comparisonTimeoutRef = useRef(null);
+  const comparisonTimeoutHandlerRef = useRef(null);
   const comparisonCaptureTokenRef = useRef(0);
   const cancelComparisonCaptureRef = useRef(null);
+  const comparisonTestHarnessRef = useRef({
+    failureMode: null,
+    deferNextCompletedFrame: false,
+    blockedRequest: null,
+    deferredFrames: [],
+  });
+  const comparisonFrameHandlerRef = useRef(null);
   const [subjectMode, setSubjectMode] = useState("room");
   const [hdrField, setHdrField] = useState("mixed");
   const [hdrDepth, setHdrDepth] = useState(2.5);
@@ -580,6 +595,7 @@ function App() {
     comparisonCaptureTokenRef.current += 1;
     if (comparisonTimeoutRef.current !== null) window.clearTimeout(comparisonTimeoutRef.current);
     comparisonTimeoutRef.current = null;
+    comparisonTimeoutHandlerRef.current = null;
     setComparisonPendingSlot(null);
     return true;
   }, []);
@@ -624,10 +640,12 @@ function App() {
     setComparisonPendingSlot(slot);
     setComparisonStatus(`Requesting a fresh Ground Glass frame for ${slot} (up to 120 seconds)…`);
     if (comparisonTimeoutRef.current !== null) window.clearTimeout(comparisonTimeoutRef.current);
-    comparisonTimeoutRef.current = window.setTimeout(() => {
+    const timeoutHandler = () => {
       if (comparisonCaptureTokenRef.current !== token) return;
       cancelComparisonCaptureRef.current?.("Capture timed out waiting for its completed Ground Glass frame. Check renderer diagnostics and try again.");
-    }, 120_000);
+    };
+    comparisonTimeoutHandlerRef.current = timeoutHandler;
+    comparisonTimeoutRef.current = window.setTimeout(timeoutHandler, 120_000);
     setComparisonCaptureNonce((value) => value + 1);
   };
   const clearComparison = (slot) => {
@@ -639,12 +657,49 @@ function App() {
     comparisonIntentRef.current = null;
     if (comparisonTimeoutRef.current !== null) window.clearTimeout(comparisonTimeoutRef.current);
     comparisonTimeoutRef.current = null;
+    comparisonTimeoutHandlerRef.current = null;
   }, []);
   useEffect(() => {
     if (!show) cancelComparisonCaptureRef.current?.("Capture cancelled because the views were unmounted.");
     else if (!groundEnabled) cancelComparisonCaptureRef.current?.("Capture cancelled because Ground Glass was unmounted.");
   }, [show, groundEnabled]);
   const handleFrame = useCallback((frame) => {
+    const pendingAtEntry = comparisonIntentRef.current;
+    const testHarness = comparisonTestHarnessRef.current;
+    if (
+      testHarness.blockedRequest && pendingAtEntry?.requestId &&
+      pendingAtEntry.requestId !== testHarness.blockedRequest.requestId
+    ) {
+      testHarness.blockedRequest = null;
+    }
+    if (
+      comparisonCaptureTestSeamEnabled && frame.status === "completed" && pendingAtEntry?.requestId &&
+      pendingAtEntry.requestId === frame.request?.requestId &&
+      pendingAtEntry.generationId === frame.generation?.generationId
+    ) {
+      if (testHarness.blockedRequest?.requestId === frame.request.requestId &&
+          testHarness.blockedRequest?.generationId === frame.generation.generationId) return;
+      if (testHarness.deferNextCompletedFrame) {
+        testHarness.deferNextCompletedFrame = false;
+        testHarness.blockedRequest = {
+          requestId: pendingAtEntry.requestId,
+          generationId: pendingAtEntry.generationId,
+        };
+        testHarness.deferredFrames.push(frame);
+        return;
+      }
+      if (testHarness.failureMode) {
+        const failureMode = testHarness.failureMode;
+        testHarness.failureMode = null;
+        testHarness.blockedRequest = {
+          requestId: pendingAtEntry.requestId,
+          generationId: pendingAtEntry.generationId,
+        };
+        testHarness.deferredFrames.push(frame);
+        if (failureMode === "renderer") setComparisonTestRendererFailure(true);
+        return;
+      }
+    }
     manualTrace.current?.record("frame-completed", { frame });
     const samples = window.__focusStageSamples;
     const sample = samples?.[samples.length - 1];
@@ -735,6 +790,41 @@ function App() {
       setComparisonStatus(`Capture failed: ${String(error?.message || error)}`);
     }
   }, [finishComparisonCapture]);
+  comparisonFrameHandlerRef.current = handleFrame;
+  useEffect(() => {
+    if (!comparisonCaptureTestSeamEnabled) return undefined;
+    const harness = comparisonTestHarnessRef.current;
+    const api = {
+      armTimeout: () => { harness.failureMode = "timeout"; },
+      armRendererFailure: () => { harness.failureMode = "renderer"; },
+      deferNextCompletedFrame: () => { harness.deferNextCompletedFrame = true; },
+      deferredFrameCount: () => harness.deferredFrames.length,
+      deferredFrameIdentities: () => harness.deferredFrames.map((frame) => ({
+        status: frame.status,
+        frameId: frame.frameId,
+        requestId: frame.request?.requestId ?? null,
+        generationId: frame.generation?.generationId ?? null,
+      })),
+      replayDeferredFrame: (index) => {
+        const frame = harness.deferredFrames[index];
+        if (!frame) throw new Error(`No deferred completed frame at index ${index}`);
+        if (harness.blockedRequest?.requestId === frame.request?.requestId &&
+            harness.blockedRequest?.generationId === frame.generation?.generationId) {
+          harness.blockedRequest = null;
+        }
+        comparisonFrameHandlerRef.current?.(frame);
+      },
+      firePendingTimeout: () => {
+        if (!comparisonTimeoutHandlerRef.current) throw new Error("No pending A/B capture timeout is armed");
+        comparisonTimeoutHandlerRef.current();
+      },
+      releaseRendererFailureProbe: () => setComparisonTestRendererFailure(false),
+    };
+    window.__roomComparisonCaptureTest = api;
+    return () => {
+      if (window.__roomComparisonCaptureTest === api) delete window.__roomComparisonCaptureTest;
+    };
+  }, []);
   const handleDisposed = useCallback((retiredGeneration, outcome, reason) => {
     cancelComparisonCaptureRef.current?.(
       `Capture cancelled because renderer generation ${retiredGeneration?.generationId || "unknown"} was disposed${reason ? `: ${reason}` : ` (${outcome || "renderer retired"})`}.`,
@@ -1028,6 +1118,9 @@ function App() {
           <div style={{ width: 480, height: 360, background: "#111" }}>
             {owner && show && groundEnabled && (
               <RenderBoundary key={generationEpoch} onError={handleRttBoundaryError}>
+                {comparisonCaptureTestSeamEnabled && (
+                  <ComparisonCaptureTestFailureProbe active={comparisonTestRendererFailure} />
+                )}
                 <GroundGlassRTT
                   key={generationEpoch}
                   developmentHdrColor={hdr}

@@ -1,6 +1,105 @@
-# Room at Dawn Ground Glass investigation — incomplete
+# Room-at-Dawn — final PoC closeout
 
-This experiment contains the original local reference baseline and an incomplete canonical Ground Glass integration. See the next-round findings below; the full PoC has not passed.
+## Outcome
+
+This is a **development-only photographic optics feasibility PoC**, not a production scene or a claim of complete optical fidelity.
+
+- **Photographic optics feasibility:** PASS. The original procedural room renders through the canonical Ground Glass path; the user's manual comparisons show recognizable Focus/DOF, Front Tilt, and Front Swing effects.
+- **Complete renderer fidelity:** PARTIAL / NOT FULLY VALIDATED. Quantitative blur transfer, some foreground defocus, custom glass reflection parity, and native WebGPU remain incomplete.
+- **Production promotion:** DEFERRED.
+- **Development-only merge readiness:** pending final-head GitHub Actions and independent review.
+
+The user's Tilt, Swing, and Focus comparisons are recorded as human-observed qualitative acceptance in [human-acceptance-v9](evidence/human-acceptance-v9/README.md). The original user screenshots were not available as files in the worktree or task attachments at closeout. Their observations are recorded without inventing capture identities, browser details, source revision, or composition.
+
+## Run the experiment
+
+From the repository root, with Node 24 and dependencies installed:
+
+```sh
+npm run dev -- --host 127.0.0.1
+```
+
+Open:
+
+`http://127.0.0.1:5173/view-camera-simulator/experiments/room-at-dawn/optics.html`
+
+Use the host/port printed by Vite if 5173 is occupied. This standalone development document has a separate JavaScript realm. It is not a public SPA route, catalog scene, or guided task. The production build must continue to exclude this entry, vendored source, bake, diagnostic UI, and capture harness.
+
+## Demonstrated operations and reference settings
+
+The experiment uses the existing canonical camera and Ground Glass controls for focus, aperture and camera movements, with development-only quality, HDR/display, reflection, Raw RTT Debug, and A/B diagnostics.
+
+The user's accepted comparisons report one changed setting per pair:
+
+| Demonstration | A | B | Human-observed result |
+|---|---|---|---|
+| Front Tilt | 90 mm, 1610 mm focus, f/5.6, 0° Tilt | Same, +9° Tilt | Wall/headboard detail improves as near bed/floor sharpness falls. |
+| Front Swing | 90 mm, 1610 mm focus, f/5.6, 0° Swing | Same, +5° Swing | Sharpness shifts horizontally toward right-side framed pictures/headboard. |
+| Focus / DOF | 90 mm, 460 mm focus, f/5.6, neutral movements | Same, 5520 mm focus | Near/far scene sharpness changes visibly; framing changes through focus breathing. |
+
+The exact user composition and lateral placement are not established, so these values reproduce the reported optics settings but do not promise a pixel-matched screenshot. For independent manual exploration, the existing Wide, Desk / Material Detail, Depth / Focus Test, Bed / Tilt Study, and Door / Swing Study presets remain available. Do not infer that a preset matches the user's screenshot composition.
+
+High quality is the experiment default. The synthetic fixed-exposure aperture radiometry result is also retained: measured f/22:f/5.6 linear green composite ratio ~0.064781 versus canonical prediction ~0.064793 within the tested synthetic scope.
+
+## Architecture in brief
+
+`optics.html` imports the pinned upstream procedural scene and baked GI in an isolated JavaScript realm, adapts translated source-space GI into per-view material variants, and mounts the room through the existing development-only `GroundGlassRTT` scene-profile seam. The canonical camera state drives the off-axis projection, physical CoC, Near/Far Gather, Composite, and final display transform. The original room's GI identity check matched 302/302 expected meshes in the verified runs.
+
+See [Architecture and lessons learned](ARCHITECTURE_AND_LESSONS_LEARNED.md) for ownership, coordinates, HDR stages, materials, and the reusable integration pattern.
+
+## Known limitations
+
+- Complete optical blur / PSF transfer is PARTIAL; visual acceptance does not establish calibrated blur diameters or exact Scheimpflug intersections.
+- Far-focus foreground plant edges show ghosting and defocus is incomplete; root cause remains unresolved.
+- High-quality Near Gather proposals cover a ~60 internal-pixel radius with 32 samples and a first noncentral proposal around 7.5 pixels. This may limit some small CoC footprints but is not proven to cause all artifacts.
+- Original custom glass shader reflection parity is unresolved; native WebGPU equivalence is not validated.
+- Room camera placement is translation-only; compound Tilt + Swing and general camera orientation are deferred.
+- Focus slider status: `UI_POINTER_INSTABILITY_FIXED / AUTOMATED_BROWSER_VERIFIED`. The user has not explicitly confirmed the original pointer symptom is fully resolved.
+- Renderer teardown tests verify selected lifecycle callbacks; exact GPU-memory reclamation and upstream partial-build cancellation are not measured.
+- A matched Raw RTT Debug versus Processed check for the user's exact plant composition was not run because the composition/lateral placement was not supplied. The plant ghosting remains `KNOWN_LIMITATION / ROOT_CAUSE_UNRESOLVED`; the inspected source material alone does not establish the rendered depth behavior.
+
+The evidence and remaining investigations are summarized in the separate [research backlog](RESEARCH_BACKLOG.md). No shared DOF algorithm, production optics model, public scene registry, guided task, or teaching scene was changed for closeout.
+
+## Final status matrix
+
+| Area | Final classification |
+|---|---|
+| Original Room Integration | PASS |
+| Canonical Ground Glass Pipeline | PASS |
+| Original Baked GI | PASS within verified 302/302 matching scope |
+| Synthetic Linear HDR | PASS within tested scope |
+| Focus / DOF | Basic Visual PASS |
+| Front Tilt | Qualitative Visual PASS |
+| Front Swing | Qualitative Visual PASS |
+| Scheimpflug Focus-plane Control | Qualitative PASS |
+| Aperture Radiometry | PASS within tested synthetic scope |
+| Complete Optical Blur Calibration | PARTIAL |
+| Foreground Defocus / Ghosting | Known limitation; root cause unresolved |
+| Small-CoC Sampling | Research finding; not established as a general cause |
+| Custom Glass Reflection | PARTIAL / DEFERRED |
+| Compound Tilt + Swing | DEFERRED |
+| Native WebGPU | NOT VALIDATED |
+| Production Scene Integration | DEFERRED |
+| Production Build Isolation | PASS; final local production build excluded the experiment entry, room vendor, GI bake, and diagnostics |
+| Historical Qualification | Local complete-path replay: `NOT_APPLICABLE`; final-head GitHub Actions pending |
+| Ordinary CI | Final-head GitHub Actions pending; local full suite has two existing seeded-material signature failures and one Vitest worker-reporting timeout under the full CI workflow |
+| Development-only Merge Readiness | Pending final-head GitHub Actions and independent review |
+
+## Closeout evidence and validation
+
+- Historical qualification prerequisite PR #365 is merged into current main; its merge commit is integrated in this branch.
+- The six content-pinned audited capture dependency files retain their specified SHA-256 hashes.
+- Complete local routing over 505 PR changed paths returned `NOT_APPLICABLE`, no historical families, and no broad fallback. This is local routing evidence, not the required GitHub Actions result.
+- The focused browser test passed under Node 24.22.3 on WebGL 2 / ANGLE Metal, GI 302/302 and 960×720 captures. It now covers deterministic no-frame timeout, actual React RenderBoundary failure handling, A preservation, usable controls, later successful captures, timeout-handler cleanup, and stale-frame rejection. The timer callback is invoked deterministically; the renderer error uses a test-only throw and is not a GPU context-loss test.
+- `npm run ci:local:e2e -- --workers=2` passed CSS, lint, and typecheck, then exited nonzero in the full suite: 370/371 files and 4,479/4,481 tests passed. The two assertions in `freeModeSeededMaterialsWave1.test.tsx` also fail when run against the immutable main baseline. Vitest additionally reported one `onTaskUpdate` worker timeout during the full run; the CI runner stopped before build/E2E. The production build was run separately and passed.
+- Focused public Chromium E2E rechecks ran 7 cases: 2 passed, 5 failed on two known main-baseline patterns. Two Architecture + Foreground interaction cases timed out while pressing Focus through the public helper; three Interior Corner tests rejected the route's appended `seed` and `sv` parameters. The Rise URL failure was separately reproduced on immutable main `af680d7f9409bab13c6654abaaa2dad5aeac8079`; the other two URL assertions and both Architecture timeouts were reported reproduced on that same baseline in the prior triage. These results do not establish one shared root cause or a branch-induced regression.
+- Human screenshot observations and missing-file provenance are recorded in `evidence/human-acceptance-v9/`; no substitute image was created.
+- The evidence/checkout/history footprint and retention decision are documented in the architecture handoff and PR description.
+- The actual final-head historical-qualification and ordinary CI results, plus independent review, will be added to the PR handoff after publication.
+
+## Prior research-round record (historical)
+
+The following round-by-round notes are retained as provenance. Where an old status conflicts with the final summary above, use the final summary.
 
 Run from the repository root with Node 24 and the normal dependencies installed:
 
