@@ -1,5 +1,7 @@
 import * as THREE from "three";
 import type { ArchitectureForegroundPresentation } from "../scenes/presentation/architectureForeground";
+import { resolveArchitectureForegroundMaterialVariations } from "../scenes/architectureForegroundMaterialVariation";
+import type { SceneVariationDescriptor } from "../types/sceneVariation";
 import { createBuildingMaterials, createPavingMaterials } from "./architecture-foreground/BuildingMaterials";
 import { addElevations } from "./architecture-foreground/Elevations";
 import { addRoofline } from "./architecture-foreground/Roofline";
@@ -10,6 +12,7 @@ import { disposeTeachingSubjectResources } from "./TeachingMaterials";
 type ArchitectureForegroundGeometry = ArchitectureForegroundPresentation["geometry"];
 export type ArchitectureForegroundAssetRequest = Readonly<{
   presentation: ArchitectureForegroundPresentation;
+  variationDescriptor?: SceneVariationDescriptor;
 }>;
 
 const addForecourtStructure = (
@@ -55,15 +58,16 @@ const addForecourtStructure = (
 };
 
 export const createArchitectureForegroundGroup = (
-  { presentation: { geometry } }: ArchitectureForegroundAssetRequest,
+  { presentation: { geometry }, variationDescriptor }: ArchitectureForegroundAssetRequest,
 ): THREE.Group => {
   const root = new THREE.Group();
   root.name = "architecture-foreground-subject";
-  const materials = createBuildingMaterials();
+  const variations = resolveArchitectureForegroundMaterialVariations(variationDescriptor);
+  const materials = createBuildingMaterials(variations);
   addElevations(root, geometry, materials);
   addRoofline(root, geometry, materials);
 
-  const { paving, curb, returns } = createPavingMaterials(geometry.ground);
+  const { paving, curb, returns } = createPavingMaterials(geometry.ground, variations);
   const ground = new THREE.Mesh(
     new THREE.PlaneGeometry(toWorld(geometry.ground.width), toWorld(geometry.ground.depth)),
     paving,
