@@ -3,6 +3,7 @@ import type { ArchitectureForegroundPresentation } from "../scenes/presentation/
 import { createBuildingMaterials, createPavingMaterials } from "./architecture-foreground/BuildingMaterials";
 import { addElevations } from "./architecture-foreground/Elevations";
 import { addRoofline } from "./architecture-foreground/Roofline";
+import { createArchitectureForegroundCourtyard } from "./architecture-foreground/environment/ArchitectureForegroundCourtyard";
 import { toWorld } from "./rttUtils";
 import { disposeTeachingSubjectResources } from "./TeachingMaterials";
 
@@ -72,6 +73,7 @@ export const createArchitectureForegroundGroup = (
   ground.position.set(0, toWorld(geometry.ground.y), toWorld(geometry.ground.centerZ));
   root.add(ground);
   addForecourtStructure(root, returns, curb, geometry);
+  root.add(createArchitectureForegroundCourtyard(geometry.ground, paving));
   return root;
 };
 
