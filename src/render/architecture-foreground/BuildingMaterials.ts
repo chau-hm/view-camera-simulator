@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import type { ArchitectureForegroundPresentation } from "../../scenes/presentation/architectureForeground";
+import type { ArchitectureForegroundMaterialVariations } from "../../scenes/architectureForegroundMaterialVariation";
 import { createProceduralSurfaceMaterial } from "../ProceduralSurfaceMaterials";
 
 type Ground = ArchitectureForegroundPresentation["geometry"]["ground"];
@@ -10,31 +11,44 @@ function solid(name: string, color: string, roughness = 0.85) {
   });
 }
 
-export function createBuildingMaterials() {
+export function createBuildingMaterials(variations?: ArchitectureForegroundMaterialVariations) {
   const plaster = createProceduralSurfaceMaterial({
-    color: "#ded2bf", pattern: "plaster", repeat: [1, 1], roughness: 0.91, normalStrength: 0.16,
+    color: variations?.plaster.color ?? "#ded2bf",
+    pattern: "plaster",
+    repeat: variations?.plaster.repeat ?? [1, 1],
+    roughness: variations?.plaster.roughness ?? 0.91,
+    normalStrength: variations?.plaster.normalStrength ?? 0.16,
+    ...(variations ? { variationSeed: variations.plaster.variationSeed } : {}),
   });
   plaster.name = "architecture-foreground-plaster";
   const stone = createProceduralSurfaceMaterial({
-    color: "#bfaf97", pattern: "limestone", repeat: [1.12, 2.1], roughness: 0.91, normalStrength: 0.25,
+    color: variations?.rusticatedLimestone.color ?? "#bfaf97",
+    pattern: "limestone",
+    repeat: variations?.rusticatedLimestone.repeat ?? [1.12, 2.1],
+    roughness: variations?.rusticatedLimestone.roughness ?? 0.91,
+    normalStrength: variations?.rusticatedLimestone.normalStrength ?? 0.25,
+    ...(variations ? { variationSeed: variations.rusticatedLimestone.variationSeed } : {}),
   });
   stone.name = "architecture-foreground-rusticated-stone";
   return {
     plaster,
     stone,
-    trim: solid("limestone-trim", "#d1c0a4"),
-    cap: solid("limestone-edges", "#e0cfb2"),
-    mullion: solid("mullion", "#b2a48d"),
+    trim: solid("limestone-trim", variations?.trim.color ?? "#d1c0a4", variations?.trim.roughness),
+    cap: solid("limestone-edges", variations?.cap.color ?? "#e0cfb2", variations?.cap.roughness),
+    mullion: solid("mullion", variations?.mullion.color ?? "#b2a48d", variations?.mullion.roughness),
     sash: solid("sash", "#332e28", 0.5),
     glazing: solid("glazing", "#33434a", 0.32),
     transom: solid("transom-glazing", "#52636f", 0.31),
-    roof: solid("roof-slate", "#777776", 0.95),
+    roof: solid("roof-slate", variations?.roof.color ?? "#777776", variations?.roof.roughness ?? 0.95),
   };
 }
 
 export type BuildingMaterials = ReturnType<typeof createBuildingMaterials>;
 
-export function createPavingMaterials(ground: Ground) {
+export function createPavingMaterials(
+  ground: Ground,
+  variations?: ArchitectureForegroundMaterialVariations,
+) {
   const cells = 4;
   const samplesPerSlab = 64;
   const size = cells * samplesPerSlab;
@@ -71,7 +85,15 @@ export function createPavingMaterials(ground: Ground) {
   texture.offset.y = -texture.repeat.y;
   texture.needsUpdate = true;
 
-  const paving = solid("paving-stone", "#ffffff", 0.99);
+  const paving = solid(
+    "paving-stone",
+    variations?.paving.color ?? "#ffffff",
+    variations?.paving.roughness ?? 0.99,
+  );
   paving.map = texture;
-  return { paving, curb: solid("curb-stone", "#b0a594"), returns: solid("curb-return-stone", "#aaa08e") };
+  return {
+    paving,
+    curb: solid("curb-stone", variations?.curb.color ?? "#b0a594", variations?.curb.roughness),
+    returns: solid("curb-return-stone", variations?.returns.color ?? "#aaa08e", variations?.returns.roughness),
+  };
 }

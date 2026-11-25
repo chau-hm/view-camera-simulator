@@ -12,6 +12,7 @@
   "writeScope": {
     "allowedPaths": [
       "src/render/ArchitectureRiseSubjectFactory.tsx",
+      "src/render/architecture-rise/environment/**",
       ".dream-loop/**"
     ],
     "protectedPaths": [

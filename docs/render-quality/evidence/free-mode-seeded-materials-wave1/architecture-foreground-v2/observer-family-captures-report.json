@@ -1,0 +1,1394 @@
+{
+  "captureHead": "integration-working-tree",
+  "captureMode": "development-playwright-chromium",
+  "sceneId": "architecture-foreground",
+  "schemaVersion": 1,
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "devicePixelRatio": 1,
+  "renderQuality": "standard",
+  "observer": {
+    "overlays": "disabled through public controls",
+    "resetAction": "Reset 3D view",
+    "cameraPosition": "5.600000,3.000000,-6.500000",
+    "cameraTarget": "0.000000,0.250000,6.900000",
+    "canonicalState": {
+      "position": "5.600000,3.000000,-6.500000",
+      "target": "0.000000,0.250000,6.900000",
+      "viewFocus": "scene",
+      "focusDistanceMm": 9490,
+      "aperture": 11,
+      "movements": [
+        {
+          "standard": "front",
+          "controls": [
+            {
+              "label": "Rise",
+              "value": 0
+            },
+            {
+              "label": "Tilt",
+              "value": 0
+            },
+            {
+              "label": "Swing",
+              "value": 0
+            }
+          ]
+        }
+      ],
+      "rendererGeneration": "1"
+    },
+    "freeState": {
+      "position": "5.600000,3.000000,-6.500000",
+      "target": "0.000000,0.250000,6.900000",
+      "viewFocus": "scene",
+      "focusDistanceMm": 9490,
+      "aperture": 11,
+      "movements": [
+        {
+          "standard": "front",
+          "controls": [
+            {
+              "label": "Rise",
+              "value": 0
+            },
+            {
+              "label": "Tilt",
+              "value": 0
+            },
+            {
+              "label": "Swing",
+              "value": 0
+            }
+          ]
+        }
+      ],
+      "rendererGeneration": "1"
+    },
+    "canonicalCapture": {
+      "filename": "architecture-foreground-appearance-family-guided-canonical.png",
+      "width": 514,
+      "height": 410,
+      "sha256": "c48b7c9cfc11e42ec8b9a8b0e5b896b194e60f58b320de3e243cd98a03dbc315"
+    },
+    "captures": [
+      {
+        "seed": 0,
+        "schemaVersion": 1,
+        "mode": "free",
+        "state": {
+          "position": "5.600000,3.000000,-6.500000",
+          "target": "0.000000,0.250000,6.900000",
+          "viewFocus": "scene",
+          "focusDistanceMm": 9490,
+          "aperture": 11,
+          "movements": [
+            {
+              "standard": "front",
+              "controls": [
+                {
+                  "label": "Rise",
+                  "value": 0
+                },
+                {
+                  "label": "Tilt",
+                  "value": 0
+                },
+                {
+                  "label": "Swing",
+                  "value": 0
+                }
+              ]
+            }
+          ],
+          "rendererGeneration": "1"
+        },
+        "materialParameters": {
+          "appearanceFamily": "warm-stone",
+          "plaster": {
+            "variationSeed": 3656645311,
+            "color": "#d9c8aa",
+            "repeat": [
+              1,
+              1
+            ],
+            "roughness": 0.927,
+            "normalStrength": 0.172
+          },
+          "rusticatedLimestone": {
+            "variationSeed": 2512202633,
+            "color": "#c1ad8f",
+            "repeat": [
+              1.12,
+              2.1
+            ],
+            "roughness": 0.918,
+            "normalStrength": 0.238
+          },
+          "trim": {
+            "variationSeed": 1347222764,
+            "color": "#c2aa84",
+            "roughness": 0.837
+          },
+          "cap": {
+            "variationSeed": 1524493345,
+            "color": "#e0cba8",
+            "roughness": 0.835
+          },
+          "mullion": {
+            "variationSeed": 950068639,
+            "color": "#9e8c71",
+            "roughness": 0.793
+          },
+          "roof": {
+            "variationSeed": 4106697819,
+            "color": "#78746c",
+            "roughness": 0.962
+          },
+          "paving": {
+            "variationSeed": 3468635170,
+            "color": "#f3ebdc",
+            "roughness": 0.987
+          },
+          "curb": {
+            "variationSeed": 4060475940,
+            "color": "#a99a81",
+            "roughness": 0.822
+          },
+          "returns": {
+            "variationSeed": 4201121648,
+            "color": "#b7a788",
+            "roughness": 0.866
+          }
+        },
+        "observerCapture": {
+          "filename": "architecture-foreground-appearance-family-seed-0.png",
+          "width": 514,
+          "height": 410,
+          "sha256": "c69be55c58743dacc064eb98fb35a17ea4d1b01446eede0764bc9a099cbb9469"
+        },
+        "groundGlass": {
+          "requestId": "gg-mwrz1j1z-7513xyey8or-default-request-3",
+          "completedRequestId": "gg-mwrz1j1z-7513xyey8or-default-request-3",
+          "sceneId": "architecture-foreground",
+          "frameStatus": "completed",
+          "subjectGeneration": "1",
+          "resourceGeneration": "1"
+        }
+      },
+      {
+        "seed": 1,
+        "schemaVersion": 1,
+        "mode": "free",
+        "state": {
+          "position": "5.600000,3.000000,-6.500000",
+          "target": "0.000000,0.250000,6.900000",
+          "viewFocus": "scene",
+          "focusDistanceMm": 9490,
+          "aperture": 11,
+          "movements": [
+            {
+              "standard": "front",
+              "controls": [
+                {
+                  "label": "Rise",
+                  "value": 0
+                },
+                {
+                  "label": "Tilt",
+                  "value": 0
+                },
+                {
+                  "label": "Swing",
+                  "value": 0
+                }
+              ]
+            }
+          ],
+          "rendererGeneration": "1"
+        },
+        "materialParameters": {
+          "appearanceFamily": "light-mineral",
+          "plaster": {
+            "variationSeed": 3849519501,
+            "color": "#e3dfd4",
+            "repeat": [
+              1,
+              1
+            ],
+            "roughness": 0.896,
+            "normalStrength": 0.157
+          },
+          "rusticatedLimestone": {
+            "variationSeed": 1379795699,
+            "color": "#c8bda8",
+            "repeat": [
+              1.12,
+              2.1
+            ],
+            "roughness": 0.892,
+            "normalStrength": 0.263
+          },
+          "trim": {
+            "variationSeed": 245589605,
+            "color": "#d1c5ab",
+            "roughness": 0.852
+          },
+          "cap": {
+            "variationSeed": 1365099394,
+            "color": "#e6dfce",
+            "roughness": 0.862
+          },
+          "mullion": {
+            "variationSeed": 3456068643,
+            "color": "#98958d",
+            "roughness": 0.82
+          },
+          "roof": {
+            "variationSeed": 3387946989,
+            "color": "#7c7b76",
+            "roughness": 0.931
+          },
+          "paving": {
+            "variationSeed": 3643136911,
+            "color": "#ece9df",
+            "roughness": 0.977
+          },
+          "curb": {
+            "variationSeed": 3372601336,
+            "color": "#aaa69b",
+            "roughness": 0.86
+          },
+          "returns": {
+            "variationSeed": 1152421460,
+            "color": "#bab5a8",
+            "roughness": 0.824
+          }
+        },
+        "observerCapture": {
+          "filename": "architecture-foreground-appearance-family-seed-1.png",
+          "width": 514,
+          "height": 410,
+          "sha256": "fc6b6e401c5c64b132d4e7c65903ec208455dc73eddcc320af15c0ff07f3f5ce"
+        },
+        "groundGlass": {
+          "requestId": "gg-mwrz350k-29nar6xcun4-default-request-3",
+          "completedRequestId": "gg-mwrz350k-29nar6xcun4-default-request-3",
+          "sceneId": "architecture-foreground",
+          "frameStatus": "completed",
+          "subjectGeneration": "1",
+          "resourceGeneration": "1"
+        }
+      },
+      {
+        "seed": 284719,
+        "schemaVersion": 1,
+        "mode": "free",
+        "state": {
+          "position": "5.600000,3.000000,-6.500000",
+          "target": "0.000000,0.250000,6.900000",
+          "viewFocus": "scene",
+          "focusDistanceMm": 9490,
+          "aperture": 11,
+          "movements": [
+            {
+              "standard": "front",
+              "controls": [
+                {
+                  "label": "Rise",
+                  "value": 0
+                },
+                {
+                  "label": "Tilt",
+                  "value": 0
+                },
+                {
+                  "label": "Swing",
+                  "value": 0
+                }
+              ]
+            }
+          ],
+          "rendererGeneration": "1"
+        },
+        "materialParameters": {
+          "appearanceFamily": "dark-contemporary",
+          "plaster": {
+            "variationSeed": 3748106264,
+            "color": "#7b8485",
+            "repeat": [
+              1,
+              1
+            ],
+            "roughness": 0.922,
+            "normalStrength": 0.134
+          },
+          "rusticatedLimestone": {
+            "variationSeed": 3613511082,
+            "color": "#938e83",
+            "repeat": [
+              1.12,
+              2.1
+            ],
+            "roughness": 0.918,
+            "normalStrength": 0.227
+          },
+          "trim": {
+            "variationSeed": 3630863560,
+            "color": "#c0c4c1",
+            "roughness": 0.868
+          },
+          "cap": {
+            "variationSeed": 2065458132,
+            "color": "#dcdfda",
+            "roughness": 0.826
+          },
+          "mullion": {
+            "variationSeed": 1713466721,
+            "color": "#bec2bf",
+            "roughness": 0.822
+          },
+          "roof": {
+            "variationSeed": 1024937463,
+            "color": "#5f6464",
+            "roughness": 0.901
+          },
+          "paving": {
+            "variationSeed": 1697206576,
+            "color": "#d0d4d3",
+            "roughness": 0.993
+          },
+          "curb": {
+            "variationSeed": 3213165222,
+            "color": "#a2a5a2",
+            "roughness": 0.822
+          },
+          "returns": {
+            "variationSeed": 4238889938,
+            "color": "#b1b4b0",
+            "roughness": 0.863
+          }
+        },
+        "observerCapture": {
+          "filename": "architecture-foreground-appearance-family-seed-284719.png",
+          "width": 514,
+          "height": 410,
+          "sha256": "9ad0866d875ef20f9c89d7b4754a81beaf7a627587603703bd5532cb0cac1d20"
+        },
+        "groundGlass": {
+          "requestId": "gg-mwrz3ro9-krjtt3ely4o-default-request-3",
+          "completedRequestId": "gg-mwrz3ro9-krjtt3ely4o-default-request-3",
+          "sceneId": "architecture-foreground",
+          "frameStatus": "completed",
+          "subjectGeneration": "1",
+          "resourceGeneration": "1"
+        }
+      },
+      {
+        "seed": 4294967295,
+        "schemaVersion": 1,
+        "mode": "free",
+        "state": {
+          "position": "5.600000,3.000000,-6.500000",
+          "target": "0.000000,0.250000,6.900000",
+          "viewFocus": "scene",
+          "focusDistanceMm": 9490,
+          "aperture": 11,
+          "movements": [
+            {
+              "standard": "front",
+              "controls": [
+                {
+                  "label": "Rise",
+                  "value": 0
+                },
+                {
+                  "label": "Tilt",
+                  "value": 0
+                },
+                {
+                  "label": "Swing",
+                  "value": 0
+                }
+              ]
+            }
+          ],
+          "rendererGeneration": "1"
+        },
+        "materialParameters": {
+          "appearanceFamily": "light-mineral",
+          "plaster": {
+            "variationSeed": 3552187507,
+            "color": "#e6e2d8",
+            "repeat": [
+              1,
+              1
+            ],
+            "roughness": 0.924,
+            "normalStrength": 0.144
+          },
+          "rusticatedLimestone": {
+            "variationSeed": 3314933831,
+            "color": "#c8bda8",
+            "repeat": [
+              1.12,
+              2.1
+            ],
+            "roughness": 0.898,
+            "normalStrength": 0.225
+          },
+          "trim": {
+            "variationSeed": 1901224164,
+            "color": "#d1c5ab",
+            "roughness": 0.825
+          },
+          "cap": {
+            "variationSeed": 1187492346,
+            "color": "#e6dfce",
+            "roughness": 0.808
+          },
+          "mullion": {
+            "variationSeed": 3274895611,
+            "color": "#a19c91",
+            "roughness": 0.769
+          },
+          "roof": {
+            "variationSeed": 1387114296,
+            "color": "#85837c",
+            "roughness": 0.922
+          },
+          "paving": {
+            "variationSeed": 3557525296,
+            "color": "#efebe1",
+            "roughness": 0.989
+          },
+          "curb": {
+            "variationSeed": 3275590436,
+            "color": "#aaa69b",
+            "roughness": 0.851
+          },
+          "returns": {
+            "variationSeed": 2974170638,
+            "color": "#bab5a8",
+            "roughness": 0.884
+          }
+        },
+        "observerCapture": {
+          "filename": "architecture-foreground-appearance-family-seed-4294967295.png",
+          "width": 514,
+          "height": 410,
+          "sha256": "06f69e38c78832a37715e6a3f93901a8cda1e0c7f1638091ab2a80cea56fcdbf"
+        },
+        "groundGlass": {
+          "requestId": "gg-mwrz4f8z-ccz82y7ojwo-default-request-3",
+          "completedRequestId": "gg-mwrz4f8z-ccz82y7ojwo-default-request-3",
+          "sceneId": "architecture-foreground",
+          "frameStatus": "completed",
+          "subjectGeneration": "1",
+          "resourceGeneration": "1"
+        }
+      },
+      {
+        "seed": 17,
+        "schemaVersion": 1,
+        "mode": "free",
+        "state": {
+          "position": "5.600000,3.000000,-6.500000",
+          "target": "0.000000,0.250000,6.900000",
+          "viewFocus": "scene",
+          "focusDistanceMm": 9490,
+          "aperture": 11,
+          "movements": [
+            {
+              "standard": "front",
+              "controls": [
+                {
+                  "label": "Rise",
+                  "value": 0
+                },
+                {
+                  "label": "Tilt",
+                  "value": 0
+                },
+                {
+                  "label": "Swing",
+                  "value": 0
+                }
+              ]
+            }
+          ],
+          "rendererGeneration": "1"
+        },
+        "materialParameters": {
+          "appearanceFamily": "light-mineral",
+          "plaster": {
+            "variationSeed": 2852398930,
+            "color": "#e6e2d8",
+            "repeat": [
+              1,
+              1
+            ],
+            "roughness": 0.915,
+            "normalStrength": 0.18
+          },
+          "rusticatedLimestone": {
+            "variationSeed": 3328771640,
+            "color": "#cfc4ae",
+            "repeat": [
+              1.12,
+              2.1
+            ],
+            "roughness": 0.896,
+            "normalStrength": 0.263
+          },
+          "trim": {
+            "variationSeed": 780074763,
+            "color": "#d1c5ab",
+            "roughness": 0.826
+          },
+          "cap": {
+            "variationSeed": 237720921,
+            "color": "#e9e4d9",
+            "roughness": 0.869
+          },
+          "mullion": {
+            "variationSeed": 3435235940,
+            "color": "#a19c91",
+            "roughness": 0.773
+          },
+          "roof": {
+            "variationSeed": 131895917,
+            "color": "#85837c",
+            "roughness": 0.941
+          },
+          "paving": {
+            "variationSeed": 2895869272,
+            "color": "#efebe1",
+            "roughness": 0.981
+          },
+          "curb": {
+            "variationSeed": 4233828067,
+            "color": "#aaa69b",
+            "roughness": 0.869
+          },
+          "returns": {
+            "variationSeed": 1288375677,
+            "color": "#bab5a8",
+            "roughness": 0.862
+          }
+        },
+        "observerCapture": {
+          "filename": "architecture-foreground-appearance-family-seed-17.png",
+          "width": 514,
+          "height": 410,
+          "sha256": "e9ae701fed84d8996c0e791272ab4376ef030d7d896bd3bb9ee8e8e0865b8d2f"
+        },
+        "groundGlass": {
+          "requestId": "gg-mwrz58tq-q0umytfbh7e-default-request-3",
+          "completedRequestId": "gg-mwrz58tq-q0umytfbh7e-default-request-3",
+          "sceneId": "architecture-foreground",
+          "frameStatus": "completed",
+          "subjectGeneration": "1",
+          "resourceGeneration": "1"
+        }
+      },
+      {
+        "seed": 2024,
+        "schemaVersion": 1,
+        "mode": "free",
+        "state": {
+          "position": "5.600000,3.000000,-6.500000",
+          "target": "0.000000,0.250000,6.900000",
+          "viewFocus": "scene",
+          "focusDistanceMm": 9490,
+          "aperture": 11,
+          "movements": [
+            {
+              "standard": "front",
+              "controls": [
+                {
+                  "label": "Rise",
+                  "value": 0
+                },
+                {
+                  "label": "Tilt",
+                  "value": 0
+                },
+                {
+                  "label": "Swing",
+                  "value": 0
+                }
+              ]
+            }
+          ],
+          "rendererGeneration": "1"
+        },
+        "materialParameters": {
+          "appearanceFamily": "dark-contemporary",
+          "plaster": {
+            "variationSeed": 2205939571,
+            "color": "#7b8485",
+            "repeat": [
+              1,
+              1
+            ],
+            "roughness": 0.913,
+            "normalStrength": 0.131
+          },
+          "rusticatedLimestone": {
+            "variationSeed": 803813388,
+            "color": "#9a9489",
+            "repeat": [
+              1.12,
+              2.1
+            ],
+            "roughness": 0.929,
+            "normalStrength": 0.266
+          },
+          "trim": {
+            "variationSeed": 3035459407,
+            "color": "#c7cbc7",
+            "roughness": 0.856
+          },
+          "cap": {
+            "variationSeed": 2775774889,
+            "color": "#d7dad6",
+            "roughness": 0.82
+          },
+          "mullion": {
+            "variationSeed": 336195682,
+            "color": "#bec2bf",
+            "roughness": 0.805
+          },
+          "roof": {
+            "variationSeed": 4063334805,
+            "color": "#5f6464",
+            "roughness": 0.931
+          },
+          "paving": {
+            "variationSeed": 3038405808,
+            "color": "#d0d4d3",
+            "roughness": 0.983
+          },
+          "curb": {
+            "variationSeed": 2579070332,
+            "color": "#999e9c",
+            "roughness": 0.848
+          },
+          "returns": {
+            "variationSeed": 1285708624,
+            "color": "#b1b4b0",
+            "roughness": 0.873
+          }
+        },
+        "observerCapture": {
+          "filename": "architecture-foreground-appearance-family-seed-2024.png",
+          "width": 514,
+          "height": 410,
+          "sha256": "ada86498d6e0321233c6b7761d0a1867e6f580e07a064f9dc4596026163b4548"
+        },
+        "groundGlass": {
+          "requestId": "gg-mwrz5wal-etn5z3jdvag-default-request-3",
+          "completedRequestId": "gg-mwrz5wal-etn5z3jdvag-default-request-3",
+          "sceneId": "architecture-foreground",
+          "frameStatus": "completed",
+          "subjectGeneration": "1",
+          "resourceGeneration": "1"
+        }
+      },
+      {
+        "seed": 8675309,
+        "schemaVersion": 1,
+        "mode": "free",
+        "state": {
+          "position": "5.600000,3.000000,-6.500000",
+          "target": "0.000000,0.250000,6.900000",
+          "viewFocus": "scene",
+          "focusDistanceMm": 9490,
+          "aperture": 11,
+          "movements": [
+            {
+              "standard": "front",
+              "controls": [
+                {
+                  "label": "Rise",
+                  "value": 0
+                },
+                {
+                  "label": "Tilt",
+                  "value": 0
+                },
+                {
+                  "label": "Swing",
+                  "value": 0
+                }
+              ]
+            }
+          ],
+          "rendererGeneration": "1"
+        },
+        "materialParameters": {
+          "appearanceFamily": "warm-stone",
+          "plaster": {
+            "variationSeed": 326150557,
+            "color": "#d4c1a0",
+            "repeat": [
+              1,
+              1
+            ],
+            "roughness": 0.929,
+            "normalStrength": 0.176
+          },
+          "rusticatedLimestone": {
+            "variationSeed": 1321542135,
+            "color": "#c1ad8f",
+            "repeat": [
+              1.12,
+              2.1
+            ],
+            "roughness": 0.913,
+            "normalStrength": 0.229
+          },
+          "trim": {
+            "variationSeed": 3186960231,
+            "color": "#c7b18f",
+            "roughness": 0.858
+          },
+          "cap": {
+            "variationSeed": 2330527229,
+            "color": "#e0cba8",
+            "roughness": 0.855
+          },
+          "mullion": {
+            "variationSeed": 3967200350,
+            "color": "#a89578",
+            "roughness": 0.84
+          },
+          "roof": {
+            "variationSeed": 1906912232,
+            "color": "#78746c",
+            "roughness": 0.923
+          },
+          "paving": {
+            "variationSeed": 248093842,
+            "color": "#f3ebdc",
+            "roughness": 0.987
+          },
+          "curb": {
+            "variationSeed": 2160581406,
+            "color": "#b09e82",
+            "roughness": 0.84
+          },
+          "returns": {
+            "variationSeed": 3087750804,
+            "color": "#bdaa8d",
+            "roughness": 0.838
+          }
+        },
+        "observerCapture": {
+          "filename": "architecture-foreground-appearance-family-seed-8675309.png",
+          "width": 514,
+          "height": 410,
+          "sha256": "7cd8f106cd43ccd8410bc62362dd54805c5b293f4dd305f4bddce7865b82668d"
+        },
+        "groundGlass": {
+          "requestId": "gg-mwrz6jbg-ooa412oysh-default-request-3",
+          "completedRequestId": "gg-mwrz6jbg-ooa412oysh-default-request-3",
+          "sceneId": "architecture-foreground",
+          "frameStatus": "completed",
+          "subjectGeneration": "1",
+          "resourceGeneration": "1"
+        }
+      },
+      {
+        "seed": 123456789,
+        "schemaVersion": 1,
+        "mode": "free",
+        "state": {
+          "position": "5.600000,3.000000,-6.500000",
+          "target": "0.000000,0.250000,6.900000",
+          "viewFocus": "scene",
+          "focusDistanceMm": 9490,
+          "aperture": 11,
+          "movements": [
+            {
+              "standard": "front",
+              "controls": [
+                {
+                  "label": "Rise",
+                  "value": 0
+                },
+                {
+                  "label": "Tilt",
+                  "value": 0
+                },
+                {
+                  "label": "Swing",
+                  "value": 0
+                }
+              ]
+            }
+          ],
+          "rendererGeneration": "1"
+        },
+        "materialParameters": {
+          "appearanceFamily": "dark-contemporary",
+          "plaster": {
+            "variationSeed": 4224410601,
+            "color": "#7b8485",
+            "repeat": [
+              1,
+              1
+            ],
+            "roughness": 0.892,
+            "normalStrength": 0.17
+          },
+          "rusticatedLimestone": {
+            "variationSeed": 154146497,
+            "color": "#938e83",
+            "repeat": [
+              1.12,
+              2.1
+            ],
+            "roughness": 0.912,
+            "normalStrength": 0.232
+          },
+          "trim": {
+            "variationSeed": 541286500,
+            "color": "#c0c4c1",
+            "roughness": 0.83
+          },
+          "cap": {
+            "variationSeed": 3835451891,
+            "color": "#dcdfda",
+            "roughness": 0.815
+          },
+          "mullion": {
+            "variationSeed": 1530649126,
+            "color": "#bec2bf",
+            "roughness": 0.831
+          },
+          "roof": {
+            "variationSeed": 1770762922,
+            "color": "#5f6464",
+            "roughness": 0.915
+          },
+          "paving": {
+            "variationSeed": 878098873,
+            "color": "#d5d8d7",
+            "roughness": 0.993
+          },
+          "curb": {
+            "variationSeed": 4250372149,
+            "color": "#999e9c",
+            "roughness": 0.88
+          },
+          "returns": {
+            "variationSeed": 4148567311,
+            "color": "#a9ada9",
+            "roughness": 0.885
+          }
+        },
+        "observerCapture": {
+          "filename": "architecture-foreground-appearance-family-seed-123456789.png",
+          "width": 514,
+          "height": 410,
+          "sha256": "9b7a8b55e6592c50cd72f031c5aaef23d3c777c22468514f099c8fca591c0cb7"
+        },
+        "groundGlass": {
+          "requestId": "gg-mwrz7621-uvhnnkvi6u-default-request-3",
+          "completedRequestId": "gg-mwrz7621-uvhnnkvi6u-default-request-3",
+          "sceneId": "architecture-foreground",
+          "frameStatus": "completed",
+          "subjectGeneration": "1",
+          "resourceGeneration": "1"
+        }
+      },
+      {
+        "seed": 987654321,
+        "schemaVersion": 1,
+        "mode": "free",
+        "state": {
+          "position": "5.600000,3.000000,-6.500000",
+          "target": "0.000000,0.250000,6.900000",
+          "viewFocus": "scene",
+          "focusDistanceMm": 9490,
+          "aperture": 11,
+          "movements": [
+            {
+              "standard": "front",
+              "controls": [
+                {
+                  "label": "Rise",
+                  "value": 0
+                },
+                {
+                  "label": "Tilt",
+                  "value": 0
+                },
+                {
+                  "label": "Swing",
+                  "value": 0
+                }
+              ]
+            }
+          ],
+          "rendererGeneration": "1"
+        },
+        "materialParameters": {
+          "appearanceFamily": "warm-stone",
+          "plaster": {
+            "variationSeed": 3026073471,
+            "color": "#d9c8aa",
+            "repeat": [
+              1,
+              1
+            ],
+            "roughness": 0.908,
+            "normalStrength": 0.157
+          },
+          "rusticatedLimestone": {
+            "variationSeed": 1583926723,
+            "color": "#c1ad8f",
+            "repeat": [
+              1.12,
+              2.1
+            ],
+            "roughness": 0.912,
+            "normalStrength": 0.254
+          },
+          "trim": {
+            "variationSeed": 3823533821,
+            "color": "#c7b18f",
+            "roughness": 0.838
+          },
+          "cap": {
+            "variationSeed": 3015898176,
+            "color": "#e7d8bc",
+            "roughness": 0.859
+          },
+          "mullion": {
+            "variationSeed": 3107370525,
+            "color": "#a89578",
+            "roughness": 0.791
+          },
+          "roof": {
+            "variationSeed": 1679174864,
+            "color": "#78746c",
+            "roughness": 0.901
+          },
+          "paving": {
+            "variationSeed": 1036033666,
+            "color": "#f0e5d1",
+            "roughness": 0.977
+          },
+          "curb": {
+            "variationSeed": 3113043699,
+            "color": "#b09e82",
+            "roughness": 0.878
+          },
+          "returns": {
+            "variationSeed": 4017963652,
+            "color": "#b7a788",
+            "roughness": 0.868
+          }
+        },
+        "observerCapture": {
+          "filename": "architecture-foreground-appearance-family-seed-987654321.png",
+          "width": 514,
+          "height": 410,
+          "sha256": "c79b3d278f5de76ed6eb559f44c2f5500afd92b460923bdb4ab684ddb63d1d7a"
+        },
+        "groundGlass": {
+          "requestId": "gg-mwrz88o2-0ar0kasqsf9t-default-request-3",
+          "completedRequestId": "gg-mwrz88o2-0ar0kasqsf9t-default-request-3",
+          "sceneId": "architecture-foreground",
+          "frameStatus": "completed",
+          "subjectGeneration": "1",
+          "resourceGeneration": "1"
+        }
+      },
+      {
+        "seed": 2718281828,
+        "schemaVersion": 1,
+        "mode": "free",
+        "state": {
+          "position": "5.600000,3.000000,-6.500000",
+          "target": "0.000000,0.250000,6.900000",
+          "viewFocus": "scene",
+          "focusDistanceMm": 9490,
+          "aperture": 11,
+          "movements": [
+            {
+              "standard": "front",
+              "controls": [
+                {
+                  "label": "Rise",
+                  "value": 0
+                },
+                {
+                  "label": "Tilt",
+                  "value": 0
+                },
+                {
+                  "label": "Swing",
+                  "value": 0
+                }
+              ]
+            }
+          ],
+          "rendererGeneration": "1"
+        },
+        "materialParameters": {
+          "appearanceFamily": "light-mineral",
+          "plaster": {
+            "variationSeed": 730179993,
+            "color": "#e3dfd4",
+            "repeat": [
+              1,
+              1
+            ],
+            "roughness": 0.927,
+            "normalStrength": 0.164
+          },
+          "rusticatedLimestone": {
+            "variationSeed": 3578124911,
+            "color": "#c8bda8",
+            "repeat": [
+              1.12,
+              2.1
+            ],
+            "roughness": 0.897,
+            "normalStrength": 0.234
+          },
+          "trim": {
+            "variationSeed": 971986127,
+            "color": "#d7cbb2",
+            "roughness": 0.877
+          },
+          "cap": {
+            "variationSeed": 3008770499,
+            "color": "#e9e4d9",
+            "roughness": 0.824
+          },
+          "mullion": {
+            "variationSeed": 3406772448,
+            "color": "#98958d",
+            "roughness": 0.812
+          },
+          "roof": {
+            "variationSeed": 1261223514,
+            "color": "#85837c",
+            "roughness": 0.961
+          },
+          "paving": {
+            "variationSeed": 2712312336,
+            "color": "#efebe1",
+            "roughness": 0.979
+          },
+          "curb": {
+            "variationSeed": 3478963225,
+            "color": "#aaa69b",
+            "roughness": 0.855
+          },
+          "returns": {
+            "variationSeed": 1740815855,
+            "color": "#bab5a8",
+            "roughness": 0.846
+          }
+        },
+        "observerCapture": {
+          "filename": "architecture-foreground-appearance-family-seed-2718281828.png",
+          "width": 514,
+          "height": 410,
+          "sha256": "1ada458ce25c0e2f8599ac4ce661bad45ef50ea826aaa3fb3d24448c0cc93b1c"
+        },
+        "groundGlass": {
+          "requestId": "gg-mwrz9mhg-oktlecnvwui-default-request-3",
+          "completedRequestId": "gg-mwrz9mhg-oktlecnvwui-default-request-3",
+          "sceneId": "architecture-foreground",
+          "frameStatus": "completed",
+          "subjectGeneration": "1",
+          "resourceGeneration": "1"
+        }
+      },
+      {
+        "seed": 3141592653,
+        "schemaVersion": 1,
+        "mode": "free",
+        "state": {
+          "position": "5.600000,3.000000,-6.500000",
+          "target": "0.000000,0.250000,6.900000",
+          "viewFocus": "scene",
+          "focusDistanceMm": 9490,
+          "aperture": 11,
+          "movements": [
+            {
+              "standard": "front",
+              "controls": [
+                {
+                  "label": "Rise",
+                  "value": 0
+                },
+                {
+                  "label": "Tilt",
+                  "value": 0
+                },
+                {
+                  "label": "Swing",
+                  "value": 0
+                }
+              ]
+            }
+          ],
+          "rendererGeneration": "1"
+        },
+        "materialParameters": {
+          "appearanceFamily": "warm-stone",
+          "plaster": {
+            "variationSeed": 687207512,
+            "color": "#d9c8aa",
+            "repeat": [
+              1,
+              1
+            ],
+            "roughness": 0.917,
+            "normalStrength": 0.171
+          },
+          "rusticatedLimestone": {
+            "variationSeed": 3585986455,
+            "color": "#b9a486",
+            "repeat": [
+              1.12,
+              2.1
+            ],
+            "roughness": 0.901,
+            "normalStrength": 0.267
+          },
+          "trim": {
+            "variationSeed": 3482032862,
+            "color": "#c7b18f",
+            "roughness": 0.823
+          },
+          "cap": {
+            "variationSeed": 1597100479,
+            "color": "#e0cba8",
+            "roughness": 0.835
+          },
+          "mullion": {
+            "variationSeed": 704394822,
+            "color": "#a89578",
+            "roughness": 0.83
+          },
+          "roof": {
+            "variationSeed": 3612400798,
+            "color": "#716d65",
+            "roughness": 0.931
+          },
+          "paving": {
+            "variationSeed": 3773980066,
+            "color": "#f3ebdc",
+            "roughness": 0.977
+          },
+          "curb": {
+            "variationSeed": 594200266,
+            "color": "#a99a81",
+            "roughness": 0.888
+          },
+          "returns": {
+            "variationSeed": 330774093,
+            "color": "#bdaa8d",
+            "roughness": 0.832
+          }
+        },
+        "observerCapture": {
+          "filename": "architecture-foreground-appearance-family-seed-3141592653.png",
+          "width": 514,
+          "height": 410,
+          "sha256": "0738b9cb53daeeb0a67906792ac0e4e56b70f1e03753bae7889cdf670337a5fc"
+        },
+        "groundGlass": {
+          "requestId": "gg-mwrzagsf-m99rot9w4hf-default-request-3",
+          "completedRequestId": "gg-mwrzagsf-m99rot9w4hf-default-request-3",
+          "sceneId": "architecture-foreground",
+          "frameStatus": "completed",
+          "subjectGeneration": "1",
+          "resourceGeneration": "1"
+        }
+      },
+      {
+        "seed": 4000000000,
+        "schemaVersion": 1,
+        "mode": "free",
+        "state": {
+          "position": "5.600000,3.000000,-6.500000",
+          "target": "0.000000,0.250000,6.900000",
+          "viewFocus": "scene",
+          "focusDistanceMm": 9490,
+          "aperture": 11,
+          "movements": [
+            {
+              "standard": "front",
+              "controls": [
+                {
+                  "label": "Rise",
+                  "value": 0
+                },
+                {
+                  "label": "Tilt",
+                  "value": 0
+                },
+                {
+                  "label": "Swing",
+                  "value": 0
+                }
+              ]
+            }
+          ],
+          "rendererGeneration": "1"
+        },
+        "materialParameters": {
+          "appearanceFamily": "dark-contemporary",
+          "plaster": {
+            "variationSeed": 2378934165,
+            "color": "#7b8485",
+            "repeat": [
+              1,
+              1
+            ],
+            "roughness": 0.9,
+            "normalStrength": 0.14
+          },
+          "rusticatedLimestone": {
+            "variationSeed": 3757807604,
+            "color": "#938e83",
+            "repeat": [
+              1.12,
+              2.1
+            ],
+            "roughness": 0.925,
+            "normalStrength": 0.26
+          },
+          "trim": {
+            "variationSeed": 1176674687,
+            "color": "#c0c4c1",
+            "roughness": 0.845
+          },
+          "cap": {
+            "variationSeed": 984381906,
+            "color": "#d7dad6",
+            "roughness": 0.869
+          },
+          "mullion": {
+            "variationSeed": 2900012803,
+            "color": "#b5bbb8",
+            "roughness": 0.797
+          },
+          "roof": {
+            "variationSeed": 522525749,
+            "color": "#54595a",
+            "roughness": 0.96
+          },
+          "paving": {
+            "variationSeed": 3254593255,
+            "color": "#d5d8d7",
+            "roughness": 0.976
+          },
+          "curb": {
+            "variationSeed": 3181218262,
+            "color": "#a2a5a2",
+            "roughness": 0.885
+          },
+          "returns": {
+            "variationSeed": 3952914084,
+            "color": "#a9ada9",
+            "roughness": 0.829
+          }
+        },
+        "observerCapture": {
+          "filename": "architecture-foreground-appearance-family-seed-4000000000.png",
+          "width": 514,
+          "height": 410,
+          "sha256": "7b6bbba81114b94e8cdd560ddeeeccbe3dcb4168b58648a15a60b790be01c801"
+        },
+        "groundGlass": {
+          "requestId": "gg-mwrzbayg-7j3cs99trvl-default-request-3",
+          "completedRequestId": "gg-mwrzbayg-7j3cs99trvl-default-request-3",
+          "sceneId": "architecture-foreground",
+          "frameStatus": "completed",
+          "subjectGeneration": "1",
+          "resourceGeneration": "1"
+        }
+      }
+    ],
+    "replay": {
+      "seed": 284719,
+      "capture": {
+        "filename": "architecture-foreground-appearance-family-seed-284719-url-replay.png",
+        "width": 514,
+        "height": 410,
+        "sha256": "9ad0866d875ef20f9c89d7b4754a81beaf7a627587603703bd5532cb0cac1d20"
+      },
+      "matchesSeedCapture": true
+    }
+  },
+  "fixedSeedSample": {
+    "required": [
+      0,
+      1,
+      284719,
+      4294967295
+    ],
+    "additionalSelectedBeforeVisualInspection": [
+      17,
+      2024,
+      8675309,
+      123456789,
+      987654321,
+      2718281828,
+      3141592653,
+      4000000000
+    ],
+    "allSeeds": [
+      0,
+      1,
+      284719,
+      4294967295,
+      17,
+      2024,
+      8675309,
+      123456789,
+      987654321,
+      2718281828,
+      3141592653,
+      4000000000
+    ]
+  },
+  "familyCoverage": {
+    "warm-stone": [
+      0,
+      8675309,
+      987654321,
+      3141592653
+    ],
+    "light-mineral": [
+      1,
+      4294967295,
+      17,
+      2718281828
+    ],
+    "dark-contemporary": [
+      284719,
+      2024,
+      123456789,
+      4000000000
+    ]
+  },
+  "contactSheets": {
+    "requiredComparison": "architecture-foreground-appearance-family-required-comparison.png",
+    "multiSeedSample": "architecture-foreground-appearance-family-seed-sample.png"
+  }
+}

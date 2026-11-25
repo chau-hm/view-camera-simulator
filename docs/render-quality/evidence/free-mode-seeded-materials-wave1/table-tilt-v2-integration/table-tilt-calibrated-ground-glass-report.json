@@ -1,0 +1,3608 @@
+{
+  "qualification": "Table Tilt v2 final integration Ground Glass qualification",
+  "integrationBase": "97908ec09e630f95471ab37bbc587158738872ae",
+  "canonicalCompatibility": {
+    "currentMainAndIntegratedNoDescriptorSignature": "d8bcb9595b6b55b12652dd541aff1d68ce18735da5e3e5303d205b82e92c27f1",
+    "source": "origin/main PR #357 factory with no variation descriptor; integrated Guided path uses the same canonical construction"
+  },
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "devicePixelRatio": 1,
+  "sceneId": "table-tilt",
+  "mode": "free",
+  "schemaVersion": 1,
+  "seed": 284719,
+  "originalCaptureLimitation": "The Wave 1 capture selected a generic reachable midpoint focus value rather than the authoritative Table Tilt calibration.",
+  "calibrationSource": "src/scenes/tableTiltGeometry.ts#tableTiltCalibration",
+  "calibrationRequested": {
+    "frontTiltDeg": 9,
+    "focusDistanceMm": 6129.51872835921,
+    "aperture": 11,
+    "frontRiseMm": 0,
+    "frontSwingDeg": 0
+  },
+  "neutralState": {
+    "mode": "neutral",
+    "frontStandard": "front",
+    "frontRiseMm": 0,
+    "frontTiltDeg": 0,
+    "frontSwingDeg": 0,
+    "focusDistanceMm": 4600,
+    "focusSource": "tableTiltScene.cameraPreset.focusDistanceMm (existing zero-tilt scene default)",
+    "aperture": 11
+  },
+  "calibratedSettings": {
+    "movementControl": "Front standard / Tilt",
+    "frontRiseMm": 0,
+    "frontTilt": {
+      "requested": 9,
+      "actual": 9,
+      "min": -10,
+      "max": 10,
+      "step": 0.1
+    },
+    "frontSwingDeg": 0,
+    "focusDistance": {
+      "requested": 6129.51872835921,
+      "actual": 6130,
+      "min": 160,
+      "max": 9150,
+      "step": 10
+    },
+    "aperture": 11,
+    "requestId": "gg-mwt9jdcg-r79bxli5ri-default-request-6",
+    "materialSubjectGeneration": "1",
+    "materialTextureCounts": {
+      "observer": 19,
+      "rtt": 19,
+      "renderer": 30
+    },
+    "materialResourcesStableDuringTiltAndFocus": true
+  },
+  "focusControlResolution": 10,
+  "tiltControlResolution": 0.1,
+  "captures": {
+    "neutral": [
+      {
+        "filename": "table-tilt-ground-glass-neutral-seed-284719-raw.png",
+        "width": 514,
+        "height": 411,
+        "sha256": "3d564792ea96e357043a9dd059afc930171d20e395418a069e7082cb3f5c4472",
+        "label": "Neutral · Raw · f/11",
+        "settings": {
+          "mode": "neutral",
+          "frontStandard": "front",
+          "frontRiseMm": 0,
+          "frontTiltDeg": 0,
+          "frontSwingDeg": 0,
+          "focusDistanceMm": 4600,
+          "focusSource": "tableTiltScene.cameraPreset.focusDistanceMm (existing zero-tilt scene default)",
+          "aperture": 11
+        },
+        "diagnostics": {
+          "requestId": "gg-mwt9jdcg-r79bxli5ri-default-request-3",
+          "completedRequestId": "gg-mwt9jdcg-r79bxli5ri-default-request-3",
+          "frameStatus": "completed",
+          "sceneId": "table-tilt",
+          "previewMode": "raw",
+          "dofBypass": false,
+          "dofProcessingEnabled": true,
+          "dofMode": "derived-planes",
+          "rawContentful": "true",
+          "finalContentful": "true",
+          "rendererGeneration": "gg-mwt9jdcg-r79bxli5ri-default-generation-1",
+          "subjectGeneration": "1",
+          "rttResourceGeneration": "1",
+          "rttOwnerId": "ground-glass-rtt-owner-_r_0_",
+          "camera": {
+            "lensWorldPosition": [
+              0,
+              0,
+              0
+            ],
+            "filmPlaneUpWorld": [
+              0,
+              1,
+              0
+            ],
+            "opticalAxisWorld": [
+              0,
+              0,
+              1
+            ],
+            "nearWorld": 0.01,
+            "farWorld": 10.15,
+            "projectionDeterminant": -0.14921030044503003,
+            "projectionMatrix": [
+              2.4418296027603295,
+              0,
+              0,
+              0,
+              0,
+              3.0522870034504117,
+              0,
+              0,
+              0,
+              0,
+              -1.0019723865877712,
+              -1,
+              0,
+              0,
+              -0.020019723865877713,
+              0
+            ]
+          },
+          "framingProjectionSummary": {
+            "tabletopCornersInsideFilmAndClip": 2,
+            "tabletopTopCornerCount": 4,
+            "focusDetailsInsideFilmAndClip": 3,
+            "focusDetailCount": 3,
+            "interpretation": "Projected focus-detail points being inside the film is separate from whether their physical markings are legible at normal Ground Glass size."
+          },
+          "projectedTabletopTopCorners": [
+            {
+              "id": "near-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": 1.0104122494180674,
+                "y": -1.1077359816362686,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 1.0052061247090336,
+                "v": 1.0538679908181343
+              },
+              "displayUv": {
+                "u": -0.005206124709033588,
+                "v": -0.053867990818134315
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "near-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": -1.0104122494180674,
+                "y": -1.1077359816362686,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": -0.005206124709033699,
+                "v": 1.0538679908181343
+              },
+              "displayUv": {
+                "u": 1.0052061247090336,
+                "v": -0.053867990818134315
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "far-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": 0.46511040052577696,
+                "y": -0.509910213769076,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.7325552002628885,
+                "v": 0.7549551068845379
+              },
+              "displayUv": {
+                "u": 0.26744479973711155,
+                "v": 0.24504489311546207
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": -0.46511040052577696,
+                "y": -0.509910213769076,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.26744479973711155,
+                "v": 0.7549551068845379
+              },
+              "displayUv": {
+                "u": 0.7325552002628885,
+                "v": 0.24504489311546207
+              },
+              "insideFilmAndClip": true
+            }
+          ],
+          "projectedFocusDetails": [
+            {
+              "id": "near-cup",
+              "worldMm": {
+                "x": -350,
+                "y": -958.8679832249492,
+                "z": 3148
+              },
+              "ndc": {
+                "x": 0.2714867728609007,
+                "y": -0.9297141941620773,
+                "z": 0.9956128809124607
+              },
+              "sourceUv": {
+                "u": 0.6357433864304504,
+                "v": 0.9648570970810386
+              },
+              "displayUv": {
+                "u": 0.36425661356954964,
+                "v": 0.03514290291896138
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "mid-notebook",
+              "worldMm": {
+                "x": 0,
+                "y": -958.8679832249492,
+                "z": 4600
+              },
+              "ndc": {
+                "x": 0,
+                "y": -0.6362478876570041,
+                "z": 0.9976202727038848
+              },
+              "sourceUv": {
+                "u": 0.5,
+                "v": 0.8181239438285021
+              },
+              "displayUv": {
+                "u": 0.5,
+                "v": 0.18187605617149794
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-book",
+              "worldMm": {
+                "x": 350,
+                "y": -958.8679832249492,
+                "z": 5900
+              },
+              "ndc": {
+                "x": -0.1448542984688331,
+                "y": -0.49605767512241006,
+                "z": 0.9985792130511818
+              },
+              "sourceUv": {
+                "u": 0.42757285076558343,
+                "v": 0.748028837561205
+              },
+              "displayUv": {
+                "u": 0.5724271492344166,
+                "v": 0.251971162438795
+              },
+              "insideFilmAndClip": true
+            }
+          ]
+        }
+      },
+      {
+        "filename": "table-tilt-ground-glass-neutral-seed-284719-upright.png",
+        "width": 514,
+        "height": 411,
+        "sha256": "8d9a725de72e3e363bdada3249128ca784762354fdcb11737075cf3a04b40252",
+        "label": "Neutral · Upright · f/11",
+        "settings": {
+          "mode": "neutral",
+          "frontStandard": "front",
+          "frontRiseMm": 0,
+          "frontTiltDeg": 0,
+          "frontSwingDeg": 0,
+          "focusDistanceMm": 4600,
+          "focusSource": "tableTiltScene.cameraPreset.focusDistanceMm (existing zero-tilt scene default)",
+          "aperture": 11
+        },
+        "diagnostics": {
+          "requestId": "gg-mwt9jdcg-r79bxli5ri-default-request-4",
+          "completedRequestId": "gg-mwt9jdcg-r79bxli5ri-default-request-4",
+          "frameStatus": "completed",
+          "sceneId": "table-tilt",
+          "previewMode": "upright",
+          "dofBypass": false,
+          "dofProcessingEnabled": true,
+          "dofMode": "derived-planes",
+          "rawContentful": "true",
+          "finalContentful": "true",
+          "rendererGeneration": "gg-mwt9jdcg-r79bxli5ri-default-generation-1",
+          "subjectGeneration": "1",
+          "rttResourceGeneration": "1",
+          "rttOwnerId": "ground-glass-rtt-owner-_r_0_",
+          "camera": {
+            "lensWorldPosition": [
+              0,
+              0,
+              0
+            ],
+            "filmPlaneUpWorld": [
+              0,
+              1,
+              0
+            ],
+            "opticalAxisWorld": [
+              0,
+              0,
+              1
+            ],
+            "nearWorld": 0.01,
+            "farWorld": 10.15,
+            "projectionDeterminant": -0.14921030044503003,
+            "projectionMatrix": [
+              2.4418296027603295,
+              0,
+              0,
+              0,
+              0,
+              3.0522870034504117,
+              0,
+              0,
+              0,
+              0,
+              -1.0019723865877712,
+              -1,
+              0,
+              0,
+              -0.020019723865877713,
+              0
+            ]
+          },
+          "framingProjectionSummary": {
+            "tabletopCornersInsideFilmAndClip": 2,
+            "tabletopTopCornerCount": 4,
+            "focusDetailsInsideFilmAndClip": 3,
+            "focusDetailCount": 3,
+            "interpretation": "Projected focus-detail points being inside the film is separate from whether their physical markings are legible at normal Ground Glass size."
+          },
+          "projectedTabletopTopCorners": [
+            {
+              "id": "near-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": 1.0104122494180674,
+                "y": -1.1077359816362686,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 1.0052061247090336,
+                "v": 1.0538679908181343
+              },
+              "displayUv": {
+                "u": 1.0052061247090336,
+                "v": 1.0538679908181343
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "near-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": -1.0104122494180674,
+                "y": -1.1077359816362686,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": -0.005206124709033699,
+                "v": 1.0538679908181343
+              },
+              "displayUv": {
+                "u": -0.005206124709033699,
+                "v": 1.0538679908181343
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "far-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": 0.46511040052577696,
+                "y": -0.509910213769076,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.7325552002628885,
+                "v": 0.7549551068845379
+              },
+              "displayUv": {
+                "u": 0.7325552002628885,
+                "v": 0.7549551068845379
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": -0.46511040052577696,
+                "y": -0.509910213769076,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.26744479973711155,
+                "v": 0.7549551068845379
+              },
+              "displayUv": {
+                "u": 0.26744479973711155,
+                "v": 0.7549551068845379
+              },
+              "insideFilmAndClip": true
+            }
+          ],
+          "projectedFocusDetails": [
+            {
+              "id": "near-cup",
+              "worldMm": {
+                "x": -350,
+                "y": -958.8679832249492,
+                "z": 3148
+              },
+              "ndc": {
+                "x": 0.2714867728609007,
+                "y": -0.9297141941620773,
+                "z": 0.9956128809124607
+              },
+              "sourceUv": {
+                "u": 0.6357433864304504,
+                "v": 0.9648570970810386
+              },
+              "displayUv": {
+                "u": 0.6357433864304504,
+                "v": 0.9648570970810386
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "mid-notebook",
+              "worldMm": {
+                "x": 0,
+                "y": -958.8679832249492,
+                "z": 4600
+              },
+              "ndc": {
+                "x": 0,
+                "y": -0.6362478876570041,
+                "z": 0.9976202727038848
+              },
+              "sourceUv": {
+                "u": 0.5,
+                "v": 0.8181239438285021
+              },
+              "displayUv": {
+                "u": 0.5,
+                "v": 0.8181239438285021
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-book",
+              "worldMm": {
+                "x": 350,
+                "y": -958.8679832249492,
+                "z": 5900
+              },
+              "ndc": {
+                "x": -0.1448542984688331,
+                "y": -0.49605767512241006,
+                "z": 0.9985792130511818
+              },
+              "sourceUv": {
+                "u": 0.42757285076558343,
+                "v": 0.748028837561205
+              },
+              "displayUv": {
+                "u": 0.42757285076558343,
+                "v": 0.748028837561205
+              },
+              "insideFilmAndClip": true
+            }
+          ]
+        }
+      }
+    ],
+    "calibratedSeed284719": [
+      {
+        "filename": "table-tilt-ground-glass-calibrated-seed-284719-raw.png",
+        "width": 514,
+        "height": 411,
+        "sha256": "23fd0af66dd3a58425b996c501593a7933c6410c27d3388b42ef390969f91f03",
+        "label": "Calibrated · Raw · f/11",
+        "settings": {
+          "movementControl": "Front standard / Tilt",
+          "frontRiseMm": 0,
+          "frontTilt": {
+            "requested": 9,
+            "actual": 9,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          },
+          "frontSwingDeg": 0,
+          "focusDistance": {
+            "requested": 6129.51872835921,
+            "actual": 6130,
+            "min": 160,
+            "max": 9150,
+            "step": 10
+          },
+          "aperture": 11,
+          "requestId": "gg-mwt9jdcg-r79bxli5ri-default-request-6",
+          "materialSubjectGeneration": "1",
+          "materialTextureCounts": {
+            "observer": 19,
+            "rtt": 19,
+            "renderer": 30
+          },
+          "materialResourcesStableDuringTiltAndFocus": true
+        },
+        "diagnostics": {
+          "requestId": "gg-mwt9jdcg-r79bxli5ri-default-request-7",
+          "completedRequestId": "gg-mwt9jdcg-r79bxli5ri-default-request-7",
+          "frameStatus": "completed",
+          "sceneId": "table-tilt",
+          "previewMode": "raw",
+          "dofBypass": false,
+          "dofProcessingEnabled": true,
+          "dofMode": "derived-planes",
+          "rawContentful": "true",
+          "finalContentful": "true",
+          "rendererGeneration": "gg-mwt9jdcg-r79bxli5ri-default-generation-1",
+          "subjectGeneration": "1",
+          "rttResourceGeneration": "1",
+          "rttOwnerId": "ground-glass-rtt-owner-_r_0_",
+          "camera": {
+            "lensWorldPosition": [
+              0,
+              0,
+              0
+            ],
+            "filmPlaneUpWorld": [
+              0,
+              1,
+              0
+            ],
+            "opticalAxisWorld": [
+              0,
+              0,
+              1
+            ],
+            "nearWorld": 0.01,
+            "farWorld": 10.15,
+            "projectionDeterminant": -0.14314019306314052,
+            "projectionMatrix": [
+              2.3916451931035976,
+              0,
+              0,
+              0,
+              0,
+              2.9895564913794974,
+              0,
+              0,
+              0,
+              0,
+              -1.0019723865877712,
+              -1,
+              0,
+              0,
+              -0.020019723865877713,
+              0
+            ]
+          },
+          "framingProjectionSummary": {
+            "tabletopCornersInsideFilmAndClip": 2,
+            "tabletopTopCornerCount": 4,
+            "focusDetailsInsideFilmAndClip": 3,
+            "focusDetailCount": 3,
+            "interpretation": "Projected focus-detail points being inside the film is separate from whether their physical markings are legible at normal Ground Glass size."
+          },
+          "projectedTabletopTopCorners": [
+            {
+              "id": "near-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": 0.9896462868014887,
+                "y": -1.084969824558357,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 0.9948231434007444,
+                "v": 1.0424849122791784
+              },
+              "displayUv": {
+                "u": 0.005176856599255597,
+                "v": -0.04248491227917839
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "near-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": -0.9896462868014887,
+                "y": -1.084969824558357,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 0.0051768565992556526,
+                "v": 1.0424849122791784
+              },
+              "displayUv": {
+                "u": 0.9948231434007444,
+                "v": -0.04248491227917839
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "far-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": 0.4555514653530662,
+                "y": -0.49943055416178334,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.7277757326765331,
+                "v": 0.7497152770808917
+              },
+              "displayUv": {
+                "u": 0.27222426732346694,
+                "v": 0.2502847229191083
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": -0.4555514653530662,
+                "y": -0.49943055416178334,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.27222426732346694,
+                "v": 0.7497152770808917
+              },
+              "displayUv": {
+                "u": 0.7277757326765331,
+                "v": 0.2502847229191083
+              },
+              "insideFilmAndClip": true
+            }
+          ],
+          "projectedFocusDetails": [
+            {
+              "id": "near-cup",
+              "worldMm": {
+                "x": -350,
+                "y": -958.8679832249492,
+                "z": 3148
+              },
+              "ndc": {
+                "x": 0.26590718474785874,
+                "y": -0.9106067355864401,
+                "z": 0.9956128809124607
+              },
+              "sourceUv": {
+                "u": 0.6329535923739293,
+                "v": 0.9553033677932201
+              },
+              "displayUv": {
+                "u": 0.36704640762607066,
+                "v": 0.044696632206779885
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "mid-notebook",
+              "worldMm": {
+                "x": 0,
+                "y": -958.8679832249492,
+                "z": 4600
+              },
+              "ndc": {
+                "x": 0,
+                "y": -0.6231717399187202,
+                "z": 0.9976202727038848
+              },
+              "sourceUv": {
+                "u": 0.5,
+                "v": 0.8115858699593601
+              },
+              "displayUv": {
+                "u": 0.5,
+                "v": 0.1884141300406399
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-book",
+              "worldMm": {
+                "x": 350,
+                "y": -958.8679832249492,
+                "z": 5900
+              },
+              "ndc": {
+                "x": -0.14187725721801003,
+                "y": -0.48586271247900226,
+                "z": 0.9985792130511818
+              },
+              "sourceUv": {
+                "u": 0.429061371390995,
+                "v": 0.7429313562395011
+              },
+              "displayUv": {
+                "u": 0.570938628609005,
+                "v": 0.25706864376049887
+              },
+              "insideFilmAndClip": true
+            }
+          ]
+        }
+      },
+      {
+        "filename": "table-tilt-ground-glass-calibrated-seed-284719-upright.png",
+        "width": 514,
+        "height": 411,
+        "sha256": "70396eacc2ed0e90095f03e2fc9cd8c529f29be16fe7e504f301a6cb58da4727",
+        "label": "Calibrated · Upright · f/11",
+        "settings": {
+          "movementControl": "Front standard / Tilt",
+          "frontRiseMm": 0,
+          "frontTilt": {
+            "requested": 9,
+            "actual": 9,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          },
+          "frontSwingDeg": 0,
+          "focusDistance": {
+            "requested": 6129.51872835921,
+            "actual": 6130,
+            "min": 160,
+            "max": 9150,
+            "step": 10
+          },
+          "aperture": 11,
+          "requestId": "gg-mwt9jdcg-r79bxli5ri-default-request-6",
+          "materialSubjectGeneration": "1",
+          "materialTextureCounts": {
+            "observer": 19,
+            "rtt": 19,
+            "renderer": 30
+          },
+          "materialResourcesStableDuringTiltAndFocus": true
+        },
+        "diagnostics": {
+          "requestId": "gg-mwt9jdcg-r79bxli5ri-default-request-8",
+          "completedRequestId": "gg-mwt9jdcg-r79bxli5ri-default-request-8",
+          "frameStatus": "completed",
+          "sceneId": "table-tilt",
+          "previewMode": "upright",
+          "dofBypass": false,
+          "dofProcessingEnabled": true,
+          "dofMode": "derived-planes",
+          "rawContentful": "true",
+          "finalContentful": "true",
+          "rendererGeneration": "gg-mwt9jdcg-r79bxli5ri-default-generation-1",
+          "subjectGeneration": "1",
+          "rttResourceGeneration": "1",
+          "rttOwnerId": "ground-glass-rtt-owner-_r_0_",
+          "camera": {
+            "lensWorldPosition": [
+              0,
+              0,
+              0
+            ],
+            "filmPlaneUpWorld": [
+              0,
+              1,
+              0
+            ],
+            "opticalAxisWorld": [
+              0,
+              0,
+              1
+            ],
+            "nearWorld": 0.01,
+            "farWorld": 10.15,
+            "projectionDeterminant": -0.14314019306314052,
+            "projectionMatrix": [
+              2.3916451931035976,
+              0,
+              0,
+              0,
+              0,
+              2.9895564913794974,
+              0,
+              0,
+              0,
+              0,
+              -1.0019723865877712,
+              -1,
+              0,
+              0,
+              -0.020019723865877713,
+              0
+            ]
+          },
+          "framingProjectionSummary": {
+            "tabletopCornersInsideFilmAndClip": 2,
+            "tabletopTopCornerCount": 4,
+            "focusDetailsInsideFilmAndClip": 3,
+            "focusDetailCount": 3,
+            "interpretation": "Projected focus-detail points being inside the film is separate from whether their physical markings are legible at normal Ground Glass size."
+          },
+          "projectedTabletopTopCorners": [
+            {
+              "id": "near-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": 0.9896462868014887,
+                "y": -1.084969824558357,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 0.9948231434007444,
+                "v": 1.0424849122791784
+              },
+              "displayUv": {
+                "u": 0.9948231434007444,
+                "v": 1.0424849122791784
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "near-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": -0.9896462868014887,
+                "y": -1.084969824558357,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 0.0051768565992556526,
+                "v": 1.0424849122791784
+              },
+              "displayUv": {
+                "u": 0.0051768565992556526,
+                "v": 1.0424849122791784
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "far-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": 0.4555514653530662,
+                "y": -0.49943055416178334,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.7277757326765331,
+                "v": 0.7497152770808917
+              },
+              "displayUv": {
+                "u": 0.7277757326765331,
+                "v": 0.7497152770808917
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": -0.4555514653530662,
+                "y": -0.49943055416178334,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.27222426732346694,
+                "v": 0.7497152770808917
+              },
+              "displayUv": {
+                "u": 0.27222426732346694,
+                "v": 0.7497152770808917
+              },
+              "insideFilmAndClip": true
+            }
+          ],
+          "projectedFocusDetails": [
+            {
+              "id": "near-cup",
+              "worldMm": {
+                "x": -350,
+                "y": -958.8679832249492,
+                "z": 3148
+              },
+              "ndc": {
+                "x": 0.26590718474785874,
+                "y": -0.9106067355864401,
+                "z": 0.9956128809124607
+              },
+              "sourceUv": {
+                "u": 0.6329535923739293,
+                "v": 0.9553033677932201
+              },
+              "displayUv": {
+                "u": 0.6329535923739293,
+                "v": 0.9553033677932201
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "mid-notebook",
+              "worldMm": {
+                "x": 0,
+                "y": -958.8679832249492,
+                "z": 4600
+              },
+              "ndc": {
+                "x": 0,
+                "y": -0.6231717399187202,
+                "z": 0.9976202727038848
+              },
+              "sourceUv": {
+                "u": 0.5,
+                "v": 0.8115858699593601
+              },
+              "displayUv": {
+                "u": 0.5,
+                "v": 0.8115858699593601
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-book",
+              "worldMm": {
+                "x": 350,
+                "y": -958.8679832249492,
+                "z": 5900
+              },
+              "ndc": {
+                "x": -0.14187725721801003,
+                "y": -0.48586271247900226,
+                "z": 0.9985792130511818
+              },
+              "sourceUv": {
+                "u": 0.429061371390995,
+                "v": 0.7429313562395011
+              },
+              "displayUv": {
+                "u": 0.429061371390995,
+                "v": 0.7429313562395011
+              },
+              "insideFilmAndClip": true
+            }
+          ]
+        }
+      }
+    ],
+    "calibratedFourSeed": [
+      {
+        "filename": "table-tilt-ground-glass-calibrated-seed-0-raw.png",
+        "width": 514,
+        "height": 411,
+        "sha256": "4a1ad174230714180e9146b0239d601f3259ae24041d3d30d8a2f7bcc88956a0",
+        "label": "Seed 0 · Calibrated · Raw · f/11",
+        "settings": {
+          "movementControl": "Front standard / Tilt",
+          "frontRiseMm": 0,
+          "frontTilt": {
+            "requested": 9,
+            "actual": 9,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          },
+          "frontSwingDeg": 0,
+          "focusDistance": {
+            "requested": 6129.51872835921,
+            "actual": 6130,
+            "min": 160,
+            "max": 9150,
+            "step": 10
+          },
+          "aperture": 11,
+          "requestId": "gg-mwt9lkgh-3f37n2kyqu5-default-request-5",
+          "materialSubjectGeneration": "1",
+          "materialTextureCounts": {
+            "observer": 19,
+            "rtt": 19,
+            "renderer": 30
+          },
+          "materialResourcesStableDuringTiltAndFocus": true
+        },
+        "diagnostics": {
+          "requestId": "gg-mwt9lkgh-3f37n2kyqu5-default-request-5",
+          "completedRequestId": "gg-mwt9lkgh-3f37n2kyqu5-default-request-5",
+          "frameStatus": "completed",
+          "sceneId": "table-tilt",
+          "previewMode": "raw",
+          "dofBypass": false,
+          "dofProcessingEnabled": true,
+          "dofMode": "derived-planes",
+          "rawContentful": "true",
+          "finalContentful": "true",
+          "rendererGeneration": "gg-mwt9lkgh-3f37n2kyqu5-default-generation-1",
+          "subjectGeneration": "1",
+          "rttResourceGeneration": "1",
+          "rttOwnerId": "ground-glass-rtt-owner-_r_0_",
+          "camera": {
+            "lensWorldPosition": [
+              0,
+              0,
+              0
+            ],
+            "filmPlaneUpWorld": [
+              0,
+              1,
+              0
+            ],
+            "opticalAxisWorld": [
+              0,
+              0,
+              1
+            ],
+            "nearWorld": 0.01,
+            "farWorld": 10.15,
+            "projectionDeterminant": -0.14314019306314052,
+            "projectionMatrix": [
+              2.3916451931035976,
+              0,
+              0,
+              0,
+              0,
+              2.9895564913794974,
+              0,
+              0,
+              0,
+              0,
+              -1.0019723865877712,
+              -1,
+              0,
+              0,
+              -0.020019723865877713,
+              0
+            ]
+          },
+          "framingProjectionSummary": {
+            "tabletopCornersInsideFilmAndClip": 2,
+            "tabletopTopCornerCount": 4,
+            "focusDetailsInsideFilmAndClip": 3,
+            "focusDetailCount": 3,
+            "interpretation": "Projected focus-detail points being inside the film is separate from whether their physical markings are legible at normal Ground Glass size."
+          },
+          "projectedTabletopTopCorners": [
+            {
+              "id": "near-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": 0.9896462868014887,
+                "y": -1.084969824558357,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 0.9948231434007444,
+                "v": 1.0424849122791784
+              },
+              "displayUv": {
+                "u": 0.005176856599255597,
+                "v": -0.04248491227917839
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "near-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": -0.9896462868014887,
+                "y": -1.084969824558357,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 0.0051768565992556526,
+                "v": 1.0424849122791784
+              },
+              "displayUv": {
+                "u": 0.9948231434007444,
+                "v": -0.04248491227917839
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "far-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": 0.4555514653530662,
+                "y": -0.49943055416178334,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.7277757326765331,
+                "v": 0.7497152770808917
+              },
+              "displayUv": {
+                "u": 0.27222426732346694,
+                "v": 0.2502847229191083
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": -0.4555514653530662,
+                "y": -0.49943055416178334,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.27222426732346694,
+                "v": 0.7497152770808917
+              },
+              "displayUv": {
+                "u": 0.7277757326765331,
+                "v": 0.2502847229191083
+              },
+              "insideFilmAndClip": true
+            }
+          ],
+          "projectedFocusDetails": [
+            {
+              "id": "near-cup",
+              "worldMm": {
+                "x": -350,
+                "y": -958.8679832249492,
+                "z": 3148
+              },
+              "ndc": {
+                "x": 0.26590718474785874,
+                "y": -0.9106067355864401,
+                "z": 0.9956128809124607
+              },
+              "sourceUv": {
+                "u": 0.6329535923739293,
+                "v": 0.9553033677932201
+              },
+              "displayUv": {
+                "u": 0.36704640762607066,
+                "v": 0.044696632206779885
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "mid-notebook",
+              "worldMm": {
+                "x": 0,
+                "y": -958.8679832249492,
+                "z": 4600
+              },
+              "ndc": {
+                "x": 0,
+                "y": -0.6231717399187202,
+                "z": 0.9976202727038848
+              },
+              "sourceUv": {
+                "u": 0.5,
+                "v": 0.8115858699593601
+              },
+              "displayUv": {
+                "u": 0.5,
+                "v": 0.1884141300406399
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-book",
+              "worldMm": {
+                "x": 350,
+                "y": -958.8679832249492,
+                "z": 5900
+              },
+              "ndc": {
+                "x": -0.14187725721801003,
+                "y": -0.48586271247900226,
+                "z": 0.9985792130511818
+              },
+              "sourceUv": {
+                "u": 0.429061371390995,
+                "v": 0.7429313562395011
+              },
+              "displayUv": {
+                "u": 0.570938628609005,
+                "v": 0.25706864376049887
+              },
+              "insideFilmAndClip": true
+            }
+          ]
+        }
+      },
+      {
+        "filename": "table-tilt-ground-glass-calibrated-seed-0-upright.png",
+        "width": 514,
+        "height": 411,
+        "sha256": "ad6fcaa98b4748b98453b7080bbf6aa49113f90ffb88c7b533d72a50d3665ace",
+        "label": "Seed 0 · Calibrated · Upright · f/11",
+        "settings": {
+          "movementControl": "Front standard / Tilt",
+          "frontRiseMm": 0,
+          "frontTilt": {
+            "requested": 9,
+            "actual": 9,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          },
+          "frontSwingDeg": 0,
+          "focusDistance": {
+            "requested": 6129.51872835921,
+            "actual": 6130,
+            "min": 160,
+            "max": 9150,
+            "step": 10
+          },
+          "aperture": 11,
+          "requestId": "gg-mwt9lkgh-3f37n2kyqu5-default-request-5",
+          "materialSubjectGeneration": "1",
+          "materialTextureCounts": {
+            "observer": 19,
+            "rtt": 19,
+            "renderer": 30
+          },
+          "materialResourcesStableDuringTiltAndFocus": true
+        },
+        "diagnostics": {
+          "requestId": "gg-mwt9lkgh-3f37n2kyqu5-default-request-6",
+          "completedRequestId": "gg-mwt9lkgh-3f37n2kyqu5-default-request-6",
+          "frameStatus": "completed",
+          "sceneId": "table-tilt",
+          "previewMode": "upright",
+          "dofBypass": false,
+          "dofProcessingEnabled": true,
+          "dofMode": "derived-planes",
+          "rawContentful": "true",
+          "finalContentful": "true",
+          "rendererGeneration": "gg-mwt9lkgh-3f37n2kyqu5-default-generation-1",
+          "subjectGeneration": "1",
+          "rttResourceGeneration": "1",
+          "rttOwnerId": "ground-glass-rtt-owner-_r_0_",
+          "camera": {
+            "lensWorldPosition": [
+              0,
+              0,
+              0
+            ],
+            "filmPlaneUpWorld": [
+              0,
+              1,
+              0
+            ],
+            "opticalAxisWorld": [
+              0,
+              0,
+              1
+            ],
+            "nearWorld": 0.01,
+            "farWorld": 10.15,
+            "projectionDeterminant": -0.14314019306314052,
+            "projectionMatrix": [
+              2.3916451931035976,
+              0,
+              0,
+              0,
+              0,
+              2.9895564913794974,
+              0,
+              0,
+              0,
+              0,
+              -1.0019723865877712,
+              -1,
+              0,
+              0,
+              -0.020019723865877713,
+              0
+            ]
+          },
+          "framingProjectionSummary": {
+            "tabletopCornersInsideFilmAndClip": 2,
+            "tabletopTopCornerCount": 4,
+            "focusDetailsInsideFilmAndClip": 3,
+            "focusDetailCount": 3,
+            "interpretation": "Projected focus-detail points being inside the film is separate from whether their physical markings are legible at normal Ground Glass size."
+          },
+          "projectedTabletopTopCorners": [
+            {
+              "id": "near-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": 0.9896462868014887,
+                "y": -1.084969824558357,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 0.9948231434007444,
+                "v": 1.0424849122791784
+              },
+              "displayUv": {
+                "u": 0.9948231434007444,
+                "v": 1.0424849122791784
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "near-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": -0.9896462868014887,
+                "y": -1.084969824558357,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 0.0051768565992556526,
+                "v": 1.0424849122791784
+              },
+              "displayUv": {
+                "u": 0.0051768565992556526,
+                "v": 1.0424849122791784
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "far-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": 0.4555514653530662,
+                "y": -0.49943055416178334,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.7277757326765331,
+                "v": 0.7497152770808917
+              },
+              "displayUv": {
+                "u": 0.7277757326765331,
+                "v": 0.7497152770808917
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": -0.4555514653530662,
+                "y": -0.49943055416178334,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.27222426732346694,
+                "v": 0.7497152770808917
+              },
+              "displayUv": {
+                "u": 0.27222426732346694,
+                "v": 0.7497152770808917
+              },
+              "insideFilmAndClip": true
+            }
+          ],
+          "projectedFocusDetails": [
+            {
+              "id": "near-cup",
+              "worldMm": {
+                "x": -350,
+                "y": -958.8679832249492,
+                "z": 3148
+              },
+              "ndc": {
+                "x": 0.26590718474785874,
+                "y": -0.9106067355864401,
+                "z": 0.9956128809124607
+              },
+              "sourceUv": {
+                "u": 0.6329535923739293,
+                "v": 0.9553033677932201
+              },
+              "displayUv": {
+                "u": 0.6329535923739293,
+                "v": 0.9553033677932201
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "mid-notebook",
+              "worldMm": {
+                "x": 0,
+                "y": -958.8679832249492,
+                "z": 4600
+              },
+              "ndc": {
+                "x": 0,
+                "y": -0.6231717399187202,
+                "z": 0.9976202727038848
+              },
+              "sourceUv": {
+                "u": 0.5,
+                "v": 0.8115858699593601
+              },
+              "displayUv": {
+                "u": 0.5,
+                "v": 0.8115858699593601
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-book",
+              "worldMm": {
+                "x": 350,
+                "y": -958.8679832249492,
+                "z": 5900
+              },
+              "ndc": {
+                "x": -0.14187725721801003,
+                "y": -0.48586271247900226,
+                "z": 0.9985792130511818
+              },
+              "sourceUv": {
+                "u": 0.429061371390995,
+                "v": 0.7429313562395011
+              },
+              "displayUv": {
+                "u": 0.429061371390995,
+                "v": 0.7429313562395011
+              },
+              "insideFilmAndClip": true
+            }
+          ]
+        }
+      },
+      {
+        "filename": "table-tilt-ground-glass-calibrated-seed-1-raw.png",
+        "width": 514,
+        "height": 411,
+        "sha256": "0f20264b1f225347b30828d6ab32105c112b0b7be86317891daa5c33bbf32968",
+        "label": "Seed 1 · Calibrated · Raw · f/11",
+        "settings": {
+          "movementControl": "Front standard / Tilt",
+          "frontRiseMm": 0,
+          "frontTilt": {
+            "requested": 9,
+            "actual": 9,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          },
+          "frontSwingDeg": 0,
+          "focusDistance": {
+            "requested": 6129.51872835921,
+            "actual": 6130,
+            "min": 160,
+            "max": 9150,
+            "step": 10
+          },
+          "aperture": 11,
+          "requestId": "gg-mwt9msw5-stgaj8exxme-default-request-5",
+          "materialSubjectGeneration": "1",
+          "materialTextureCounts": {
+            "observer": 19,
+            "rtt": 19,
+            "renderer": 30
+          },
+          "materialResourcesStableDuringTiltAndFocus": true
+        },
+        "diagnostics": {
+          "requestId": "gg-mwt9msw5-stgaj8exxme-default-request-5",
+          "completedRequestId": "gg-mwt9msw5-stgaj8exxme-default-request-5",
+          "frameStatus": "completed",
+          "sceneId": "table-tilt",
+          "previewMode": "raw",
+          "dofBypass": false,
+          "dofProcessingEnabled": true,
+          "dofMode": "derived-planes",
+          "rawContentful": "true",
+          "finalContentful": "true",
+          "rendererGeneration": "gg-mwt9msw5-stgaj8exxme-default-generation-1",
+          "subjectGeneration": "1",
+          "rttResourceGeneration": "1",
+          "rttOwnerId": "ground-glass-rtt-owner-_r_0_",
+          "camera": {
+            "lensWorldPosition": [
+              0,
+              0,
+              0
+            ],
+            "filmPlaneUpWorld": [
+              0,
+              1,
+              0
+            ],
+            "opticalAxisWorld": [
+              0,
+              0,
+              1
+            ],
+            "nearWorld": 0.01,
+            "farWorld": 10.15,
+            "projectionDeterminant": -0.14314019306314052,
+            "projectionMatrix": [
+              2.3916451931035976,
+              0,
+              0,
+              0,
+              0,
+              2.9895564913794974,
+              0,
+              0,
+              0,
+              0,
+              -1.0019723865877712,
+              -1,
+              0,
+              0,
+              -0.020019723865877713,
+              0
+            ]
+          },
+          "framingProjectionSummary": {
+            "tabletopCornersInsideFilmAndClip": 2,
+            "tabletopTopCornerCount": 4,
+            "focusDetailsInsideFilmAndClip": 3,
+            "focusDetailCount": 3,
+            "interpretation": "Projected focus-detail points being inside the film is separate from whether their physical markings are legible at normal Ground Glass size."
+          },
+          "projectedTabletopTopCorners": [
+            {
+              "id": "near-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": 0.9896462868014887,
+                "y": -1.084969824558357,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 0.9948231434007444,
+                "v": 1.0424849122791784
+              },
+              "displayUv": {
+                "u": 0.005176856599255597,
+                "v": -0.04248491227917839
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "near-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": -0.9896462868014887,
+                "y": -1.084969824558357,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 0.0051768565992556526,
+                "v": 1.0424849122791784
+              },
+              "displayUv": {
+                "u": 0.9948231434007444,
+                "v": -0.04248491227917839
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "far-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": 0.4555514653530662,
+                "y": -0.49943055416178334,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.7277757326765331,
+                "v": 0.7497152770808917
+              },
+              "displayUv": {
+                "u": 0.27222426732346694,
+                "v": 0.2502847229191083
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": -0.4555514653530662,
+                "y": -0.49943055416178334,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.27222426732346694,
+                "v": 0.7497152770808917
+              },
+              "displayUv": {
+                "u": 0.7277757326765331,
+                "v": 0.2502847229191083
+              },
+              "insideFilmAndClip": true
+            }
+          ],
+          "projectedFocusDetails": [
+            {
+              "id": "near-cup",
+              "worldMm": {
+                "x": -350,
+                "y": -958.8679832249492,
+                "z": 3148
+              },
+              "ndc": {
+                "x": 0.26590718474785874,
+                "y": -0.9106067355864401,
+                "z": 0.9956128809124607
+              },
+              "sourceUv": {
+                "u": 0.6329535923739293,
+                "v": 0.9553033677932201
+              },
+              "displayUv": {
+                "u": 0.36704640762607066,
+                "v": 0.044696632206779885
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "mid-notebook",
+              "worldMm": {
+                "x": 0,
+                "y": -958.8679832249492,
+                "z": 4600
+              },
+              "ndc": {
+                "x": 0,
+                "y": -0.6231717399187202,
+                "z": 0.9976202727038848
+              },
+              "sourceUv": {
+                "u": 0.5,
+                "v": 0.8115858699593601
+              },
+              "displayUv": {
+                "u": 0.5,
+                "v": 0.1884141300406399
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-book",
+              "worldMm": {
+                "x": 350,
+                "y": -958.8679832249492,
+                "z": 5900
+              },
+              "ndc": {
+                "x": -0.14187725721801003,
+                "y": -0.48586271247900226,
+                "z": 0.9985792130511818
+              },
+              "sourceUv": {
+                "u": 0.429061371390995,
+                "v": 0.7429313562395011
+              },
+              "displayUv": {
+                "u": 0.570938628609005,
+                "v": 0.25706864376049887
+              },
+              "insideFilmAndClip": true
+            }
+          ]
+        }
+      },
+      {
+        "filename": "table-tilt-ground-glass-calibrated-seed-1-upright.png",
+        "width": 514,
+        "height": 411,
+        "sha256": "2d0216f22be701298c940066da11833dc018110a7408e9b6a7d845919ef19b94",
+        "label": "Seed 1 · Calibrated · Upright · f/11",
+        "settings": {
+          "movementControl": "Front standard / Tilt",
+          "frontRiseMm": 0,
+          "frontTilt": {
+            "requested": 9,
+            "actual": 9,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          },
+          "frontSwingDeg": 0,
+          "focusDistance": {
+            "requested": 6129.51872835921,
+            "actual": 6130,
+            "min": 160,
+            "max": 9150,
+            "step": 10
+          },
+          "aperture": 11,
+          "requestId": "gg-mwt9msw5-stgaj8exxme-default-request-5",
+          "materialSubjectGeneration": "1",
+          "materialTextureCounts": {
+            "observer": 19,
+            "rtt": 19,
+            "renderer": 30
+          },
+          "materialResourcesStableDuringTiltAndFocus": true
+        },
+        "diagnostics": {
+          "requestId": "gg-mwt9msw5-stgaj8exxme-default-request-6",
+          "completedRequestId": "gg-mwt9msw5-stgaj8exxme-default-request-6",
+          "frameStatus": "completed",
+          "sceneId": "table-tilt",
+          "previewMode": "upright",
+          "dofBypass": false,
+          "dofProcessingEnabled": true,
+          "dofMode": "derived-planes",
+          "rawContentful": "true",
+          "finalContentful": "true",
+          "rendererGeneration": "gg-mwt9msw5-stgaj8exxme-default-generation-1",
+          "subjectGeneration": "1",
+          "rttResourceGeneration": "1",
+          "rttOwnerId": "ground-glass-rtt-owner-_r_0_",
+          "camera": {
+            "lensWorldPosition": [
+              0,
+              0,
+              0
+            ],
+            "filmPlaneUpWorld": [
+              0,
+              1,
+              0
+            ],
+            "opticalAxisWorld": [
+              0,
+              0,
+              1
+            ],
+            "nearWorld": 0.01,
+            "farWorld": 10.15,
+            "projectionDeterminant": -0.14314019306314052,
+            "projectionMatrix": [
+              2.3916451931035976,
+              0,
+              0,
+              0,
+              0,
+              2.9895564913794974,
+              0,
+              0,
+              0,
+              0,
+              -1.0019723865877712,
+              -1,
+              0,
+              0,
+              -0.020019723865877713,
+              0
+            ]
+          },
+          "framingProjectionSummary": {
+            "tabletopCornersInsideFilmAndClip": 2,
+            "tabletopTopCornerCount": 4,
+            "focusDetailsInsideFilmAndClip": 3,
+            "focusDetailCount": 3,
+            "interpretation": "Projected focus-detail points being inside the film is separate from whether their physical markings are legible at normal Ground Glass size."
+          },
+          "projectedTabletopTopCorners": [
+            {
+              "id": "near-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": 0.9896462868014887,
+                "y": -1.084969824558357,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 0.9948231434007444,
+                "v": 1.0424849122791784
+              },
+              "displayUv": {
+                "u": 0.9948231434007444,
+                "v": 1.0424849122791784
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "near-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": -0.9896462868014887,
+                "y": -1.084969824558357,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 0.0051768565992556526,
+                "v": 1.0424849122791784
+              },
+              "displayUv": {
+                "u": 0.0051768565992556526,
+                "v": 1.0424849122791784
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "far-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": 0.4555514653530662,
+                "y": -0.49943055416178334,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.7277757326765331,
+                "v": 0.7497152770808917
+              },
+              "displayUv": {
+                "u": 0.7277757326765331,
+                "v": 0.7497152770808917
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": -0.4555514653530662,
+                "y": -0.49943055416178334,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.27222426732346694,
+                "v": 0.7497152770808917
+              },
+              "displayUv": {
+                "u": 0.27222426732346694,
+                "v": 0.7497152770808917
+              },
+              "insideFilmAndClip": true
+            }
+          ],
+          "projectedFocusDetails": [
+            {
+              "id": "near-cup",
+              "worldMm": {
+                "x": -350,
+                "y": -958.8679832249492,
+                "z": 3148
+              },
+              "ndc": {
+                "x": 0.26590718474785874,
+                "y": -0.9106067355864401,
+                "z": 0.9956128809124607
+              },
+              "sourceUv": {
+                "u": 0.6329535923739293,
+                "v": 0.9553033677932201
+              },
+              "displayUv": {
+                "u": 0.6329535923739293,
+                "v": 0.9553033677932201
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "mid-notebook",
+              "worldMm": {
+                "x": 0,
+                "y": -958.8679832249492,
+                "z": 4600
+              },
+              "ndc": {
+                "x": 0,
+                "y": -0.6231717399187202,
+                "z": 0.9976202727038848
+              },
+              "sourceUv": {
+                "u": 0.5,
+                "v": 0.8115858699593601
+              },
+              "displayUv": {
+                "u": 0.5,
+                "v": 0.8115858699593601
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-book",
+              "worldMm": {
+                "x": 350,
+                "y": -958.8679832249492,
+                "z": 5900
+              },
+              "ndc": {
+                "x": -0.14187725721801003,
+                "y": -0.48586271247900226,
+                "z": 0.9985792130511818
+              },
+              "sourceUv": {
+                "u": 0.429061371390995,
+                "v": 0.7429313562395011
+              },
+              "displayUv": {
+                "u": 0.429061371390995,
+                "v": 0.7429313562395011
+              },
+              "insideFilmAndClip": true
+            }
+          ]
+        }
+      },
+      {
+        "filename": "table-tilt-ground-glass-calibrated-seed-284719-raw.png",
+        "width": 514,
+        "height": 411,
+        "sha256": "23fd0af66dd3a58425b996c501593a7933c6410c27d3388b42ef390969f91f03",
+        "label": "Calibrated · Raw · f/11",
+        "settings": {
+          "movementControl": "Front standard / Tilt",
+          "frontRiseMm": 0,
+          "frontTilt": {
+            "requested": 9,
+            "actual": 9,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          },
+          "frontSwingDeg": 0,
+          "focusDistance": {
+            "requested": 6129.51872835921,
+            "actual": 6130,
+            "min": 160,
+            "max": 9150,
+            "step": 10
+          },
+          "aperture": 11,
+          "requestId": "gg-mwt9jdcg-r79bxli5ri-default-request-6",
+          "materialSubjectGeneration": "1",
+          "materialTextureCounts": {
+            "observer": 19,
+            "rtt": 19,
+            "renderer": 30
+          },
+          "materialResourcesStableDuringTiltAndFocus": true
+        },
+        "diagnostics": {
+          "requestId": "gg-mwt9jdcg-r79bxli5ri-default-request-7",
+          "completedRequestId": "gg-mwt9jdcg-r79bxli5ri-default-request-7",
+          "frameStatus": "completed",
+          "sceneId": "table-tilt",
+          "previewMode": "raw",
+          "dofBypass": false,
+          "dofProcessingEnabled": true,
+          "dofMode": "derived-planes",
+          "rawContentful": "true",
+          "finalContentful": "true",
+          "rendererGeneration": "gg-mwt9jdcg-r79bxli5ri-default-generation-1",
+          "subjectGeneration": "1",
+          "rttResourceGeneration": "1",
+          "rttOwnerId": "ground-glass-rtt-owner-_r_0_",
+          "camera": {
+            "lensWorldPosition": [
+              0,
+              0,
+              0
+            ],
+            "filmPlaneUpWorld": [
+              0,
+              1,
+              0
+            ],
+            "opticalAxisWorld": [
+              0,
+              0,
+              1
+            ],
+            "nearWorld": 0.01,
+            "farWorld": 10.15,
+            "projectionDeterminant": -0.14314019306314052,
+            "projectionMatrix": [
+              2.3916451931035976,
+              0,
+              0,
+              0,
+              0,
+              2.9895564913794974,
+              0,
+              0,
+              0,
+              0,
+              -1.0019723865877712,
+              -1,
+              0,
+              0,
+              -0.020019723865877713,
+              0
+            ]
+          },
+          "framingProjectionSummary": {
+            "tabletopCornersInsideFilmAndClip": 2,
+            "tabletopTopCornerCount": 4,
+            "focusDetailsInsideFilmAndClip": 3,
+            "focusDetailCount": 3,
+            "interpretation": "Projected focus-detail points being inside the film is separate from whether their physical markings are legible at normal Ground Glass size."
+          },
+          "projectedTabletopTopCorners": [
+            {
+              "id": "near-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": 0.9896462868014887,
+                "y": -1.084969824558357,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 0.9948231434007444,
+                "v": 1.0424849122791784
+              },
+              "displayUv": {
+                "u": 0.005176856599255597,
+                "v": -0.04248491227917839
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "near-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": -0.9896462868014887,
+                "y": -1.084969824558357,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 0.0051768565992556526,
+                "v": 1.0424849122791784
+              },
+              "displayUv": {
+                "u": 0.9948231434007444,
+                "v": -0.04248491227917839
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "far-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": 0.4555514653530662,
+                "y": -0.49943055416178334,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.7277757326765331,
+                "v": 0.7497152770808917
+              },
+              "displayUv": {
+                "u": 0.27222426732346694,
+                "v": 0.2502847229191083
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": -0.4555514653530662,
+                "y": -0.49943055416178334,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.27222426732346694,
+                "v": 0.7497152770808917
+              },
+              "displayUv": {
+                "u": 0.7277757326765331,
+                "v": 0.2502847229191083
+              },
+              "insideFilmAndClip": true
+            }
+          ],
+          "projectedFocusDetails": [
+            {
+              "id": "near-cup",
+              "worldMm": {
+                "x": -350,
+                "y": -958.8679832249492,
+                "z": 3148
+              },
+              "ndc": {
+                "x": 0.26590718474785874,
+                "y": -0.9106067355864401,
+                "z": 0.9956128809124607
+              },
+              "sourceUv": {
+                "u": 0.6329535923739293,
+                "v": 0.9553033677932201
+              },
+              "displayUv": {
+                "u": 0.36704640762607066,
+                "v": 0.044696632206779885
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "mid-notebook",
+              "worldMm": {
+                "x": 0,
+                "y": -958.8679832249492,
+                "z": 4600
+              },
+              "ndc": {
+                "x": 0,
+                "y": -0.6231717399187202,
+                "z": 0.9976202727038848
+              },
+              "sourceUv": {
+                "u": 0.5,
+                "v": 0.8115858699593601
+              },
+              "displayUv": {
+                "u": 0.5,
+                "v": 0.1884141300406399
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-book",
+              "worldMm": {
+                "x": 350,
+                "y": -958.8679832249492,
+                "z": 5900
+              },
+              "ndc": {
+                "x": -0.14187725721801003,
+                "y": -0.48586271247900226,
+                "z": 0.9985792130511818
+              },
+              "sourceUv": {
+                "u": 0.429061371390995,
+                "v": 0.7429313562395011
+              },
+              "displayUv": {
+                "u": 0.570938628609005,
+                "v": 0.25706864376049887
+              },
+              "insideFilmAndClip": true
+            }
+          ]
+        }
+      },
+      {
+        "filename": "table-tilt-ground-glass-calibrated-seed-284719-upright.png",
+        "width": 514,
+        "height": 411,
+        "sha256": "70396eacc2ed0e90095f03e2fc9cd8c529f29be16fe7e504f301a6cb58da4727",
+        "label": "Calibrated · Upright · f/11",
+        "settings": {
+          "movementControl": "Front standard / Tilt",
+          "frontRiseMm": 0,
+          "frontTilt": {
+            "requested": 9,
+            "actual": 9,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          },
+          "frontSwingDeg": 0,
+          "focusDistance": {
+            "requested": 6129.51872835921,
+            "actual": 6130,
+            "min": 160,
+            "max": 9150,
+            "step": 10
+          },
+          "aperture": 11,
+          "requestId": "gg-mwt9jdcg-r79bxli5ri-default-request-6",
+          "materialSubjectGeneration": "1",
+          "materialTextureCounts": {
+            "observer": 19,
+            "rtt": 19,
+            "renderer": 30
+          },
+          "materialResourcesStableDuringTiltAndFocus": true
+        },
+        "diagnostics": {
+          "requestId": "gg-mwt9jdcg-r79bxli5ri-default-request-8",
+          "completedRequestId": "gg-mwt9jdcg-r79bxli5ri-default-request-8",
+          "frameStatus": "completed",
+          "sceneId": "table-tilt",
+          "previewMode": "upright",
+          "dofBypass": false,
+          "dofProcessingEnabled": true,
+          "dofMode": "derived-planes",
+          "rawContentful": "true",
+          "finalContentful": "true",
+          "rendererGeneration": "gg-mwt9jdcg-r79bxli5ri-default-generation-1",
+          "subjectGeneration": "1",
+          "rttResourceGeneration": "1",
+          "rttOwnerId": "ground-glass-rtt-owner-_r_0_",
+          "camera": {
+            "lensWorldPosition": [
+              0,
+              0,
+              0
+            ],
+            "filmPlaneUpWorld": [
+              0,
+              1,
+              0
+            ],
+            "opticalAxisWorld": [
+              0,
+              0,
+              1
+            ],
+            "nearWorld": 0.01,
+            "farWorld": 10.15,
+            "projectionDeterminant": -0.14314019306314052,
+            "projectionMatrix": [
+              2.3916451931035976,
+              0,
+              0,
+              0,
+              0,
+              2.9895564913794974,
+              0,
+              0,
+              0,
+              0,
+              -1.0019723865877712,
+              -1,
+              0,
+              0,
+              -0.020019723865877713,
+              0
+            ]
+          },
+          "framingProjectionSummary": {
+            "tabletopCornersInsideFilmAndClip": 2,
+            "tabletopTopCornerCount": 4,
+            "focusDetailsInsideFilmAndClip": 3,
+            "focusDetailCount": 3,
+            "interpretation": "Projected focus-detail points being inside the film is separate from whether their physical markings are legible at normal Ground Glass size."
+          },
+          "projectedTabletopTopCorners": [
+            {
+              "id": "near-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": 0.9896462868014887,
+                "y": -1.084969824558357,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 0.9948231434007444,
+                "v": 1.0424849122791784
+              },
+              "displayUv": {
+                "u": 0.9948231434007444,
+                "v": 1.0424849122791784
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "near-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": -0.9896462868014887,
+                "y": -1.084969824558357,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 0.0051768565992556526,
+                "v": 1.0424849122791784
+              },
+              "displayUv": {
+                "u": 0.0051768565992556526,
+                "v": 1.0424849122791784
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "far-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": 0.4555514653530662,
+                "y": -0.49943055416178334,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.7277757326765331,
+                "v": 0.7497152770808917
+              },
+              "displayUv": {
+                "u": 0.7277757326765331,
+                "v": 0.7497152770808917
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": -0.4555514653530662,
+                "y": -0.49943055416178334,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.27222426732346694,
+                "v": 0.7497152770808917
+              },
+              "displayUv": {
+                "u": 0.27222426732346694,
+                "v": 0.7497152770808917
+              },
+              "insideFilmAndClip": true
+            }
+          ],
+          "projectedFocusDetails": [
+            {
+              "id": "near-cup",
+              "worldMm": {
+                "x": -350,
+                "y": -958.8679832249492,
+                "z": 3148
+              },
+              "ndc": {
+                "x": 0.26590718474785874,
+                "y": -0.9106067355864401,
+                "z": 0.9956128809124607
+              },
+              "sourceUv": {
+                "u": 0.6329535923739293,
+                "v": 0.9553033677932201
+              },
+              "displayUv": {
+                "u": 0.6329535923739293,
+                "v": 0.9553033677932201
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "mid-notebook",
+              "worldMm": {
+                "x": 0,
+                "y": -958.8679832249492,
+                "z": 4600
+              },
+              "ndc": {
+                "x": 0,
+                "y": -0.6231717399187202,
+                "z": 0.9976202727038848
+              },
+              "sourceUv": {
+                "u": 0.5,
+                "v": 0.8115858699593601
+              },
+              "displayUv": {
+                "u": 0.5,
+                "v": 0.8115858699593601
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-book",
+              "worldMm": {
+                "x": 350,
+                "y": -958.8679832249492,
+                "z": 5900
+              },
+              "ndc": {
+                "x": -0.14187725721801003,
+                "y": -0.48586271247900226,
+                "z": 0.9985792130511818
+              },
+              "sourceUv": {
+                "u": 0.429061371390995,
+                "v": 0.7429313562395011
+              },
+              "displayUv": {
+                "u": 0.429061371390995,
+                "v": 0.7429313562395011
+              },
+              "insideFilmAndClip": true
+            }
+          ]
+        }
+      },
+      {
+        "filename": "table-tilt-ground-glass-calibrated-seed-4294967295-raw.png",
+        "width": 514,
+        "height": 411,
+        "sha256": "ddc70fb9be0c32657686a2b5e01b0e51b5dfd2e499684669765c0d74fcdb64fd",
+        "label": "Seed 4294967295 · Calibrated · Raw · f/11",
+        "settings": {
+          "movementControl": "Front standard / Tilt",
+          "frontRiseMm": 0,
+          "frontTilt": {
+            "requested": 9,
+            "actual": 9,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          },
+          "frontSwingDeg": 0,
+          "focusDistance": {
+            "requested": 6129.51872835921,
+            "actual": 6130,
+            "min": 160,
+            "max": 9150,
+            "step": 10
+          },
+          "aperture": 11,
+          "requestId": "gg-mwt9nynh-okw2at1nm7l-default-request-5",
+          "materialSubjectGeneration": "1",
+          "materialTextureCounts": {
+            "observer": 19,
+            "rtt": 19,
+            "renderer": 30
+          },
+          "materialResourcesStableDuringTiltAndFocus": true
+        },
+        "diagnostics": {
+          "requestId": "gg-mwt9nynh-okw2at1nm7l-default-request-5",
+          "completedRequestId": "gg-mwt9nynh-okw2at1nm7l-default-request-5",
+          "frameStatus": "completed",
+          "sceneId": "table-tilt",
+          "previewMode": "raw",
+          "dofBypass": false,
+          "dofProcessingEnabled": true,
+          "dofMode": "derived-planes",
+          "rawContentful": "true",
+          "finalContentful": "true",
+          "rendererGeneration": "gg-mwt9nynh-okw2at1nm7l-default-generation-1",
+          "subjectGeneration": "1",
+          "rttResourceGeneration": "1",
+          "rttOwnerId": "ground-glass-rtt-owner-_r_0_",
+          "camera": {
+            "lensWorldPosition": [
+              0,
+              0,
+              0
+            ],
+            "filmPlaneUpWorld": [
+              0,
+              1,
+              0
+            ],
+            "opticalAxisWorld": [
+              0,
+              0,
+              1
+            ],
+            "nearWorld": 0.01,
+            "farWorld": 10.15,
+            "projectionDeterminant": -0.14314019306314052,
+            "projectionMatrix": [
+              2.3916451931035976,
+              0,
+              0,
+              0,
+              0,
+              2.9895564913794974,
+              0,
+              0,
+              0,
+              0,
+              -1.0019723865877712,
+              -1,
+              0,
+              0,
+              -0.020019723865877713,
+              0
+            ]
+          },
+          "framingProjectionSummary": {
+            "tabletopCornersInsideFilmAndClip": 2,
+            "tabletopTopCornerCount": 4,
+            "focusDetailsInsideFilmAndClip": 3,
+            "focusDetailCount": 3,
+            "interpretation": "Projected focus-detail points being inside the film is separate from whether their physical markings are legible at normal Ground Glass size."
+          },
+          "projectedTabletopTopCorners": [
+            {
+              "id": "near-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": 0.9896462868014887,
+                "y": -1.084969824558357,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 0.9948231434007444,
+                "v": 1.0424849122791784
+              },
+              "displayUv": {
+                "u": 0.005176856599255597,
+                "v": -0.04248491227917839
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "near-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": -0.9896462868014887,
+                "y": -1.084969824558357,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 0.0051768565992556526,
+                "v": 1.0424849122791784
+              },
+              "displayUv": {
+                "u": 0.9948231434007444,
+                "v": -0.04248491227917839
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "far-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": 0.4555514653530662,
+                "y": -0.49943055416178334,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.7277757326765331,
+                "v": 0.7497152770808917
+              },
+              "displayUv": {
+                "u": 0.27222426732346694,
+                "v": 0.2502847229191083
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": -0.4555514653530662,
+                "y": -0.49943055416178334,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.27222426732346694,
+                "v": 0.7497152770808917
+              },
+              "displayUv": {
+                "u": 0.7277757326765331,
+                "v": 0.2502847229191083
+              },
+              "insideFilmAndClip": true
+            }
+          ],
+          "projectedFocusDetails": [
+            {
+              "id": "near-cup",
+              "worldMm": {
+                "x": -350,
+                "y": -958.8679832249492,
+                "z": 3148
+              },
+              "ndc": {
+                "x": 0.26590718474785874,
+                "y": -0.9106067355864401,
+                "z": 0.9956128809124607
+              },
+              "sourceUv": {
+                "u": 0.6329535923739293,
+                "v": 0.9553033677932201
+              },
+              "displayUv": {
+                "u": 0.36704640762607066,
+                "v": 0.044696632206779885
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "mid-notebook",
+              "worldMm": {
+                "x": 0,
+                "y": -958.8679832249492,
+                "z": 4600
+              },
+              "ndc": {
+                "x": 0,
+                "y": -0.6231717399187202,
+                "z": 0.9976202727038848
+              },
+              "sourceUv": {
+                "u": 0.5,
+                "v": 0.8115858699593601
+              },
+              "displayUv": {
+                "u": 0.5,
+                "v": 0.1884141300406399
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-book",
+              "worldMm": {
+                "x": 350,
+                "y": -958.8679832249492,
+                "z": 5900
+              },
+              "ndc": {
+                "x": -0.14187725721801003,
+                "y": -0.48586271247900226,
+                "z": 0.9985792130511818
+              },
+              "sourceUv": {
+                "u": 0.429061371390995,
+                "v": 0.7429313562395011
+              },
+              "displayUv": {
+                "u": 0.570938628609005,
+                "v": 0.25706864376049887
+              },
+              "insideFilmAndClip": true
+            }
+          ]
+        }
+      },
+      {
+        "filename": "table-tilt-ground-glass-calibrated-seed-4294967295-upright.png",
+        "width": 514,
+        "height": 411,
+        "sha256": "1783ed46122b1caf00ea2fa0d6c5511b74d0777625e8af968c7b30cbdda74733",
+        "label": "Seed 4294967295 · Calibrated · Upright · f/11",
+        "settings": {
+          "movementControl": "Front standard / Tilt",
+          "frontRiseMm": 0,
+          "frontTilt": {
+            "requested": 9,
+            "actual": 9,
+            "min": -10,
+            "max": 10,
+            "step": 0.1
+          },
+          "frontSwingDeg": 0,
+          "focusDistance": {
+            "requested": 6129.51872835921,
+            "actual": 6130,
+            "min": 160,
+            "max": 9150,
+            "step": 10
+          },
+          "aperture": 11,
+          "requestId": "gg-mwt9nynh-okw2at1nm7l-default-request-5",
+          "materialSubjectGeneration": "1",
+          "materialTextureCounts": {
+            "observer": 19,
+            "rtt": 19,
+            "renderer": 30
+          },
+          "materialResourcesStableDuringTiltAndFocus": true
+        },
+        "diagnostics": {
+          "requestId": "gg-mwt9nynh-okw2at1nm7l-default-request-6",
+          "completedRequestId": "gg-mwt9nynh-okw2at1nm7l-default-request-6",
+          "frameStatus": "completed",
+          "sceneId": "table-tilt",
+          "previewMode": "upright",
+          "dofBypass": false,
+          "dofProcessingEnabled": true,
+          "dofMode": "derived-planes",
+          "rawContentful": "true",
+          "finalContentful": "true",
+          "rendererGeneration": "gg-mwt9nynh-okw2at1nm7l-default-generation-1",
+          "subjectGeneration": "1",
+          "rttResourceGeneration": "1",
+          "rttOwnerId": "ground-glass-rtt-owner-_r_0_",
+          "camera": {
+            "lensWorldPosition": [
+              0,
+              0,
+              0
+            ],
+            "filmPlaneUpWorld": [
+              0,
+              1,
+              0
+            ],
+            "opticalAxisWorld": [
+              0,
+              0,
+              1
+            ],
+            "nearWorld": 0.01,
+            "farWorld": 10.15,
+            "projectionDeterminant": -0.14314019306314052,
+            "projectionMatrix": [
+              2.3916451931035976,
+              0,
+              0,
+              0,
+              0,
+              2.9895564913794974,
+              0,
+              0,
+              0,
+              0,
+              -1.0019723865877712,
+              -1,
+              0,
+              0,
+              -0.020019723865877713,
+              0
+            ]
+          },
+          "framingProjectionSummary": {
+            "tabletopCornersInsideFilmAndClip": 2,
+            "tabletopTopCornerCount": 4,
+            "focusDetailsInsideFilmAndClip": 3,
+            "focusDetailCount": 3,
+            "interpretation": "Projected focus-detail points being inside the film is separate from whether their physical markings are legible at normal Ground Glass size."
+          },
+          "projectedTabletopTopCorners": [
+            {
+              "id": "near-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": 0.9896462868014887,
+                "y": -1.084969824558357,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 0.9948231434007444,
+                "v": 1.0424849122791784
+              },
+              "displayUv": {
+                "u": 0.9948231434007444,
+                "v": 1.0424849122791784
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "near-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 2900
+              },
+              "ndc": {
+                "x": -0.9896462868014887,
+                "y": -1.084969824558357,
+                "z": 0.995069033530572
+              },
+              "sourceUv": {
+                "u": 0.0051768565992556526,
+                "v": 1.0424849122791784
+              },
+              "displayUv": {
+                "u": 0.0051768565992556526,
+                "v": 1.0424849122791784
+              },
+              "insideFilmAndClip": false
+            },
+            {
+              "id": "far-left",
+              "worldMm": {
+                "x": -1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": 0.4555514653530662,
+                "y": -0.49943055416178334,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.7277757326765331,
+                "v": 0.7497152770808917
+              },
+              "displayUv": {
+                "u": 0.7277757326765331,
+                "v": 0.7497152770808917
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-right",
+              "worldMm": {
+                "x": 1200,
+                "y": -1052.4679832249492,
+                "z": 6300
+              },
+              "ndc": {
+                "x": -0.4555514653530662,
+                "y": -0.49943055416178334,
+                "z": 0.9987946526408064
+              },
+              "sourceUv": {
+                "u": 0.27222426732346694,
+                "v": 0.7497152770808917
+              },
+              "displayUv": {
+                "u": 0.27222426732346694,
+                "v": 0.7497152770808917
+              },
+              "insideFilmAndClip": true
+            }
+          ],
+          "projectedFocusDetails": [
+            {
+              "id": "near-cup",
+              "worldMm": {
+                "x": -350,
+                "y": -958.8679832249492,
+                "z": 3148
+              },
+              "ndc": {
+                "x": 0.26590718474785874,
+                "y": -0.9106067355864401,
+                "z": 0.9956128809124607
+              },
+              "sourceUv": {
+                "u": 0.6329535923739293,
+                "v": 0.9553033677932201
+              },
+              "displayUv": {
+                "u": 0.6329535923739293,
+                "v": 0.9553033677932201
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "mid-notebook",
+              "worldMm": {
+                "x": 0,
+                "y": -958.8679832249492,
+                "z": 4600
+              },
+              "ndc": {
+                "x": 0,
+                "y": -0.6231717399187202,
+                "z": 0.9976202727038848
+              },
+              "sourceUv": {
+                "u": 0.5,
+                "v": 0.8115858699593601
+              },
+              "displayUv": {
+                "u": 0.5,
+                "v": 0.8115858699593601
+              },
+              "insideFilmAndClip": true
+            },
+            {
+              "id": "far-book",
+              "worldMm": {
+                "x": 350,
+                "y": -958.8679832249492,
+                "z": 5900
+              },
+              "ndc": {
+                "x": -0.14187725721801003,
+                "y": -0.48586271247900226,
+                "z": 0.9985792130511818
+              },
+              "sourceUv": {
+                "u": 0.429061371390995,
+                "v": 0.7429313562395011
+              },
+              "displayUv": {
+                "u": 0.429061371390995,
+                "v": 0.7429313562395011
+              },
+              "insideFilmAndClip": true
+            }
+          ]
+        }
+      }
+    ],
+    "calibratedSeed284719F56": {
+      "filename": "table-tilt-ground-glass-calibrated-seed-284719-f5p6-raw.png",
+      "width": 514,
+      "height": 411,
+      "sha256": "2d3a7ae1e15783086e0b1ddefeea0f7863d1f87f3b1d027dabca8eb82bb0f794",
+      "label": "Calibrated · Raw · f/5.6 (supporting focus view)",
+      "settings": {
+        "movementControl": "Front standard / Tilt",
+        "frontRiseMm": 0,
+        "frontTilt": {
+          "requested": 9,
+          "actual": 9,
+          "min": -10,
+          "max": 10,
+          "step": 0.1
+        },
+        "frontSwingDeg": 0,
+        "focusDistance": {
+          "requested": 6129.51872835921,
+          "actual": 6130,
+          "min": 160,
+          "max": 9150,
+          "step": 10
+        },
+        "aperture": 5.6,
+        "requestId": "gg-mwt9jdcg-r79bxli5ri-default-request-9",
+        "materialSubjectGeneration": "1",
+        "materialTextureCounts": {
+          "observer": 19,
+          "rtt": 19,
+          "renderer": 30
+        },
+        "materialResourcesStableDuringTiltAndFocus": true
+      },
+      "diagnostics": {
+        "requestId": "gg-mwt9jdcg-r79bxli5ri-default-request-10",
+        "completedRequestId": "gg-mwt9jdcg-r79bxli5ri-default-request-10",
+        "frameStatus": "completed",
+        "sceneId": "table-tilt",
+        "previewMode": "raw",
+        "dofBypass": false,
+        "dofProcessingEnabled": true,
+        "dofMode": "derived-planes",
+        "rawContentful": "true",
+        "finalContentful": "true",
+        "rendererGeneration": "gg-mwt9jdcg-r79bxli5ri-default-generation-1",
+        "subjectGeneration": "1",
+        "rttResourceGeneration": "1",
+        "rttOwnerId": "ground-glass-rtt-owner-_r_0_",
+        "camera": {
+          "lensWorldPosition": [
+            0,
+            0,
+            0
+          ],
+          "filmPlaneUpWorld": [
+            0,
+            1,
+            0
+          ],
+          "opticalAxisWorld": [
+            0,
+            0,
+            1
+          ],
+          "nearWorld": 0.01,
+          "farWorld": 10.15,
+          "projectionDeterminant": -0.14314019306314052,
+          "projectionMatrix": [
+            2.3916451931035976,
+            0,
+            0,
+            0,
+            0,
+            2.9895564913794974,
+            0,
+            0,
+            0,
+            0,
+            -1.0019723865877712,
+            -1,
+            0,
+            0,
+            -0.020019723865877713,
+            0
+          ]
+        },
+        "framingProjectionSummary": {
+          "tabletopCornersInsideFilmAndClip": 2,
+          "tabletopTopCornerCount": 4,
+          "focusDetailsInsideFilmAndClip": 3,
+          "focusDetailCount": 3,
+          "interpretation": "Projected focus-detail points being inside the film is separate from whether their physical markings are legible at normal Ground Glass size."
+        },
+        "projectedTabletopTopCorners": [
+          {
+            "id": "near-left",
+            "worldMm": {
+              "x": -1200,
+              "y": -1052.4679832249492,
+              "z": 2900
+            },
+            "ndc": {
+              "x": 0.9896462868014887,
+              "y": -1.084969824558357,
+              "z": 0.995069033530572
+            },
+            "sourceUv": {
+              "u": 0.9948231434007444,
+              "v": 1.0424849122791784
+            },
+            "displayUv": {
+              "u": 0.005176856599255597,
+              "v": -0.04248491227917839
+            },
+            "insideFilmAndClip": false
+          },
+          {
+            "id": "near-right",
+            "worldMm": {
+              "x": 1200,
+              "y": -1052.4679832249492,
+              "z": 2900
+            },
+            "ndc": {
+              "x": -0.9896462868014887,
+              "y": -1.084969824558357,
+              "z": 0.995069033530572
+            },
+            "sourceUv": {
+              "u": 0.0051768565992556526,
+              "v": 1.0424849122791784
+            },
+            "displayUv": {
+              "u": 0.9948231434007444,
+              "v": -0.04248491227917839
+            },
+            "insideFilmAndClip": false
+          },
+          {
+            "id": "far-left",
+            "worldMm": {
+              "x": -1200,
+              "y": -1052.4679832249492,
+              "z": 6300
+            },
+            "ndc": {
+              "x": 0.4555514653530662,
+              "y": -0.49943055416178334,
+              "z": 0.9987946526408064
+            },
+            "sourceUv": {
+              "u": 0.7277757326765331,
+              "v": 0.7497152770808917
+            },
+            "displayUv": {
+              "u": 0.27222426732346694,
+              "v": 0.2502847229191083
+            },
+            "insideFilmAndClip": true
+          },
+          {
+            "id": "far-right",
+            "worldMm": {
+              "x": 1200,
+              "y": -1052.4679832249492,
+              "z": 6300
+            },
+            "ndc": {
+              "x": -0.4555514653530662,
+              "y": -0.49943055416178334,
+              "z": 0.9987946526408064
+            },
+            "sourceUv": {
+              "u": 0.27222426732346694,
+              "v": 0.7497152770808917
+            },
+            "displayUv": {
+              "u": 0.7277757326765331,
+              "v": 0.2502847229191083
+            },
+            "insideFilmAndClip": true
+          }
+        ],
+        "projectedFocusDetails": [
+          {
+            "id": "near-cup",
+            "worldMm": {
+              "x": -350,
+              "y": -958.8679832249492,
+              "z": 3148
+            },
+            "ndc": {
+              "x": 0.26590718474785874,
+              "y": -0.9106067355864401,
+              "z": 0.9956128809124607
+            },
+            "sourceUv": {
+              "u": 0.6329535923739293,
+              "v": 0.9553033677932201
+            },
+            "displayUv": {
+              "u": 0.36704640762607066,
+              "v": 0.044696632206779885
+            },
+            "insideFilmAndClip": true
+          },
+          {
+            "id": "mid-notebook",
+            "worldMm": {
+              "x": 0,
+              "y": -958.8679832249492,
+              "z": 4600
+            },
+            "ndc": {
+              "x": 0,
+              "y": -0.6231717399187202,
+              "z": 0.9976202727038848
+            },
+            "sourceUv": {
+              "u": 0.5,
+              "v": 0.8115858699593601
+            },
+            "displayUv": {
+              "u": 0.5,
+              "v": 0.1884141300406399
+            },
+            "insideFilmAndClip": true
+          },
+          {
+            "id": "far-book",
+            "worldMm": {
+              "x": 350,
+              "y": -958.8679832249492,
+              "z": 5900
+            },
+            "ndc": {
+              "x": -0.14187725721801003,
+              "y": -0.48586271247900226,
+              "z": 0.9985792130511818
+            },
+            "sourceUv": {
+              "u": 0.429061371390995,
+              "v": 0.7429313562395011
+            },
+            "displayUv": {
+              "u": 0.570938628609005,
+              "v": 0.25706864376049887
+            },
+            "insideFilmAndClip": true
+          }
+        ]
+      }
+    },
+    "rawRttBypassDiagnostic": {
+      "filename": "table-tilt-ground-glass-calibrated-seed-284719-raw-rtt-bypass-dof.png",
+      "width": 514,
+      "height": 411,
+      "sha256": "31aeffe762a2c05618e03124cee9863e8da07101ea53d5150b3b12a99cb46cea",
+      "settings": {
+        "movementControl": "Front standard / Tilt",
+        "frontRiseMm": 0,
+        "frontTilt": {
+          "requested": 9,
+          "actual": 9,
+          "min": -10,
+          "max": 10,
+          "step": 0.1
+        },
+        "frontSwingDeg": 0,
+        "focusDistance": {
+          "requested": 6129.51872835921,
+          "actual": 6130,
+          "min": 160,
+          "max": 9150,
+          "step": 10
+        },
+        "aperture": 11,
+        "requestId": "gg-mwt9jdcg-r79bxli5ri-default-request-6",
+        "materialSubjectGeneration": "1",
+        "materialTextureCounts": {
+          "observer": 19,
+          "rtt": 19,
+          "renderer": 30
+        },
+        "materialResourcesStableDuringTiltAndFocus": true
+      },
+      "classification": "Raw RTT diagnostic; DOF processing bypassed; not an ordinary photographic Ground Glass output.",
+      "diagnostics": {
+        "requestId": "gg-mwt9jdcg-r79bxli5ri-default-request-12",
+        "completedRequestId": "gg-mwt9jdcg-r79bxli5ri-default-request-12",
+        "frameStatus": "completed",
+        "sceneId": "table-tilt",
+        "previewMode": "raw",
+        "dofBypass": true,
+        "dofProcessingEnabled": false,
+        "dofMode": "derived-planes",
+        "rawContentful": "true",
+        "finalContentful": "true",
+        "rendererGeneration": "gg-mwt9jdcg-r79bxli5ri-default-generation-1",
+        "subjectGeneration": "1",
+        "rttResourceGeneration": "1",
+        "rttOwnerId": "ground-glass-rtt-owner-_r_0_",
+        "camera": {
+          "lensWorldPosition": [
+            0,
+            0,
+            0
+          ],
+          "filmPlaneUpWorld": [
+            0,
+            1,
+            0
+          ],
+          "opticalAxisWorld": [
+            0,
+            0,
+            1
+          ],
+          "nearWorld": 0.01,
+          "farWorld": 10.15,
+          "projectionDeterminant": -0.14314019306314052,
+          "projectionMatrix": [
+            2.3916451931035976,
+            0,
+            0,
+            0,
+            0,
+            2.9895564913794974,
+            0,
+            0,
+            0,
+            0,
+            -1.0019723865877712,
+            -1,
+            0,
+            0,
+            -0.020019723865877713,
+            0
+          ]
+        },
+        "framingProjectionSummary": {
+          "tabletopCornersInsideFilmAndClip": 2,
+          "tabletopTopCornerCount": 4,
+          "focusDetailsInsideFilmAndClip": 3,
+          "focusDetailCount": 3,
+          "interpretation": "Projected focus-detail points being inside the film is separate from whether their physical markings are legible at normal Ground Glass size."
+        },
+        "projectedTabletopTopCorners": [
+          {
+            "id": "near-left",
+            "worldMm": {
+              "x": -1200,
+              "y": -1052.4679832249492,
+              "z": 2900
+            },
+            "ndc": {
+              "x": 0.9896462868014887,
+              "y": -1.084969824558357,
+              "z": 0.995069033530572
+            },
+            "sourceUv": {
+              "u": 0.9948231434007444,
+              "v": 1.0424849122791784
+            },
+            "displayUv": {
+              "u": 0.005176856599255597,
+              "v": -0.04248491227917839
+            },
+            "insideFilmAndClip": false
+          },
+          {
+            "id": "near-right",
+            "worldMm": {
+              "x": 1200,
+              "y": -1052.4679832249492,
+              "z": 2900
+            },
+            "ndc": {
+              "x": -0.9896462868014887,
+              "y": -1.084969824558357,
+              "z": 0.995069033530572
+            },
+            "sourceUv": {
+              "u": 0.0051768565992556526,
+              "v": 1.0424849122791784
+            },
+            "displayUv": {
+              "u": 0.9948231434007444,
+              "v": -0.04248491227917839
+            },
+            "insideFilmAndClip": false
+          },
+          {
+            "id": "far-left",
+            "worldMm": {
+              "x": -1200,
+              "y": -1052.4679832249492,
+              "z": 6300
+            },
+            "ndc": {
+              "x": 0.4555514653530662,
+              "y": -0.49943055416178334,
+              "z": 0.9987946526408064
+            },
+            "sourceUv": {
+              "u": 0.7277757326765331,
+              "v": 0.7497152770808917
+            },
+            "displayUv": {
+              "u": 0.27222426732346694,
+              "v": 0.2502847229191083
+            },
+            "insideFilmAndClip": true
+          },
+          {
+            "id": "far-right",
+            "worldMm": {
+              "x": 1200,
+              "y": -1052.4679832249492,
+              "z": 6300
+            },
+            "ndc": {
+              "x": -0.4555514653530662,
+              "y": -0.49943055416178334,
+              "z": 0.9987946526408064
+            },
+            "sourceUv": {
+              "u": 0.27222426732346694,
+              "v": 0.7497152770808917
+            },
+            "displayUv": {
+              "u": 0.7277757326765331,
+              "v": 0.2502847229191083
+            },
+            "insideFilmAndClip": true
+          }
+        ],
+        "projectedFocusDetails": [
+          {
+            "id": "near-cup",
+            "worldMm": {
+              "x": -350,
+              "y": -958.8679832249492,
+              "z": 3148
+            },
+            "ndc": {
+              "x": 0.26590718474785874,
+              "y": -0.9106067355864401,
+              "z": 0.9956128809124607
+            },
+            "sourceUv": {
+              "u": 0.6329535923739293,
+              "v": 0.9553033677932201
+            },
+            "displayUv": {
+              "u": 0.36704640762607066,
+              "v": 0.044696632206779885
+            },
+            "insideFilmAndClip": true
+          },
+          {
+            "id": "mid-notebook",
+            "worldMm": {
+              "x": 0,
+              "y": -958.8679832249492,
+              "z": 4600
+            },
+            "ndc": {
+              "x": 0,
+              "y": -0.6231717399187202,
+              "z": 0.9976202727038848
+            },
+            "sourceUv": {
+              "u": 0.5,
+              "v": 0.8115858699593601
+            },
+            "displayUv": {
+              "u": 0.5,
+              "v": 0.1884141300406399
+            },
+            "insideFilmAndClip": true
+          },
+          {
+            "id": "far-book",
+            "worldMm": {
+              "x": 350,
+              "y": -958.8679832249492,
+              "z": 5900
+            },
+            "ndc": {
+              "x": -0.14187725721801003,
+              "y": -0.48586271247900226,
+              "z": 0.9985792130511818
+            },
+            "sourceUv": {
+              "u": 0.429061371390995,
+              "v": 0.7429313562395011
+            },
+            "displayUv": {
+              "u": 0.570938628609005,
+              "v": 0.25706864376049887
+            },
+            "insideFilmAndClip": true
+          }
+        ]
+      }
+    }
+  },
+  "contactSheets": [
+    "table-tilt-calibrated-neutral-vs-calibrated-contact-sheet.png",
+    "table-tilt-calibrated-four-seed-contact-sheet.png"
+  ],
+  "visualAssessment": {
+    "inspectionMethod": "Manual inspection of the unretouched 514×411 Chromium Ground Glass captures and contact sheets at native display size.",
+    "tabletopVisibility": "The tabletop appears as a narrow band near the frame edge; its wood grain and seed-to-seed differences are not reliably inspectable at normal display size.",
+    "focusDetailVisibility": "Near, middle, and far focus-detail points project inside the film, but their markings remain too small to read in the photographic captures.",
+    "framing": "LIMITED: only the far pair of projected tabletop top corners lies inside the film; the near pair is clipped. Front Tilt changes focus-plane orientation but does not materially reframe the scene.",
+    "rawUpright": "Correct: Raw shows the inverted subject band near the top; Upright Assist places it near the bottom.",
+    "f56SupportingView": "The normal f/5.6 capture is very bright with a washed-out background; it remains supporting evidence and is not used to qualify tabletop material visibility.",
+    "materialsQualificationThroughGroundGlass": "NEEDS_REVIEW",
+    "photographicFramingClassification": "LIMITED"
+  }
+}

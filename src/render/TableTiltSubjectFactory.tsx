@@ -1,10 +1,16 @@
 import * as THREE from "three";
 import type { TableTiltSubjectDefinition } from "../scenes/tableTiltGeometry";
 import type { TableTiltPresentation } from "../scenes/presentation/tableTilt";
+import { resolveTableTiltMaterialVariations } from "../scenes/tableTiltMaterialVariation";
+import type { SceneVariationDescriptor } from "../types/sceneVariation";
 import { toWorld } from "./rttUtils";
 import { createProceduralSurfaceMaterial } from "./ProceduralSurfaceMaterials";
 import { disposeTeachingSubjectResources } from "./TeachingMaterials";
 import { ceramicGlaze, cupShell, easedBox, paperEdges, recessedTray } from "./table-tilt/TableTiltFinishes";
+import {
+  createTableTiltStudioEnvironment,
+  createTableTiltStudioFloorMaterial,
+} from "./table-tilt/TableTiltStudioEnvironment";
 
 const degreesToRadians = (degrees: number): number => (degrees * Math.PI) / 180;
 
@@ -412,6 +418,7 @@ const addTableTiltContext = (
   presentation: TableTiltPresentation,
   frameMaterial: THREE.MeshStandardMaterial,
   woodMaterial: THREE.MeshStandardMaterial,
+  contextAccentMaterial: THREE.MeshStandardMaterial = frameMaterial,
 ): void => {
   const { geometry } = presentation;
   const context = new THREE.Group();
@@ -497,7 +504,7 @@ const addTableTiltContext = (
     width: 180,
     height: 97,
     depth: 180,
-    material: frameMaterial,
+    material: contextAccentMaterial,
   });
   addLocalBox({
     name: "table-tilt-context-far-block",
@@ -514,6 +521,7 @@ const addTableTiltContext = (
 
 export type TableTiltAssetRequest = Readonly<{
   presentation: TableTiltPresentation;
+  variationDescriptor?: SceneVariationDescriptor;
 }>;
 
 /** Create the canonical Table Tilt subject for interactive and RTT use. */
@@ -522,12 +530,13 @@ export function createTableTiltGroup(
 ): THREE.Group {
   const { presentation } = request;
   const { geometry } = presentation;
+  const variations = resolveTableTiltMaterialVariations(request.variationDescriptor);
   const root = new THREE.Group();
   root.name = "table-tilt-subject";
 
   const floorMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(toWorld(geometry.floor.width), toWorld(geometry.floor.depth)),
-    standardMaterial(geometry.floor.color, 1),
+    createTableTiltStudioFloorMaterial(geometry.floor),
   );
   floorMesh.name = "table-tilt-floor";
   floorMesh.rotation.x = -Math.PI / 2;
@@ -536,7 +545,7 @@ export function createTableTiltGroup(
     toWorld(geometry.floor.center.y),
     toWorld(geometry.floor.center.z),
   );
-  root.add(floorMesh);
+  root.add(floorMesh, createTableTiltStudioEnvironment(geometry.floor));
 
   const tabletopAssembly = new THREE.Group();
   tabletopAssembly.name = "table-tilt-tabletop-assembly";
@@ -547,10 +556,34 @@ export function createTableTiltGroup(
   );
   tabletopAssembly.rotation.x = geometry.tabletop.tiltAngleRad;
 
-  const woodMaterial = createProceduralSurfaceMaterial({
-    pattern: "wood", color: "#c09264", repeat: [2, 4], roughness: 0.72, normalStrength: 0.37,
-  });
-  const frameMaterial = standardMaterial("#4d3b30", 0.84);
+  const tabletopWoodMaterial = variations
+    ? createProceduralSurfaceMaterial({
+        color: variations.tabletopWood.color,
+        pattern: "wood",
+        repeat: variations.tabletopWood.repeat,
+        roughness: variations.tabletopWood.roughness,
+        normalStrength: variations.tabletopWood.normalStrength,
+        variationSeed: variations.tabletopWood.variationSeed,
+      })
+    : createProceduralSurfaceMaterial({
+        pattern: "wood", color: "#c09264", repeat: [2, 4], roughness: 0.72, normalStrength: 0.37,
+      });
+  const contextWoodMaterial = variations
+    ? createProceduralSurfaceMaterial({
+        color: variations.contextWood.color,
+        pattern: "wood",
+        repeat: variations.contextWood.repeat,
+        roughness: variations.contextWood.roughness,
+        normalStrength: variations.contextWood.normalStrength,
+        variationSeed: variations.contextWood.variationSeed,
+      })
+    : tabletopWoodMaterial;
+  const frameMaterial = variations
+    ? standardMaterial(variations.tableFrame.color, variations.tableFrame.roughness)
+    : standardMaterial("#4d3b30", 0.84);
+  const contextAccentMaterial = variations
+    ? standardMaterial(variations.contextAccent.color, variations.contextAccent.roughness)
+    : frameMaterial;
   const tabletopGeometry = easedBox(
     geometry.tabletop.width, geometry.tabletop.thickness, geometry.tabletop.depth, 9,
   );
@@ -560,7 +593,7 @@ export function createTableTiltGroup(
   for (let i = 0; i < uv.count; i++) {
     if (Math.abs(normals.getY(i)) > 0.5) uv.setXY(i, uv.getY(i), uv.getX(i));
   }
-  const tabletopMesh = new THREE.Mesh(tabletopGeometry, woodMaterial);
+  const tabletopMesh = new THREE.Mesh(tabletopGeometry, tabletopWoodMaterial);
   tabletopMesh.name = "table-tilt-tabletop";
   tabletopAssembly.add(tabletopMesh);
 
@@ -587,7 +620,7 @@ export function createTableTiltGroup(
   }
   root.add(tabletopAssembly);
 
-  addTableTiltContext(root, presentation, frameMaterial, woodMaterial);
+  addTableTiltContext(root, presentation, frameMaterial, contextWoodMaterial, contextAccentMaterial);
 
   const referenceLeg = geometry.tableSupports[0];
   const legGeometry = easedBox(referenceLeg.width, referenceLeg.height, referenceLeg.depth, 7);

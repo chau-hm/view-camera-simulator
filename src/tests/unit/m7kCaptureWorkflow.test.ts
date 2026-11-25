@@ -342,29 +342,86 @@ describe("M7K capture workflow provenance", () => {
     }
   }, 20_000);
 
-  it("requires the accepted schema-v1 and selected schema-v2 evidence checks in the CI job", () => {
+  it("routes frozen archive checks through qualification and retains current CI owners", () => {
     const workflow = readFileSync(resolve(process.cwd(), ".github/workflows/pages.yml"), "utf8");
+    const archiveWorkflow = readFileSync(resolve(process.cwd(), ".github/workflows/historical-qualification.yml"), "utf8");
+    const evidenceManifest = JSON.parse(readFileSync(resolve(process.cwd(), "scripts/historical-evidence-manifest.json"), "utf8")) as {
+      families: Array<{ id: string; commands: Array<{ args: string[] }> }>;
+    };
     const ciStart = workflow.indexOf("  ci:\n");
     const deployStart = workflow.indexOf("\n  deploy:", ciStart);
     expect(ciStart).toBeGreaterThanOrEqual(0);
     expect(deployStart).toBeGreaterThan(ciStart);
     const ciJob = workflow.slice(ciStart, deployStart);
+    expect(ciJob).toContain("always() &&");
+    expect(ciJob).not.toContain("!cancelled()");
+    expect(ciJob).toContain("- historical-qualification");
+    expect(ciJob).toContain("HISTORICAL_RESULT");
+    expect(ciJob).toContain("run: node scripts/historical-qualification-ci-gate.mjs");
     expect(workflow).toContain("  push:\n    branches:\n      - \"**\"\n");
-    expect(ciJob).not.toContain("if:");
-    expect(ciJob).toContain("name: Fetch M7E native capture source history");
-    expect(ciJob).toContain("name: Fetch M7F native capture source history");
-    expect(ciJob).toContain("name: Fetch M7J retained capture source history");
-    expect(ciJob).toContain("name: Fetch M7K execution source history");
-    expect(ciJob).toContain("      - name: Validate M7K accepted schema-v1 full-suite evidence integrity\n        run: npm run evidence:check:m7k\n");
-    expect(ciJob).toContain("      - name: Validate M7K schema-v2 selected evidence integrity\n" +
-      "        run: >-\n          npm run evidence:check:m7k --\n" +
-      "          --report-path=docs/architecture/ground-glass-m7k-broad-e2e/" +
-      "review-fix-r1/selected/qualification-report.json\n");
-    expect(ciJob).toContain("name: Fetch M7K schema-v2 tooling and evaluator source history");
-    expect(ciJob).toContain("--retained-ref=refs/pull/309/head");
-    expect(ciJob).toContain("--verify-path=scripts/run-m7k-broad-e2e.mjs");
-    expect(ciJob).toContain("--verify-path=src/render/testing/groundGlassM7kBroadE2eQualification.ts");
+    for (const provenanceFetchRequiredByVitest of [
+      "Fetch M7F native capture source history",
+      "Fetch M7K execution source history",
+      "Fetch M7M scene-readiness execution source history",
+      "Fetch M7M retained normalizer and evaluator source history",
+      "Fetch M7N renderer lifecycle evidence source history",
+      "Fetch M7O Canvas assertion timing evidence source history",
+      "Fetch M7P assertion scheduling evidence source history",
+      "Fetch M7Q matched tracing A/B evidence source history",
+    ]) {
+      expect(ciJob).toContain(provenanceFetchRequiredByVitest);
+    }
+    for (const archiveOnlyStep of [
+      "Fetch M7E native capture source history",
+      "Fetch M7J retained capture source history",
+      "Fetch M7K schema-v2 tooling and evaluator source history",
+      "Replay persisted M7F presentation evidence",
+      "Validate M7G consolidated evidence integrity",
+      "Validate M7H historical broad E2E triage integrity",
+      "Validate M7I broad E2E remediation evidence integrity",
+      "Validate M7J four-worker stability evidence integrity",
+      "Validate M7K accepted schema-v1 full-suite evidence integrity",
+      "Validate M7K schema-v2 selected evidence integrity",
+      "Validate M7L Learning Drawer remediation evidence integrity",
+      "Validate M7M Scene / Ground Glass readiness evidence integrity",
+      "Validate M7N renderer lifecycle evidence integrity",
+      "Validate M7O Canvas assertion timing evidence integrity",
+      "Validate M7P assertion scheduling evidence integrity",
+      "Validate M7Q matched light-peer tracing A/B evidence integrity",
+      "Fetch M7W offline analysis source history",
+      "Validate M7W Ordinary WebGL and Renderer-Serial execution evidence",
+    ]) {
+      expect(ciJob).not.toContain(archiveOnlyStep);
+    }
+    expect(ciJob).toContain("run: npm run lint");
+    expect(ciJob).toContain("run: npm run typecheck");
+    expect(ciJob).toContain("run: npm run test");
+    expect(ciJob).toContain("src/tests/e2e/smoke.spec.ts");
+    expect(ciJob).toContain("src/tests/e2e/architecture-rise-webgpu-production.spec.ts");
+    expect(ciJob).toContain("name: Fetch M7R retained baseline and analysis source history");
+    expect(ciJob).toContain("name: Fetch M7V reviewed source-declaration baseline");
+    expect(ciJob).toContain("run: npm run evidence:check:m7r");
+    expect(ciJob).toContain("run: npm run evidence:check:m7v");
+    expect(ciJob.match(/npm run evidence:(?:check|replay):m7[a-z]/g)).toEqual([
+      "npm run evidence:check:m7r",
+      "npm run evidence:check:m7v",
+    ]);
     expect(ciJob).not.toContain("continue-on-error: true");
+    expect(archiveWorkflow).toContain("  workflow_call:");
+    expect(archiveWorkflow).toContain("  workflow_dispatch:");
+    expect(archiveWorkflow).toContain("description: Run the complete verifiable historical archive.");
+    expect(archiveWorkflow).toContain("          - full\n        default: full");
+    expect(archiveWorkflow).toContain("fetch-depth: 1");
+    expect(archiveWorkflow).toContain("persist-credentials: false");
+    expect(archiveWorkflow).toContain("pull-requests: read");
+    expect(archiveWorkflow).toContain("node scripts/run-historical-qualification.mjs");
+    expect(evidenceManifest.families.find(({ id }) => id === "M7R")?.commands).toHaveLength(1);
+    expect(evidenceManifest.families.find(({ id }) => id === "M7V")).toBeUndefined();
+    expect(evidenceManifest.families.find(({ id }) => id === "M7K")?.commands).toHaveLength(2);
+    for (const family of ["M7E", "M7F", "M7G", "M7H", "M7I", "M7J", "M7K", "M7L", "M7M", "M7N", "M7O", "M7P", "M7Q", "M7W"]) {
+      expect(evidenceManifest.families.some(({ id }) => id === family)).toBe(true);
+    }
+    expect(workflow).toContain("  historical-qualification:\n");
     expect(workflow).toContain("  deploy:\n    if: github.event_name == 'push' && github.ref == 'refs/heads/production'\n    needs: ci\n");
   });
 });

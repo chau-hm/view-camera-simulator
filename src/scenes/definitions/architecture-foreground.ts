@@ -3,6 +3,7 @@ import geometry from "../architectureForegroundGeometry";
 
 export const architectureForegroundScene: SceneDefinition = {
   id: "architecture-foreground",
+  sceneVariation: { enabled: true, schemaVersion: 1 },
   name: "Architecture + Foreground",
   description:
     "Frame a level architectural subject while observing how foreground depth creates a second focusing problem.",

@@ -39,6 +39,7 @@
     "evidence:require-qualified:m7v": "node ./scripts/run-m7v-qualification.mjs require-qualified",
     "evidence:normalize:m7w": "node ./scripts/normalizeM7wQualificationCapture.mjs",
     "evidence:check:m7w": "node ./scripts/run-m7w-evidence.mjs",
+    "evidence:qualification:historical": "node ./scripts/run-historical-qualification.mjs",
     "evidence:migrate:m7e": "node --experimental-strip-types ./scripts/migrateM7ePersistedCaptures.mjs",
     "benchmark:observer-backends": "node ./scripts/run-observer-backend-benchmark.mjs",
     "benchmark:scene-capacity": "node ./scripts/run-scene-capacity-benchmark.mjs",
@@ -71,6 +72,9 @@
     "check:css": "node ./scripts/check-css-structure.mjs",
     "ci:local": "node ./scripts/ci-local.mjs",
     "ci:local:e2e": "node ./scripts/ci-local.mjs --with-e2e",
+    "ci:local:focused": "node ./scripts/ci-local.mjs --mode=focused",
+    "ci:local:affected": "node ./scripts/ci-local.mjs --mode=affected",
+    "ci:local:core": "node ./scripts/ci-local.mjs --mode=core",
     "promote:preflight": "node ./scripts/promote-production.mjs -- --check",
     "promote:production": "node ./scripts/promote-production.mjs",
     "preview": "vite preview"

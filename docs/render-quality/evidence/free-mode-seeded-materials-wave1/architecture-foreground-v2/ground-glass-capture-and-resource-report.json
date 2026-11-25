@@ -1,0 +1,544 @@
+{
+  "sceneId": "architecture-foreground",
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "devicePixelRatio": 1,
+  "observerCaptures": [
+    {
+      "filename": "architecture-foreground-observer-guided-canonical.png",
+      "label": "Guided · canonical",
+      "sceneId": "architecture-foreground",
+      "mode": "guided-canonical",
+      "width": 514,
+      "height": 410,
+      "sha256": "c48b7c9cfc11e42ec8b9a8b0e5b896b194e60f58b320de3e243cd98a03dbc315"
+    },
+    {
+      "filename": "architecture-foreground-observer-seed-0.png",
+      "label": "Free · seed 0",
+      "sceneId": "architecture-foreground",
+      "mode": "free",
+      "seed": 0,
+      "width": 514,
+      "height": 410,
+      "sha256": "c69be55c58743dacc064eb98fb35a17ea4d1b01446eede0764bc9a099cbb9469"
+    },
+    {
+      "filename": "architecture-foreground-observer-seed-284719.png",
+      "label": "Free · seed 284719",
+      "sceneId": "architecture-foreground",
+      "mode": "free",
+      "seed": 284719,
+      "width": 514,
+      "height": 410,
+      "sha256": "9ad0866d875ef20f9c89d7b4754a81beaf7a627587603703bd5532cb0cac1d20"
+    },
+    {
+      "filename": "architecture-foreground-observer-seed-4294967295.png",
+      "label": "Free · seed 4294967295",
+      "sceneId": "architecture-foreground",
+      "mode": "free",
+      "seed": 4294967295,
+      "width": 514,
+      "height": 410,
+      "sha256": "06f69e38c78832a37715e6a3f93901a8cda1e0c7f1638091ab2a80cea56fcdbf"
+    },
+    {
+      "filename": "architecture-foreground-observer-same-seed-url-replay.png",
+      "label": "URL replay · seed 284719",
+      "sceneId": "architecture-foreground",
+      "mode": "same-seed-url-replay",
+      "seed": 284719,
+      "width": 514,
+      "height": 410,
+      "sha256": "9ad0866d875ef20f9c89d7b4754a81beaf7a627587603703bd5532cb0cac1d20"
+    }
+  ],
+  "groundGlassCaptures": [
+    {
+      "filename": "architecture-foreground-ground-glass-seed-0-raw.png",
+      "label": "0 · Raw",
+      "sceneId": "architecture-foreground",
+      "mode": "ground-glass-raw",
+      "seed": 0,
+      "focusMm": 8000,
+      "aperture": 11,
+      "requestId": "gg-mwrzgzvd-9z1y0skrw4f-default-request-4",
+      "width": 514,
+      "height": 411,
+      "sha256": "e80a01c34500d1f6d03102e7598fa5342968867808fec88988b48644b0b334a1"
+    },
+    {
+      "filename": "architecture-foreground-ground-glass-seed-0-upright.png",
+      "label": "0 · Upright",
+      "sceneId": "architecture-foreground",
+      "mode": "ground-glass-upright",
+      "seed": 0,
+      "focusMm": 8000,
+      "aperture": 11,
+      "requestId": "gg-mwrzgzvd-9z1y0skrw4f-default-request-5",
+      "width": 514,
+      "height": 411,
+      "sha256": "96054d1b54a2c444a536d5868f6058053c2bb404ece89ae7cb19788e219e15db"
+    },
+    {
+      "filename": "architecture-foreground-ground-glass-seed-284719-raw.png",
+      "label": "284719 · Raw",
+      "sceneId": "architecture-foreground",
+      "mode": "ground-glass-raw",
+      "seed": 284719,
+      "focusMm": 8000,
+      "aperture": 11,
+      "requestId": "gg-mwrzi21d-pd5urjobhz-default-request-4",
+      "width": 514,
+      "height": 411,
+      "sha256": "d5c3449dae2980b82ea0b68f46d108d246c63215bd6d3cfab34796120019d30d"
+    },
+    {
+      "filename": "architecture-foreground-ground-glass-seed-284719-upright.png",
+      "label": "284719 · Upright",
+      "sceneId": "architecture-foreground",
+      "mode": "ground-glass-upright",
+      "seed": 284719,
+      "focusMm": 8000,
+      "aperture": 11,
+      "requestId": "gg-mwrzi21d-pd5urjobhz-default-request-5",
+      "width": 514,
+      "height": 411,
+      "sha256": "cc4c8976c3c7311afb48fec0744dcba4134c267c1ef8f3dae0c7c862ffb54ac6"
+    },
+    {
+      "filename": "architecture-foreground-ground-glass-seed-4294967295-raw.png",
+      "label": "4294967295 · Raw",
+      "sceneId": "architecture-foreground",
+      "mode": "ground-glass-raw",
+      "seed": 4294967295,
+      "focusMm": 8000,
+      "aperture": 11,
+      "requestId": "gg-mwrzj5o1-b63rpyiq2-default-request-4",
+      "width": 514,
+      "height": 411,
+      "sha256": "af2493ddc2fa1c44f91a35b178e3b23061ca8d5ccee31886288da2f16ed097ad"
+    },
+    {
+      "filename": "architecture-foreground-ground-glass-seed-4294967295-upright.png",
+      "label": "4294967295 · Upright",
+      "sceneId": "architecture-foreground",
+      "mode": "ground-glass-upright",
+      "seed": 4294967295,
+      "focusMm": 8000,
+      "aperture": 11,
+      "requestId": "gg-mwrzj5o1-b63rpyiq2-default-request-5",
+      "width": 514,
+      "height": 411,
+      "sha256": "ee4d23c06e80d4762ed1222a6c596c5a672647b981489b019e84dac6163a35c8"
+    }
+  ],
+  "capacityByStage": {
+    "guidedCanonical": {
+      "viewportSubject": {
+        "objects": 71,
+        "meshes": 68,
+        "geometries": 67,
+        "materials": 16,
+        "textures": 7,
+        "triangles": 28574
+      },
+      "rttSubject": {
+        "objects": 66,
+        "meshes": 64,
+        "geometries": 63,
+        "materials": 12,
+        "textures": 7,
+        "triangles": 27518
+      },
+      "rendererResources": {
+        "geometries": 64,
+        "textures": 18
+      },
+      "frameCadence": {
+        "p50Ms": 164.30000001192093,
+        "p95Ms": 187.10000002384186,
+        "approxFps": 6.0775495320433635,
+        "count": 60
+      },
+      "groundGlass": {
+        "profilingBackend": "cpu-fallback",
+        "timingUnit": "cpu-submit-ms",
+        "frame": {
+          "latestMs": 157.39999997615814,
+          "averageMs": 164.53999999960263,
+          "p50Ms": 164.30000001192093,
+          "p95Ms": 187.10000002384186,
+          "count": 60
+        },
+        "groundGlassCpuSubmit": {
+          "latestMs": 0.30000001192092896,
+          "averageMs": 0.24500000178813935,
+          "p50Ms": 0.20000004768371582,
+          "p95Ms": 0.3999999761581421,
+          "count": 60
+        },
+        "physicalDofCpuSubmit": {
+          "latestMs": 0.10000002384185791,
+          "averageMs": 0.03333333134651184,
+          "p50Ms": 0,
+          "p95Ms": 0.10000002384185791,
+          "count": 60
+        }
+      }
+    },
+    "seed284719": {
+      "viewportSubject": {
+        "objects": 71,
+        "meshes": 68,
+        "geometries": 67,
+        "materials": 16,
+        "textures": 7,
+        "triangles": 28574
+      },
+      "rttSubject": {
+        "objects": 66,
+        "meshes": 64,
+        "geometries": 63,
+        "materials": 12,
+        "textures": 7,
+        "triangles": 27518
+      },
+      "rendererResources": {
+        "geometries": 64,
+        "textures": 18
+      },
+      "frameCadence": {
+        "p50Ms": 162,
+        "p95Ms": 186.10000002384186,
+        "approxFps": 5.968456706275317,
+        "count": 40
+      },
+      "groundGlass": {
+        "profilingBackend": "cpu-fallback",
+        "timingUnit": "cpu-submit-ms",
+        "frame": {
+          "latestMs": 160.60000002384186,
+          "averageMs": 167.54750000089408,
+          "p50Ms": 162,
+          "p95Ms": 186.10000002384186,
+          "count": 40
+        },
+        "groundGlassCpuSubmit": {
+          "latestMs": 0.10000002384185791,
+          "averageMs": 0.25249999612569807,
+          "p50Ms": 0.20000004768371582,
+          "p95Ms": 0.3999999761581421,
+          "count": 40
+        },
+        "physicalDofCpuSubmit": {
+          "latestMs": 0,
+          "averageMs": 0.027500002086162566,
+          "p50Ms": 0,
+          "p95Ms": 0.10000002384185791,
+          "count": 40
+        }
+      }
+    },
+    "regenerationStart": {
+      "viewportSubject": {
+        "objects": 71,
+        "meshes": 68,
+        "geometries": 67,
+        "materials": 16,
+        "textures": 7,
+        "triangles": 28574
+      },
+      "rttSubject": {
+        "objects": 66,
+        "meshes": 64,
+        "geometries": 63,
+        "materials": 12,
+        "textures": 7,
+        "triangles": 27518
+      },
+      "rendererResources": {
+        "geometries": 64,
+        "textures": 18
+      },
+      "frameCadence": {
+        "p50Ms": 167.5,
+        "p95Ms": 193.4000000357628,
+        "approxFps": 5.800912676934522,
+        "count": 60
+      },
+      "groundGlass": {
+        "profilingBackend": "cpu-fallback",
+        "timingUnit": "cpu-submit-ms",
+        "frame": {
+          "latestMs": 160.0999999642372,
+          "averageMs": 172.386666666468,
+          "p50Ms": 167.5,
+          "p95Ms": 193.4000000357628,
+          "count": 60
+        },
+        "groundGlassCpuSubmit": {
+          "latestMs": 0.30000001192092896,
+          "averageMs": 0.263333335518837,
+          "p50Ms": 0.30000001192092896,
+          "p95Ms": 0.30000001192092896,
+          "count": 60
+        },
+        "physicalDofCpuSubmit": {
+          "latestMs": 0,
+          "averageMs": 0.04666667183240255,
+          "p50Ms": 0,
+          "p95Ms": 0.10000002384185791,
+          "count": 60
+        }
+      }
+    }
+  },
+  "regeneration": {
+    "actionCount": 10,
+    "seeds": [
+      1866582107,
+      1795375407,
+      556691375,
+      2552667659,
+      2149117195,
+      2640554795,
+      878738715,
+      1439688636,
+      831285320,
+      3622558633
+    ],
+    "subjectGenerations": [
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9",
+      "10",
+      "11"
+    ],
+    "rendererCounts": [
+      {
+        "geometries": 64,
+        "textures": 18
+      },
+      {
+        "geometries": 64,
+        "textures": 18
+      },
+      {
+        "geometries": 64,
+        "textures": 18
+      },
+      {
+        "geometries": 64,
+        "textures": 18
+      },
+      {
+        "geometries": 64,
+        "textures": 18
+      },
+      {
+        "geometries": 64,
+        "textures": 18
+      },
+      {
+        "geometries": 64,
+        "textures": 18
+      },
+      {
+        "geometries": 64,
+        "textures": 18
+      },
+      {
+        "geometries": 64,
+        "textures": 18
+      },
+      {
+        "geometries": 64,
+        "textures": 18
+      }
+    ],
+    "viewportCounts": [
+      {
+        "objects": 71,
+        "meshes": 68,
+        "geometries": 67,
+        "materials": 16,
+        "textures": 7,
+        "triangles": 28574
+      },
+      {
+        "objects": 71,
+        "meshes": 68,
+        "geometries": 67,
+        "materials": 16,
+        "textures": 7,
+        "triangles": 28574
+      },
+      {
+        "objects": 71,
+        "meshes": 68,
+        "geometries": 67,
+        "materials": 16,
+        "textures": 7,
+        "triangles": 28574
+      },
+      {
+        "objects": 71,
+        "meshes": 68,
+        "geometries": 67,
+        "materials": 16,
+        "textures": 7,
+        "triangles": 28574
+      },
+      {
+        "objects": 71,
+        "meshes": 68,
+        "geometries": 67,
+        "materials": 16,
+        "textures": 7,
+        "triangles": 28574
+      },
+      {
+        "objects": 71,
+        "meshes": 68,
+        "geometries": 67,
+        "materials": 16,
+        "textures": 7,
+        "triangles": 28574
+      },
+      {
+        "objects": 71,
+        "meshes": 68,
+        "geometries": 67,
+        "materials": 16,
+        "textures": 7,
+        "triangles": 28574
+      },
+      {
+        "objects": 71,
+        "meshes": 68,
+        "geometries": 67,
+        "materials": 16,
+        "textures": 7,
+        "triangles": 28574
+      },
+      {
+        "objects": 71,
+        "meshes": 68,
+        "geometries": 67,
+        "materials": 16,
+        "textures": 7,
+        "triangles": 28574
+      },
+      {
+        "objects": 71,
+        "meshes": 68,
+        "geometries": 67,
+        "materials": 16,
+        "textures": 7,
+        "triangles": 28574
+      }
+    ],
+    "rttCounts": [
+      {
+        "objects": 66,
+        "meshes": 64,
+        "geometries": 63,
+        "materials": 12,
+        "textures": 7,
+        "triangles": 27518
+      },
+      {
+        "objects": 66,
+        "meshes": 64,
+        "geometries": 63,
+        "materials": 12,
+        "textures": 7,
+        "triangles": 27518
+      },
+      {
+        "objects": 66,
+        "meshes": 64,
+        "geometries": 63,
+        "materials": 12,
+        "textures": 7,
+        "triangles": 27518
+      },
+      {
+        "objects": 66,
+        "meshes": 64,
+        "geometries": 63,
+        "materials": 12,
+        "textures": 7,
+        "triangles": 27518
+      },
+      {
+        "objects": 66,
+        "meshes": 64,
+        "geometries": 63,
+        "materials": 12,
+        "textures": 7,
+        "triangles": 27518
+      },
+      {
+        "objects": 66,
+        "meshes": 64,
+        "geometries": 63,
+        "materials": 12,
+        "textures": 7,
+        "triangles": 27518
+      },
+      {
+        "objects": 66,
+        "meshes": 64,
+        "geometries": 63,
+        "materials": 12,
+        "textures": 7,
+        "triangles": 27518
+      },
+      {
+        "objects": 66,
+        "meshes": 64,
+        "geometries": 63,
+        "materials": 12,
+        "textures": 7,
+        "triangles": 27518
+      },
+      {
+        "objects": 66,
+        "meshes": 64,
+        "geometries": 63,
+        "materials": 12,
+        "textures": 7,
+        "triangles": 27518
+      },
+      {
+        "objects": 66,
+        "meshes": 64,
+        "geometries": 63,
+        "materials": 12,
+        "textures": 7,
+        "triangles": 27518
+      }
+    ],
+    "controlsPreserved": {
+      "focusValue": "8000",
+      "aperture": 11,
+      "movement": {
+        "Rise": 10,
+        "Tilt": 0.1
+      },
+      "observerCameraPosition": "5.600000,3.000000,-6.500000"
+    },
+    "initialRendererGeneration": "gg-mwrzk6ne-1uz7ctvy61e-default-generation-1",
+    "initialRttResourceGeneration": "1"
+  }
+}

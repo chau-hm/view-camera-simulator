@@ -27,6 +27,7 @@ pnpm-debug.log*
 *.tsbuildinfo
 
 # Test artifacts
+.agents/output/ci-local/
 playwright-report/
 test-results/
 .test-results/

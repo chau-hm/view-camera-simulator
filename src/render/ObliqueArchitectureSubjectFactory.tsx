@@ -5,6 +5,7 @@ import { disposeTeachingSubjectResources } from "./TeachingMaterials";
 import { createBuildingGeometry } from "./oblique-architecture/BuildingGeometry";
 import { addElevations } from "./oblique-architecture/Elevations";
 import { createMasonryMaterials } from "./oblique-architecture/MasonryMaterials";
+import { createObliqueIndustrialEnvironment } from "./oblique-architecture/environment/ObliqueIndustrialEnvironment";
 
 export type ObliqueArchitectureAssetRequest = Readonly<{
   presentation: ObliqueArchitecturePresentation;
@@ -126,6 +127,7 @@ export const createObliqueArchitectureGroup = (
     root.add(probe);
   });
   shapes.finish();
+  root.add(createObliqueIndustrialEnvironment(ground, material));
   return root;
 };
 

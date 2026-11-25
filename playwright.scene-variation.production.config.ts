@@ -5,6 +5,7 @@ const port = process.env.PLAYWRIGHT_SCENE_VARIATION_PRODUCTION_PORT ?? "4176";
 export default defineConfig({
   testDir: "./src/tests/scene-variation-e2e",
   testMatch: [
+    "free-mode-seeded-materials-wave1-base-production.spec.ts",
     "architecture-rise-seeded-materials-production.spec.ts",
     "interior-corner-seeded-materials-production.spec.ts",
     "interior-corner-seeded-props-production.spec.ts",
