@@ -354,15 +354,18 @@ describe("production promotion safety", () => {
     const fixture = createFixture("clean-divergence", { shallow: true });
     expect(git(fixture.clone, ["rev-parse", "--is-shallow-repository"])).toBe("true");
     const before = repositorySnapshot(fixture);
-    const result = withTemporaryEntries(fixture, runPromotion(fixture, ["--check"]));
+    const preflight = withTemporaryEntries(fixture, runPromotion(fixture, ["--check"]));
+    const promotion = withTemporaryEntries(fixture, runPromotion(fixture, []));
 
-    expect(result.status).not.toBe(0);
-    expect(result.output).toContain("BLOCKED_SHALLOW_HISTORY");
-    expect(result.output).toContain("git fetch --unshallow origin");
-    expect(result.output).toContain("rerun `npm run promote:preflight`");
-    expect(result.output).not.toContain("Creating isolated worktree");
+    for (const result of [preflight, promotion]) {
+      expect(result.status).not.toBe(0);
+      expect(result.output).toContain("BLOCKED_SHALLOW_HISTORY");
+      expect(result.output).toContain("git fetch --unshallow origin");
+      expect(result.output).toContain("rerun `npm run promote:preflight`");
+      expect(result.output).not.toContain("Creating isolated worktree");
+      expect(result.temporaryEntries).toEqual([]);
+    }
     expect(repositorySnapshot(fixture)).toEqual(before);
-    expect(result.temporaryEntries).toEqual([]);
   });
 
   it("distinguishes missing reachable objects from a genuinely unrelated graph", () => {
