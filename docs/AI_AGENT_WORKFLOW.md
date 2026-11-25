@@ -480,10 +480,47 @@ npm run promote:preflight
 npm run promote:production
 ```
 
+`npm run promote:preflight` reads the current authoritative `origin/main` and
+`origin/production` SHAs, checks that the fetched tracking refs match, rejects a
+shallow repository or incomplete reachable object graph, and confirms that the
+recorded commits share Git ancestry. It reports the common ancestor, branch-only
+commit counts, and whether either branch contains the other. A diverged history
+with a common ancestor is valid and is checked using the normal promotion merge.
+
+When promotion is needed, preflight creates a detached temporary worktree at the
+recorded production SHA and runs the same `git merge --no-ff` operation used by
+promotion, with Git's recorded `rerere` conflict resolutions disabled so an
+unresolved conflict cannot be silently reused. It reports conflicting paths
+when that merge cannot complete and removes the temporary worktree on success
+or failure. The merge may create an unreferenced commit object in the local
+object database; preflight does not update local branch refs or publish to the
+remote.
+
+A `PROMOTION_READY` result means the two recorded commits were merge-compatible
+at the time of the check. It does not reserve either remote ref or guarantee a
+future promotion: refs and repository conditions can change after preflight.
+Actual promotion remains a separate, user-controlled command and independently
+fetches and validates the current remote state.
+
+If preflight reports shallow history, recover it manually and rerun preflight:
+
+```bash
+git fetch --unshallow origin
+npm run promote:preflight
+```
+
+If preflight reports no common ancestor, it could not establish shared Git
+history for the recorded commits. Confirm that the expected remote refs were
+selected and that the repository has complete objects. The promotion must stop;
+do not use `--allow-unrelated-histories`. Merge conflicts are reported with the
+conflicting paths and require resolution through the normal release process
+before promotion is attempted.
+
 The canonical script should continue to:
 
 - read authoritative remote refs;
 - use an isolated temporary worktree;
+- validate repository history and normal merge feasibility before publication;
 - detect concurrent remote movement;
 - publish only to `production`;
 - use a normal non-force push;
