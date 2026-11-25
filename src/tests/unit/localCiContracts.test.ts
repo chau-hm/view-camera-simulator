@@ -510,6 +510,131 @@ describe("Local CI argument and ownership contracts", () => {
     expect(normalizer.incomplete).toBe(false);
   });
 
+  it("maps the B1 CPU reference to its direct contract tests without requiring native GPU proof", async () => {
+    const reference = await resolveCheckedInOwnerSelection([
+      "src/render/webgpu/groundGlassB1Reference.ts",
+    ]);
+
+    expect(reference.ownerIds).toContain("webgpu-b1-reference");
+    expect(reference.ownerIds).toContain("webgpu-source-supplement");
+    expect(reference.ownerIds).toContain("render-source-supplement");
+    expect(reference.ownerIds).not.toContain("webgpu-lifecycle");
+    expect(reference.tests).toContain("src/tests/unit/groundGlassWebGpuB1Reference.test.ts");
+    expect(reference.tests).toContain("src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts");
+    expect(reference.fullVitest).toBe(false);
+    expect(reference.incomplete).toBe(false);
+    expect(reference.provisionalPaths).toEqual([]);
+    expect(reference.requiresE2E).toBe(false);
+    expect(reference.nativeGpuRequired).toBe(false);
+  });
+
+  it("keeps unknown WebGPU files provisional and fails closed to full Vitest", async () => {
+    const changed = "src/render/webgpu/newUnmappedReference.ts";
+    const selection = await resolveCheckedInOwnerSelection([changed]);
+
+    expect(selection.ownerIds).toContain("webgpu-source-supplement");
+    expect(selection.ownerIds).toContain("render-source-supplement");
+    expect(selection.ownerIds).not.toContain("webgpu-lifecycle");
+    expect(selection.provisionalPaths).toEqual([changed]);
+    expect(selection.fullVitest).toBe(true);
+    expect(selection.incomplete).toBe(true);
+    expect(selection.tests).toEqual([]);
+    expect(selection.requiresE2E).toBe(false);
+    expect(selection.nativeGpuRequired).toBe(false);
+  });
+
+  it("keeps verified runtime helpers precise and adapter lifecycle provisional with native proof", async () => {
+    const runtime = await resolveCheckedInOwnerSelection([
+      "src/render/webgpu/groundGlassWebGpuRuntime.ts",
+    ]);
+    expect(runtime.ownerIds).toContain("webgpu-runtime-classification");
+    expect(runtime.tests).toContain("src/tests/unit/groundGlassWebGpuRuntime.test.ts");
+    expect(runtime.fullVitest).toBe(false);
+    expect(runtime.incomplete).toBe(false);
+    expect(runtime.requiresE2E).toBe(false);
+    expect(runtime.nativeGpuRequired).toBe(false);
+
+    const diagnostics = await resolveCheckedInOwnerSelection([
+      "src/render/webgpu/groundGlassWebGpuDiagnostics.ts",
+    ]);
+    expect(diagnostics.ownerIds).toContain("webgpu-diagnostic-attribution");
+    expect(diagnostics.tests).toContain("src/tests/unit/GroundGlassWebGPUAdapterDiagnostics.test.ts");
+    expect(diagnostics.fullVitest).toBe(false);
+    expect(diagnostics.incomplete).toBe(false);
+    expect(diagnostics.requiresE2E).toBe(false);
+    expect(diagnostics.nativeGpuRequired).toBe(false);
+
+    const adapter = await resolveCheckedInOwnerSelection([
+      "src/render/webgpu/GroundGlassWebGPUAdapter.tsx",
+    ]);
+    expect(adapter.ownerIds).toContain("webgpu-lifecycle");
+    expect(adapter.tests).toEqual([]);
+    expect(adapter.e2eSpecs).toContain("src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts");
+    expect(nativeWebGpuAssertionForSpec("src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts"))
+      .toEqual({ environmentKey: "GROUND_GLASS_NATIVE_WEBGPU_REQUIRED", requiredValue: "1" });
+    expect(adapter.fullVitest).toBe(true);
+    expect(adapter.incomplete).toBe(true);
+    expect(adapter.provisionalPaths).toContain("src/render/webgpu/GroundGlassWebGPUAdapter.tsx");
+    expect(adapter.requiresE2E).toBe(true);
+    expect(adapter.nativeGpuRequired).toBe(true);
+
+    const seam = await resolveCheckedInOwnerSelection([
+      "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+    ]);
+    expect(seam.ownerIds).toContain("webgpu-test-seam");
+    expect(seam.tests).toEqual([]);
+    expect(seam.fullVitest).toBe(true);
+    expect(seam.incomplete).toBe(true);
+    expect(seam.requiresE2E).toBe(true);
+    expect(seam.nativeGpuRequired).toBe(true);
+  });
+
+  it("preserves active M7 Unit ownership and unions it with precise WebGPU owners", async () => {
+    const evidencePath = "src/render/webgpu/groundGlassM7eGatherB1Evidence.ts";
+    const evidence = await resolveCheckedInOwnerSelection([evidencePath]);
+    expect(evidence.ownerIds).toContain("historical-active-unit-contracts");
+    expect(evidence.ownerIds).toContain("webgpu-source-supplement");
+    expect(evidence.tests).toContain("src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts");
+    expect(evidence.incomplete).toBe(false);
+    expect(evidence.nativeGpuRequired).toBe(false);
+    expect(evidence.requiresE2E).toBe(false);
+
+    const mappedUnion = await resolveCheckedInOwnerSelection([
+      "src/render/webgpu/groundGlassB1Reference.ts",
+      "src/render/webgpu/groundGlassWebGpuRuntime.ts",
+    ]);
+    expect(mappedUnion.tests).toContain("src/tests/unit/groundGlassWebGpuB1Reference.test.ts");
+    expect(mappedUnion.tests).toContain("src/tests/unit/groundGlassWebGpuRuntime.test.ts");
+    expect(new Set(mappedUnion.tests).size).toBe(mappedUnion.tests.length);
+    expect(mappedUnion.incomplete).toBe(false);
+
+    const mixed = await resolveCheckedInOwnerSelection([
+      "src/render/webgpu/groundGlassB1Reference.ts",
+      "src/render/webgpu/groundGlassWebGpuRuntime.ts",
+      "src/render/webgpu/newUnmappedReference.ts",
+    ]);
+    expect(mixed.ownerIds).toEqual(expect.arrayContaining([
+      "webgpu-b1-reference",
+      "webgpu-runtime-classification",
+      "webgpu-source-supplement",
+      "render-source-supplement",
+    ]));
+    expect(mixed.reasons).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        path: "src/render/webgpu/groundGlassB1Reference.ts",
+        owner: "webgpu-b1-reference",
+      }),
+      expect.objectContaining({
+        path: "src/render/webgpu/groundGlassWebGpuRuntime.ts",
+        owner: "webgpu-runtime-classification",
+      }),
+    ]));
+    expect(mixed.provisionalPaths).toContain("src/render/webgpu/newUnmappedReference.ts");
+    expect(mixed.fullVitest).toBe(true);
+    expect(mixed.incomplete).toBe(true);
+    expect(mixed.tests).toEqual([]);
+  });
+
   it("does not let broad renderer or infrastructure matches establish complete affected ownership", async () => {
     const renderer = await resolveCheckedInOwnerSelection(["src/render/newSharedSurface.ts"]);
     expect(renderer.ownerIds).toEqual(["render-source-supplement"]);
@@ -987,6 +1112,61 @@ describe("Local CI emitted report integration", () => {
       provisionalPaths: [changed],
       unknownPaths: [],
     });
+    expect(result.report.steps).toHaveLength(1);
+    expect(result.report.steps[0]).toMatchObject({
+      runner: "vitest",
+      mode: "full",
+      status: "PASS",
+      testFilesSelected: ["Vitest configured discovery"],
+    });
+    expect(result.report.limitations.join(" ")).toContain("Only provisional ownership matched");
+  });
+
+  it("reports direct B1 reference coverage as complete without scheduling native GPU qualification", async () => {
+    const changed = "src/render/webgpu/groundGlassB1Reference.ts";
+    const fixture = await makeLocalCiRunnerFixture([changed]);
+    const result = await executeLocalCi(fixture, ["--mode=affected", "--base", fixture.base]);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.report.status).toBe("PASS");
+    expect(result.report.execution.completeForRequestedScope).toBe(true);
+    expect(result.report.execution.changedFiles).toEqual([changed]);
+    expect(result.report.execution.owners).toContain("webgpu-b1-reference");
+    expect(result.report.execution.owners).not.toContain("webgpu-lifecycle");
+    expect(result.report.execution.fallback).toBeNull();
+    expect(result.report.execution.selectedTestFiles).toContain("src/tests/unit/groundGlassWebGpuB1Reference.test.ts");
+    expect(result.report.execution.selectedTestFiles).toContain("src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts");
+    expect(result.report.execution.e2eCoverage).toMatchObject({
+      required: [],
+      scheduled: [],
+      missingRequired: [],
+      status: "NOT_REQUIRED",
+    });
+    expect(result.report.steps).toHaveLength(1);
+    expect(result.report.steps[0]).toMatchObject({
+      runner: "vitest",
+      mode: "affected",
+      status: "PASS",
+    });
+    expect(result.report.steps[0].counts.files).toContain("src/tests/unit/groundGlassWebGpuB1Reference.test.ts");
+  });
+
+  it("keeps unknown WebGPU ownership incomplete after the full Vitest fallback passes", async () => {
+    const changed = "src/render/webgpu/newUnmappedReference.ts";
+    const fixture = await makeLocalCiRunnerFixture([changed]);
+    const result = await executeLocalCi(fixture, ["--mode=affected", "--base", fixture.base]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.report.status).toBe("INCOMPLETE");
+    expect(result.report.execution.completeForRequestedScope).toBe(false);
+    expect(result.report.execution.changedFiles).toEqual([changed]);
+    expect(result.report.execution.owners).toContain("webgpu-source-supplement");
+    expect(result.report.execution.fallback).toMatchObject({
+      kind: "full-vitest",
+      provisionalPaths: [changed],
+      unknownPaths: [],
+    });
+    expect(result.report.execution.selectedTestFiles).toEqual(["Vitest configured discovery"]);
     expect(result.report.steps).toHaveLength(1);
     expect(result.report.steps[0]).toMatchObject({
       runner: "vitest",

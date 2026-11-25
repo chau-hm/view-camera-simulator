@@ -160,9 +160,44 @@
       "reason": "Table Tilt furnishing and mounted-asset inputs select their registered-scene visibility proof, geometry/optics and task consumers, plus the public browser flow. A mounted-camera height mutation is detected, but an exploratory sideboard horizontal-anchor mutation survived; until that furnishing position has an independent reference, this owner cannot alone establish complete coverage. Scene-tree changes also retain the separate incomplete scene-implementation owner."
     },
     {
-      "id": "webgpu-lifecycle",
-      "label": "WebGPU adapter and runtime contracts",
+      "id": "webgpu-source-supplement",
+      "label": "Unclassified WebGPU implementation with provisional coverage",
       "paths": ["src/render/webgpu/**"],
+      "coverage": "provisional",
+      "reason": "The WebGPU directory contains CPU references, research helpers, evidence implementations, adapter code, and test controls. A directory match alone does not identify their direct contracts; unmapped files use full Vitest and remain incomplete. This broad owner does not impose GPU qualification on reference-only changes."
+    },
+    {
+      "id": "webgpu-b1-reference",
+      "label": "B1 CPU reconstruction reference",
+      "paths": ["src/render/webgpu/groundGlassB1Reference.ts"],
+      "coverage": "complete",
+      "tests": [
+        "src/tests/unit/groundGlassWebGpuB1Reference.test.ts",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts"
+      ],
+      "reason": "The direct B1 tests cover observed gather/center provenance, far-gather acceptance, source-color fallback, binary16 limits, alpha/compositing, and malformed inputs. The M7E Unit test independently recomputes B1 output in the active evidence evaluator. These CPU contracts do not prove native GPU execution."
+    },
+    {
+      "id": "webgpu-runtime-classification",
+      "label": "Mounted WebGPU runtime classification helper",
+      "paths": ["src/render/webgpu/groundGlassWebGpuRuntime.ts"],
+      "coverage": "complete",
+      "tests": ["src/tests/unit/groundGlassWebGpuRuntime.test.ts"],
+      "reason": "This pure classifier has a direct Unit owner for initialized WebGPU, WebGL2 compatibility, and unknown runtime evidence. The test protects classification semantics; it is not native-browser qualification."
+    },
+    {
+      "id": "webgpu-diagnostic-attribution",
+      "label": "WebGPU diagnostic attribution helpers",
+      "paths": ["src/render/webgpu/groundGlassWebGpuDiagnostics.ts"],
+      "coverage": "complete",
+      "tests": ["src/tests/unit/GroundGlassWebGPUAdapterDiagnostics.test.ts"],
+      "reason": "The direct Unit owner checks source-bound runtime and presentation diagnostic attribution. It does not establish adapter or device lifecycle behavior."
+    },
+    {
+      "id": "webgpu-lifecycle",
+      "label": "WebGPU adapter and device lifecycle qualification",
+      "paths": ["src/render/webgpu/GroundGlassWebGPUAdapter.tsx"],
+      "coverage": "provisional",
       "tests": [
         "src/tests/unit/groundGlassWebGpuRuntime.test.ts",
         "src/tests/unit/groundGlassWebGpuOpticalStateAdapter.test.ts",
@@ -172,7 +207,20 @@
       "e2eSpecs": ["src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts"],
       "requiresE2E": true,
       "nativeGpuRequired": true,
-      "reason": "Deterministic adapter tests do not replace explicit browser/device lifecycle qualification."
+      "incompleteReason": "The selected Unit checks and failure-host browser scenario do not map every adapter, asynchronous lifecycle, and resource transition in the adapter implementation. Full Vitest and explicit native-WebGPU evidence remain required; this owner cannot establish complete Affected coverage.",
+      "reason": "Adapter/device behavior is distinct from CPU reference correctness. The selected deterministic tests are useful supplements, while the native failure-host scenario and backend assertion preserve browser/device qualification."
+    },
+    {
+      "id": "webgpu-test-seam",
+      "label": "WebGPU development control and failure-injection seam",
+      "paths": ["src/render/webgpu/groundGlassWebGpuTestSeam.ts"],
+      "coverage": "provisional",
+      "tests": ["src/tests/unit/groundGlassWebGpuTestSeam.test.ts"],
+      "e2eSpecs": ["src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts"],
+      "requiresE2E": true,
+      "nativeGpuRequired": true,
+      "incompleteReason": "The Unit owner covers recovery-action routing, but this seam also exposes capture, synchronization, and failure-injection controls. Native lifecycle coverage does not map every exported control, so affected ownership remains provisional.",
+      "reason": "Changes to the seam can alter controls used by native adapter/device lifecycle qualification; they are separate from reference-only changes and retain the focused native failure-host contract."
     },
     {
       "id": "scene-publication",
