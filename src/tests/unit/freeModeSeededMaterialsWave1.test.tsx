@@ -177,6 +177,35 @@ const tableRoleNames = [
   "table-tilt-context-middle-canister",
 ] as const;
 
+const SEEDED_MATERIAL_CASES = [
+  ...SEEDED_MATERIAL_BATCHES.map(({ label, seeds, architectureDigest }) => ({
+    label: `Architecture + Foreground ${label}`,
+    sceneId: architectureForegroundScene.id,
+    seeds,
+    digest: architectureDigest,
+    make: (seed: number) => createArchitectureForegroundGroup({
+      presentation: ARCHITECTURE_FOREGROUND_PRESENTATION,
+      variationDescriptor: descriptorFor(architectureForegroundScene, seed),
+    }),
+    dispose: disposeArchitectureForegroundGroup,
+    names: architectureRoleNames,
+    mapNames: architectureRoleNames,
+  })),
+  ...SEEDED_MATERIAL_BATCHES.map(({ label, seeds, tableDigest }) => ({
+    label: `Table Tilt ${label}`,
+    sceneId: tableTiltScene.id,
+    seeds,
+    digest: tableDigest,
+    make: (seed: number) => createTableTiltGroup({
+      presentation: TABLE_TILT_PRESENTATION,
+      variationDescriptor: descriptorFor(tableTiltScene, seed),
+    }),
+    dispose: disposeTableTiltGroup,
+    names: tableRoleNames,
+    mapNames: ["table-tilt-tabletop", "table-tilt-context-near-tray"],
+  })),
+];
+
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
@@ -349,89 +378,66 @@ describe("Free Mode seeded material subject factories", () => {
     }
   });
 
-  it.each(SEEDED_MATERIAL_BATCHES)("replays seed maps and varies valid material realizations for $label", ({
+  it.each(SEEDED_MATERIAL_CASES)("replays seed maps and varies valid material realizations for $label", ({
     seeds,
-    architectureDigest,
-    tableDigest,
+    sceneId,
+    digest,
+    make,
+    dispose,
+    names,
+    mapNames,
   }) => {
-    const fixtures = [
-      {
-        sceneId: architectureForegroundScene.id,
-        make: (seed: number) => createArchitectureForegroundGroup({
-          presentation: ARCHITECTURE_FOREGROUND_PRESENTATION,
-          variationDescriptor: descriptorFor(architectureForegroundScene, seed),
-        }),
-        dispose: disposeArchitectureForegroundGroup,
-        names: architectureRoleNames,
-        mapNames: architectureRoleNames,
-        digest: architectureDigest,
-      },
-      {
-        sceneId: tableTiltScene.id,
-        make: (seed: number) => createTableTiltGroup({
-          presentation: TABLE_TILT_PRESENTATION,
-          variationDescriptor: descriptorFor(tableTiltScene, seed),
-        }),
-        dispose: disposeTableTiltGroup,
-        names: tableRoleNames,
-        mapNames: ["table-tilt-tabletop", "table-tilt-context-near-tray"],
-        digest: tableDigest,
-      },
-    ];
-
-    fixtures.forEach(({ sceneId, make, dispose, names, mapNames, digest }) => {
-      const signatures: string[] = [];
-      const mapSignatures: string[] = [];
-      for (const seed of seeds) {
-        const group = make(seed);
+    const signatures: string[] = [];
+    const mapSignatures: string[] = [];
+    for (const seed of seeds) {
+      const group = make(seed);
+      try {
+        const signature = surfaceMapSignature(group, names);
+        signatures.push(signature);
+        mapSignatures.push(mapBytesSignature(group, mapNames));
+        const replay = make(seed);
         try {
-          const signature = surfaceMapSignature(group, names);
-          signatures.push(signature);
-          mapSignatures.push(mapBytesSignature(group, mapNames));
-          const replay = make(seed);
-          try {
-            expect(surfaceMapSignature(replay, names)).toBe(signature);
-          } finally {
-            dispose(replay);
-          }
-          for (const name of names) {
-            const material = materialFor(group, name);
-            expect(material).toBeInstanceOf(THREE.MeshStandardMaterial);
-            if (!(material instanceof THREE.MeshStandardMaterial)) continue;
-            const textures = [material.map, material.roughnessMap, material.normalMap];
-            if (sceneId === "table-tilt") {
-              if (name === "table-tilt-apron-near" || name === "table-tilt-context-middle-canister") {
-                expect(textures.every((texture) => texture === null)).toBe(true);
-              } else {
-                textures.forEach((texture) => {
-                  expect(texture).toBeInstanceOf(THREE.DataTexture);
-                  expect(texture?.image).toMatchObject({ width: 128, height: 128 });
-                });
-              }
-            } else if (name === "architecture-foreground-ground") {
-              expect(textures[0]).toBeInstanceOf(THREE.DataTexture);
-              expect(textures[0]?.image).toMatchObject({ width: 256, height: 256 });
-              expect(textures.slice(1).every((texture) => texture === null)).toBe(true);
-            } else if (
-              name === "architecture-foreground-building" ||
-              name === "architecture-foreground-front-base"
-            ) {
+          expect(surfaceMapSignature(replay, names)).toBe(signature);
+        } finally {
+          dispose(replay);
+        }
+        for (const name of names) {
+          const material = materialFor(group, name);
+          expect(material).toBeInstanceOf(THREE.MeshStandardMaterial);
+          if (!(material instanceof THREE.MeshStandardMaterial)) continue;
+          const textures = [material.map, material.roughnessMap, material.normalMap];
+          if (sceneId === "table-tilt") {
+            if (name === "table-tilt-apron-near" || name === "table-tilt-context-middle-canister") {
+              expect(textures.every((texture) => texture === null)).toBe(true);
+            } else {
               textures.forEach((texture) => {
                 expect(texture).toBeInstanceOf(THREE.DataTexture);
                 expect(texture?.image).toMatchObject({ width: 128, height: 128 });
               });
-            } else {
-              expect(textures.every((texture) => texture === null)).toBe(true);
             }
+          } else if (name === "architecture-foreground-ground") {
+            expect(textures[0]).toBeInstanceOf(THREE.DataTexture);
+            expect(textures[0]?.image).toMatchObject({ width: 256, height: 256 });
+            expect(textures.slice(1).every((texture) => texture === null)).toBe(true);
+          } else if (
+            name === "architecture-foreground-building" ||
+            name === "architecture-foreground-front-base"
+          ) {
+            textures.forEach((texture) => {
+              expect(texture).toBeInstanceOf(THREE.DataTexture);
+              expect(texture?.image).toMatchObject({ width: 128, height: 128 });
+            });
+          } else {
+            expect(textures.every((texture) => texture === null)).toBe(true);
           }
-        } finally {
-          dispose(group);
         }
+      } finally {
+        dispose(group);
       }
-      expect(new Set(signatures).size).toBe(seeds.length);
-      expect(new Set(mapSignatures).size).toBe(seeds.length);
-      expect(hash(JSON.stringify({ signatures, mapSignatures }))).toBe(digest);
-    });
+    }
+    expect(new Set(signatures).size).toBe(seeds.length);
+    expect(new Set(mapSignatures).size).toBe(seeds.length);
+    expect(hash(JSON.stringify({ signatures, mapSignatures }))).toBe(digest);
   });
 
   it("records reviewed schema-v1 material-family map signatures for the four reference seeds", () => {
