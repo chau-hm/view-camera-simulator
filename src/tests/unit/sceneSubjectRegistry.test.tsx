@@ -568,121 +568,131 @@ describe("scene subject registry", () => {
     },
   );
 
-  it("routes each migrated interactive subject and RTT through the same registered presentation factory", () => {
-    const candidates = [
-      {
-        scene: architectureRiseScene,
-        assetKey: ARCHITECTURE_RISE_ASSET_KEY,
-        presentation: ARCHITECTURE_RISE_PRESENTATION,
-        factory: vi.spyOn(architectureRiseAsset, "createArchitectureRiseGroup"),
-        disposer: vi.spyOn(architectureRiseAsset, "disposeArchitectureRiseGroup"),
-      },
-      {
-        scene: obliqueArchitectureScene,
-        assetKey: OBLIQUE_ARCHITECTURE_ASSET_KEY,
-        presentation: OBLIQUE_ARCHITECTURE_PRESENTATION,
-        factory: vi.spyOn(obliqueArchitectureAsset, "createObliqueArchitectureGroup"),
-        disposer: vi.spyOn(obliqueArchitectureAsset, "disposeObliqueArchitectureGroup"),
-      },
-      {
-        scene: tableTiltScene,
-        assetKey: TABLE_TILT_ASSET_KEY,
-        presentation: TABLE_TILT_PRESENTATION,
-        factory: vi.spyOn(tableTiltAsset, "createTableTiltGroup"),
-        disposer: vi.spyOn(tableTiltAsset, "disposeTableTiltGroup"),
-      },
-      {
-        scene: shelfSwingScene,
-        assetKey: SHELF_SWING_ASSET_KEY,
-        presentation: SHELF_SWING_PRESENTATION,
-        factory: vi.spyOn(shelfSwingAsset, "createShelfSwingGroup"),
-        disposer: vi.spyOn(shelfSwingAsset, "disposeShelfSwingGroup"),
-      },
-      {
-        scene: architectureForegroundScene,
-        assetKey: ARCHITECTURE_FOREGROUND_ASSET_KEY,
-        presentation: ARCHITECTURE_FOREGROUND_PRESENTATION,
-        factory: vi.spyOn(
-          architectureForegroundAsset,
-          "createArchitectureForegroundGroup",
-        ),
-        disposer: vi.spyOn(
-          architectureForegroundAsset,
-          "disposeArchitectureForegroundGroup",
-        ),
-      },
-      {
-        scene: interiorCornerScene,
-        assetKey: INTERIOR_CORNER_ASSET_KEY,
-        presentation: INTERIOR_CORNER_PRESENTATION,
-        factory: vi.spyOn(interiorCornerAsset, "createInteriorCornerGroup"),
-        disposer: vi.spyOn(interiorCornerAsset, "disposeInteriorCornerGroup"),
-      },
-      {
-        scene: obliqueTabletopScene,
-        assetKey: OBLIQUE_TABLETOP_ASSET_KEY,
-        presentation: OBLIQUE_TABLETOP_PRESENTATION,
-        factory: vi.spyOn(obliqueTabletopAsset, "createObliqueTabletopGroup"),
-        disposer: vi.spyOn(obliqueTabletopAsset, "disposeObliqueTabletopGroup"),
-      },
-      {
-        scene: macroBellowsExtensionScene,
-        assetKey: MACRO_BELLOWS_EXTENSION_ASSET_KEY,
-        presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION,
-        factory: vi.spyOn(macroBellowsExtensionAsset, "createMacroSpecimenGroup"),
-        disposer: vi.spyOn(macroBellowsExtensionAsset, "disposeMacroSpecimenGroup"),
-      },
-      {
-        scene: macroDepthOfFieldScene,
-        assetKey: MACRO_DEPTH_OF_FIELD_ASSET_KEY,
-        presentation: MACRO_DEPTH_OF_FIELD_PRESENTATION,
-        factory: vi.spyOn(macroDepthOfFieldAsset, "createMacroDepthOfFieldGroup"),
-        disposer: vi.spyOn(macroDepthOfFieldAsset, "disposeMacroDepthOfFieldGroup"),
-      },
-      {
-        scene: macroObliquePlaneScene,
-        assetKey: MACRO_OBLIQUE_PLANE_ASSET_KEY,
-        presentation: MACRO_OBLIQUE_PLANE_PRESENTATION,
-        factory: vi.spyOn(macroObliquePlaneAsset, "createMacroObliquePlaneGroup"),
-        disposer: vi.spyOn(macroObliquePlaneAsset, "disposeMacroObliquePlaneGroup"),
-      },
-      {
-        scene: macroCompoundMovementsScene,
-        assetKey: MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
-        presentation: MACRO_COMPOUND_MOVEMENTS_PRESENTATION,
-        factory: vi.spyOn(macroCompoundMovementsAsset, "createMacroCompoundMovementsGroup"),
-        disposer: vi.spyOn(macroCompoundMovementsAsset, "disposeMacroCompoundMovementsGroup"),
-      },
-    ];
+  it.each([
+    {
+      scene: architectureRiseScene,
+      assetKey: ARCHITECTURE_RISE_ASSET_KEY,
+      presentation: ARCHITECTURE_RISE_PRESENTATION,
+      createFactorySpy: () => vi.spyOn(architectureRiseAsset, "createArchitectureRiseGroup"),
+      createDisposerSpy: () => vi.spyOn(architectureRiseAsset, "disposeArchitectureRiseGroup"),
+    },
+    {
+      scene: obliqueArchitectureScene,
+      assetKey: OBLIQUE_ARCHITECTURE_ASSET_KEY,
+      presentation: OBLIQUE_ARCHITECTURE_PRESENTATION,
+      createFactorySpy: () => vi.spyOn(obliqueArchitectureAsset, "createObliqueArchitectureGroup"),
+      createDisposerSpy: () => vi.spyOn(obliqueArchitectureAsset, "disposeObliqueArchitectureGroup"),
+    },
+    {
+      scene: tableTiltScene,
+      assetKey: TABLE_TILT_ASSET_KEY,
+      presentation: TABLE_TILT_PRESENTATION,
+      createFactorySpy: () => vi.spyOn(tableTiltAsset, "createTableTiltGroup"),
+      createDisposerSpy: () => vi.spyOn(tableTiltAsset, "disposeTableTiltGroup"),
+    },
+    {
+      scene: shelfSwingScene,
+      assetKey: SHELF_SWING_ASSET_KEY,
+      presentation: SHELF_SWING_PRESENTATION,
+      createFactorySpy: () => vi.spyOn(shelfSwingAsset, "createShelfSwingGroup"),
+      createDisposerSpy: () => vi.spyOn(shelfSwingAsset, "disposeShelfSwingGroup"),
+    },
+    {
+      scene: architectureForegroundScene,
+      assetKey: ARCHITECTURE_FOREGROUND_ASSET_KEY,
+      presentation: ARCHITECTURE_FOREGROUND_PRESENTATION,
+      createFactorySpy: () => vi.spyOn(
+        architectureForegroundAsset,
+        "createArchitectureForegroundGroup",
+      ),
+      createDisposerSpy: () => vi.spyOn(
+        architectureForegroundAsset,
+        "disposeArchitectureForegroundGroup",
+      ),
+    },
+    {
+      scene: interiorCornerScene,
+      assetKey: INTERIOR_CORNER_ASSET_KEY,
+      presentation: INTERIOR_CORNER_PRESENTATION,
+      createFactorySpy: () => vi.spyOn(interiorCornerAsset, "createInteriorCornerGroup"),
+      createDisposerSpy: () => vi.spyOn(interiorCornerAsset, "disposeInteriorCornerGroup"),
+    },
+    {
+      scene: obliqueTabletopScene,
+      assetKey: OBLIQUE_TABLETOP_ASSET_KEY,
+      presentation: OBLIQUE_TABLETOP_PRESENTATION,
+      createFactorySpy: () => vi.spyOn(obliqueTabletopAsset, "createObliqueTabletopGroup"),
+      createDisposerSpy: () => vi.spyOn(obliqueTabletopAsset, "disposeObliqueTabletopGroup"),
+    },
+    {
+      scene: macroBellowsExtensionScene,
+      assetKey: MACRO_BELLOWS_EXTENSION_ASSET_KEY,
+      presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION,
+      createFactorySpy: () => vi.spyOn(macroBellowsExtensionAsset, "createMacroSpecimenGroup"),
+      createDisposerSpy: () => vi.spyOn(macroBellowsExtensionAsset, "disposeMacroSpecimenGroup"),
+    },
+    {
+      scene: macroDepthOfFieldScene,
+      assetKey: MACRO_DEPTH_OF_FIELD_ASSET_KEY,
+      presentation: MACRO_DEPTH_OF_FIELD_PRESENTATION,
+      createFactorySpy: () => vi.spyOn(macroDepthOfFieldAsset, "createMacroDepthOfFieldGroup"),
+      createDisposerSpy: () => vi.spyOn(macroDepthOfFieldAsset, "disposeMacroDepthOfFieldGroup"),
+    },
+    {
+      scene: macroObliquePlaneScene,
+      assetKey: MACRO_OBLIQUE_PLANE_ASSET_KEY,
+      presentation: MACRO_OBLIQUE_PLANE_PRESENTATION,
+      createFactorySpy: () => vi.spyOn(macroObliquePlaneAsset, "createMacroObliquePlaneGroup"),
+      createDisposerSpy: () => vi.spyOn(macroObliquePlaneAsset, "disposeMacroObliquePlaneGroup"),
+    },
+    {
+      scene: macroCompoundMovementsScene,
+      assetKey: MACRO_COMPOUND_MOVEMENTS_ASSET_KEY,
+      presentation: MACRO_COMPOUND_MOVEMENTS_PRESENTATION,
+      createFactorySpy: () => vi.spyOn(
+        macroCompoundMovementsAsset,
+        "createMacroCompoundMovementsGroup",
+      ),
+      createDisposerSpy: () => vi.spyOn(
+        macroCompoundMovementsAsset,
+        "disposeMacroCompoundMovementsGroup",
+      ),
+    },
+  ])("routes $scene.id interactive subject and RTT through the registered presentation factory", ({
+    scene,
+    assetKey,
+    presentation,
+    createFactorySpy,
+    createDisposerSpy,
+  }) => {
+    const factory = createFactorySpy();
+    const disposer = createDisposerSpy();
+    const subject = getRegisteredSceneSubject(scene.id);
+    expect(subject).toBeDefined();
+    const Subject = subject as ComponentType<{ scene: typeof scene }>;
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const view = render(<Subject scene={scene} />);
+    consoleError.mockRestore();
+    const rttGroup = createRegisteredRttSubject(scene.id);
 
-    candidates.forEach(({ scene, assetKey, presentation, factory, disposer }) => {
-      const subject = getRegisteredSceneSubject(scene.id);
-      expect(subject).toBeDefined();
-      const Subject = subject as ComponentType<{ scene: typeof scene }>;
-      const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
-      const view = render(<Subject scene={scene} />);
-      consoleError.mockRestore();
-      const rttGroup = createRegisteredRttSubject(scene.id);
+    expect(rttGroup).toBeInstanceOf(THREE.Group);
+    const interactiveGroup = factory.mock.results[0]?.value as THREE.Group;
+    expect(interactiveGroup).toBeInstanceOf(THREE.Group);
+    expect(interactiveGroup).not.toBe(rttGroup);
+    expect(factory).toHaveBeenCalledTimes(2);
+    expect(factory.mock.calls[0]?.[0]?.presentation).toBe(presentation);
+    expect(factory.mock.calls[1]?.[0]?.presentation).toBe(presentation);
+    expect(interactiveGroup.userData.assetImplementationId).toBe(
+      resolveSceneAsset(assetKey).implementationId,
+    );
+    expect(rttGroup?.userData.assetImplementationId).toBe(
+      resolveSceneAsset(assetKey).implementationId,
+    );
 
-      expect(rttGroup).toBeInstanceOf(THREE.Group);
-      const interactiveGroup = factory.mock.results[0]?.value as THREE.Group;
-      expect(interactiveGroup).toBeInstanceOf(THREE.Group);
-      expect(interactiveGroup).not.toBe(rttGroup);
-      expect(factory).toHaveBeenCalledTimes(2);
-      expect(factory.mock.calls[0]?.[0]?.presentation).toBe(presentation);
-      expect(factory.mock.calls[1]?.[0]?.presentation).toBe(presentation);
-      expect(interactiveGroup.userData.assetImplementationId).toBe(
-        resolveSceneAsset(assetKey).implementationId,
-      );
-      expect(rttGroup?.userData.assetImplementationId).toBe(
-        resolveSceneAsset(assetKey).implementationId,
-      );
-
-      disposeRegisteredRttSubject(scene.id, rttGroup!);
-      view.unmount();
-      expect(disposer).toHaveBeenCalledTimes(2);
-      expect(disposer.mock.calls[0]?.[0]).toBe(rttGroup);
-    });
+    disposeRegisteredRttSubject(scene.id, rttGroup!);
+    view.unmount();
+    expect(disposer).toHaveBeenCalledTimes(2);
+    expect(disposer.mock.calls[0]?.[0]).toBe(rttGroup);
   });
 
   it("routes Mirror Shift interactive and RTT consumers through the same registered factory", () => {
