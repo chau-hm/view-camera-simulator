@@ -7,7 +7,7 @@ This is a **development-only photographic optics feasibility PoC**, not a produc
 - **Photographic optics feasibility:** PASS. The original procedural room renders through the canonical Ground Glass path; the user's manual comparisons show recognizable Focus/DOF, Front Tilt, and Front Swing effects.
 - **Complete renderer fidelity:** PARTIAL / NOT FULLY VALIDATED. Quantitative blur transfer, some foreground defocus, custom glass reflection parity, and native WebGPU remain incomplete.
 - **Production promotion:** DEFERRED.
-- **Development-only merge readiness:** BLOCKED by the required ordinary CI unit job failure on the closeout head; independent review is still in progress.
+- **Development-only merge readiness:** BLOCKED by the required ordinary CI unit job failure on the final validation head; independent review found no separate code blocker.
 
 The user's Tilt, Swing, and Focus comparisons are recorded as human-observed qualitative acceptance in [human-acceptance-v9](evidence/human-acceptance-v9/README.md). The original user screenshots were not available as files in the worktree or task attachments at closeout. Their observations are recorded without inventing capture identities, browser details, source revision, or composition.
 
@@ -81,9 +81,9 @@ The evidence and remaining investigations are summarized in the separate [resear
 | Native WebGPU | NOT VALIDATED |
 | Production Scene Integration | DEFERRED |
 | Production Build Isolation | PASS; final local production build excluded the experiment entry, room vendor, GI bake, and diagnostics |
-| Historical Qualification | PASS on closeout head `a75ac5f6` (GitHub job #45653087387 succeeded); local complete-path replay: `NOT_APPLICABLE`; documentation follow-up requires a new head check |
-| Ordinary CI | FAIL on `a75ac5f6` (run #45653087387): lint/typecheck passed, unit/integration failed; see exact counts below. Main-baseline signature failures and suite-load timeouts remain separate from this PoC |
-| Development-only Merge Readiness | BLOCKED pending a green required ordinary CI run and independent review |
+| Historical Qualification | PASS on `c572939b` (GitHub job #45655304968 succeeded); local complete-path replay: `NOT_APPLICABLE`; see PR checks for the final docs-only head |
+| Ordinary CI | FAIL on `c572939b` (run #45655304968): lint/typecheck passed, unit/integration failed; see exact counts below. Main-baseline signature failures and suite-load timeouts remain separate from this PoC |
+| Development-only Merge Readiness | BLOCKED pending a green required ordinary CI run and final independent review |
 
 ## Closeout evidence and validation
 
@@ -92,11 +92,11 @@ The evidence and remaining investigations are summarized in the separate [resear
 - Complete local routing over 505 PR changed paths returned `NOT_APPLICABLE`, no historical families, and no broad fallback. This is local routing evidence, not the required GitHub Actions result.
 - The focused browser test passed under Node 24.22.3 on WebGL 2 / ANGLE Metal, GI 302/302 and 960×720 captures. It now covers deterministic no-frame timeout, actual React RenderBoundary failure handling, A preservation, usable controls, later successful captures, timeout-handler cleanup, and stale-frame rejection. The timer callback is invoked deterministically; the renderer error uses a test-only throw and is not a GPU context-loss test.
 - `npm run ci:local:e2e -- --workers=2` passed CSS, lint, and typecheck, then exited nonzero in the full suite: 370/371 files and 4,479/4,481 tests passed. The two seeded-material signature assertions also fail against immutable main. This local full run reported an `onTaskUpdate` worker timeout; its runner stopped before build/E2E. The production build was run separately and passed.
-- Actual PR workflow [#45653087387](https://github.com/chau-hm/view-camera-simulator/actions/runs/45653087387) on closeout head `a75ac5f6`: historical qualification **success**, lint/typecheck **success**, ordinary `ci` **failure**. Unit/integration finished with 369/371 files and 4,477/4,481 tests passing, four failed tests and one Vitest `onTaskUpdate` worker error. Two failures are the known seeded-material signatures reproduced on main. The other failures were five-second timeouts in `freeModeSeededMaterialsWave1.test.tsx` and `sceneSubjectRegistry.test.tsx`; both tests passed in a focused two-file run against immutable main, so those timeout failures were not reproduced outside the full-run load. Chromium smoke and production-preview steps were skipped after the unit job failed. A docs-only follow-up will trigger new final-head checks.
+- Actual final code-and-architecture handoff workflow [#45655304968](https://github.com/chau-hm/view-camera-simulator/actions/runs/45655304968) on `c572939b`: historical qualification **success**, lint/typecheck **success**, ordinary `ci` **failure**. Unit/integration finished with 369/371 files and 4,477/4,481 tests passing, four failed tests and one Vitest `onTaskUpdate` worker error. Two failures are the known seeded-material signatures reproduced on main. The other failures were five-second timeouts in `freeModeSeededMaterialsWave1.test.tsx` and `sceneSubjectRegistry.test.tsx`; both tests passed in a focused two-file run against immutable main, so those timeouts were not reproduced outside the full-run load. Chromium smoke and production-preview steps were skipped after the unit job failed.
 - Focused public Chromium E2E rechecks ran 7 cases: 2 passed, 5 failed on two known main-baseline patterns. Two Architecture + Foreground interaction cases timed out while pressing Focus through the public helper; three Interior Corner tests rejected the route's appended `seed` and `sv` parameters. The Rise URL failure was separately reproduced on immutable main `af680d7f9409bab13c6654abaaa2dad5aeac8079`; the other two URL assertions and both Architecture timeouts were reported reproduced on that same baseline in the prior triage. These results do not establish one shared root cause or a branch-induced regression.
 - Human screenshot observations and missing-file provenance are recorded in `evidence/human-acceptance-v9/`; no substitute image was created.
 - The evidence/checkout/history footprint and retention decision are documented in the architecture handoff and PR description.
-- The above GitHub results apply to `a75ac5f6`. The current PR Checks link is authoritative for the documentation follow-up head; do not treat the earlier green qualification job as a pass on a later SHA until that run completes.
+- The preceding GitHub results apply to `c572939b`. The current PR Checks link is authoritative for the final docs-only follow-up head; no later SHA is considered green without its own completed checks.
 
 ## Prior research-round record (historical)
 
