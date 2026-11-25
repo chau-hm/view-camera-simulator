@@ -361,22 +361,32 @@ function runPromotionMerge(state, repoRoot, temporaryDirectory) {
 }
 
 function worktreeIsRegistered(repoRoot, worktreeDir) {
-  const args = ["worktree", "list", "--porcelain"];
+  const args = ["worktree", "list", "--porcelain", "-z"];
   const result = runGitResult(args, { cwd: repoRoot });
   const output = requireGitResult(args, result);
   const expectedPath = canonicalPath(worktreeDir);
-  return output.split("\n").some((line) => {
-    if (!line.startsWith("worktree ")) return false;
-    return canonicalPath(line.slice("worktree ".length)) === expectedPath;
-  });
+  const registeredPaths = output
+    .split("\0")
+    .filter((field) => field.startsWith("worktree "))
+    .map((field) => field.slice("worktree ".length));
+  return registeredPaths.some((registeredPath) => canonicalPath(registeredPath) === expectedPath);
 }
 
 function canonicalPath(path) {
-  const absolutePath = resolve(path);
-  try {
-    return realpathSync.native(absolutePath);
-  } catch {
-    return join(realpathSync.native(dirname(absolutePath)), basename(absolutePath));
+  let unresolvedPath = resolve(path);
+  const unresolvedSuffix = [];
+
+  while (true) {
+    try {
+      return join(realpathSync.native(unresolvedPath), ...unresolvedSuffix);
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+
+      const parent = dirname(unresolvedPath);
+      if (parent === unresolvedPath) throw error;
+      unresolvedSuffix.unshift(basename(unresolvedPath));
+      unresolvedPath = parent;
+    }
   }
 }
 
@@ -415,8 +425,10 @@ function main() {
     const state = validateRecordedRemoteState(repoRoot);
 
     if (state.mainContainedInProduction) {
-      console.log("NO_PROMOTION_NEEDED: origin/main is already contained in origin/production.");
-      successfulStatus = "NO_PROMOTION_NEEDED";
+      successfulStatus = {
+        kind: "NO_PROMOTION_NEEDED",
+        message: "NO_PROMOTION_NEEDED: origin/main is already contained in origin/production.",
+      };
       return;
     }
 
@@ -424,9 +436,13 @@ function main() {
     const mergedSha = runPromotionMerge(state, repoRoot, temporaryDirectory);
 
     if (CHECK_ONLY) {
-      console.log(`PROMOTION_READY: recorded origin/main ${state.mainSha} can be merged into recorded origin/production ${state.productionSha}.`);
-      console.log("The disposable merge was not published. Future promotion is not guaranteed because remote refs and repository conditions can change.");
-      successfulStatus = "PROMOTION_READY";
+      successfulStatus = {
+        kind: "PROMOTION_READY",
+        message: [
+          `PROMOTION_READY: recorded origin/main ${state.mainSha} can be merged into recorded origin/production ${state.productionSha}.`,
+          "The disposable merge was not published. Future promotion is not guaranteed because remote refs and repository conditions can change.",
+        ].join("\n"),
+      };
       return;
     }
 
@@ -469,10 +485,15 @@ function main() {
         "PROMOTION_PUBLISHED_VERIFICATION_FAILED",
         `origin/production does not match the promoted commit after publication. Expected ${mergedSha}, found ${productionAfter}.`,
       );
-      console.log("PROMOTION_VERIFIED: production publication matches the recorded merge result.");
-      console.log(`origin/main unchanged: ${mainAfter}`);
-      console.log(`origin/production:      ${productionAfter}`);
-      successfulStatus = "PROMOTION_VERIFIED";
+      successfulStatus = {
+        kind: "PROMOTION_VERIFIED",
+        mergedSha,
+        message: [
+          "PROMOTION_VERIFIED: production publication matches the recorded merge result.",
+          `origin/main unchanged: ${mainAfter}`,
+          `origin/production:      ${productionAfter}`,
+        ].join("\n"),
+      };
     } catch (error) {
       throw new PromotionError(
         "PROMOTION_PUBLISHED_VERIFICATION_FAILED",
@@ -487,12 +508,19 @@ function main() {
       try {
         cleanupTemporaryDirectory(repoRoot, temporaryDirectory);
       } catch (cleanupError) {
-        console.error(`BLOCKED_TEMPORARY_WORKTREE_CLEANUP: failed to remove this invocation's temporary worktree ${temporaryDirectory}: ${cleanupError?.message ?? cleanupError}`);
+        if (successfulStatus?.kind === "PROMOTION_VERIFIED") {
+          console.error(`PROMOTION_VERIFIED_BUT_CLEANUP_FAILED: Production publication succeeded and was verified at ${successfulStatus.mergedSha}. Temporary local worktree cleanup failed for ${temporaryDirectory}: ${cleanupError?.message ?? cleanupError}`);
+        } else if (successfulStatus?.kind === "PROMOTION_READY") {
+          console.error(`BLOCKED_TEMPORARY_WORKTREE_CLEANUP: The recorded commits were merge-compatible, but preflight did not complete because temporary local worktree cleanup failed for ${temporaryDirectory}: ${cleanupError?.message ?? cleanupError}. No remote publication was attempted.`);
+        } else {
+          console.error(`BLOCKED_TEMPORARY_WORKTREE_CLEANUP: failed to remove this invocation's temporary worktree ${temporaryDirectory}: ${cleanupError?.message ?? cleanupError}`);
+        }
         process.exitCode = 1;
       }
     }
 
     if (successfulStatus && process.exitCode === undefined) {
+      console.log(successfulStatus.message);
       process.exitCode = 0;
     }
   }

@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -11,7 +11,7 @@ const realGit = execFileSync("which", ["git"], { encoding: "utf8" }).trim();
 const fixtureRoots: string[] = [];
 
 type FixtureKind = "identical" | "main-contained" | "production-ancestor" | "clean-divergence" | "conflict" | "unrelated";
-type HookMode = "fail-worktree-add" | "fail-merge" | "move-main-after-fetch" | "move-production-before-push" | "move-production-after-push";
+type HookMode = "fail-worktree-add" | "fail-merge" | "fail-worktree-remove" | "move-main-after-fetch" | "move-production-before-push" | "move-production-after-push";
 
 interface Fixture {
   root: string;
@@ -46,13 +46,16 @@ function commitFile(directory: string, fileName: string, contents: string, messa
   return git(directory, ["rev-parse", "HEAD"]);
 }
 
-function createFixture(kind: FixtureKind = "clean-divergence", { shallow = false }: { shallow?: boolean } = {}): Fixture {
+function createFixture(
+  kind: FixtureKind = "clean-divergence",
+  { shallow = false, temporaryDirectoryName = "script-tmp" }: { shallow?: boolean; temporaryDirectoryName?: string } = {},
+): Fixture {
   const root = mkdtempSync(join(tmpdir(), "production-promotion-fixture-"));
   fixtureRoots.push(root);
   const remote = join(root, "origin.git");
   const seed = join(root, "seed");
   const clone = join(root, "clone");
-  const temporary = join(root, "script-tmp");
+  const temporary = join(root, temporaryDirectoryName);
 
   mkdirSync(seed, { recursive: true });
   mkdirSync(temporary, { recursive: true });
@@ -151,12 +154,56 @@ function remoteRefSnapshot(remote: string): string {
   return git(remote, ["for-each-ref", "--format=%(refname) %(objectname)", "refs/heads"]);
 }
 
+function remoteRefSnapshotExceptProduction(remote: string): string {
+  return remoteRefSnapshot(remote)
+    .split("\n")
+    .filter((line) => !line.startsWith("refs/heads/production "))
+    .join("\n");
+}
+
 function localBranchSnapshot(clone: string): string {
   return git(clone, ["for-each-ref", "--format=%(refname) %(objectname)", "refs/heads"]);
 }
 
 function worktreeSnapshot(clone: string): string {
-  return git(clone, ["worktree", "list", "--porcelain"]);
+  return git(clone, ["worktree", "list", "--porcelain", "-z"]);
+}
+
+function createStaleAndLiveWorktrees(fixture: Fixture) {
+  const staleParent = join(fixture.root, "stale-worktree-parent", "removed-middle", "removed-inner");
+  const stalePath = join(staleParent, "stale\nregistered worktree");
+  const liveParent = join(fixture.root, "unrelated-worktree-parent");
+  const livePath = join(liveParent, "live worktree\nwith newline");
+  mkdirSync(staleParent, { recursive: true });
+  mkdirSync(liveParent, { recursive: true });
+
+  git(fixture.clone, ["worktree", "add", "--detach", stalePath, fixture.productionSha]);
+  git(fixture.clone, ["worktree", "add", "--detach", livePath, fixture.productionSha]);
+  writeFileSync(join(livePath, "working.txt"), "staged unrelated edit\n");
+  git(livePath, ["add", "working.txt"]);
+  writeFileSync(join(livePath, "working.txt"), "unstaged unrelated edit\n");
+
+  const registeredBeforeDelete = worktreeSnapshot(fixture.clone);
+  if (!registeredBeforeDelete.includes(stalePath)) {
+    throw new Error("Git did not report the unrelated worktree registered before its directory was removed.");
+  }
+  rmSync(join(fixture.root, "stale-worktree-parent"), { recursive: true, force: true });
+  const staleRegistrationSnapshot = worktreeSnapshot(fixture.clone);
+  if (!staleRegistrationSnapshot.includes(stalePath)) {
+    throw new Error("Removing the unrelated worktree directory unexpectedly removed its Git registration.");
+  }
+
+  return { stalePath, livePath, staleRegistrationSnapshot };
+}
+
+function unrelatedWorktreeSnapshot(directory: string) {
+  return {
+    exists: existsSync(directory),
+    status: git(directory, ["status", "--porcelain=v1", "--untracked-files=all"]),
+    stagedDiff: git(directory, ["diff", "--cached", "--binary"]),
+    unstagedDiff: git(directory, ["diff", "--binary"]),
+    workingContents: readFileSync(join(directory, "working.txt"), "utf8"),
+  };
 }
 
 function repositorySnapshot(fixture: Fixture) {
@@ -208,6 +255,10 @@ if (mode === "fail-merge" && command === "merge") {
   process.stderr.write("injected unexpected merge command failure\\n");
   process.exit(72);
 }
+if (mode === "fail-worktree-remove" && command === "worktree" && args[1] === "remove") {
+  process.stderr.write("injected temporary worktree cleanup failure\\n");
+  process.exit(73);
+}
 if (mode === "move-main-after-fetch" && args[0] === "fetch") {
   const result = call(args);
   if (result.status === 0) updateRef("refs/heads/main", process.env.PROMOTION_TEST_ALTERNATE_SHA);
@@ -248,12 +299,17 @@ relay(call(args));
   };
 }
 
-function runPromotion(fixture: Fixture, args: string[] = ["--", "--check"], hook?: HookMode) {
+function runPromotion(
+  fixture: Fixture,
+  args: string[] = ["--", "--check"],
+  hook?: HookMode,
+  temporaryDirectory = fixture.temporary,
+) {
   const env = {
     ...process.env,
-    TMPDIR: fixture.temporary,
-    TMP: fixture.temporary,
-    TEMP: fixture.temporary,
+    TMPDIR: temporaryDirectory,
+    TMP: temporaryDirectory,
+    TEMP: temporaryDirectory,
     ...(hook ? installGitHook(fixture, hook) : {}),
   };
   const result = spawnSync(process.execPath, [scriptPath, ...args], { cwd: fixture.clone, env, encoding: "utf8" });
@@ -267,10 +323,10 @@ function runPromotion(fixture: Fixture, args: string[] = ["--", "--check"], hook
 }
 
 function withTemporaryEntries(fixture: Fixture, result: ReturnType<typeof runPromotion>) {
-  const temporaryPath = result.output.match(/Creating isolated worktree: ([^\r\n]+)/)?.[1];
-  const remainingPaths = temporaryPath && existsSync(temporaryPath) ? [temporaryPath] : [];
-  remainingPaths.push(...readdirSync(fixture.temporary).map((entry) => join(fixture.temporary, entry)));
-  return { ...result, temporaryEntries: remainingPaths };
+  return {
+    ...result,
+    temporaryEntries: readdirSync(fixture.temporary).map((entry) => join(fixture.temporary, entry)),
+  };
 }
 
 afterEach(() => {
@@ -415,6 +471,62 @@ describe("production promotion safety", () => {
     expect(result.temporaryEntries).toEqual([]);
   });
 
+  it("cleans preflight's temporary worktree past unrelated stale and unusual-path registrations", () => {
+    const fixture = createFixture("clean-divergence", { temporaryDirectoryName: "script temp\nwith newline" });
+    const unrelated = createStaleAndLiveWorktrees(fixture);
+    const before = repositorySnapshot(fixture);
+    const liveBefore = unrelatedWorktreeSnapshot(unrelated.livePath);
+    const result = withTemporaryEntries(fixture, runPromotion(fixture));
+
+    expect(unrelated.staleRegistrationSnapshot).toContain(unrelated.stalePath);
+    expect(result.status).toBe(0);
+    expect(result.output).toContain("PROMOTION_READY");
+    expect(result.output).toContain("script temp\nwith newline/view-camera-production-");
+    expect(repositorySnapshot(fixture)).toEqual(before);
+    expect(unrelatedWorktreeSnapshot(unrelated.livePath)).toEqual(liveBefore);
+    expect(result.temporaryEntries).toEqual([]);
+  });
+
+  it("matches a temporary worktree registered through a symlinked directory alias", () => {
+    const fixture = createFixture();
+    const alias = join(fixture.root, "script-temp-alias");
+    symlinkSync(fixture.temporary, alias, "dir");
+    const before = repositorySnapshot(fixture);
+    const result = withTemporaryEntries(fixture, runPromotion(fixture, ["--", "--check"], undefined, alias));
+
+    expect(result.status).toBe(0);
+    expect(result.output).toContain("PROMOTION_READY");
+    expect(repositorySnapshot(fixture)).toEqual(before);
+    expect(result.temporaryEntries).toEqual([]);
+  });
+
+  it("cleans actual promotion's temporary worktree past unrelated stale registrations", () => {
+    const fixture = createFixture("clean-divergence", { temporaryDirectoryName: "promotion temp\nwith newline" });
+    const unrelated = createStaleAndLiveWorktrees(fixture);
+    const before = repositorySnapshot(fixture);
+    const otherRemoteRefsBefore = remoteRefSnapshotExceptProduction(fixture.remote);
+    const liveBefore = unrelatedWorktreeSnapshot(unrelated.livePath);
+    const result = withTemporaryEntries(fixture, runPromotion(fixture, []));
+    const promotedSha = git(fixture.remote, ["rev-parse", "refs/heads/production"]);
+    const after = repositorySnapshot(fixture);
+
+    expect(result.status).toBe(0);
+    expect(result.output).toContain("PROMOTION_VERIFIED");
+    expect(after.localBranches).toBe(before.localBranches);
+    expect(after.status).toBe(before.status);
+    expect(after.stagedDiff).toBe(before.stagedDiff);
+    expect(after.unstagedDiff).toBe(before.unstagedDiff);
+    expect(after.indexSha256).toBe(before.indexSha256);
+    expect(after.workingContents).toBe(before.workingContents);
+    expect(after.worktrees).toBe(before.worktrees);
+    expect(remoteRefSnapshotExceptProduction(fixture.remote)).toBe(otherRemoteRefsBefore);
+    expect(git(fixture.remote, ["rev-parse", "refs/heads/main"])).toBe(fixture.mainSha);
+    expect(git(fixture.remote, ["merge-base", "--is-ancestor", fixture.mainSha, promotedSha])).toBe("");
+    expect(git(fixture.remote, ["merge-base", "--is-ancestor", fixture.productionSha, promotedSha])).toBe("");
+    expect(unrelatedWorktreeSnapshot(unrelated.livePath)).toEqual(liveBefore);
+    expect(result.temporaryEntries).toEqual([]);
+  });
+
   it.each([
     ["worktree creation", "fail-worktree-add" as const, "injected disposable worktree creation failure"],
     ["unexpected merge command", "fail-merge" as const, "injected unexpected merge command failure"],
@@ -449,6 +561,24 @@ describe("production promotion safety", () => {
     expect(result.temporaryEntries).toEqual([]);
   });
 
+  it("does not report preflight readiness when successful merge cleanup fails", () => {
+    const fixture = createFixture("clean-divergence");
+    const before = repositorySnapshot(fixture);
+    const result = withTemporaryEntries(fixture, runPromotion(fixture, ["--check"], "fail-worktree-remove"));
+
+    expect(result.status).not.toBe(0);
+    expect(result.output).toContain("BLOCKED_TEMPORARY_WORKTREE_CLEANUP");
+    expect(result.output).toContain("preflight did not complete");
+    expect(result.output).toContain("No remote publication was attempted");
+    expect(result.output).not.toContain("PROMOTION_READY:");
+    expect(remoteRefSnapshot(fixture.remote)).toBe(before.remoteRefs);
+    expect(localBranchSnapshot(fixture.clone)).toBe(before.localBranches);
+    expect(result.temporaryEntries).toHaveLength(1);
+
+    git(fixture.clone, ["worktree", "remove", "--force", result.temporaryEntries[0]]);
+    expect(existsSync(result.temporaryEntries[0])).toBe(false);
+  });
+
   it("reports when a successful push cannot be verified afterward", () => {
     const fixture = createFixture("clean-divergence");
     const result = withTemporaryEntries(fixture, runPromotion(fixture, [], "move-production-after-push"));
@@ -458,5 +588,26 @@ describe("production promotion safety", () => {
     expect(result.output).toContain("publication may already have occurred");
     expect(git(fixture.remote, ["rev-parse", "refs/heads/production"])).toBe(fixture.alternateProductionSha);
     expect(result.temporaryEntries).toEqual([]);
+  });
+
+  it("distinguishes verified production publication from a later cleanup failure", () => {
+    const fixture = createFixture("clean-divergence");
+    const before = repositorySnapshot(fixture);
+    const result = withTemporaryEntries(fixture, runPromotion(fixture, [], "fail-worktree-remove"));
+    const promotedSha = git(fixture.remote, ["rev-parse", "refs/heads/production"]);
+
+    expect(result.status).not.toBe(0);
+    expect(result.output).toContain("PROMOTION_VERIFIED_BUT_CLEANUP_FAILED");
+    expect(result.output).toContain("Production publication succeeded and was verified");
+    expect(result.output).toContain("Temporary local worktree cleanup failed");
+    expect(result.output).toContain("injected temporary worktree cleanup failure");
+    expect(git(fixture.remote, ["rev-parse", "refs/heads/main"])).toBe(fixture.mainSha);
+    expect(git(fixture.remote, ["merge-base", "--is-ancestor", fixture.mainSha, promotedSha])).toBe("");
+    expect(git(fixture.remote, ["merge-base", "--is-ancestor", fixture.productionSha, promotedSha])).toBe("");
+    expect(localBranchSnapshot(fixture.clone)).toBe(before.localBranches);
+    expect(result.temporaryEntries).toHaveLength(1);
+
+    git(fixture.clone, ["worktree", "remove", "--force", result.temporaryEntries[0]]);
+    expect(existsSync(result.temporaryEntries[0])).toBe(false);
   });
 });
