@@ -26,6 +26,8 @@ flowchart LR
 
 The experiment reuses the existing `GroundGlassRTT`, development scene-profile seam, canonical optics derivation, off-axis camera configuration, CoC pass, Near/Far Gather, Composite, and Raw/Upright presentation. The original upstream perspective camera and film pipeline are used only as historical reference; they do not produce the canonical Ground Glass image.
 
+Canonical finite image-circle coverage is carried separately from focus blur as a parallel circle or nonparallel conic on the active physical film plane, then contributes its own coverage gain in `GroundGlassRTT`. The room demo reuses this state; its human comparisons do not independently calibrate coverage. Raw/Upright changes presentation orientation without changing the canonical optics. Raw RTT Debug bypasses optical illumination and coverage, so it is a source-image diagnostic rather than a processed preview.
+
 The upstream room is built in metres; canonical optics and movement values use millimetres and degrees at their module boundaries. Presets apply translation only and preserve physical scale. The room stays fixed while camera state changes. The development scene adapter selects the existing `optical-axis-conjugate` finite-focus datum for Tilt/Swing; this is a scene configuration choice using established optics, not a rewrite of shared optical mathematics.
 
 The upstream GI module mutates Three.js shader chunks at import time. Loading it in a standalone `optics.html` document gives it a separate JavaScript realm and prevents that mutation from contaminating the production SPA. A material-local adapter translates GI world-position evaluation back into source-room coordinates. The experiment does not register the room in the public scene catalog or guided tasks.
