@@ -4,6 +4,9 @@ export type HistoricalQualificationGateInput = Readonly<{
   featureGateResult?: string;
   historicalResult?: string;
   historicalDecision?: string;
+  historicalMode?: string;
+  eventName?: string;
+  ref?: string;
 }>;
 
 export function evaluateHistoricalQualificationGate(input: HistoricalQualificationGateInput): {

@@ -159,6 +159,29 @@ describe("historical evidence change routing", () => {
     });
   });
 
+  it("routes both M7E architecture documents through the registered replay owner", () => {
+    expect(classifyChangedPaths([
+      "docs/architecture/GROUND_GLASS_M7E_R187_GATHER_B1.md",
+      "docs/architecture/GROUND_GLASS_M7E_R187_GATHER_B1_AUDIT.md",
+    ])).toMatchObject({
+      decision: "QUALIFIED",
+      families: ["M7E", "M7G", "M7H", "M7I", "M7J", "M7K", "M7L", "M7M", "M7Q"],
+      broad: false,
+    });
+  });
+
+  it("routes scene-capacity qualification source and test changes to their ordinary unit-test owner", () => {
+    expect(classifyChangedPaths([
+      "src/render/sceneCapacityBenchmarkQualification.ts",
+      "src/tests/unit/sceneCapacityBenchmarkQualification.test.ts",
+    ])).toMatchObject({
+      decision: "NOT_APPLICABLE",
+      families: [],
+      broad: false,
+      currentOwners: ["ordinary-ci:unit-tests"],
+    });
+  });
+
   it("routes multiple report families and closes shared report dependencies", () => {
     expect(classifyChangedPaths([
       "docs/architecture/GROUND_GLASS_M7H_BROAD_E2E_TRIAGE_REPORT.json",
@@ -232,10 +255,20 @@ describe("historical evidence change routing", () => {
       "package-lock.json",
       ".github/workflows/historical-qualification.yml",
       "scripts/historical-evidence-manifest.json",
+      "scripts/fixtures/historical-qualification-production-incident.json",
+      "scripts/historical-qualification-baseline.json",
+      "scripts/historical-qualification-baseline.d.mts",
+      "scripts/historical-qualification-baseline.mjs",
+      "scripts/historical-production-release.d.mts",
+      "scripts/historical-production-release.mjs",
+      "scripts/run-historical-qualification-incident-regression.mjs",
       "scripts/historical-evidence-routing.d.mts",
       "scripts/historical-qualification-ci-gate.d.mts",
       "src/tests/unit/historicalEvidenceRouting.test.ts",
       "src/tests/unit/historicalQualificationGate.test.ts",
+      "src/tests/unit/historicalProductionRelease.test.ts",
+      "src/tests/unit/historicalQualificationBaseline.test.ts",
+      "src/tests/unit/m7kCaptureWorkflow.test.ts",
     ]) {
       expect(classifyChangedPaths([path])).toMatchObject({ decision: "QUALIFIED", families: allFamilies, broad: true });
     }
@@ -291,6 +324,9 @@ describe("historical evidence change routing", () => {
   it("keeps fail-closed outcomes distinct from a successful or non-applicable route", () => {
     expect(determineQualificationDecision({ routeDecision: "NOT_APPLICABLE", hasFamilies: false })).toBe("NOT_APPLICABLE");
     expect(determineQualificationDecision({ routeDecision: "QUALIFIED", hasFamilies: true })).toBe("QUALIFIED");
+    expect(determineQualificationDecision({ routeDecision: "QUALIFIED_WITH_LEGACY_ARCHIVAL", hasFamilies: true })).toBe("QUALIFIED_WITH_LEGACY_ARCHIVAL");
+    expect(determineQualificationDecision({ routeDecision: "QUALIFIED_WITH_LEGACY_ARCHIVAL", hasFamilies: true, validatorFailure: true })).toBe("FAILED");
+    expect(determineQualificationDecision({ routeDecision: "QUALIFIED_WITH_LEGACY_ARCHIVAL", hasFamilies: true, sourceFailure: true })).toBe("UNVERIFIED");
     expect(determineQualificationDecision({ routeDecision: "QUALIFIED", hasFamilies: true, validatorFailure: true })).toBe("FAILED");
     expect(determineQualificationDecision({ routeDecision: "QUALIFIED", hasFamilies: true, sourceFailure: true, validatorFailure: true })).toBe("UNVERIFIED");
     expect(determineQualificationDecision({ routeDecision: "QUALIFIED", hasFamilies: true, sourceFailure: true })).toBe("UNVERIFIED");

@@ -13,6 +13,7 @@ import {
   determineQualificationDecision,
   failedClosedRoute,
 } from "./historical-evidence-routing.mjs";
+import { discoverProductionRelease } from "./historical-production-release.mjs";
 
 const root = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const manifest = HISTORICAL_EVIDENCE_MANIFEST;
@@ -110,6 +111,7 @@ const result = {
   startedAt,
   completedAt: null,
   changedPaths: [],
+  eventChangedPaths: [],
   families: [],
   broadFallback: false,
   reasons: [],
@@ -117,20 +119,47 @@ const result = {
   sourceFetches: [],
   validators: [],
   missingArtifacts: [],
+  releaseProof: null,
+  qualificationCoverage: null,
+  blockingReasons: [],
 };
+
+function getBlockingReasons() {
+  const reasons = [];
+  if (result.decision === "UNVERIFIED") {
+    reasons.push(...result.reasons.filter((reason) => /unsupported-or-unmapped|unmapped-evidence|source.*unavailable|baseline.*failed|topology|tree.*differ|does-not-match|not-a-verified-main|missing-from-change-discovery|routing-unverified|history-unavailable|qualification-could-not-complete|npm-ci-unavailable|qualification-fatal/i.test(reason)));
+    for (const { id, reason } of result.unsupported) reasons.push(`unsupported family ${id}: ${reason}`);
+    for (const path of result.missingArtifacts) reasons.push(`missing required artifact: ${path}`);
+    for (const fetch of result.sourceFetches.filter(({ exitCode }) => exitCode !== 0)) reasons.push(`source verification failed: ${fetch.id ?? fetch.sha ?? "unknown"}`);
+  }
+  if (result.decision === "FAILED") {
+    for (const validator of result.validators.filter(({ exitCode, signal, error }) => exitCode !== 0 || signal || error)) {
+      reasons.push(`validator failed: ${validator.family} / ${validator.name}`);
+    }
+  }
+  if (reasons.length === 0 && !["QUALIFIED", "QUALIFIED_WITH_LEGACY_ARCHIVAL", "NOT_APPLICABLE"].includes(result.decision)) {
+    reasons.push(result.reasons[0] ?? `qualification-decision-${result.decision.toLowerCase()}`);
+  }
+  return [...new Set(reasons)];
+}
 
 function publishResult() {
   result.completedAt = new Date().toISOString();
+  result.blockingReasons = getBlockingReasons();
   const serialized = `${JSON.stringify(result, null, 2)}\n`;
   if (reportPath) {
     mkdirSync(resolve(reportPath, ".."), { recursive: true });
     writeFileSync(reportPath, serialized);
   }
   const outputPath = process.env.GITHUB_OUTPUT;
-  if (outputPath) appendFileSync(outputPath, `decision=${result.decision}\n`);
+  if (outputPath) appendFileSync(outputPath, `decision=${result.decision}\nmode=${result.mode}\n`);
   const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+  const primaryBlockingReason = result.blockingReasons[0] ?? null;
+  process.stdout.write(`Historical qualification decision: ${result.decision}${primaryBlockingReason ? `; primary blocking reason: ${primaryBlockingReason}` : ""}\n`);
   if (summaryPath) {
     const familyList = result.families.length ? result.families.join(", ") : "none";
+    const releaseProof = result.releaseProof;
+    const legacyDispositions = result.qualificationCoverage?.legacyDispositions ?? [];
     appendFileSync(summaryPath, [
       "## Historical evidence qualification",
       "",
@@ -138,13 +167,26 @@ function publishResult() {
       `**Mode:** \`${result.mode}\``,
       `**Families:** ${familyList}`,
       `**Ordinary-CI owners:** ${result.currentOwners?.length ? result.currentOwners.join(", ") : "none"}`,
-      `**Changed paths inspected:** ${result.changedPaths.length}`,
+      `**Cumulative qualification paths inspected:** ${result.changedPaths.length}`,
+      ...(releaseProof ? [
+        `**Production event before/after:** \`${releaseProof.eventBeforeSha}\` → \`${releaseProof.eventAfterSha}\``,
+        `**Promoted main source:** \`${releaseProof.promotedSourceSha}\``,
+        `**Verified merge parents:** \`${releaseProof.verifiedMergeParents.join(" ")}\``,
+        `**Source/destination tree:** \`${releaseProof.sourceTreeSha}\` / \`${releaseProof.destinationTreeSha}\``,
+        `**Qualification baseline:** \`${releaseProof.policyIdentity.commit}\` (tree \`${releaseProof.policyIdentity.tree}\`)`,
+        `**Baseline inventory:** ${releaseProof.policyIdentity.inventoryEntryCount} exact entries (SHA-256 \`${releaseProof.policyIdentity.inventorySha256}\`).`,
+        `**Immediate event paths:** ${releaseProof.eventChangedPathCount}; **baseline-to-source paths:** ${releaseProof.cumulativeQualificationPathCount}`,
+        `**Exact main workflow evidence reused:** no; all registered historical validators run for a production release.`,
+        `**Unverified legacy archive dispositions:** ${legacyDispositions.length}; unchanged exact blobs only.`,
+      ] : []),
+      ...(primaryBlockingReason ? [`**Primary blocking reason:** ${primaryBlockingReason}`] : []),
+      ...(result.blockingReasons.length > 1 ? [`**Additional blocking reasons:** ${result.blockingReasons.length - 1} (see the machine-readable artifact).`] : []),
       ...(result.validators.length ? [
         "",
         "### Validator results",
         ...result.validators.map((validator) => `- ${validator.family} / ${validator.name}: ${validator.exitCode === 0 ? "passed" : "failed"}${Number.isFinite(validator.durationMs) ? ` (${validator.durationMs} ms)` : ""}`),
       ] : []),
-      ...(result.reasons.length ? ["", "### Routing / qualification notes", ...result.reasons.map((reason) => `- ${reason}`)] : []),
+      ...(result.reasons.length ? ["", "### Routing / qualification notes", ...result.reasons.slice(0, 20).map((reason) => `- ${reason}`), ...(result.reasons.length > 20 ? [`- ${result.reasons.length - 20} additional path-level routing notes are in the machine-readable artifact.`] : [])] : []),
       ...(result.unsupported.length ? ["", "### Unverified families", ...result.unsupported.map(({ id, reason }) => `- ${id}: ${reason}`)] : []),
       ...(result.missingArtifacts.length ? ["", "### Missing required artifacts", ...result.missingArtifacts.map((path) => `- ${path}`)] : []),
       "",
@@ -171,6 +213,9 @@ async function route(options) {
     return { ...classifyCompleteChangedPaths(discovered.paths), ...discovered, changedPaths: discovered.paths };
   }
   if (eventName === "push") {
+    if (result.mode === "production-release") {
+      return await discoverProductionRelease(event, { runGit, repositoryRoot: root, repository });
+    }
     const discovered = await discoverPushPaths(event, { runGit, repositoryRoot: root });
     if (discovered.noCommit) {
       return { decision: "NOT_APPLICABLE", families: [], changedPaths: [], broad: false, reasons: [discovered.reason], currentOwners: [], unsupported: [] };
@@ -370,9 +415,12 @@ async function main() {
     reasons: classification.reasons ?? [],
     unsupported: classification.unsupported ?? [],
     currentOwners: classification.currentOwners ?? [],
-    baseSha: classification.baseSha ?? classification.comparisonBaseSha ?? null,
-    headSha: classification.headSha ?? classification.afterSha ?? null,
     pullNumber: classification.pullNumber ?? null,
+    eventChangedPaths: classification.eventChangedPaths ?? [],
+    releaseProof: classification.releaseProof ?? null,
+    qualificationCoverage: classification.qualificationCoverage ?? null,
+    baseSha: classification.releaseProof?.policyIdentity?.commit ?? classification.baseSha ?? classification.comparisonBaseSha ?? null,
+    headSha: classification.releaseProof?.promotedSourceSha ?? classification.headSha ?? classification.afterSha ?? null,
   });
 
   if (options.dryRun) {
@@ -458,7 +506,7 @@ async function main() {
     rmSync(tempDirectory, { recursive: true, force: true });
     publishResult();
   }
-  return result.decision === "QUALIFIED" || result.decision === "NOT_APPLICABLE" ? 0 : 1;
+  return result.decision === "QUALIFIED" || result.decision === "QUALIFIED_WITH_LEGACY_ARCHIVAL" || result.decision === "NOT_APPLICABLE" ? 0 : 1;
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

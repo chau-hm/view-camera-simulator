@@ -1,10 +1,11 @@
-export type HistoricalQualificationDecision = "QUALIFIED" | "NOT_APPLICABLE" | "FAILED" | "UNVERIFIED";
+export type HistoricalQualificationDecision = "QUALIFIED" | "QUALIFIED_WITH_LEGACY_ARCHIVAL" | "NOT_APPLICABLE" | "FAILED" | "UNVERIFIED";
 
 export type HistoricalEvidenceFamily = Readonly<{
   id: string;
   owner?: string;
   alwaysInOrdinaryCi?: boolean;
   artifactRoots: readonly string[];
+  documentationPaths?: readonly string[];
   replaySourcePaths?: readonly string[];
   commands: readonly Readonly<{ name: string; args: readonly string[] }>[];
   requiredArtifacts: readonly string[];
@@ -15,6 +16,7 @@ export const HISTORICAL_EVIDENCE_MANIFEST: Readonly<{
   families: readonly HistoricalEvidenceFamily[];
   dependencies: Readonly<Record<string, readonly string[]>>;
   unsupportedFamilies: Readonly<Record<string, string>>;
+  ordinaryCiPaths: readonly Readonly<{ path: string; owner: string }>[];
   sourcePins: readonly Readonly<{
     id: string;
     families: readonly string[];

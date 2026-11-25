@@ -40,6 +40,9 @@ jobs:
           FEATURE_GATE_RESULT: ${{ needs.feature-push-validation-gate.result }}
           HISTORICAL_RESULT: ${{ needs.historical-qualification.result }}
           HISTORICAL_DECISION: ${{ needs.historical-qualification.outputs.decision }}
+          HISTORICAL_MODE: ${{ needs.historical-qualification.outputs.mode }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF: ${{ github.ref }}
         run: node scripts/historical-qualification-ci-gate.mjs
 
       # Dedicated M7E–M7Q and M7W evidence commands run in the change-triggered
@@ -390,7 +393,7 @@ jobs:
          needs.feature-push-routing.outputs.decision == 'no-commit'))
     uses: ./.github/workflows/historical-qualification.yml
     with:
-      mode: changed
+      mode: ${{ github.event_name == 'push' && github.ref == 'refs/heads/production' && 'production-release' || 'changed' }}
     permissions:
       contents: read
       pull-requests: read

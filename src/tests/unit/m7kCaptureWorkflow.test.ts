@@ -357,6 +357,9 @@ describe("M7K capture workflow provenance", () => {
     expect(ciJob).not.toContain("!cancelled()");
     expect(ciJob).toContain("- historical-qualification");
     expect(ciJob).toContain("HISTORICAL_RESULT");
+    expect(ciJob).toContain("HISTORICAL_MODE");
+    expect(ciJob).toContain("GITHUB_EVENT_NAME");
+    expect(ciJob).toContain("GITHUB_REF");
     expect(ciJob).toContain("run: node scripts/historical-qualification-ci-gate.mjs");
     expect(workflow).toContain("  push:\n    branches:\n      - \"**\"\n");
     for (const provenanceFetchRequiredByVitest of [
@@ -411,7 +414,11 @@ describe("M7K capture workflow provenance", () => {
     expect(archiveWorkflow).toContain("  workflow_dispatch:");
     expect(archiveWorkflow).toContain("description: Run the complete verifiable historical archive.");
     expect(archiveWorkflow).toContain("          - full\n        default: full");
-    expect(archiveWorkflow).toContain("fetch-depth: 1");
+    expect(archiveWorkflow).toContain("fetch-depth: 0");
+    expect(archiveWorkflow).toContain("QUALIFIED_WITH_LEGACY_ARCHIVAL");
+    expect(archiveWorkflow).toContain("value: ${{ jobs.qualify.outputs.mode }}");
+    expect(archiveWorkflow).toContain("name: Reproduce the failed production route and verify cumulative recovery");
+    expect(archiveWorkflow).toContain("run: node scripts/run-historical-qualification-incident-regression.mjs");
     expect(archiveWorkflow).toContain("persist-credentials: false");
     expect(archiveWorkflow).toContain("pull-requests: read");
     expect(archiveWorkflow).toContain("node scripts/run-historical-qualification.mjs");
@@ -422,6 +429,7 @@ describe("M7K capture workflow provenance", () => {
       expect(evidenceManifest.families.some(({ id }) => id === family)).toBe(true);
     }
     expect(workflow).toContain("  historical-qualification:\n");
+    expect(workflow).toContain("mode: ${{ github.event_name == 'push' && github.ref == 'refs/heads/production' && 'production-release' || 'changed' }}");
     expect(workflow).toContain("  deploy:\n    if: github.event_name == 'push' && github.ref == 'refs/heads/production'\n    needs: ci\n");
   });
 });

@@ -54,9 +54,12 @@ function isAuditedNonHistoricalCaptureTest(path) {
 const normalizePath = (value) => value.replaceAll("\\", "/").replace(/^\.\//, "");
 const isWithin = (path, prefix) => prefix.endsWith("/") ? path.startsWith(prefix) : path === prefix;
 const isSharedQualificationPath = (path) => globalPaths.some((prefix) => isWithin(path, prefix));
+const ordinaryCiPathOwners = new Map((HISTORICAL_EVIDENCE_MANIFEST.ordinaryCiPaths ?? [])
+  .map(({ path, owner }) => [normalizePath(path).toLowerCase(), owner]));
 const familyPathMatches = (path, family) => {
   const normalized = path.toLowerCase();
   if (family.artifactRoots.some((root) => normalized.startsWith(root.toLowerCase()))) return true;
+  if (family.documentationPaths?.some((documentationPath) => normalizePath(documentationPath).toLowerCase() === normalized)) return true;
   if (family.replaySourcePaths?.some((sourcePath) => normalizePath(sourcePath) === path)) return true;
   if (HISTORICAL_EVIDENCE_MANIFEST.sourcePins.some((pin) =>
     pin.families.includes(family.id) && pin.verifyPaths.some((sourcePath) => normalizePath(sourcePath) === path))) return true;
@@ -136,6 +139,13 @@ export function classifyChangedPaths(changedPaths, options = {}) {
       ordinaryCiOwners.forEach((owner) => currentOwners.add(owner));
       currentOwners.add("ordinary-ci:evidence:check:m7v");
       reasons.push(`shared-qualification-path:${path}`);
+      continue;
+    }
+
+    const ordinaryCiPathOwner = ordinaryCiPathOwners.get(path.toLowerCase());
+    if (ordinaryCiPathOwner) {
+      currentOwners.add(ordinaryCiPathOwner);
+      reasons.push(`ordinary-ci-path:${ordinaryCiPathOwner}:${path}`);
       continue;
     }
 
@@ -376,7 +386,9 @@ export function determineQualificationDecision({ routeDecision, hasFamilies, sou
   if (!hasFamilies && routeDecision === "NOT_APPLICABLE") return "NOT_APPLICABLE";
   if (routeDecision === "UNVERIFIED" || sourceFailure || missingArtifacts || unsupported) return "UNVERIFIED";
   if (validatorFailure) return "FAILED";
-  return routeDecision === "QUALIFIED" ? "QUALIFIED" : "UNVERIFIED";
+  return routeDecision === "QUALIFIED" || routeDecision === "QUALIFIED_WITH_LEGACY_ARCHIVAL"
+    ? routeDecision
+    : "UNVERIFIED";
 }
 
 export function manifestPathForDiagnostics() {

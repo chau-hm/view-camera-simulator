@@ -1,0 +1,292 @@
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { spawnSync } from "node:child_process";
+import { afterEach, describe, expect, it } from "vitest";
+import { HISTORICAL_EVIDENCE_MANIFEST, classifyCompleteChangedPaths } from "../../../scripts/historical-evidence-routing.mjs";
+import { calculateBaselineInventoryDigest } from "../../../scripts/historical-qualification-baseline.mjs";
+import { discoverProductionRelease } from "../../../scripts/historical-production-release.mjs";
+
+const activeFixtures: string[] = [];
+const shaPattern = /^[0-9a-f]{40}$/;
+const repository = HISTORICAL_EVIDENCE_MANIFEST.repository;
+const derivation = "All tracked paths at policyCommit were classified by that commit’s historical-evidence router; entries include every unsupported-family and unmapped-evidence route, not only paths present in the later incident diff.";
+
+afterEach(() => {
+  for (const directory of activeFixtures.splice(0)) rmSync(directory, { recursive: true, force: true });
+});
+
+const git = (cwd: string, args: string[]) => {
+  const result = spawnSync("git", args, { cwd, encoding: "utf8" });
+  if (result.error) throw result.error;
+  if (result.status !== 0) throw new Error(`git ${args[0]} failed: ${result.stderr}`);
+  return result.stdout.trim();
+};
+
+const runGit = async (args: string[], cwd: string, allowFailure = false) => {
+  const result = spawnSync("git", args, { cwd, encoding: "utf8" });
+  if (result.error) throw result.error;
+  const normalized = { status: result.status ?? 1, stdout: result.stdout ?? "", stderr: result.stderr ?? "" };
+  if (!allowFailure && normalized.status !== 0) throw new Error(`git ${args[0]} failed: ${normalized.stderr.trim()}`);
+  return allowFailure ? normalized : normalized.stdout;
+};
+
+function createFixture() {
+  const root = mkdtempSync(join(tmpdir(), "historical-production-release-"));
+  activeFixtures.push(root);
+  const origin = resolve(root, "origin.git");
+  const work = resolve(root, "work");
+  git(root, ["init", "--bare", origin]);
+  git(root, ["init", "-b", "main", work]);
+  git(work, ["config", "user.name", "Historical release fixture"]);
+  git(work, ["config", "user.email", "historical-release-fixture@example.invalid"]);
+  git(work, ["remote", "add", "origin", origin]);
+
+  const seedFile = resolve(work, "README.md");
+  writeFileSync(seedFile, "fixture\n");
+  git(work, ["add", "README.md"]);
+  git(work, ["commit", "-m", "fixture seed"]);
+  const prePolicyParent = git(work, ["rev-parse", "HEAD"]);
+
+  const legacyPath = "docs/architecture/legacy-report.json";
+  mkdirSync(resolve(work, "docs/architecture"), { recursive: true });
+  writeFileSync(resolve(work, legacyPath), JSON.stringify({ retained: true }) + "\n");
+  git(work, ["add", legacyPath]);
+  git(work, ["commit", "-m", "policy baseline"]);
+  const baselineCommit = git(work, ["rev-parse", "HEAD"]);
+  const baselineTree = git(work, ["rev-parse", `${baselineCommit}^{tree}`]);
+  const blobSha = git(work, ["rev-parse", `${baselineCommit}:${legacyPath}`]);
+  const entry = {
+    path: legacyPath,
+    blobSha,
+    kind: "archived-report-or-capture",
+    disposition: "legacy-archival-unverified" as const,
+    family: null,
+    ordinaryCiOwner: null,
+    limitation: "No equivalent retained integrity validator is available; this exact blob remains unverified.",
+  };
+  const entries = [entry];
+  const baseline = {
+    schemaVersion: 1 as const,
+    policy: {
+      id: "fixture-policy",
+      policyCommit: baselineCommit,
+      policyTree: baselineTree,
+      prePolicyParent,
+      acceptedDisposition: "Unchanged exact blobs remain unverified; this is not validator success.",
+    },
+    inventory: {
+      entryCount: entries.length,
+      sha256: calculateBaselineInventoryDigest(entries),
+      policyIntroductionRouterReasons: { "unmapped-evidence-verification-dependency": 1 },
+      derivation,
+    },
+    entries,
+  };
+  const baselineIdentity = {
+    ...baseline.policy,
+    entryCount: baseline.inventory.entryCount,
+    inventorySha256: baseline.inventory.sha256,
+    policyIntroductionRouterReasons: baseline.inventory.policyIntroductionRouterReasons,
+  };
+  git(work, ["push", "-u", "origin", "main"]);
+  const previousProduction = git(work, ["commit-tree", baselineTree, "-p", baselineCommit, "-m", "previous production"]);
+  git(work, ["update-ref", "refs/heads/production", previousProduction]);
+  git(work, ["push", "origin", "refs/heads/production:refs/heads/production"]);
+  return { root, origin, work, legacyPath, baselineCommit, baselineTree, previousProduction, baseline, baselineIdentity };
+}
+
+function addCommit(work: string, path: string, contents: string, message: string) {
+  const target = resolve(work, path);
+  mkdirSync(resolve(target, ".."), { recursive: true });
+  writeFileSync(target, contents);
+  git(work, ["add", path]);
+  git(work, ["commit", "-m", message]);
+  return git(work, ["rev-parse", "HEAD"]);
+}
+
+function mergeTree(work: string, productionParent: string, sourceParent: string, tree = git(work, ["rev-parse", `${sourceParent}^{tree}`]), extraParents: string[] = []) {
+  return git(work, ["commit-tree", tree, "-p", productionParent, "-p", sourceParent, ...extraParents.flatMap((parent) => ["-p", parent]), "-m", "fixture production promotion"]);
+}
+
+function eventFor(before: string, after: string) {
+  return { repository: { full_name: repository }, ref: "refs/heads/production", before, after, deleted: false };
+}
+
+async function promote(fixture: ReturnType<typeof createFixture>, sourceSha: string, productionParent = fixture.previousProduction) {
+  const after = mergeTree(fixture.work, productionParent, sourceSha);
+  git(fixture.work, ["checkout", "--detach", after]);
+  const result = await discoverProductionRelease(eventFor(productionParent, after), {
+    runGit,
+    repositoryRoot: fixture.work,
+    baseline: fixture.baseline,
+    baselineIdentity: fixture.baselineIdentity,
+  });
+  return { after, result };
+}
+
+describe("production historical release proof", () => {
+  it("accepts only an exact two-parent promotion whose source is on main and tree matches", async () => {
+    const fixture = createFixture();
+    const sourceSha = addCommit(fixture.work, "src/ordinary-change.ts", "export const changed = true;\n", "ordinary main change");
+    git(fixture.work, ["push", "origin", "main"]);
+    const { after, result } = await promote(fixture, sourceSha);
+
+    expect(result.decision).toBe("QUALIFIED_WITH_LEGACY_ARCHIVAL");
+    expect(result.families).toEqual(HISTORICAL_EVIDENCE_MANIFEST.families.filter(({ alwaysInOrdinaryCi }) => alwaysInOrdinaryCi !== true).map(({ id }) => id));
+    expect(result.releaseProof).toMatchObject({
+      eventAfterSha: after,
+      promotedSourceSha: sourceSha,
+      verifiedMergeParents: [fixture.previousProduction, sourceSha],
+      sourceTreeSha: git(fixture.work, ["rev-parse", `${sourceSha}^{tree}`]),
+      destinationTreeSha: git(fixture.work, ["rev-parse", `${after}^{tree}`]),
+      sourceIsVerifiedMainAncestor: true,
+    });
+    expect(result.qualificationCoverage.legacyDispositions).toContainEqual(expect.objectContaining({
+      path: fixture.legacyPath,
+      blobSha: fixture.baseline.entries[0]!.blobSha,
+      disposition: "legacy-archival-unverified",
+    }));
+  });
+
+  it("rejects a tree mismatch even when the merge parents look canonical", async () => {
+    const fixture = createFixture();
+    const sourceSha = addCommit(fixture.work, "src/main.ts", "export {};\n", "main source");
+    git(fixture.work, ["push", "origin", "main"]);
+    const wrongTree = git(fixture.work, ["rev-parse", `${fixture.baselineCommit}^{tree}`]);
+    const after = mergeTree(fixture.work, fixture.previousProduction, sourceSha, wrongTree);
+    git(fixture.work, ["checkout", "--detach", after]);
+    await expect(discoverProductionRelease(eventFor(fixture.previousProduction, after), {
+      runGit, repositoryRoot: fixture.work, baseline: fixture.baseline, baselineIdentity: fixture.baselineIdentity,
+    })).rejects.toThrow("production-promotion-source-and-destination-trees-differ");
+  });
+
+  it("rejects an incorrect first parent and an unexpected merge topology", async () => {
+    const fixture = createFixture();
+    const sourceSha = addCommit(fixture.work, "src/main.ts", "export {};\n", "main source");
+    git(fixture.work, ["push", "origin", "main"]);
+    const wrongFirstParent = git(fixture.work, ["commit-tree", git(fixture.work, ["rev-parse", `${sourceSha}^{tree}`]), "-p", fixture.baselineCommit, "-p", sourceSha, "-m", "wrong first parent"]);
+    git(fixture.work, ["checkout", "--detach", wrongFirstParent]);
+    await expect(discoverProductionRelease(eventFor(fixture.previousProduction, wrongFirstParent), {
+      runGit, repositoryRoot: fixture.work, baseline: fixture.baseline, baselineIdentity: fixture.baselineIdentity,
+    })).rejects.toThrow("production-promotion-first-parent-does-not-match-event-before");
+
+    const oneParent = git(fixture.work, ["commit-tree", git(fixture.work, ["rev-parse", `${sourceSha}^{tree}`]), "-p", fixture.previousProduction, "-m", "not a merge"]);
+    git(fixture.work, ["checkout", "--detach", oneParent]);
+    await expect(discoverProductionRelease(eventFor(fixture.previousProduction, oneParent), {
+      runGit, repositoryRoot: fixture.work, baseline: fixture.baseline, baselineIdentity: fixture.baselineIdentity,
+    })).rejects.toThrow("production-promotion-merge-topology-not-two-parent");
+
+    const threeParents = mergeTree(fixture.work, fixture.previousProduction, sourceSha, undefined, [fixture.baselineCommit]);
+    git(fixture.work, ["checkout", "--detach", threeParents]);
+    await expect(discoverProductionRelease(eventFor(fixture.previousProduction, threeParents), {
+      runGit, repositoryRoot: fixture.work, baseline: fixture.baseline, baselineIdentity: fixture.baselineIdentity,
+    })).rejects.toThrow("production-promotion-merge-topology-not-two-parent");
+  });
+
+  it("rejects an unrelated source revision and an incompatible baseline identity", async () => {
+    const fixture = createFixture();
+    const sourceSha = addCommit(fixture.work, "src/main.ts", "export {};\n", "main source");
+    git(fixture.work, ["push", "origin", "main"]);
+    const unrelatedSha = git(fixture.work, ["commit-tree", git(fixture.work, ["rev-parse", `${fixture.baselineCommit}^{tree}`]), "-p", fixture.baselineCommit, "-m", "unrelated source"]);
+    const unrelatedPromotion = mergeTree(fixture.work, fixture.previousProduction, unrelatedSha);
+    git(fixture.work, ["checkout", "--detach", unrelatedPromotion]);
+    await expect(discoverProductionRelease(eventFor(fixture.previousProduction, unrelatedPromotion), {
+      runGit, repositoryRoot: fixture.work, baseline: fixture.baseline, baselineIdentity: fixture.baselineIdentity,
+    })).rejects.toThrow("promoted-source-is-not-a-verified-main-revision");
+
+    const wrongBaseline = structuredClone(fixture.baseline);
+    wrongBaseline.policy.policyTree = "0".repeat(40);
+    const promotion = mergeTree(fixture.work, fixture.previousProduction, sourceSha);
+    git(fixture.work, ["checkout", "--detach", promotion]);
+    await expect(discoverProductionRelease(eventFor(fixture.previousProduction, promotion), {
+      runGit, repositoryRoot: fixture.work, baseline: wrongBaseline, baselineIdentity: fixture.baselineIdentity,
+    })).rejects.toThrow("legacy-baseline-tree-identity-mismatch");
+  });
+
+  it("fails closed for an unknown new evidence file under a legacy archive directory", async () => {
+    const fixture = createFixture();
+    const newEvidencePath = "docs/architecture/opaque-archive-directory/new.json";
+    const sourceSha = addCommit(fixture.work, newEvidencePath, "{\"newEvidence\":true}\n", "add unclassified evidence under a legacy directory");
+    git(fixture.work, ["push", "origin", "main"]);
+    const { result } = await promote(fixture, sourceSha);
+
+    expect(classifyCompleteChangedPaths([newEvidencePath]).decision).toBe("NOT_APPLICABLE");
+    expect(result.decision).toBe("UNVERIFIED");
+    expect(result.qualificationCoverage.unresolvedPaths).toEqual([newEvidencePath]);
+  });
+
+  it("invalidates an exact archive disposition when the protected file is renamed", async () => {
+    const fixture = createFixture();
+    const renamedPath = "docs/architecture/legacy-report-renamed.json";
+    git(fixture.work, ["mv", fixture.legacyPath, renamedPath]);
+    git(fixture.work, ["commit", "-am", "rename the protected legacy report"]);
+    const sourceSha = git(fixture.work, ["rev-parse", "HEAD"]);
+    git(fixture.work, ["push", "origin", "main"]);
+    const { result } = await promote(fixture, sourceSha);
+
+    expect(result.decision).toBe("UNVERIFIED");
+    expect(result.qualificationCoverage.invalidatedBaselinePaths).toContainEqual(expect.objectContaining({
+      path: fixture.legacyPath,
+      currentBlobSha: null,
+      reason: "baseline-protected-path-deleted",
+    }));
+    expect(result.changedPaths).toEqual(expect.arrayContaining([fixture.legacyPath, renamedPath]));
+    expect(result.qualificationCoverage.unresolvedPaths).toEqual(expect.arrayContaining([fixture.legacyPath, renamedPath]));
+  });
+
+  it("rejects wrong event repository, ref, head, and missing source identity", async () => {
+    const fixture = createFixture();
+    const sourceSha = addCommit(fixture.work, "src/main.ts", "export {};\n", "main source");
+    git(fixture.work, ["push", "origin", "main"]);
+    const after = mergeTree(fixture.work, fixture.previousProduction, sourceSha);
+    git(fixture.work, ["checkout", "--detach", after]);
+    const validEvent = eventFor(fixture.previousProduction, after);
+    await expect(discoverProductionRelease({ ...validEvent, ref: "refs/heads/main" }, {
+      runGit, repositoryRoot: fixture.work, baseline: fixture.baseline, baselineIdentity: fixture.baselineIdentity,
+    })).rejects.toThrow("production-release-ref-mismatch");
+    await expect(discoverProductionRelease({ ...validEvent, repository: { full_name: "other/repository" } }, {
+      runGit, repositoryRoot: fixture.work, baseline: fixture.baseline, baselineIdentity: fixture.baselineIdentity,
+    })).rejects.toThrow("production-release-repository-mismatch");
+    await expect(discoverProductionRelease({ ...validEvent, after: fixture.previousProduction }, {
+      runGit, repositoryRoot: fixture.work, baseline: fixture.baseline, baselineIdentity: fixture.baselineIdentity,
+    })).rejects.toThrow("checked-out-head-does-not-match-production-event-after");
+    await expect(discoverProductionRelease({ ...validEvent, before: "f".repeat(40) }, {
+      runGit, repositoryRoot: fixture.work, baseline: fixture.baseline, baselineIdentity: fixture.baselineIdentity,
+    })).rejects.toThrow("production-event-before-commit-unavailable");
+    expect(shaPattern.test(sourceSha)).toBe(true);
+  });
+
+  it("keeps a failed cumulative evidence range visible after production advances by a small promotion", async () => {
+    const fixture = createFixture();
+    const largeSource = addCommit(
+      fixture.work,
+      "docs/architecture/new-unowned-capture-report.json",
+      JSON.stringify({ unowned: true }) + "\n",
+      "large source adds unowned historical evidence",
+    );
+    git(fixture.work, ["push", "origin", "main"]);
+    const failedPromotion = mergeTree(fixture.work, fixture.previousProduction, largeSource);
+    git(fixture.work, ["checkout", "--detach", failedPromotion]);
+    const failedResult = await discoverProductionRelease(eventFor(fixture.previousProduction, failedPromotion), {
+      runGit, repositoryRoot: fixture.work, baseline: fixture.baseline, baselineIdentity: fixture.baselineIdentity,
+    });
+    expect(failedResult.decision).toBe("UNVERIFIED");
+    expect(failedResult.changedPaths).toContain("docs/architecture/new-unowned-capture-report.json");
+    expect(failedResult.qualificationCoverage.unresolvedPaths).toEqual([
+      "docs/architecture/new-unowned-capture-report.json",
+    ]);
+
+    git(fixture.work, ["checkout", "main"]);
+    const smallSource = addCommit(fixture.work, "src/small-follow-up.ts", "export const followUp = true;\n", "small follow-up");
+    git(fixture.work, ["push", "origin", "main"]);
+    const nextPromotion = mergeTree(fixture.work, failedPromotion, smallSource);
+    git(fixture.work, ["checkout", "--detach", nextPromotion]);
+    const nextResult = await discoverProductionRelease(eventFor(failedPromotion, nextPromotion), {
+      runGit, repositoryRoot: fixture.work, baseline: fixture.baseline, baselineIdentity: fixture.baselineIdentity,
+    });
+    expect(nextResult.eventChangedPaths).toEqual(["src/small-follow-up.ts"]);
+    expect(nextResult.changedPaths).toContain("docs/architecture/new-unowned-capture-report.json");
+    expect(nextResult.decision).toBe("UNVERIFIED");
+  });
+});
