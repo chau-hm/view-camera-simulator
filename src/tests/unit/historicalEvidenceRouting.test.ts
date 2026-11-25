@@ -1,5 +1,8 @@
-import { readFileSync } from "node:fs";
-import { relative, resolve } from "node:path";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { dirname, relative, resolve } from "node:path";
 import * as ts from "typescript";
 import { describe, expect, it } from "vitest";
 import {
@@ -62,6 +65,80 @@ describe("historical evidence change routing", () => {
       families: [],
       broad: false,
     });
+  });
+
+  it("accepts only the audited checkout bytes and fails closed for changed or missing test/helpers", () => {
+    // Main does not contain the experimental feature files. Exercise the real
+    // router and SHA-256 against a temporary checkout with synthetic bytes and
+    // matching fixture digests substituted in a copy of the router source.
+    const audited = [
+      "src/tests/unit/roomAtDawnCaptureSync.test.ts",
+      "src/tests/unit/roomAtDawnReflectionCapture.test.ts",
+      "src/tests/unit/roomAtDawnComparisonCapture.test.ts",
+    ];
+    const fixtures = [
+      [audited[0], "test-sync", "ee7563ca79ca477988bcde5a7d515526b45506ba209bebe890150ae156a1b037"],
+      ["experiments/room-at-dawn/capture-sync.cjs", "helper-sync", "d8ec1b767a648759cc0242c2b78ddb1a255befcd3ccf737cac8c464ccad10874"],
+      [audited[1], "test-reflection", "b7993e6674135708663cc6f507c89d7104e31fb681ef0ca326f83dff95ee42ae"],
+      ["experiments/room-at-dawn/reflection-capture.js", "helper-reflection", "75b358799453fd9b5b8cde386b03cbbbfbfaa74a819f1d0325d1fcb27d678ebf"],
+      [audited[2], "test-comparison", "aca2d1ce20cd31c52dde8d5391371fc870af1574ec339d3ee25eb6c5c144d58c"],
+      ["experiments/room-at-dawn/comparison-capture.ts", "helper-comparison", "9f5747c40f86cc016a4f4a1bb09413ef3f5b969ef89bc7bc8a0969e5bd12b597"],
+    ];
+    const temp = mkdtempSync(resolve(tmpdir(), "historical-capture-audit-"));
+    try {
+      mkdirSync(resolve(temp, "scripts"), { recursive: true });
+      writeFileSync(resolve(temp, "scripts/historical-evidence-manifest.json"),
+        readFileSync(resolve(process.cwd(), "scripts/historical-evidence-manifest.json")));
+      let routing = readFileSync(resolve(process.cwd(), "scripts/historical-evidence-routing.mjs"), "utf8");
+      for (const [path, contents, digest] of fixtures) {
+        expect(routing).toContain(digest);
+        routing = routing.replace(digest, createHash("sha256").update(contents).digest("hex"));
+        const target = resolve(temp, path);
+        mkdirSync(dirname(target), { recursive: true });
+        writeFileSync(target, contents);
+      }
+      writeFileSync(resolve(temp, "routing.mjs"), routing);
+      const route = (paths: string[]) => JSON.parse(execFileSync(process.execPath, [
+        "--input-type=module", "-e",
+        `import { classifyChangedPaths } from './routing.mjs'; console.log(JSON.stringify(classifyChangedPaths(${JSON.stringify(paths)})));`,
+      ], { cwd: temp, encoding: "utf8" }));
+
+      for (const path of audited) expect(route([path])).toMatchObject({ decision: "NOT_APPLICABLE", families: [], broad: false });
+      expect(route(audited)).toMatchObject({ decision: "NOT_APPLICABLE", families: [], broad: false });
+      for (const helper of ["experiments/room-at-dawn/capture-sync.cjs", "experiments/room-at-dawn/reflection-capture.js", "experiments/room-at-dawn/comparison-capture.ts"]) {
+        expect(route([helper])).toMatchObject({ decision: "NOT_APPLICABLE", families: [], broad: false });
+      }
+      for (const unknown of ["src/tests/unit/roomAtDawnCaptureSyncExtra.test.ts", "src/tests/unit/roomAtDawnReflectionCapture.test.ts.backup", "src/tests/unit/roomAtDawnComparisonCaptureExtra.test.ts", "src/tests/unit/roomatdawncapturesync.test.ts", "src/tests/unit/newCaptureEvidence.test.ts"]) {
+        for (const owner of audited) {
+          expect(route([owner, unknown])).toMatchObject({ decision: "UNVERIFIED", families: allFamilies, broad: true });
+        }
+      }
+      for (const [path, contents] of fixtures) {
+        const target = resolve(temp, path);
+        const pairIndex = Math.floor(fixtures.findIndex(([fixturePath]) => fixturePath === path) / 2);
+        const owner = audited[pairIndex];
+        const helper = fixtures[pairIndex * 2 + 1][0];
+        writeFileSync(target, `${contents}-modified`);
+        for (const trigger of [owner, helper]) {
+          expect(route([trigger])).toMatchObject({ decision: "UNVERIFIED", families: allFamilies, broad: true });
+        }
+        rmSync(target);
+        for (const trigger of [owner, helper]) {
+          expect(route([trigger])).toMatchObject({ decision: "UNVERIFIED", families: allFamilies, broad: true });
+        }
+        // A directory at the audited file path exercises a real read error
+        // without relying on chmod behavior or the test user's privileges.
+        mkdirSync(target);
+        for (const trigger of [owner, helper]) {
+          expect(route([trigger])).toMatchObject({ decision: "UNVERIFIED", families: allFamilies, broad: true });
+        }
+        rmSync(target, { recursive: true });
+        writeFileSync(target, contents);
+      }
+      const historical = "docs/architecture/ground-glass-m7e-r187-gather-b1/captures/architecture-rise.json";
+      expect(route([...audited, historical])).toMatchObject({ decision: "QUALIFIED", families: classifyChangedPaths([historical]).families, broad: false });
+      expect(route([audited[2], historical])).toMatchObject({ decision: "QUALIFIED", families: classifyChangedPaths([historical]).families, broad: false });
+    } finally { rmSync(temp, { recursive: true, force: true }); }
   });
 
   it("treats a verified empty event diff as non-applicable while unavailable paths fail closed", () => {
