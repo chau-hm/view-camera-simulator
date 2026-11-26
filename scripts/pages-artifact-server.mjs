@@ -25,7 +25,7 @@ createServer(async (req, res) => {
     } catch (error) {
       if (error.code !== 'ENOENT' && error.code !== 'EISDIR') throw error;
       const fallback = await readFile(resolve(root, '404.html'));
-      res.writeHead(404, { 'content-type': 'text/html' }).end(fallback);
+      res.writeHead(req.headers['x-pages-fallback-test'] === '1' ? 404 : 200, { 'content-type': 'text/html' }).end(fallback);
     }
   } catch { res.writeHead(500).end(); }
 }).listen(port, '127.0.0.1');

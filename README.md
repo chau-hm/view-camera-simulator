@@ -264,8 +264,9 @@ node scripts/pages-artifact.mjs verify /tmp/pages-candidate "$(git rev-parse HEA
 The destination must not already exist. Preparation runs the checked build
 (`tsc -b` and one Vite production bundle) with the repository-name base, then
 copies `index.html` to `404.html`. Preview serves the existing payload and does
-not build. Its server models Pages fallback as an HTTP 404 with the fallback
-body; root-based renderer tests are redirected to the subpath. Existing root
+not build. Its server serves the fallback body for deep links; a dedicated browser test
+requests the HTTP 404 response Pages uses. Existing root-based renderer tests
+are redirected to the subpath and use a successful SPA fallback response. Existing root
 Preview coverage remains independent. Compare verification before and after
 Preview; the pilot fails rather than uploads if either Preview or verification
 fails. Its JSON result records content integrity, not release authorization.
