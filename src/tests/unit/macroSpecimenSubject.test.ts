@@ -1,99 +1,194 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import * as THREE from "three";
 import { createMacroSpecimenGroup, disposeMacroSpecimenGroup } from "../../render/MacroSpecimenSubjectFactory";
 import { MacroSpecimenSubject } from "../../render/SceneAssetSubjects";
 import { getSceneSubjectRegistration } from "../../render/sceneSubjectRegistry";
 import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
-import { macroSpecimenBoundsMm, macroBellowsExtensionFocusTargets } from "../../scenes/macroSpecimenGeometry";
+import {
+  MACRO_BELLOWS_WATCH,
+  macroBellowsExtensionDiagnosticSamplesMm,
+  macroBellowsExtensionFocusTargets,
+  macroBellowsExtensionWatchBoundsMm,
+} from "../../scenes/macroSpecimenGeometry";
 import { resolveGenericConceptualSupportRail } from "../../render/ConceptualViewCamera";
-import { MACRO_BELLOWS_EXTENSION_PRESENTATION } from "../../scenes/presentation/macroBellowsExtension";
+import {
+  MACRO_BELLOWS_EXTENSION_PRESENTATION,
+  MACRO_BELLOWS_WATCH_LIGHTING_PROFILE,
+} from "../../scenes/presentation/macroBellowsExtension";
+import { resolveScenePresentationLighting } from "../../render/presentationLighting";
+import { configureTeachingShadowParticipation } from "../../render/TeachingLighting";
+import { CAMERA_MOVEMENT_BASELINE_PRESENTATION } from "../../scenes/presentation/understandingCameraMovements";
 
-describe("macro specimen physical renderer contract", () => {
-  it("routes viewport and RTT through the registered physical subject slot", () => {
+describe("macro tourbillon watch physical renderer contract", () => {
+  it("routes one strapless native watch head through the registered Observer and RTT slot", () => {
     const registration = getSceneSubjectRegistration("macro-bellows-extension")!;
     expect(isGroundGlassRttScene("macro-bellows-extension")).toBe(true);
     expect(registration.SceneSubject).toBe(MacroSpecimenSubject);
     expect(registration.createRttGroup).toBeDefined();
     expect(registration.disposeRttGroup).toBeDefined();
+    expect(registration.rttBounds).toEqual(macroBellowsExtensionWatchBoundsMm);
+
     const group = createMacroSpecimenGroup({ presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION });
     const bounds = new THREE.Box3().setFromObject(group);
-    expect(bounds.min.x).toBeCloseTo(-0.045, 6);
-    expect(bounds.max.x).toBeCloseTo(0.045, 6);
-    expect(bounds.min.z).toBeCloseTo(macroSpecimenBoundsMm.min.z / 1000, 6);
-    expect(bounds.max.z).toBeCloseTo(macroSpecimenBoundsMm.max.z / 1000, 6);
-    for (const part of ["outer-rim", "inner-ring", "central-relief", "radial-mark-0", "fine-line-0", "surface-dot-0"]) {
-      expect(group.getObjectByName(`macro-specimen-${part}`)).toBeInstanceOf(THREE.Mesh);
-    }
-    for (const part of [
-      "face-plate",
-      "face-inset",
-      "engraved-channel-0",
-      "edge-knurl-0",
-      "radial-engraving-0",
-      "fastener-0",
-      "fastener-slot-0",
-      "back-cap",
-      "back-outer-ring",
-      "back-relief",
+    expect(group.name).toBe("macro-bellows-extension-watch-head");
+    expect(group.position.z).toBeCloseTo(MACRO_BELLOWS_WATCH.caseOriginMm.z / 1000, 9);
+    expect(group.rotation.y).toBeCloseTo(Math.PI, 12);
+    expect(group.scale.toArray()).toEqual([0.001, 0.001, 0.001]);
+    expect(bounds.min.x).toBeCloseTo(macroBellowsExtensionWatchBoundsMm.min.x / 1000, 6);
+    expect(bounds.max.x).toBeCloseTo(macroBellowsExtensionWatchBoundsMm.max.x / 1000, 6);
+    expect(bounds.min.y).toBeCloseTo(macroBellowsExtensionWatchBoundsMm.min.y / 1000, 6);
+    expect(bounds.max.y).toBeCloseTo(macroBellowsExtensionWatchBoundsMm.max.y / 1000, 6);
+    expect(bounds.min.z).toBeCloseTo(macroBellowsExtensionWatchBoundsMm.min.z / 1000, 6);
+    expect(bounds.max.z).toBeCloseTo(macroBellowsExtensionWatchBoundsMm.max.z / 1000, 6);
+    expect(group.getObjectByName("Strap assembly")).toBeUndefined();
+    expect(group.getObjectByName("Rotating one-minute tourbillon cage")?.rotation.z).toBe(0);
+    expect(group.userData.macroWatch).toEqual({ strapIncluded: false, cageAngleRad: 0 });
+
+    const head = group.getObjectByName("Watch head");
+    expect(head).toBeInstanceOf(THREE.Group);
+    expect(head?.children.map(({ name }) => name)).toEqual([
+      "Case assembly", "Dial assembly", "Hand assembly", "Tourbillon assembly", "Rear movement",
+    ]);
+    for (const name of [
+      "front-sapphire",
+      "Satin Roman chapter ring",
+      "Recessed engine-turned hobnail field",
+      "Polished hand collet",
+      "Stationary wheel with four relieved openings",
+      "exhibition-caseback-rim",
     ]) {
-      expect(group.getObjectByName(`macro-specimen-${part}`)).toBeInstanceOf(THREE.Mesh);
+      expect(group.getObjectByName(name)).toBeInstanceOf(THREE.Mesh);
     }
-    const specimenMeshes = group.children.filter((object): object is THREE.Mesh => object instanceof THREE.Mesh);
-    const specimenMaterials = specimenMeshes
-      .map(({ material }) => material)
-      .filter((material): material is THREE.MeshStandardMaterial => material instanceof THREE.MeshStandardMaterial);
-    expect(new Set(specimenMaterials).size).toBeGreaterThanOrEqual(4);
-    expect(specimenMaterials.every(({ roughnessMap }) => roughnessMap instanceof THREE.DataTexture)).toBe(true);
-    const materialFor = (part: string): THREE.MeshStandardMaterial => {
-      const object = group.getObjectByName(`macro-specimen-${part}`);
-      expect(object, `missing material-bearing ${part}`).toBeInstanceOf(THREE.Mesh);
-      expect(object && object instanceof THREE.Mesh ? object.material : null).toBeInstanceOf(THREE.MeshStandardMaterial);
-      return (object as THREE.Mesh).material as THREE.MeshStandardMaterial;
-    };
-    const bodyMaterial = materialFor("body");
-    const reliefMaterial = materialFor("central-relief");
-    const copperMaterial = materialFor("edge-knurl-0");
-    const insetMaterial = materialFor("face-inset");
-    expect(bodyMaterial.metalness).toBeLessThan(0.7);
-    expect(reliefMaterial.metalness).toBeGreaterThan(bodyMaterial.metalness);
-    expect(copperMaterial.metalness).toBeGreaterThan(bodyMaterial.metalness);
-    expect(bodyMaterial.roughness).toBeGreaterThan(reliefMaterial.roughness);
-    expect(copperMaterial.roughness).toBeGreaterThan(reliefMaterial.roughness);
-    expect(insetMaterial.metalness).toBeLessThan(0.2);
-    expect([bodyMaterial, reliefMaterial, copperMaterial].every(({ emissiveIntensity }) => emissiveIntensity <= 0.16)).toBe(true);
 
-    const roughnessData = (material: THREE.MeshStandardMaterial): Uint8Array => {
-      expect(material.roughnessMap).toBeInstanceOf(THREE.DataTexture);
-      return (material.roughnessMap as THREE.DataTexture).image.data as Uint8Array;
-    };
-    const bronzeData = roughnessData(materialFor("body"));
-    const bronzeChannel = bronzeData.filter((_, index) => index % 4 === 0);
-    expect(Math.max(...bronzeChannel) - Math.min(...bronzeChannel)).toBeGreaterThan(4);
+    const crystal = group.getObjectByName("front-sapphire") as THREE.Mesh;
+    expect(crystal.material).toBeInstanceOf(THREE.MeshPhysicalMaterial);
+    expect((crystal.material as THREE.MeshPhysicalMaterial).transparent).toBe(true);
+    expect((crystal.material as THREE.MeshPhysicalMaterial).depthWrite).toBe(false);
+    expect((crystal.material as THREE.MeshPhysicalMaterial).opacity).toBeCloseTo(0.115, 6);
+    configureTeachingShadowParticipation(group);
+    expect(crystal.castShadow).toBe(false);
+    expect((group.getObjectByName("rear-sapphire") as THREE.Mesh).castShadow).toBe(false);
+    expect((group.getObjectByName("Stationary wheel with four relieved openings") as THREE.Mesh).castShadow).toBe(true);
 
-    const bodyBounds = new THREE.Box3().setFromObject(group.getObjectByName("macro-specimen-body")!);
-    const facePlateBounds = new THREE.Box3().setFromObject(group.getObjectByName("macro-specimen-face-plate")!);
-    const faceInsetBounds = new THREE.Box3().setFromObject(group.getObjectByName("macro-specimen-face-inset")!);
-    // The lens is at lower Z: the raised annulus is in front of the body,
-    // while the inset is physically behind the body face through the opening.
-    expect(facePlateBounds.min.z).toBeLessThan(bodyBounds.min.z - 1e-6);
-    expect(faceInsetBounds.min.z).toBeGreaterThan(bodyBounds.min.z + 1e-6);
-    expect(faceInsetBounds.min.z).toBeGreaterThan(facePlateBounds.min.z + 1e-6);
+    const samples = [
+      ...macroBellowsExtensionFocusTargets.flatMap((target) => [
+        { surface: "Satin Roman chapter ring", worldPosition: target.worldPosition },
+        ...(target.sampleWorldPositions ?? []).map((worldPosition) => ({
+          surface: "Satin Roman chapter ring", worldPosition,
+        })),
+      ]),
+      ...macroBellowsExtensionDiagnosticSamplesMm,
+    ];
+    const headChildren = head?.children ?? [];
+    const caseAssembly = group.getObjectByName("Case assembly");
+    const surfaceAssemblies = headChildren.filter((child) => child !== caseAssembly);
+    const rayAt = (point: { x: number; y: number }, targets: THREE.Object3D[]) => {
+      const ray = new THREE.Raycaster(
+        new THREE.Vector3(point.x / 1000, point.y / 1000, 0),
+        new THREE.Vector3(0, 0, 1),
+      );
+      return ray.intersectObjects(targets, true)[0];
+    };
     group.updateMatrixWorld(true);
-    // Every focus sample must land on the first lens-facing surface of real
-    // rendered geometry, not merely inside the subject bounds.
-    for (const target of macroBellowsExtensionFocusTargets) {
-      const samples = [target.worldPosition, ...(target.sampleWorldPositions ?? [])];
-      for (const { x, y, z } of samples) {
-        const ray = new THREE.Raycaster(
-          new THREE.Vector3(x / 1000, y / 1000, 0),
-          new THREE.Vector3(0, 0, 1),
-        );
-        const hit = ray.intersectObject(group, true)[0];
-        expect(hit).toBeDefined();
-        expect(hit.point.z).toBeCloseTo(z / 1000, 6);
-      }
+    for (const sample of samples) {
+      const hit = sample.surface === "front bezel"
+        ? rayAt(sample.worldPosition, caseAssembly ? [caseAssembly] : [])
+        : rayAt(sample.worldPosition, surfaceAssemblies);
+      expect(hit, `no ${sample.surface} geometry at ${JSON.stringify(sample.worldPosition)}`).toBeDefined();
+      expect(hit?.object.name).toContain(
+        sample.surface === "hobnail dial field" ? "hobnail field" :
+          sample.surface === "hand collet" ? "hand collet" :
+            sample.surface === "tourbillon wheel" ? "Stationary wheel" :
+              sample.surface === "front bezel" ? "front-bezel" : "chapter ring",
+      );
+      expect(hit?.point.z).toBeCloseTo(sample.worldPosition.z / 1000, 6);
     }
+    const crystalHit = rayAt(macroBellowsExtensionFocusTargets[0].worldPosition, [group]);
+    expect(crystalHit?.object.name).toBe("front-sapphire");
+
+    const materials = new Set<THREE.Material>();
+    const geometries = new Set<THREE.BufferGeometry>();
+    group.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      geometries.add(object.geometry);
+      (Array.isArray(object.material) ? object.material : [object.material]).forEach((material) => materials.add(material));
+    });
+    expect(geometries.size).toBeGreaterThan(180);
+    expect(materials.size).toBeGreaterThanOrEqual(15);
+    const chapterFinish = [...materials].find((material) => material.name === "Spun silver chapter ring");
+    const roseGoldFinish = [...materials].find((material) => material.name === "Polished rose gold");
+    expect(chapterFinish).toBeInstanceOf(THREE.MeshStandardMaterial);
+    expect((chapterFinish as THREE.MeshStandardMaterial).metalness).toBeCloseTo(0.2, 6);
+    expect((chapterFinish as THREE.MeshStandardMaterial).roughness).toBeCloseTo(0.45, 6);
+    expect((chapterFinish as THREE.MeshStandardMaterial).emissiveIntensity).toBeCloseTo(0.3, 6);
+    expect(roseGoldFinish).toBeInstanceOf(THREE.MeshStandardMaterial);
+    expect((roseGoldFinish as THREE.MeshStandardMaterial).metalness).toBeCloseTo(0.58, 6);
     disposeMacroSpecimenGroup(group);
+  });
+
+  it("creates reproducible independent heads and disposes each owned resource once", () => {
+    const first = createMacroSpecimenGroup({ presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION });
+    const second = createMacroSpecimenGroup({ presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION });
+    const firstNames: string[] = [];
+    const secondNames: string[] = [];
+    first.traverse((object) => { if (object instanceof THREE.Mesh) firstNames.push(object.name); });
+    second.traverse((object) => { if (object instanceof THREE.Mesh) secondNames.push(object.name); });
+    expect(firstNames).toEqual(secondNames);
+    expect(new THREE.Box3().setFromObject(first).min.toArray()).toEqual(
+      new THREE.Box3().setFromObject(second).min.toArray(),
+    );
+
+    const resources = {
+      geometries: new Set<THREE.BufferGeometry>(),
+      materials: new Set<THREE.Material>(),
+      textures: new Set<THREE.Texture>(),
+    };
+    first.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      resources.geometries.add(object.geometry);
+      (Array.isArray(object.material) ? object.material : [object.material]).forEach((material) => {
+        resources.materials.add(material);
+        Object.values(material).forEach((value) => {
+          if (value instanceof THREE.Texture) resources.textures.add(value);
+        });
+      });
+    });
+    const geometryDisposals = vi.fn();
+    const materialDisposals = vi.fn();
+    const textureDisposals = vi.fn();
+    resources.geometries.forEach((geometry) => geometry.addEventListener("dispose", geometryDisposals));
+    resources.materials.forEach((material) => material.addEventListener("dispose", materialDisposals));
+    resources.textures.forEach((texture) => texture.addEventListener("dispose", textureDisposals));
+    disposeMacroSpecimenGroup(first);
+    expect(geometryDisposals).toHaveBeenCalledTimes(resources.geometries.size);
+    expect(materialDisposals).toHaveBeenCalledTimes(resources.materials.size);
+    expect(textureDisposals).toHaveBeenCalledTimes(resources.textures.size);
+    disposeMacroSpecimenGroup(first);
+    expect(geometryDisposals).toHaveBeenCalledTimes(resources.geometries.size);
+    expect(materialDisposals).toHaveBeenCalledTimes(resources.materials.size);
+    expect(textureDisposals).toHaveBeenCalledTimes(resources.textures.size);
+    disposeMacroSpecimenGroup(second);
+  });
+
+  it("uses one watch-scale presentation recipe for Observer and Ground Glass", () => {
+    const context = {
+      cameraMovementPresentation: CAMERA_MOVEMENT_BASELINE_PRESENTATION,
+      presentationRegion: "middle" as const,
+    };
+    const observer = resolveScenePresentationLighting("macro-bellows-extension", {
+      ...context, surface: "observer",
+    });
+    const groundGlass = resolveScenePresentationLighting("macro-bellows-extension", {
+      ...context, surface: "ground-glass",
+    });
+    expect(observer.profile).toBe(MACRO_BELLOWS_WATCH_LIGHTING_PROFILE);
+    expect(groundGlass.profile).toBe(MACRO_BELLOWS_WATCH_LIGHTING_PROFILE);
+    expect(observer.placement).toEqual(groundGlass.placement);
+    expect(observer.placement.targetWorld).toEqual([0, 0, 0.3]);
+    expect(observer.placement.keyOffsetWorld).toEqual([-0.42, 0.62, -1]);
+    expect(MACRO_BELLOWS_WATCH_LIGHTING_PROFILE.key.shadowCamera).toMatchObject({
+      left: -0.07, right: 0.07, top: 0.07, bottom: -0.07,
+    });
   });
 
   it.each([180, 225, 300])("contains the rear carriage at %s mm without moving the front support", (distance) => {

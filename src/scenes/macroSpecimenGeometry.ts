@@ -1,62 +1,51 @@
 import type { FocusTarget } from "../types/scene";
 
-/** Data-only physical subject contract shared by viewport, RTT, and scene focus targets. */
-export const MACRO_SPECIMEN = {
-  faceCenterMm: { x: 0, y: 0, z: 300 },
-  diameterMm: 90,
-  thicknessMm: 2,
-  reliefDepthMm: 0.6,
+/** Physical watch-head placement shared by Observer, RTT, and focus evaluation. */
+export const MACRO_BELLOWS_WATCH = Object.freeze({
+  caseOriginMm: Object.freeze({ x: 0, y: 0, z: 303.55 }),
+  caseDiameterMm: 42,
+  caseThicknessMm: 12,
+  tourbillonApertureDiameterMm: 13,
+  /** Lens-facing chapter-ring plane; this stays the scene's 300 mm focus datum. */
+  dialDatumMm: Object.freeze({ x: 0, y: 0, z: 300 }),
+});
+
+/** Measured watch-head bounds after the canonical dial-toward-lens transform. */
+export const macroBellowsExtensionWatchBoundsMm = {
+  min: { x: -24.56, y: -25.674, z: 297.55 },
+  max: { x: 21, y: 25.674, z: 309.55 },
 } as const;
 
-export const MACRO_SPECIMEN_RADIAL_DOT_ORBIT_RADIUS_MM = 32.5;
-export const MACRO_SPECIMEN_RADIAL_DOT_RADIUS_MM = 0.48;
-export const MACRO_SPECIMEN_BACK_DETAIL_MAX_OFFSET_MM = 2.4;
-
 /**
- * Shared face-layer dimensions. The body is an annulus so the inset can sit
- * behind its actual lens-facing face instead of being hidden by a coplanar
- * cap.
+ * The lesson focuses the exposed chapter ring at its real 300 mm plane.
+ * Keeping both primary samples on this plane preserves the existing 1:1
+ * focus-distance behavior while the raised hands and recessed mechanism stay
+ * available as separately validated depth samples.
  */
-export const MACRO_SPECIMEN_FACE_PLATE_OUTER_RADIUS_MM = 34;
-export const MACRO_SPECIMEN_FACE_INSET_RADIUS_MM = 30.8;
-export const MACRO_SPECIMEN_FACE_PLATE_RELIEF_DEPTH_MM = 0.18;
-export const MACRO_SPECIMEN_FACE_INSET_FRONT_OFFSET_MM = 0.04;
-export const MACRO_SPECIMEN_FACE_INSET_THICKNESS_MM = 0.12;
-
-export const macroSpecimenBoundsMm = {
-  min: { x: -45, y: -45, z: 299.4 },
-  max: {
-    x: 45,
-    y: 45,
-    z: MACRO_SPECIMEN.faceCenterMm.z + MACRO_SPECIMEN_BACK_DETAIL_MAX_OFFSET_MM,
-  },
-};
-
 export const macroBellowsExtensionFocusTargets: FocusTarget[] = [
   {
-    id: "specimen-coin",
-    label: "Specimen coin",
-    worldPosition: { x: 0, y: 0, z: 299.5 },
-    sampleWorldPositions: [
-      { x: 0, y: 0, z: 299.5 },
-      { x: 0, y: -23, z: 299.88 },
-      { x: 0, y: 44.4, z: 299.4 },
-      {
-        x: MACRO_SPECIMEN_RADIAL_DOT_ORBIT_RADIUS_MM,
-        y: 0,
-        z: MACRO_SPECIMEN.faceCenterMm.z - MACRO_SPECIMEN_RADIAL_DOT_RADIUS_MM,
-      },
-    ],
+    id: "tourbillon-watch-dial",
+    label: "Tourbillon watch dial",
+    worldPosition: { x: -2.65, y: 15.45, z: 300 },
+    sampleWorldPositions: [{ x: -15.45, y: -1.4, z: 300 }],
     weight: 1,
   },
 ];
+
+/** As-built points for surfaces checked behind the retained front crystal. */
+export const macroBellowsExtensionDiagnosticSamplesMm = [
+  { surface: "hobnail dial field", worldPosition: { x: -5.8, y: 1.7, z: 300.133 } },
+  { surface: "hand collet", worldPosition: { x: 0, y: 0, z: 299.015 } },
+  { surface: "tourbillon wheel", worldPosition: { x: -0.3, y: -13.2, z: 305.69 } },
+  { surface: "front bezel", worldPosition: { x: -20, y: 0, z: 298.687 } },
+] as const;
 
 export const macroBellowsExtensionCameraPlacement = {
   position: { x: 280, y: 180, z: 650 },
   target: { x: 0, y: -15, z: 150 },
 };
 
-/** Includes specimen, standards, and rail throughout the assigned extension range. */
+/** Includes watch, camera standards, and rail throughout the assigned range. */
 export const macroBellowsExtensionSceneBoundsMm = {
   min: { x: -180, y: -220, z: -380 },
   max: { x: 180, y: 180, z: 320 },

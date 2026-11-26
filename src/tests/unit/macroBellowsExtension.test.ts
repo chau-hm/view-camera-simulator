@@ -64,7 +64,11 @@ describe("macro-bellows-extension scene", () => {
     expect(macroBellowsExtensionScene.focusStandardCapability).toBeUndefined();
     expect(macroBellowsExtensionScene.macroFocusMetricsCapability).toEqual({ enabled: true });
     expect(macroBellowsExtensionScene.focusTargets).toHaveLength(1);
-    expect(macroBellowsExtensionScene.focusTargets[0].sampleWorldPositions).toHaveLength(4);
+    expect(macroBellowsExtensionScene.focusTargets[0].id).toBe("tourbillon-watch-dial");
+    expect(macroBellowsExtensionScene.focusTargets[0].worldPosition.z).toBe(300);
+    expect(macroBellowsExtensionScene.focusTargets[0].sampleWorldPositions).toEqual([
+      { x: -15.45, y: -1.4, z: 300 },
+    ]);
     expect(macroBellowsExtensionScene.macroTeachingCapability).toEqual({
       kind: "bellows-extension",
       groundGlassGridSquareMm: 10,
@@ -251,11 +255,11 @@ describe("macro-bellows-extension scene", () => {
 
   it("changes physical blur with aperture without changing macro geometry", () => {
     const wideOpen = deriveOpticsState(
-      cameraAt(300),
+      cameraAt(310),
       macroBellowsExtensionScene,
     );
     const stoppedDown = deriveOpticsState(
-      { ...cameraAt(300), aperture: 22 },
+      { ...cameraAt(310), aperture: 22 },
       macroBellowsExtensionScene,
     );
 

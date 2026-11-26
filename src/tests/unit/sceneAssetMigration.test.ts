@@ -845,7 +845,7 @@ describe("static teaching scene asset migrations", () => {
       MACRO_BELLOWS_EXTENSION_ASSET_KEY,
       { presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION },
       countFactoryCalls(macroBellowsExtensionFactorySpy),
-      "macro-bellows-extension-subject",
+      "macro-bellows-extension-watch-head",
       "macro-bellows-extension",
     );
     exerciseReplacement(

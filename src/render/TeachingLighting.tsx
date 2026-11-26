@@ -24,9 +24,14 @@ const SHADOW_HELPER_NAME =
   /(?:line|guide|overlay|axis|crosshair|scheimpflug|lattice|construction|ray|frustum|measurement|legend|diagnostic|dof)/i;
 const SHADOW_RECEIVER_NAME =
   /(?:ground|floor|tabletop|wall|backdrop|rug|surface|room|roof|plinth)/i;
-// Interior Corner keeps its visible ceiling lit, but the broad overhead slab
-// should not cast the distracting diagonal shadow onto the room walls.
-const NON_CASTING_SCENE_MESH_NAMES = new Set(["interior-corner-ceiling"]);
+// These scene-specific surfaces should not cast a solid teaching shadow.
+// Interior Corner's broad ceiling otherwise throws a distracting wall shadow.
+// The retained transparent sapphire would otherwise darken the dial and rear movement.
+const NON_CASTING_SCENE_MESH_NAMES = new Set([
+  "interior-corner-ceiling",
+  "front-sapphire",
+  "rear-sapphire",
+]);
 const TeachingShadowParticipationRefreshContext = createContext<(() => void) | null>(null);
 const NOOP = (): void => undefined;
 

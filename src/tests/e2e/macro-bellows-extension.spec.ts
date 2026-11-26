@@ -141,7 +141,7 @@ test("Macro 1 tracks canonical Image Circle growth and bellows exposure across f
   await expect(readout).toContainText("4.00×");
   await expect(readout).toContainText("+2.00 stops");
   await expect(readout).toContainText("Life-size reproduction reached (1:1)");
-  await expect(readout).toContainText("specimen is now sharply reproduced");
+  await expect(taskView).toContainText("selected chapter-ring plane is now sharply reproduced");
   const finalCircleRadiusMm = await expectMacroCoverageState(sceneCanvas, groundGlassRtt, readout, 435.93);
   expect(finalCircleRadiusMm).toBeGreaterThan(middleCircleRadiusMm);
   await expect(aperture).toHaveAttribute("data-selected-aperture", "5.6");
