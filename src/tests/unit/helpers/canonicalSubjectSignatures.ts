@@ -18,6 +18,7 @@ const normalizedGeometryParameters = (geometry: THREE.BufferGeometry): unknown =
   const shape = geometryParameters.shapes;
   if (
     !shape || Array.isArray(shape) || typeof shape !== "object" ||
+    !(shape instanceof THREE.Shape) ||
     (shape as { type?: unknown }).type !== "Shape" ||
     typeof (shape as { uuid?: unknown }).uuid !== "string"
   ) {
@@ -29,7 +30,7 @@ const normalizedGeometryParameters = (geometry: THREE.BufferGeometry): unknown =
   // only the demonstrated runtime-only field.
   return {
     ...geometryParameters,
-    shapes: { ...(shape as Record<string, unknown>), uuid: "<generated-shape-uuid>" },
+    shapes: { ...shape, uuid: "<generated-shape-uuid>" },
   };
 };
 

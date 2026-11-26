@@ -79,6 +79,17 @@ const createExtrudedShape = (depth: number, holeWidth = 0.5): THREE.Group => {
   return group;
 };
 
+const createExtrusionWithShapeLikeParameter = (uuid: string): THREE.Group => {
+  const group = new THREE.Group();
+  const geometry = new THREE.BufferGeometry();
+  Object.assign(geometry, {
+    type: "ExtrudeGeometry",
+    parameters: { shapes: { type: "Shape", uuid } },
+  });
+  group.add(new THREE.Mesh(geometry, new THREE.MeshStandardMaterial()));
+  return group;
+};
+
 const mutateTestOwnedPosition = (root: THREE.Group, meshName: string): void => {
   const mesh = root.getObjectByName(meshName);
   if (!(mesh instanceof THREE.Mesh)) throw new Error(`Missing mesh ${meshName}`);
@@ -126,6 +137,25 @@ describe("canonical test subject signatures", () => {
       expect(firstShape.uuid).not.toBe(secondShape.uuid);
       expect(firstShape.holes[0]?.curves).toEqual(secondShape.holes[0]?.curves);
       expect(canonicalGeometrySignature(first)).toBe(canonicalGeometrySignature(second));
+    } finally {
+      disposeTestRoots(first, second);
+    }
+  });
+
+  it("retains UUID differences for plain Shape-like extrusion parameters", () => {
+    const first = createExtrusionWithShapeLikeParameter("fake-a");
+    const second = createExtrusionWithShapeLikeParameter("fake-b");
+    try {
+      const firstShapeLike = ((first.children[0] as THREE.Mesh).geometry as THREE.BufferGeometry & {
+        parameters: { shapes: object };
+      }).parameters.shapes;
+      const secondShapeLike = ((second.children[0] as THREE.Mesh).geometry as THREE.BufferGeometry & {
+        parameters: { shapes: object };
+      }).parameters.shapes;
+
+      expect(firstShapeLike).not.toBeInstanceOf(THREE.Shape);
+      expect(secondShapeLike).not.toBeInstanceOf(THREE.Shape);
+      expect(canonicalGeometrySignature(first)).not.toBe(canonicalGeometrySignature(second));
     } finally {
       disposeTestRoots(first, second);
     }
