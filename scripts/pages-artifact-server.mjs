@@ -24,7 +24,7 @@ createServer(async (req, res) => {
       res.writeHead(200, { 'content-type': types[extname(file)] || 'application/octet-stream' }).end(data);
     } catch (error) {
       if (error.code !== 'ENOENT' && error.code !== 'EISDIR') throw error;
-      if (relative.startsWith('assets/')) { res.writeHead(404).end(); return; }
+      if (relative.startsWith('assets/') || extname(relative)) { res.writeHead(404).end(); return; }
       const fallback = await readFile(resolve(root, '404.html'));
       res.writeHead(req.headers['x-pages-fallback-test'] === '1' ? 404 : 200, { 'content-type': 'text/html' }).end(fallback);
     }

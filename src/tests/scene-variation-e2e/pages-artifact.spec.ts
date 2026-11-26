@@ -7,6 +7,8 @@ test("Pages payload serves assets and its fallback supports a direct deep link",
   });
   const base = "/view-camera-simulator/";
   const index = await request.get(base);
+  expect((await request.get(`${base}missing-public-image.png`)).status()).toBe(404);
+  expect((await request.get(`${base}assets/missing.js`)).status()).toBe(404);
   const fallback = await request.get(`${base}404.html`);
   expect(fallback.status()).toBe(200);
   expect(await fallback.body()).toEqual(await index.body());
