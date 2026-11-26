@@ -94,11 +94,11 @@ function prepare(out) {
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
-    const [command, path, expectedCommit] = process.argv.slice(2);
-    if (command === 'prepare' && path && !expectedCommit) prepare(path);
-    else if (command === 'verify' && path) {
+    const [command, path, expectedCommit, expectedTree] = process.argv.slice(2);
+    if (command === 'prepare' && path && !expectedCommit && !expectedTree) prepare(path);
+    else if (command === 'verify' && path && (!expectedTree || expectedCommit)) {
       const manifest = JSON.parse(readFileSync(join(path, 'manifest.json'), 'utf8'));
-      console.log(JSON.stringify(verify(join(path, 'payload'), manifest, expectedCommit ? { sourceCommit: expectedCommit } : {})));
-    } else throw new Error('Usage: node scripts/pages-artifact.mjs prepare <new-output-dir> | verify <output-dir> [expected-commit]');
+      console.log(JSON.stringify(verify(join(path, 'payload'), manifest, { ...(expectedCommit ? { sourceCommit: expectedCommit } : {}), ...(expectedTree ? { sourceTree: expectedTree } : {}) })));
+    } else throw new Error('Usage: node scripts/pages-artifact.mjs prepare <new-output-dir> | verify <output-dir> [expected-commit [expected-tree]]');
   } catch (error) { console.error(error.message); process.exitCode = 1; }
 }

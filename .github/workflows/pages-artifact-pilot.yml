@@ -29,7 +29,8 @@ jobs:
           --project=chromium-pages-artifact --workers=1
       - name: Verify unchanged payload
         run: |
-          node scripts/pages-artifact.mjs verify "$RUNNER_TEMP/pages-artifact" "$GITHUB_SHA" > "$RUNNER_TEMP/pages-artifact/validation.json"
+          node scripts/pages-artifact.mjs verify "$RUNNER_TEMP/pages-artifact" "$GITHUB_SHA" "$(git rev-parse HEAD^{tree})" > "$RUNNER_TEMP/verified.json"
+          node -e 'const fs = require("node:fs"); const result = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + "/verified.json")); fs.writeFileSync(process.env.RUNNER_TEMP + "/pages-artifact/validation.json", JSON.stringify({ status: "ARTIFACT_VALIDATED", qualification: "RELEASE_QUALIFICATION_PENDING", deployment: "NOT_DEPLOYED", ...result }, null, 2) + "\n");'
       - name: Retain candidate and identity
         uses: actions/upload-artifact@v4
         with:
