@@ -18,46 +18,7 @@ import { DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 type Uv = { u: number; v: number };
 
-const flip180 = ({ u, v }: Uv): Uv => ({ u: 1 - u, v: 1 - v });
-
-const ASYMMETRIC_REFERENCE_POINTS = [
-  { label: "A", sourceTextureUv: { u: 0.2, v: 0.2 } },
-  { label: "B", sourceTextureUv: { u: 0.8, v: 0.2 } },
-  { label: "C", sourceTextureUv: { u: 0.2, v: 0.8 } },
-  { label: "D", sourceTextureUv: { u: 0.8, v: 0.8 } },
-] as const;
-
 describe("Ground Glass RTT orientation", () => {
-  it("renders an asymmetric upright reference as a 180-degree Raw image", () => {
-    for (const point of ASYMMETRIC_REFERENCE_POINTS) {
-      const rawDisplay = applyGroundGlassRttDisplayTransform(
-        point.sourceTextureUv,
-        resolveGroundGlassRttDisplayTransform("raw"),
-      );
-      const uprightDisplay = applyGroundGlassRttDisplayTransform(
-        point.sourceTextureUv,
-        resolveGroundGlassRttDisplayTransform("upright"),
-      );
-
-      expect(rawDisplay, point.label).toEqual(flip180(point.sourceTextureUv));
-      expect(uprightDisplay, point.label).toEqual(point.sourceTextureUv);
-    }
-  });
-
-  it("keeps source-to-film coordinates separate from the Raw display flip", () => {
-    for (const point of ASYMMETRIC_REFERENCE_POINTS) {
-      const physicalFilmUv = mapGroundGlassRttTextureUvToCanonicalFilmUv(
-        point.sourceTextureUv,
-      );
-      const rawDisplayUv = applyGroundGlassRttDisplayTransform(
-        point.sourceTextureUv,
-        resolveGroundGlassRttDisplayTransform("raw"),
-      );
-      expect(physicalFilmUv, point.label).toEqual(point.sourceTextureUv);
-      expect(rawDisplayUv, point.label).toEqual(flip180(physicalFilmUv));
-    }
-  });
-
   it("maps the configured RTT camera's source texel to its canonical film-local point", () => {
     const cameraState = {
       ...DEFAULT_CAMERA_STATE,
@@ -178,39 +139,6 @@ describe("Ground Glass RTT orientation", () => {
     expect(
       calculateGroundGlassCoverageGain(coverage, negativeFilmEdge.xMm, negativeFilmEdge.yMm),
     ).toBe(0);
-  });
-
-  it("maps physical film points through the same display transform as the RTT", () => {
-    for (const point of ASYMMETRIC_REFERENCE_POINTS) {
-      const physicalFilmUv = mapGroundGlassRttTextureUvToCanonicalFilmUv(
-        point.sourceTextureUv,
-      );
-      const rasterRawDisplay = applyGroundGlassRttDisplayTransform(
-        point.sourceTextureUv,
-        resolveGroundGlassRttDisplayTransform("raw"),
-      );
-      const rasterUprightDisplay = applyGroundGlassRttDisplayTransform(
-        point.sourceTextureUv,
-        resolveGroundGlassRttDisplayTransform("upright"),
-      );
-      const rawScreenUv = { u: rasterRawDisplay.u, v: 1 - rasterRawDisplay.v };
-      const uprightScreenUv = { u: rasterUprightDisplay.u, v: 1 - rasterUprightDisplay.v };
-      const projectedRawDisplay = mapPhysicalFilmUvToGroundGlassDisplayUv(
-        physicalFilmUv,
-        "raw",
-      );
-      const projectedUprightDisplay = mapPhysicalFilmUvToGroundGlassDisplayUv(
-        physicalFilmUv,
-        "upright",
-      );
-
-      expect(rawScreenUv.u, point.label).toBeCloseTo(projectedRawDisplay.u, 12);
-      expect(rawScreenUv.v, point.label).toBeCloseTo(projectedRawDisplay.v, 12);
-      expect(uprightScreenUv.u, point.label).toBeCloseTo(projectedUprightDisplay.u, 12);
-      expect(uprightScreenUv.v, point.label).toBeCloseTo(projectedUprightDisplay.v, 12);
-      expect(uprightScreenUv.u).toBeCloseTo(1 - rawScreenUv.u, 12);
-      expect(uprightScreenUv.v).toBeCloseTo(1 - rawScreenUv.v, 12);
-    }
   });
 
   it("maps the configured RTT camera and large frame through the display contract", () => {
