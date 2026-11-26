@@ -4,7 +4,7 @@
 
 Keep full GitHub Vitest, ordinary Chromium smoke, all four Production Preview cases, M7R/M7V checks, B1/B2 routing, the authoritative `ci` identity, and the production deployment condition unchanged. Accept one bounded Production Preview build-preparation optimization: the GitHub preview step can reuse the already completed TypeScript validation and run the identical Vite production bundle without running `tsc -b` a second time.
 
-The local matched comparison showed identical output hashes and four passing real browser tests on both paths, with a repeatable 9.5–10.7s reduction per preview invocation on macOS arm64. Hosted-runner time saved and billed-cost effects remain `NOT_MEASURED`; verify the current-head GitHub result before treating this as a hosted optimization measurement.
+The local matched comparison showed identical output hashes and four passing real browser tests on both paths, with a repeatable 9.5–10.7s reduction per preview invocation on macOS arm64. Current PR run 45821749289 then passed the optimized Preview step in 194s with all four hosted cases. There is no matched hosted run of the same source with the original checked build, so hosted-runner time saved and billed-cost effects remain `NOT_MEASURED`.
 
 The same-source GitHub baseline exposed an M7V ordering failure. Move the existing exact-source fetch before full Vitest so its current Unit tests can resolve the pinned source in the depth-50 checkout. This preserves the source SHA, paths, assertions, policy, and later M7V qualification command.
 
@@ -41,6 +41,6 @@ The implementation is in [`pages.yml`](../../.github/workflows/pages.yml), [`pac
 - `deploy` remains dependent on successful `ci` and restricted to `push` on `production`.
 - Local Preview failure injection (build command exit 23) produced Playwright exit 1, not a green result.
 
-## Follow-up evidence required
+## Current-head GitHub evidence
 
-The current-head GitHub run must show that the exact-source fetch occurs before full Vitest, the full suite reaches 357-file discovery, ordinary smoke and all four Production Preview tests execute, and M7R/M7V complete. Capture hosted step durations then. Do not call the local 9.5–10.7s saving a hosted-runner saving, and do not infer billed cost.
+PR run [45821749289](https://github.com/chau-hm/view-camera-simulator/actions/runs/45821749289) used head `dc750f922752d2a4a574affd4721b675ca41da99`, base `879a50f9607bed848de02a7c358b8b9e2501d1a2`, and synthetic merge `ba650da8447a3404d06510a3f956dfed9c5eac61`. The historical qualification decision and authoritative `ci` succeeded. Full Vitest passed 357 files / 4,470 cases; smoke passed 2/2; Production Preview passed 4/4 in 194s; M7R integrity and M7V policy passed. The CI job took 10m04s and the entire workflow 15m53s including historical qualification. The 194s hosted Preview timing validates that the optimized path executed, but is not a before/after saving measurement. Do not infer hosted cost from elapsed time.

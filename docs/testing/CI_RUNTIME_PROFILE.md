@@ -48,6 +48,28 @@ The ordering change was checked in isolated depth-50 checkouts of the same basel
 
 For context only, [successful run 45731018804](https://github.com/chau-hm/view-camera-simulator/actions/runs/45731018804) is from a different source revision (`5d837274f50986e366f1d6de00ee46c2538c008d`) and is not a matched comparison. It recorded full Vitest at 326s (357 files / 4,469 cases), ordinary smoke at about 136s, Production Preview at about 462s, and the `ci` job at 17m53s. Runner-minute billing remains `NOT_MEASURED`.
 
+## B6 current-head hosted validation
+
+[PR run 45821749289](https://github.com/chau-hm/view-camera-simulator/actions/runs/45821749289) validated implementation head `dc750f922752d2a4a574affd4721b675ca41da99` against base `879a50f9607bed848de02a7c358b8b9e2501d1a2`. GitHub used synthetic merge checkout `ba650da8447a3404d06510a3f956dfed9c5eac61`. The run and authoritative `ci` job both succeeded. The current PR job exercised the Production Preview step with `VCS_PREVIEW_TYPECHECK_PASSED=1` after the mandatory typecheck.
+
+| Hosted stage | Elapsed | Result |
+|---|---:|---|
+| Historical qualification decision | 5m25s evaluator step; 5m38s job | Passed; shared CI/package changes selected the required historical lane |
+| Main `ci` job | 10m04s | Passed |
+| `npm ci` | 37s | Passed |
+| Chromium installation | 17s | Passed |
+| ESLint | 18s | Passed |
+| TypeScript check | 19s | Passed |
+| M7V exact-source fetch | <1s | Passed; exact SHA and all three paths verified before Vitest |
+| Full Vitest | 228s step; 226.98s runner duration | 357 files / 4,470 cases passed |
+| Ordinary Chromium smoke | 65s | 2/2 passed |
+| Production Preview | 194s | 4/4 passed |
+| M7R integrity | <1s | Passed; complete execution integrity, archived qualification remains `not-qualified` |
+| M7V policy | 4s | Passed |
+| Workflow create-to-completion | 15m53s | Includes the historical decision job; not runner usage |
+
+The historical decision, full suite, ordinary smoke, Preview, M7R and M7V all ran on this PR event; none of those results is inferred from the feature-push run. The Production Preview step is 194s on this current hosted revision. A matched hosted run of the same source with the original checked build is unavailable, so hosted time saved remains `NOT_MEASURED`. The older 462s Preview run is a different revision and cannot establish a reduction. Aggregate runner minutes and billed cost remain `NOT_MEASURED`.
+
 ## Production Preview profile
 
 The existing standalone path is `npm run build && npm run preview -- --host 127.0.0.1 --port 4175`. `npm run build` runs `tsc -b && vite build`; the mandatory CI typecheck already ran before the Production Preview step. Both preview builds inherit `VITE_BASE_PATH=/` from `playwright.production.config.ts` and use Vite's default production mode.
