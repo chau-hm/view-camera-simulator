@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:production-preview:after-typecheck": "vite build",
     "build:still-life-studio-qualification": "tsc -b && vite build --mode still-life-studio-qualification",
     "evidence:replay:m7e": "node ./scripts/run-m7e-offline-replay.mjs",
     "evidence:replay:m7f": "node ./scripts/run-m7f-presentation-evidence-replay.mjs",

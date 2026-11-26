@@ -8,11 +8,62 @@ const supported = HISTORICAL_EVIDENCE_MANIFEST.families;
 const supportedIds = new Set(supported.map(({ id }) => id));
 const ordinaryCiOnly = supported.filter((family) => family.alwaysInOrdinaryCi === true);
 const automaticallyRouted = supported.filter((family) => family.alwaysInOrdinaryCi !== true);
-const ordinaryCiOwners = ordinaryCiOnly.map(({ owner }) => owner);
+const registeredOrdinaryCiOwners = new Set([
+  "ordinary-ci:unit-tests",
+  "ordinary-ci:evidence:check:m7r",
+  "ordinary-ci:evidence:check:m7v",
+  "ordinary-ci:application-ci",
+]);
+const m7vOrdinaryCiOwner = "ordinary-ci:evidence:check:m7v";
+const legacyEvidenceRoots = HISTORICAL_EVIDENCE_MANIFEST.legacyEvidenceRoots ?? [];
 const idToFamily = new Map(supported.map((family) => [family.id, family]));
 const globalPaths = HISTORICAL_EVIDENCE_MANIFEST.sharedQualificationPaths;
 const familyPattern = /m7([a-z])/i;
 const shaPattern = /^[0-9a-f]{40}$/i;
+
+/** Prevent manifest changes from silently assigning evidence to arbitrary CI owners. */
+export function validateEvidenceOwnershipDeclarations(manifest = HISTORICAL_EVIDENCE_MANIFEST) {
+  const errors = [];
+  const declaredPaths = new Set();
+  const declarations = [
+    ...(manifest.families ?? [])
+      .filter(({ alwaysInOrdinaryCi }) => alwaysInOrdinaryCi === true)
+      .map(({ id, owner }) => ({ label: `family:${id}`, owner, path: null })),
+    ...(manifest.ordinaryCiPaths ?? [])
+      .map(({ path, owner }) => ({ label: `path:${path}`, owner, path })),
+  ];
+  for (const { label, owner, path } of declarations) {
+    if (typeof owner !== "string" || !registeredOrdinaryCiOwners.has(owner)) {
+      errors.push(`ordinary-ci-owner-unregistered:${label}:${String(owner ?? "<missing>")}`);
+    }
+    if (path !== null) {
+      const normalized = typeof path === "string" ? path.replaceAll("\\", "/").replace(/^\.\//, "") : "";
+      if (!normalized || normalized.startsWith("/") || normalized.split("/").includes("..")) {
+        errors.push(`ordinary-ci-path-invalid:${label}`);
+      } else if (declaredPaths.has(normalized.toLowerCase())) {
+        errors.push(`ordinary-ci-path-duplicated:${normalized}`);
+      } else {
+        declaredPaths.add(normalized.toLowerCase());
+      }
+    }
+  }
+  const roots = manifest.legacyEvidenceRoots;
+  if (!Array.isArray(roots) || roots.length === 0 || roots.some((root) => typeof root !== "string" ||
+      !/^docs\/architecture\/[^/]+(?:\/[^/]+)*\/$/.test(root) || root.split("/").includes("..")) ||
+      new Set(roots).size !== roots.length) {
+    errors.push("legacy-evidence-roots-incomplete-or-too-broad");
+  }
+  return { valid: errors.length === 0, errors };
+}
+
+const ownershipValidation = validateEvidenceOwnershipDeclarations();
+if (!ownershipValidation.valid) {
+  throw new Error(`historical-evidence-manifest-ownership-invalid:${ownershipValidation.errors.join(",")}`);
+}
+const ordinaryCiOwners = [...new Set([
+  ...ordinaryCiOnly.map(({ owner }) => owner),
+  m7vOrdinaryCiOwner,
+])];
 // These specific audited tests and their direct local helpers do not consume
 // retained historical evidence. Their byte identities are part of the audit:
 // a change, deletion, or unreadable file must return to fail-closed routing.
@@ -54,9 +105,12 @@ function isAuditedNonHistoricalCaptureTest(path) {
 const normalizePath = (value) => value.replaceAll("\\", "/").replace(/^\.\//, "");
 const isWithin = (path, prefix) => prefix.endsWith("/") ? path.startsWith(prefix) : path === prefix;
 const isSharedQualificationPath = (path) => globalPaths.some((prefix) => isWithin(path, prefix));
+const ordinaryCiPathOwners = new Map((HISTORICAL_EVIDENCE_MANIFEST.ordinaryCiPaths ?? [])
+  .map(({ path, owner }) => [normalizePath(path).toLowerCase(), owner]));
 const familyPathMatches = (path, family) => {
   const normalized = path.toLowerCase();
   if (family.artifactRoots.some((root) => normalized.startsWith(root.toLowerCase()))) return true;
+  if (family.documentationPaths?.some((documentationPath) => normalizePath(documentationPath).toLowerCase() === normalized)) return true;
   if (family.replaySourcePaths?.some((sourcePath) => normalizePath(sourcePath) === path)) return true;
   if (HISTORICAL_EVIDENCE_MANIFEST.sourcePins.some((pin) =>
     pin.families.includes(family.id) && pin.verifyPaths.some((sourcePath) => normalizePath(sourcePath) === path))) return true;
@@ -91,7 +145,8 @@ function broadDecision(reason, { unverified = true, paths = [] } = {}) {
     changedPaths: paths,
     broad: true,
     reasons: [reason],
-    currentOwners: [...ordinaryCiOwners, "ordinary-ci:evidence:check:m7v"],
+    currentOwners: [...new Set([...ordinaryCiOwners, m7vOrdinaryCiOwner])],
+    pathOwnership: [],
     unsupported: [],
   };
 }
@@ -109,6 +164,7 @@ export function classifyChangedPaths(changedPaths, options = {}) {
       broad: true,
       reasons: options.reason ? [options.reason] : ["full-historical-qualification-requested"],
       currentOwners: ["ordinary-ci:evidence:check:m7v"],
+      pathOwnership: [],
       unsupported,
     };
   }
@@ -126,16 +182,41 @@ export function classifyChangedPaths(changedPaths, options = {}) {
   const unsupported = new Map();
   const reasons = [];
   const currentOwners = new Set();
+  const pathClassifications = new Map();
   let broad = false;
   let unverified = false;
 
   for (const path of paths) {
+    const ownership = {
+      path,
+      historicalValidators: new Set(),
+      ordinaryCiOwners: new Set(),
+      unresolved: false,
+      qualificationInfrastructure: false,
+    };
+
     if (isSharedQualificationPath(path)) {
       broad = true;
-      allFamilies().forEach((id) => matched.add(id));
-      ordinaryCiOwners.forEach((owner) => currentOwners.add(owner));
-      currentOwners.add("ordinary-ci:evidence:check:m7v");
+      allFamilies().forEach((id) => {
+        matched.add(id);
+        ownership.historicalValidators.add(id);
+      });
+      [...ordinaryCiOwners, m7vOrdinaryCiOwner].forEach((owner) => {
+        currentOwners.add(owner);
+        ownership.ordinaryCiOwners.add(owner);
+      });
+      ownership.qualificationInfrastructure = true;
       reasons.push(`shared-qualification-path:${path}`);
+      pathClassifications.set(path, ownership);
+      continue;
+    }
+
+    const ordinaryCiPathOwner = ordinaryCiPathOwners.get(path.toLowerCase());
+    if (ordinaryCiPathOwner) {
+      currentOwners.add(ordinaryCiPathOwner);
+      ownership.ordinaryCiOwners.add(ordinaryCiPathOwner);
+      reasons.push(`ordinary-ci-path:${ordinaryCiPathOwner}:${path}`);
+      pathClassifications.set(path, ownership);
       continue;
     }
 
@@ -148,6 +229,7 @@ export function classifyChangedPaths(changedPaths, options = {}) {
         replaySourcePaths.some((sourcePath) => normalizePath(sourcePath) === path));
       for (const family of replayOwners) {
         matched.add(family.id);
+        ownership.historicalValidators.add(family.id);
         reasons.push(`replay-source-dependency:${family.id}:${path}`);
       }
       matchedKnownFamily = replayOwners.length > 0;
@@ -156,17 +238,22 @@ export function classifyChangedPaths(changedPaths, options = {}) {
     if (token) {
       const candidate = `M7${token[1].toUpperCase()}`;
       if (candidate === "M7V") {
-        currentOwners.add("ordinary-ci:evidence:check:m7v");
+        currentOwners.add(m7vOrdinaryCiOwner);
+        ownership.ordinaryCiOwners.add(m7vOrdinaryCiOwner);
         matched.add("M7W");
+        ownership.historicalValidators.add("M7W");
         reasons.push(`current-m7v-input-also-feeds-m7w:${path}`);
         matchedKnownFamily = true;
       } else if (supportedIds.has(candidate) && idToFamily.get(candidate).alwaysInOrdinaryCi === true
         && familyPathMatches(path, idToFamily.get(candidate))) {
-        currentOwners.add(idToFamily.get(candidate).owner);
+        const owner = idToFamily.get(candidate).owner;
+        currentOwners.add(owner);
+        ownership.ordinaryCiOwners.add(owner);
         reasons.push(`family-retained-in-ordinary-ci:${candidate}:${path}`);
         matchedKnownFamily = true;
       } else if (supportedIds.has(candidate) && familyPathMatches(path, idToFamily.get(candidate))) {
         matched.add(candidate);
+        ownership.historicalValidators.add(candidate);
         reasons.push(`family-input:${candidate}:${path}`);
         matchedKnownFamily = true;
       } else {
@@ -175,9 +262,15 @@ export function classifyChangedPaths(changedPaths, options = {}) {
         unsupported.set(candidate, unsupportedReason);
         unverified = true;
         broad = true;
-        allFamilies().forEach((id) => matched.add(id));
-        ordinaryCiOwners.forEach((owner) => currentOwners.add(owner));
-        currentOwners.add("ordinary-ci:evidence:check:m7v");
+        allFamilies().forEach((id) => {
+          matched.add(id);
+          ownership.historicalValidators.add(id);
+        });
+        [...ordinaryCiOwners, m7vOrdinaryCiOwner].forEach((owner) => {
+          currentOwners.add(owner);
+          ownership.ordinaryCiOwners.add(owner);
+        });
+        ownership.unresolved = true;
         reasons.push(`unsupported-or-unmapped-historical-family:${candidate}:${path}`);
         matchedKnownFamily = true;
       }
@@ -186,11 +279,19 @@ export function classifyChangedPaths(changedPaths, options = {}) {
     if (!matchedKnownFamily && isEvidenceLikeUnknownPath(path)) {
       unverified = true;
       broad = true;
-      allFamilies().forEach((id) => matched.add(id));
-      ordinaryCiOwners.forEach((owner) => currentOwners.add(owner));
-      currentOwners.add("ordinary-ci:evidence:check:m7v");
+      allFamilies().forEach((id) => {
+        matched.add(id);
+        ownership.historicalValidators.add(id);
+      });
+      [...ordinaryCiOwners, m7vOrdinaryCiOwner].forEach((owner) => {
+        currentOwners.add(owner);
+        ownership.ordinaryCiOwners.add(owner);
+      });
+      ownership.unresolved = true;
       reasons.push(`unmapped-evidence-verification-dependency:${path}`);
     }
+
+    pathClassifications.set(path, ownership);
   }
 
   const dependencyClosure = closeDependencies(matched);
@@ -199,6 +300,26 @@ export function classifyChangedPaths(changedPaths, options = {}) {
     if (family?.alwaysInOrdinaryCi === true) currentOwners.add(family.owner);
   }
   const families = dependencyClosure.filter((id) => idToFamily.get(id)?.alwaysInOrdinaryCi !== true);
+  const pathOwnership = paths.map((path) => {
+    const ownership = pathClassifications.get(path);
+    const pathClosure = closeDependencies(ownership.historicalValidators);
+    for (const familyId of pathClosure) {
+      const family = idToFamily.get(familyId);
+      if (family?.alwaysInOrdinaryCi === true) ownership.ordinaryCiOwners.add(family.owner);
+    }
+    const hasHistoricalValidator = pathClosure.some((id) => idToFamily.get(id)?.alwaysInOrdinaryCi !== true);
+    const classification = ownership.unresolved ? "unresolved"
+      : ownership.qualificationInfrastructure ? "qualification-infrastructure"
+        : hasHistoricalValidator ? "historical-validator"
+          : ownership.ordinaryCiOwners.size > 0 ? "ordinary-ci" : "non-evidence";
+    return {
+      path,
+      classification,
+      historicalValidators: pathClosure.filter((id) => idToFamily.get(id)?.alwaysInOrdinaryCi !== true),
+      ordinaryCiOwners: [...ownership.ordinaryCiOwners],
+      unresolved: ownership.unresolved,
+    };
+  });
   if (families.length === 0 && !unverified) {
     return {
       decision: "NOT_APPLICABLE",
@@ -207,6 +328,7 @@ export function classifyChangedPaths(changedPaths, options = {}) {
       broad: false,
       reasons: ["complete-path-set-has-no-frozen-historical-qualification-dependency"],
       currentOwners: [...currentOwners],
+      pathOwnership,
       unsupported: [],
     };
   }
@@ -218,6 +340,7 @@ export function classifyChangedPaths(changedPaths, options = {}) {
     broad,
     reasons: [...new Set(reasons)],
     currentOwners: [...currentOwners],
+    pathOwnership,
     unsupported: [...unsupported].map(([id, reason]) => ({ id, reason })),
   };
 }
@@ -232,7 +355,8 @@ export function classifyCompleteChangedPaths(changedPaths) {
       changedPaths: [],
       broad: false,
       reasons: ["complete-changed-file-set-is-empty"],
-      currentOwners: [...ordinaryCiOwners, "ordinary-ci:evidence:check:m7v"],
+      currentOwners: [...new Set([...ordinaryCiOwners, m7vOrdinaryCiOwner])],
+      pathOwnership: [],
       unsupported: [],
     };
   }
@@ -242,7 +366,12 @@ export function classifyCompleteChangedPaths(changedPaths) {
 function isEvidenceLikeUnknownPath(path) {
   const auditedOwner = nonHistoricalCaptureOwners.get(path);
   if (auditedOwner) return !isAuditedNonHistoricalCaptureTest(auditedOwner);
-  if (/^docs\/architecture\//i.test(path) && /(?:evidence|capture|qualification|provenance|report|m7)/i.test(path)) return true;
+  const lower = path.toLowerCase();
+  if (/^docs\/architecture\//.test(lower)) {
+    if (legacyEvidenceRoots.some((root) => lower.startsWith(root.toLowerCase()))) return true;
+    if (/(?:^|\/)[^/]*archive[^/]*\//.test(lower)) return true;
+  }
+  if (/^docs\/architecture\//.test(lower) && /(?:evidence|capture|qualification|provenance|report|m7)/i.test(lower)) return true;
   if (/^scripts\//i.test(path) && /(?:evidence|capture|qualification|provenance|replay|normaliz|evaluate|historical)/i.test(path)) return true;
   if (/^src\//i.test(path) && /(?:evidence|capture|qualification|provenance|m7)/i.test(path)) return true;
   return false;
@@ -376,7 +505,9 @@ export function determineQualificationDecision({ routeDecision, hasFamilies, sou
   if (!hasFamilies && routeDecision === "NOT_APPLICABLE") return "NOT_APPLICABLE";
   if (routeDecision === "UNVERIFIED" || sourceFailure || missingArtifacts || unsupported) return "UNVERIFIED";
   if (validatorFailure) return "FAILED";
-  return routeDecision === "QUALIFIED" ? "QUALIFIED" : "UNVERIFIED";
+  return routeDecision === "QUALIFIED" || routeDecision === "QUALIFIED_WITH_LEGACY_ARCHIVAL"
+    ? routeDecision
+    : "UNVERIFIED";
 }
 
 export function manifestPathForDiagnostics() {
