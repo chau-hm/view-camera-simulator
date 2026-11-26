@@ -19,6 +19,69 @@ describe("authoritative CI qualification gate", () => {
       .toEqual({ passed: true, reasons: [] });
   });
 
+  it("accepts the explicit archival disposition only for the canonical production-release event", () => {
+    expect(evaluateHistoricalQualificationGate({
+      ...validGate,
+      historicalDecision: "QUALIFIED_WITH_LEGACY_ARCHIVAL",
+      historicalMode: "production-release",
+      eventName: "push",
+      ref: "refs/heads/production",
+    })).toEqual({ passed: true, reasons: [] });
+  });
+
+  it.each([
+    { historicalMode: "changed", eventName: "push", ref: "refs/heads/production" },
+    { historicalMode: "production-release", eventName: "pull_request", ref: "refs/heads/production" },
+    { historicalMode: "production-release", eventName: "push", ref: "refs/heads/feature/example" },
+    { historicalMode: "production-release", eventName: "push", ref: "refs/heads/main" },
+  ])("rejects archival qualification outside production release context: %o", (context) => {
+    expect(evaluateHistoricalQualificationGate({
+      ...validGate,
+      historicalDecision: "QUALIFIED_WITH_LEGACY_ARCHIVAL",
+      ...context,
+    })).toMatchObject({
+      passed: false,
+      reasons: expect.arrayContaining(["legacy-archival-decision-outside-canonical-production-release"]),
+    });
+  });
+
+  it("still rejects archival qualification if ordinary CI failed", () => {
+    expect(evaluateHistoricalQualificationGate({
+      ...validGate,
+      featureGateResult: "failure",
+      historicalDecision: "QUALIFIED_WITH_LEGACY_ARCHIVAL",
+      historicalMode: "production-release",
+      eventName: "push",
+      ref: "refs/heads/production",
+    })).toMatchObject({ passed: false, reasons: ["feature-push-gate-failure"] });
+  });
+
+  it("rejects a production push if workflow wiring falls back to incremental qualification", () => {
+    expect(evaluateHistoricalQualificationGate({
+      ...validGate,
+      historicalDecision: "QUALIFIED",
+      historicalMode: "changed",
+      eventName: "push",
+      ref: "refs/heads/production",
+    })).toMatchObject({
+      passed: false,
+      reasons: ["production-push-requires-cumulative-qualification-mode"],
+    });
+  });
+
+  it("does not allow production-release mode on a feature, main, or manual event", () => {
+    expect(evaluateHistoricalQualificationGate({
+      ...validGate,
+      historicalDecision: "QUALIFIED",
+      historicalMode: "production-release",
+      eventName: "push",
+      ref: "refs/heads/feature/example",
+    })).toMatchObject({
+      passed: false,
+      reasons: ["production-release-mode-outside-canonical-production-event"],
+    });
+  });
+
   it.each(["FAILED", "UNVERIFIED", "", undefined])("rejects a non-merge-safe decision: %s", (historicalDecision) => {
     expect(evaluateHistoricalQualificationGate({ ...validGate, historicalDecision })).toMatchObject({ passed: false });
   });
