@@ -4,7 +4,7 @@ import {
   coverageViewport,
   expectCoverageContour,
   prepareCoverageView,
-} from "./helpers/coveragePixelEvidence";
+} from "./helpers/observerCoverageContour";
 import { architectureRiseContours } from "./helpers/coveragePixelReferences";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 

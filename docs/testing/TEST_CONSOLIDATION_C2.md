@@ -116,7 +116,7 @@ git diff --check
 git status --short
 ```
 
-Full Local CI passed CSS structure, lint, typecheck, all 4,501 Vitest cases across 359 files, and the production build in 119.85 s. The development E2E helper is used by these two specs only. No scene-switching infrastructure changed. The default GitHub workflow's existing browser checks and the explicit C2 Chromium run provide separate evidence.
+Full Local CI passed CSS structure, lint, typecheck, all 4,501 Vitest cases across 359 files, and the production build in 119.85 s. The first GitHub attempt classified the helper's original `coveragePixelEvidence.ts` filename as an unmapped historical evidence dependency. Its final name, `observerCoverageContour.ts`, reflects its role as an assertion for these two current browser specs. The existing classifier then identifies the complete diff as non-evidence for historical replay. No qualification rules were changed. The development E2E helper is used by these two specs only. No scene-switching infrastructure changed. The default GitHub workflow's existing browser checks and the explicit C2 Chromium run provide separate evidence.
 
 ## Independent preservation review
 

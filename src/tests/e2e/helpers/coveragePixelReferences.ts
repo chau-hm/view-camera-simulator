@@ -1,4 +1,4 @@
-import type { ContourReferences } from "./coveragePixelEvidence";
+import type { ContourReferences } from "./observerCoverageContour";
 
 // Top-origin CSS pixels in a 450 × 360 Observer canvas. These landmarks are
 // fixed from reviewed reference captures, with no runtime geometry or DOM

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { coverageViewport, expectCoverageContour, prepareCoverageView } from "./helpers/coveragePixelEvidence";
+import { coverageViewport, expectCoverageContour, prepareCoverageView } from "./helpers/observerCoverageContour";
 import { macroContours, obliqueArchitectureContours } from "./helpers/coveragePixelReferences";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
