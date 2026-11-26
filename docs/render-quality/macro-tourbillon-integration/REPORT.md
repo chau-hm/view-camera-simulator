@@ -2,11 +2,11 @@
 
 **Outcome:** MACRO_TOURBILLON_INTEGRATION_NEEDS_REFINEMENT
 
-**Integrated source revision:** 1897b554b14c8954ef76ba9eb8e470a8f0c2d662  
-**Read-only research source:** f1867d71d43cc67e9783bdbd5f3158765236340a  
-**Capture run:** 425b38c2-5d8f-4d49-976e-216e867b318a  
-**Capture source status:** clean  
-**Runtime:** Chromium 149.0.7827.55, macOS 27.0.0 arm64, Three.js r187, WebGL2 / ANGLE SwiftShader  
+**Integrated source revision:** 1897b554b14c8954ef76ba9eb8e470a8f0c2d662
+**Read-only research source:** f1867d71d43cc67e9783bdbd5f3158765236340a
+**Capture run:** 425b38c2-5d8f-4d49-976e-216e867b318a
+**Capture source status:** clean
+**Runtime:** Chromium 149.0.7827.55, macOS 27.0.0 arm64, Three.js r187, WebGL2 / ANGLE SwiftShader
 **Capture viewport:** 1280 × 900 CSS px at DPR 1; Ground Glass 450 × 360 CSS px with 574 × 459 internal RTT
 
 ## Integration decisions
