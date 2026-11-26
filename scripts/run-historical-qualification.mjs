@@ -156,11 +156,13 @@ function publishResult() {
   if (outputPath) appendFileSync(outputPath, `decision=${result.decision}\nmode=${result.mode}\n`);
   const summaryPath = process.env.GITHUB_STEP_SUMMARY;
   const primaryBlockingReason = result.blockingReasons[0] ?? null;
-  const ownershipCounts = result.pathOwnership.reduce((counts, entry) => {
+  const ownershipEntries = result.qualificationCoverage?.pathOwnership ?? result.pathOwnership;
+  const ownershipCounts = ownershipEntries.reduce((counts, entry) => {
     counts[entry.classification] = (counts[entry.classification] ?? 0) + 1;
     return counts;
   }, {});
-  const unresolvedOwnershipPaths = result.pathOwnership.filter(({ unresolved }) => unresolved).map(({ path }) => path);
+  const unresolvedOwnershipPaths = result.qualificationCoverage?.unresolvedPaths ??
+    ownershipEntries.filter(({ unresolved }) => unresolved).map(({ path }) => path);
   process.stdout.write(`Historical qualification decision: ${result.decision}${primaryBlockingReason ? `; primary blocking reason: ${primaryBlockingReason}` : ""}\n`);
   if (summaryPath) {
     const familyList = result.families.length ? result.families.join(", ") : "none";
@@ -173,7 +175,7 @@ function publishResult() {
       `**Mode:** \`${result.mode}\``,
       `**Families:** ${familyList}`,
       `**Ordinary-CI owners:** ${result.currentOwners?.length ? result.currentOwners.join(", ") : "none"}`,
-      `**Changed-path ownership:** ${ownershipCounts["historical-validator"] ?? 0} historical-validator, ${ownershipCounts["ordinary-ci"] ?? 0} ordinary-CI, ${ownershipCounts["qualification-infrastructure"] ?? 0} qualification-infrastructure, ${ownershipCounts["non-evidence"] ?? 0} non-evidence, ${ownershipCounts.unresolved ?? 0} unresolved.`,
+      `**${result.releaseProof ? "Cumulative path ownership" : "Changed-path ownership"}:** ${ownershipCounts["historical-validator"] ?? 0} historical-validator, ${ownershipCounts["ordinary-ci"] ?? 0} ordinary-CI, ${ownershipCounts["qualification-infrastructure"] ?? 0} qualification-infrastructure, ${ownershipCounts["non-evidence"] ?? 0} non-evidence, ${ownershipCounts.unresolved ?? 0} unresolved.`,
       `**Cumulative qualification paths inspected:** ${result.changedPaths.length}`,
       ...(releaseProof ? [
         `**Production event before/after:** \`${releaseProof.eventBeforeSha}\` → \`${releaseProof.eventAfterSha}\``,
