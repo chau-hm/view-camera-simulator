@@ -371,9 +371,12 @@ describe("M7K capture workflow provenance", () => {
       "Fetch M7O Canvas assertion timing evidence source history",
       "Fetch M7P assertion scheduling evidence source history",
       "Fetch M7Q matched tracing A/B evidence source history",
+      "Fetch M7V reviewed source-declaration baseline",
     ]) {
       expect(ciJob).toContain(provenanceFetchRequiredByVitest);
     }
+    expect(ciJob.indexOf("name: Fetch M7V reviewed source-declaration baseline"))
+      .toBeLessThan(ciJob.indexOf("name: Unit and integration tests"));
     for (const archiveOnlyStep of [
       "Fetch M7E native capture source history",
       "Fetch M7J retained capture source history",
@@ -402,7 +405,6 @@ describe("M7K capture workflow provenance", () => {
     expect(ciJob).toContain("src/tests/e2e/smoke.spec.ts");
     expect(ciJob).toContain("src/tests/e2e/architecture-rise-webgpu-production.spec.ts");
     expect(ciJob).toContain("name: Fetch M7R retained baseline and analysis source history");
-    expect(ciJob).toContain("name: Fetch M7V reviewed source-declaration baseline");
     expect(ciJob).toContain("run: npm run evidence:check:m7r");
     expect(ciJob).toContain("run: npm run evidence:check:m7v");
     expect(ciJob.match(/npm run evidence:(?:check|replay):m7[a-z]/g)).toEqual([
