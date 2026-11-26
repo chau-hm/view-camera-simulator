@@ -48,9 +48,9 @@ The ordering change was checked in isolated depth-50 checkouts of the same basel
 
 For context only, [successful run 45731018804](https://github.com/chau-hm/view-camera-simulator/actions/runs/45731018804) is from a different source revision (`5d837274f50986e366f1d6de00ee46c2538c008d`) and is not a matched comparison. It recorded full Vitest at 326s (357 files / 4,469 cases), ordinary smoke at about 136s, Production Preview at about 462s, and the `ci` job at 17m53s. Runner-minute billing remains `NOT_MEASURED`.
 
-## B6 current-head hosted validation
+## B6 hosted validation samples
 
-[PR run 45821749289](https://github.com/chau-hm/view-camera-simulator/actions/runs/45821749289) validated implementation head `dc750f922752d2a4a574affd4721b675ca41da99` against base `879a50f9607bed848de02a7c358b8b9e2501d1a2`. GitHub used synthetic merge checkout `ba650da8447a3404d06510a3f956dfed9c5eac61`. The run and authoritative `ci` job both succeeded. The current PR job exercised the Production Preview step with `VCS_PREVIEW_TYPECHECK_PASSED=1` after the mandatory typecheck.
+[Implementation-head PR run 45821749289](https://github.com/chau-hm/view-camera-simulator/actions/runs/45821749289) validated head `dc750f922752d2a4a574affd4721b675ca41da99` against base `879a50f9607bed848de02a7c358b8b9e2501d1a2`; GitHub used synthetic merge checkout `ba650da8447a3404d06510a3f956dfed9c5eac61`. The run and authoritative `ci` job both succeeded. The Production Preview step used `VCS_PREVIEW_TYPECHECK_PASSED=1` after the mandatory typecheck.
 
 | Hosted stage | Elapsed | Result |
 |---|---:|---|
@@ -68,7 +68,27 @@ For context only, [successful run 45731018804](https://github.com/chau-hm/view-c
 | M7V policy | 4s | Passed |
 | Workflow create-to-completion | 15m53s | Includes the historical decision job; not runner usage |
 
-The historical decision, full suite, ordinary smoke, Preview, M7R and M7V all ran on this PR event; none of those results is inferred from the feature-push run. The Production Preview step is 194s on this current hosted revision. A matched hosted run of the same source with the original checked build is unavailable, so hosted time saved remains `NOT_MEASURED`. The older 462s Preview run is a different revision and cannot establish a reduction. Aggregate runner minutes and billed cost remain `NOT_MEASURED`.
+The historical decision, full suite, ordinary smoke, Preview, M7R and M7V all ran on this PR event; none of those results is inferred from the feature-push run. The Production Preview step was 194s in this sample. A matched hosted run of the same source with the original checked build is unavailable, so hosted time saved remains `NOT_MEASURED`.
+
+[Final documentation-head run 45824795513](https://github.com/chau-hm/view-camera-simulator/actions/runs/45824795513) validated head `56b18ae5d21378ea567752a0cf4c50c8c356b241` against the same base; the synthetic merge checkout was `9722649106ff9337a7cdf3c050e38e10c94935a0`. The diff from the previous run was documentation-only; workflow, application, and test code were unchanged.
+
+| Hosted stage | Elapsed | Result |
+|---|---:|---|
+| Historical qualification decision | 4m34s job | Passed |
+| Main `ci` job | 18m28s | Passed |
+| `npm ci` | 54s | Passed |
+| Chromium installation | 19s | Passed |
+| ESLint | 22s | Passed |
+| TypeScript check | 28s | Passed |
+| M7V exact-source fetch | <1s | Passed before Vitest |
+| Full Vitest | 344s step; 343.52s runner duration | 357 files / 4,470 cases passed |
+| Ordinary Chromium smoke | 145s | 2/2 passed |
+| Production Preview | 468s | 4/4 passed with the CI-selected build path |
+| M7R integrity | <1s | Passed; execution integrity complete, archived qualification remains `not-qualified` |
+| M7V policy | 5s | Passed |
+| Workflow create-to-completion | 23m14s | Includes historical qualification; not runner usage |
+
+The 194s and 468s Preview durations, and 65s and 145s smoke durations, are two hosted samples with identical workflow/test code but different runs. This shows substantial run-to-run timing variation. The hosted logs do not separate Preview build, server startup, browser, rendering, screenshot, and teardown phases for the slower sample. Do not attribute the difference between those samples to the TypeScript-build change. The older 462s Preview run is another revision and also cannot establish a reduction. Hosted time saved, aggregate runner minutes, and billed cost remain `NOT_MEASURED`.
 
 ## Production Preview profile
 
