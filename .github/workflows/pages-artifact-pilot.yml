@@ -1,0 +1,39 @@
+name: Pages artifact pilot (non-publishing)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Build and identify candidate
+        run: node scripts/pages-artifact.mjs prepare "$RUNNER_TEMP/pages-artifact"
+      - name: Test prebuilt candidate
+        env:
+          VCS_PAGES_ARTIFACT: ${{ runner.temp }}/pages-artifact/payload
+        run: >-
+          npm run test:e2e -- --config=playwright.pages-artifact.config.ts
+          --project=chromium-pages-artifact --workers=1
+      - name: Verify unchanged payload
+        run: |
+          node scripts/pages-artifact.mjs verify "$RUNNER_TEMP/pages-artifact" "$GITHUB_SHA" > "$RUNNER_TEMP/pages-artifact/validation.json"
+      - name: Retain candidate and identity
+        uses: actions/upload-artifact@v4
+        with:
+          name: pages-candidate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pages-artifact
+          retention-days: 30
+          if-no-files-found: error
