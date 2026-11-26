@@ -242,3 +242,68 @@ npm run promote:production
 
 The Pages build uses the repository-name base path and copies `dist/index.html`
 to `dist/404.html` for SPA deep-link fallback.
+
+### Pages artifact pilot
+
+The separate manual `Pages artifact pilot (non-publishing)` workflow builds a
+candidate from its selected workflow revision. It has read-only repository
+permissions and cannot deploy or update production. A candidate from a feature
+branch is not a main release, and a successful pilot is neither ordinary CI nor
+cumulative release qualification. Main integration still does not deploy; the
+existing production promotion and its checks remain the only active release path.
+
+With Node 24, installed dependencies, a clean committed tree, and no `VITE_*`
+or conflicting `NODE_ENV` overrides, prepare and verify a candidate locally:
+
+```bash
+node scripts/pages-artifact.mjs prepare /tmp/pages-candidate
+node scripts/pages-artifact.mjs pin /tmp/pages-candidate /tmp/pages-identity.json "$(git rev-parse HEAD)" "$(git rev-parse HEAD^{tree})"
+VCS_PAGES_ARTIFACT=/tmp/pages-candidate/payload npm run test:e2e -- --config=playwright.pages-artifact.config.ts --project=chromium-pages-artifact --workers=1
+node scripts/pages-artifact.mjs verify-pinned /tmp/pages-candidate /tmp/pages-identity.json "$(git rev-parse HEAD)" "$(git rev-parse HEAD^{tree})"
+```
+
+The destination must not already exist. Preparation runs the checked build
+(`tsc -b` and one Vite production bundle) with the repository-name base, then
+copies `index.html` to `404.html`. Preview serves the existing payload and does
+not build. Its server serves the fallback body for deep links; a dedicated browser test
+requests the HTTP 404 response Pages uses. Existing root-based renderer tests
+are redirected to the subpath and use a successful SPA fallback response. Existing root
+Preview coverage remains independent. This server is a focused test harness,
+not a complete GitHub Pages hosting emulator. Before Preview, the pilot pins
+the complete manifest SHA-256, source and tree, schema, base, payload digest,
+file count and size in a separate file outside the candidate. After Preview it
+recomputes and compares all identities before upload. This detects accidental
+mutation, including a coordinated manifest and payload replacement; it does
+not defend against a compromised runner controlling the pin itself. Its JSON
+result records content integrity, not release authorization.
+
+The version 1 manifest is outside the public payload. It records source commit
+and tree, build configuration, Node and lockfile identity, optional run
+identity, and sorted regular-file paths, sizes and SHA-256 hashes. The content
+digest is SHA-256 of the UTF-8 JSON serialization of that file array. It does
+not hash itself or transport archive metadata. The verifier rejects content,
+source, schema, and unsupported filesystem-entry mismatches. The manifest is a
+producer claim: a future deployment gate must independently check the trusted
+repository, exact source/tree, producing run and attempt, successful relevant
+jobs and cumulative qualification, and compare the verified content after
+safe extraction. Reject traversal, links, unexpected entries, missing or expired
+artifacts, and any digest mismatch before deployment; never rely on an artifact
+name or an upload/download warning as authorization.
+
+The pilot uploads only the candidate directory with hidden files included,
+so `.nojekyll` and files inside `.well-known` are retained. Other hidden entries,
+environment files, credential names, private-key extensions, links and other
+unsupported types are rejected;
+the candidate root allows only the payload, manifest and validation metadata.
+After upload the pilot downloads that artifact ID into a fresh directory and
+compares its manifest and complete contents with the original pin. The focused
+integrity and workflow-contract tests also run in ordinary `npm run test`.
+
+GitHub Actions retains `pages-candidate-<run-id>-<attempt>` for 30 days.
+Retention is finite and does not provide rollback storage. After this workflow is
+merged to the default branch, dispatch **Pages artifact pilot (non-publishing)**
+from Actions on `main` (or run `gh workflow run pages-artifact-pilot.yml --ref main`),
+then inspect its source/tree, pin, Preview, upload and fresh-download verification,
+result, and lack of deployment. The pilot is not a release authorization. Main-CI integration is deferred until the separate CI
+routing work stabilizes. Until then this pilot adds a separate build; it does
+not reduce the existing production CI or establish a deployable release.
