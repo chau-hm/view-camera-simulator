@@ -41,8 +41,10 @@ export const macroBellowsExtensionDiagnosticSamplesMm = [
 ] as const;
 
 export const macroBellowsExtensionCameraPlacement = {
-  position: { x: 280, y: 180, z: 650 },
-  target: { x: 0, y: -15, z: 150 },
+  // Center the real watch datum so the public Observer zoom can inspect the
+  // smaller subject from either face without a hidden/debug camera preset.
+  position: { x: 0, y: 0, z: 650 },
+  target: { x: 0, y: 0, z: MACRO_BELLOWS_WATCH.dialDatumMm.z },
 };
 
 /** Includes watch, camera standards, and rail throughout the assigned range. */

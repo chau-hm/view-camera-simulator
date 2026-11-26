@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import * as THREE from "three";
-import { createMacroSpecimenGroup, disposeMacroSpecimenGroup } from "../../render/MacroSpecimenSubjectFactory";
+import { createTourbillonWatch } from "../../render/assets/tourbillon-watch/watch.mjs";
+import {
+  createMacroSpecimenGroup,
+  disposeMacroSpecimenGroup,
+  readMacroSpecimenCageAngle,
+  updateMacroSpecimenCageAngle,
+} from "../../render/MacroSpecimenSubjectFactory";
 import { MacroSpecimenSubject } from "../../render/SceneAssetSubjects";
 import { getSceneSubjectRegistration } from "../../render/sceneSubjectRegistry";
 import { isGroundGlassRttScene } from "../../render/groundGlassRttScenes";
@@ -42,7 +48,15 @@ describe("macro tourbillon watch physical renderer contract", () => {
     expect(bounds.max.z).toBeCloseTo(macroBellowsExtensionWatchBoundsMm.max.z / 1000, 6);
     expect(group.getObjectByName("Strap assembly")).toBeUndefined();
     expect(group.getObjectByName("Rotating one-minute tourbillon cage")?.rotation.z).toBe(0);
-    expect(group.userData.macroWatch).toEqual({ strapIncluded: false, cageAngleRad: 0 });
+    expect(group.userData.macroWatch).toEqual({
+      strapIncluded: false,
+      cageAngleRad: 0,
+      crystalVisible: true,
+    });
+    expect(updateMacroSpecimenCageAngle(group, -Math.PI / 2)).toBe(true);
+    expect(readMacroSpecimenCageAngle(group)).toBeCloseTo(-Math.PI / 2, 12);
+    expect(group.userData.macroWatch.cageAngleRad).toBeCloseTo(-Math.PI / 2, 12);
+    expect(updateMacroSpecimenCageAngle(group, 0)).toBe(true);
 
     const head = group.getObjectByName("Watch head");
     expect(head).toBeInstanceOf(THREE.Group);
@@ -118,13 +132,36 @@ describe("macro tourbillon watch physical renderer contract", () => {
     const chapterFinish = [...materials].find((material) => material.name === "Spun silver chapter ring");
     const roseGoldFinish = [...materials].find((material) => material.name === "Polished rose gold");
     expect(chapterFinish).toBeInstanceOf(THREE.MeshStandardMaterial);
-    expect((chapterFinish as THREE.MeshStandardMaterial).metalness).toBeCloseTo(0.2, 6);
+    expect((chapterFinish as THREE.MeshStandardMaterial).metalness).toBeCloseTo(0.69, 6);
     expect((chapterFinish as THREE.MeshStandardMaterial).roughness).toBeCloseTo(0.45, 6);
-    expect((chapterFinish as THREE.MeshStandardMaterial).emissiveIntensity).toBeCloseTo(0.3, 6);
+    expect((chapterFinish as THREE.MeshStandardMaterial).emissiveIntensity).toBe(1);
     expect(roseGoldFinish).toBeInstanceOf(THREE.MeshStandardMaterial);
-    expect((roseGoldFinish as THREE.MeshStandardMaterial).metalness).toBeCloseTo(0.58, 6);
+    expect((roseGoldFinish as THREE.MeshStandardMaterial).metalness).toBeCloseTo(0.92, 6);
+    expect((roseGoldFinish as THREE.MeshStandardMaterial).roughness).toBeCloseTo(0.165, 6);
+    expect((roseGoldFinish as THREE.MeshStandardMaterial).emissive.getHex()).toBe(0x000000);
+
+    const stripeFinish = [...materials].find((material) => material.name === "Rhodium bridges") as THREE.MeshStandardMaterial;
+    const perlageFinish = [...materials].find((material) => material.name === "Perlage mainplate") as THREE.MeshStandardMaterial;
+    const ratchetFinish = [...materials].find((material) => material.name === "Concentrically brushed ratchet steel") as THREE.MeshStandardMaterial;
+    expect(stripeFinish.bumpScale).toBeCloseTo(0.0003, 9);
+    expect(perlageFinish.bumpScale).toBeCloseTo(0.00038, 9);
+    expect((chapterFinish as THREE.MeshStandardMaterial).bumpScale).toBeCloseTo(0.00014, 9);
+    expect(ratchetFinish.bumpScale).toBeCloseTo(0.000073, 9);
+
+    const secondGroup = createMacroSpecimenGroup({ presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION });
+    const secondChapter = secondGroup.getObjectByName("Satin Roman chapter ring") as THREE.Mesh;
+    expect(secondChapter.material).not.toBe(chapterFinish);
+    expect((secondChapter.material as THREE.MeshStandardMaterial).bumpScale).toBeCloseTo(0.00014, 9);
+
+    const nativeWatch = createTourbillonWatch({ includeStrap: false });
+    const nativeChapter = nativeWatch.materials.find(({ name }) => name === "Spun silver chapter ring") as THREE.MeshStandardMaterial;
+    const nativeRatchet = nativeWatch.materials.find(({ name }) => name === "Concentrically brushed ratchet steel") as THREE.MeshStandardMaterial;
+    expect(nativeChapter.bumpScale).toBeCloseTo(0.14, 6);
+    expect(nativeRatchet.bumpScale).toBeCloseTo(0.073, 6);
+    nativeWatch.dispose();
+    disposeMacroSpecimenGroup(secondGroup);
     disposeMacroSpecimenGroup(group);
-  });
+  }, 15_000);
 
   it("creates reproducible independent heads and disposes each owned resource once", () => {
     const first = createMacroSpecimenGroup({ presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION });
@@ -170,6 +207,19 @@ describe("macro tourbillon watch physical renderer contract", () => {
     disposeMacroSpecimenGroup(second);
   });
 
+  it("hides the real front sapphire mesh only for the development diagnostic query", () => {
+    const previousUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    try {
+      window.history.replaceState({}, "", "/simulator/free/macro-bellows-extension?macroWatchCrystal=off");
+      const group = createMacroSpecimenGroup({ presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION });
+      expect(group.getObjectByName("front-sapphire")?.visible).toBe(false);
+      expect(group.userData.macroWatch.crystalVisible).toBe(false);
+      disposeMacroSpecimenGroup(group);
+    } finally {
+      window.history.replaceState({}, "", previousUrl);
+    }
+  });
+
   it("uses one watch-scale presentation recipe for Observer and Ground Glass", () => {
     const context = {
       cameraMovementPresentation: CAMERA_MOVEMENT_BASELINE_PRESENTATION,
@@ -185,9 +235,10 @@ describe("macro tourbillon watch physical renderer contract", () => {
     expect(groundGlass.profile).toBe(MACRO_BELLOWS_WATCH_LIGHTING_PROFILE);
     expect(observer.placement).toEqual(groundGlass.placement);
     expect(observer.placement.targetWorld).toEqual([0, 0, 0.3]);
-    expect(observer.placement.keyOffsetWorld).toEqual([-0.42, 0.62, -1]);
+    expect(observer.placement.keyOffsetWorld).toEqual([0.22, 0.21, -0.36]);
     expect(MACRO_BELLOWS_WATCH_LIGHTING_PROFILE.key.shadowCamera).toMatchObject({
-      left: -0.07, right: 0.07, top: 0.07, bottom: -0.07,
+      left: -0.029, right: 0.029, top: 0.031, bottom: -0.031,
+      near: 0.0005, far: 0.088,
     });
   });
 

@@ -5,6 +5,7 @@ export type TourbillonWatchAssembly = Readonly<{
   head: THREE.Group;
   strap: THREE.Group | null;
   cage: THREE.Group;
+  materials: readonly THREE.Material[];
   setCageAngle: (radians: number) => void;
   dispose: () => void;
 }>;

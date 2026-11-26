@@ -1,31 +1,28 @@
 import type { PresentationLightingProfile } from "../../render/presentationLightingContract";
 import * as geometry from "../macroSpecimenGeometry";
 
-/**
- * A subject-scale shadow frustum and modest fill lift keep small metal relief
- * visible without changing the shared renderer lighting recipe.
- */
+/** Accepted warm/cool watch studio key, with its dimensional shadow bounds in metres. */
 export const MACRO_BELLOWS_WATCH_LIGHTING_PROFILE = {
-  id: "macro-bellows-watch-teaching",
+  id: "macro-bellows-watch-studio",
   fill: {
     skyColor: "#ffffff",
-    groundColor: "#64748b",
-    intensity: 0.8,
+    groundColor: "#796f67",
+    intensity: 0.12,
   },
   key: {
-    color: "#ffffff",
-    intensity: 1.45,
+    color: "#ffefe1",
+    intensity: 1.82,
     castsShadow: true,
-    shadowMapSize: 1024,
-    shadowBias: -0.00004,
-    shadowNormalBias: 0.0004,
+    shadowMapSize: 2048,
+    shadowBias: -0.00013,
+    shadowNormalBias: 0.000024,
     shadowCamera: {
-      left: -0.07,
-      right: 0.07,
-      top: 0.07,
-      bottom: -0.07,
-      near: 0.1,
-      far: 8,
+      left: -0.029,
+      right: 0.029,
+      top: 0.031,
+      bottom: -0.031,
+      near: 0.0005,
+      far: 0.088,
     },
   },
 } as const satisfies PresentationLightingProfile;

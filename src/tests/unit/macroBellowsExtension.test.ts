@@ -30,6 +30,16 @@ describe("macro-bellows-extension scene", () => {
     expect(getSceneById("macro-bellows-extension")).toBe(macroBellowsExtensionScene);
     expect(sceneOrder).toContain("macro-bellows-extension");
     expect(macroBellowsExtensionScene.cameraPreset.focalLengthMm).toBe(150);
+    expect(macroBellowsExtensionScene.cameraPlacement.position).toEqual({
+      x: 0,
+      y: 0,
+      z: 650,
+    });
+    expect(macroBellowsExtensionScene.cameraPlacement.target).toEqual({
+      x: 0,
+      y: 0,
+      z: 300,
+    });
     expect(getSceneFocusDistanceRange("macro-bellows-extension", 150)).toEqual({
       min: 300,
       max: 900,

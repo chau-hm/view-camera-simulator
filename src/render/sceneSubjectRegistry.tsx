@@ -259,7 +259,9 @@ export const sceneSubjectRegistry = {
     rttBounds: MACRO_BELLOWS_EXTENSION_PRESENTATION.geometry.macroBellowsExtensionWatchBoundsMm,
     presentationLighting: {
       targetMm: MACRO_BELLOWS_EXTENSION_PRESENTATION.geometry.MACRO_BELLOWS_WATCH.dialDatumMm,
-      keyOffsetWorld: { x: -0.42, y: 0.62, z: -1.0 },
+      // The source viewer's key is 22/21/36 mm from its origin. The watch's
+      // root faces the opposite world-Z direction in this scene.
+      keyOffsetWorld: { x: 0.22, y: 0.21, z: -0.36 },
       profile: MACRO_BELLOWS_WATCH_LIGHTING_PROFILE,
     },
   },

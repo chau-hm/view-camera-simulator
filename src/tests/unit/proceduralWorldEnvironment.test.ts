@@ -4,6 +4,8 @@ import { CubeRenderTarget } from "three/webgpu";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { resolveSceneWorldIllumination } from "../../scenes/illumination/sceneWorldIllumination";
 import {
+  createProceduralSoftboxPixels,
+  createProceduralSoftboxTexture,
   createProceduralSkyGroundPixels,
   createProceduralSkyGroundTexture,
   PROCEDURAL_WORLD_ENVIRONMENT_HEIGHT,
@@ -23,7 +25,13 @@ import {
 } from "../../render/observerWorldEnvironmentRig";
 
 const environment = resolveSceneWorldIllumination("architecture-rise").environment;
-if (!environment) throw new Error("Expected the Architecture Rise environment recipe");
+if (!environment || environment.kind !== "procedural-sky-ground") {
+  throw new Error("Expected the Architecture Rise environment recipe");
+}
+const watchStudioEnvironment = resolveSceneWorldIllumination("macro-bellows-extension").environment;
+if (!watchStudioEnvironment || watchStudioEnvironment.kind !== "procedural-softbox") {
+  throw new Error("Expected the Macro Bellows watch studio environment recipe");
+}
 
 const pixelHash = (pixels: Uint8Array): string =>
   createHash("sha256").update(pixels).digest("hex");
@@ -65,6 +73,27 @@ describe("procedural world environment source", () => {
     expect(texture.wrapT).toBe(THREE.ClampToEdgeWrapping);
     expect(texture.magFilter).toBe(THREE.LinearFilter);
     expect(texture.minFilter).toBe(THREE.LinearFilter);
+    expect(texture.generateMipmaps).toBe(false);
+    texture.dispose();
+  });
+
+  it("generates the accepted softbox map deterministically as linear half-float data", () => {
+    const first = createProceduralSoftboxPixels(watchStudioEnvironment);
+    const second = createProceduralSoftboxPixels(watchStudioEnvironment);
+    expect(first).toEqual(second);
+    expect(pixelHash(new Uint8Array(first.buffer))).toBe(
+      pixelHash(new Uint8Array(second.buffer)),
+    );
+    expect(first).toHaveLength(512 * 256 * 4);
+
+    const texture = createProceduralSoftboxTexture(watchStudioEnvironment);
+    expect(texture.image.width).toBe(512);
+    expect(texture.image.height).toBe(256);
+    expect(texture.image.data).toBeInstanceOf(Uint16Array);
+    expect(texture.format).toBe(THREE.RGBAFormat);
+    expect(texture.type).toBe(THREE.HalfFloatType);
+    expect(texture.mapping).toBe(THREE.EquirectangularReflectionMapping);
+    expect(texture.colorSpace).toBe(THREE.NoColorSpace);
     expect(texture.generateMipmaps).toBe(false);
     texture.dispose();
   });

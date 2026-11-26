@@ -53,6 +53,9 @@ export function createTourbillonWatch({ includeStrap = true } = {}) {
   let disposed = false;
   return {
     root, head, strap, cage,
+    // Expose the instance-owned materials so integrations can audit their
+    // rendering properties without reaching into shared construction state.
+    materials: Object.freeze([...ownedMaterials]),
     setCageAngle(radians) {
       cage.rotation.z = radians;
     },
