@@ -116,6 +116,7 @@ const result = {
   broadFallback: false,
   reasons: [],
   unsupported: [],
+  pathOwnership: [],
   sourceFetches: [],
   validators: [],
   missingArtifacts: [],
@@ -155,6 +156,11 @@ function publishResult() {
   if (outputPath) appendFileSync(outputPath, `decision=${result.decision}\nmode=${result.mode}\n`);
   const summaryPath = process.env.GITHUB_STEP_SUMMARY;
   const primaryBlockingReason = result.blockingReasons[0] ?? null;
+  const ownershipCounts = result.pathOwnership.reduce((counts, entry) => {
+    counts[entry.classification] = (counts[entry.classification] ?? 0) + 1;
+    return counts;
+  }, {});
+  const unresolvedOwnershipPaths = result.pathOwnership.filter(({ unresolved }) => unresolved).map(({ path }) => path);
   process.stdout.write(`Historical qualification decision: ${result.decision}${primaryBlockingReason ? `; primary blocking reason: ${primaryBlockingReason}` : ""}\n`);
   if (summaryPath) {
     const familyList = result.families.length ? result.families.join(", ") : "none";
@@ -167,6 +173,7 @@ function publishResult() {
       `**Mode:** \`${result.mode}\``,
       `**Families:** ${familyList}`,
       `**Ordinary-CI owners:** ${result.currentOwners?.length ? result.currentOwners.join(", ") : "none"}`,
+      `**Changed-path ownership:** ${ownershipCounts["historical-validator"] ?? 0} historical-validator, ${ownershipCounts["ordinary-ci"] ?? 0} ordinary-CI, ${ownershipCounts["qualification-infrastructure"] ?? 0} qualification-infrastructure, ${ownershipCounts["non-evidence"] ?? 0} non-evidence, ${ownershipCounts.unresolved ?? 0} unresolved.`,
       `**Cumulative qualification paths inspected:** ${result.changedPaths.length}`,
       ...(releaseProof ? [
         `**Production event before/after:** \`${releaseProof.eventBeforeSha}\` → \`${releaseProof.eventAfterSha}\``,
@@ -180,6 +187,9 @@ function publishResult() {
         `**Unverified legacy archive dispositions:** ${legacyDispositions.length}; unchanged exact blobs only.`,
       ] : []),
       ...(primaryBlockingReason ? [`**Primary blocking reason:** ${primaryBlockingReason}`] : []),
+      ...(unresolvedOwnershipPaths.length ? [
+        `**Unresolved changed paths:** ${unresolvedOwnershipPaths.slice(0, 20).join(", ")}${unresolvedOwnershipPaths.length > 20 ? `, and ${unresolvedOwnershipPaths.length - 20} more in the machine-readable artifact` : ""}`,
+      ] : []),
       ...(result.blockingReasons.length > 1 ? [`**Additional blocking reasons:** ${result.blockingReasons.length - 1} (see the machine-readable artifact).`] : []),
       ...(result.validators.length ? [
         "",
@@ -415,6 +425,7 @@ async function main() {
     reasons: classification.reasons ?? [],
     unsupported: classification.unsupported ?? [],
     currentOwners: classification.currentOwners ?? [],
+    pathOwnership: classification.pathOwnership ?? [],
     pullNumber: classification.pullNumber ?? null,
     eventChangedPaths: classification.eventChangedPaths ?? [],
     releaseProof: classification.releaseProof ?? null,

@@ -547,6 +547,16 @@ qualified. All currently registered historical validators run for production
 releases, and ordinary application CI, browser smoke, production preview,
 evidence integrity, and build checks still gate deployment.
 
+All event modes use the same evidence ownership classifier. A changed path can
+belong to a registered historical validator, an explicitly registered
+ordinary-CI owner, qualification infrastructure, legitimate non-evidence
+documentation, or an unresolved evidence dependency. `NOT_APPLICABLE` for an
+ordinary-CI-owned path means only that the historical archive lane does not
+run that owner twice; the corresponding ordinary check remains mandatory.
+Nested legacy evidence roots are fail-closed detection scopes, not archival
+exemptions, and unknown additions under them must be resolved during
+development qualification rather than first appearing in a production gate.
+
 The fixed baseline records exact pre-policy Git blob identities and explicit
 ownership/disposition metadata. Unchanged archival material without a current
 equivalent validator may be accepted only as a distinct

@@ -31,13 +31,6 @@ function countBy(values, selector) {
   }, {});
 }
 
-function legacyArchiveDirectories(baseline) {
-  return new Set(baseline.entries
-    .filter(({ disposition }) => disposition === "legacy-archival-unverified")
-    .map(({ path }) => path.slice(0, path.lastIndexOf("/")))
-    .filter(Boolean));
-}
-
 /**
  * Proves a canonical production promotion from actual Git objects and returns
  * a cumulative, baseline-to-source qualification plan. It never trusts commit
@@ -101,19 +94,6 @@ export async function discoverProductionRelease(event, {
   if (unreportedInvalidations.length > 0) throw new Error(`baseline-invalidation-missing-from-change-discovery:${unreportedInvalidations.join(",")}`);
 
   const routing = classifyCompleteChangedPaths(qualificationPaths);
-  const archiveDirectories = legacyArchiveDirectories(baseline);
-  const unclassifiedLegacyDirectoryPaths = qualificationPaths.filter((path) => {
-    const withinLegacyArchiveDirectory = [...archiveDirectories].some((directory) => path.startsWith(`${directory}/`));
-    return withinLegacyArchiveDirectory && classifyCompleteChangedPaths([path]).decision === "NOT_APPLICABLE";
-  });
-  if (unclassifiedLegacyDirectoryPaths.length > 0) {
-    routing.decision = "UNVERIFIED";
-    routing.broad = true;
-    routing.reasons = [
-      ...(routing.reasons ?? []),
-      ...unclassifiedLegacyDirectoryPaths.map((path) => `unmapped-evidence-verification-dependency:${path}`),
-    ];
-  }
   const baselineDispositionCounts = countBy(baselineResolution.unchanged, ({ disposition }) => disposition);
   const familyOwners = {
     ...baselineDispositionCounts,
@@ -184,6 +164,13 @@ export async function discoverProductionRelease(event, {
       baselineDispositionCounts: familyOwners,
       invalidatedBaselinePaths: baselineResolution.invalidated,
       baselineContentNowOwnedByValidators: baselineResolution.validatorOwned,
+      pathOwnership: routing.pathOwnership ?? [],
+      nonEvidencePaths: (routing.pathOwnership ?? [])
+        .filter(({ classification }) => classification === "non-evidence")
+        .map(({ path }) => path),
+      ordinaryCiOwnedPaths: (routing.pathOwnership ?? [])
+        .filter(({ ordinaryCiOwners: owners }) => owners.length > 0)
+        .map(({ path, ordinaryCiOwners: owners }) => ({ path, owners })),
       legacyDispositions: baselineResolution.unchanged
         .filter(({ disposition }) => disposition === "legacy-archival-unverified" || disposition === "documentation-only")
         .map(({ path, blobSha, kind, disposition, family, ordinaryCiOwner, limitation }) => ({ path, blobSha, kind, disposition, family, ordinaryCiOwner, limitation })),

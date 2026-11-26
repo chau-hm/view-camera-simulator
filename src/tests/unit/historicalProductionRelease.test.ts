@@ -204,16 +204,82 @@ describe("production historical release proof", () => {
     })).rejects.toThrow("legacy-baseline-tree-identity-mismatch");
   });
 
-  it("fails closed for an unknown new evidence file under a legacy archive directory", async () => {
+  it("uses the same fail-closed route for unknown archive additions in development and production", async () => {
     const fixture = createFixture();
     const newEvidencePath = "docs/architecture/opaque-archive-directory/new.json";
+    const developmentRoute = classifyCompleteChangedPaths([newEvidencePath]);
     const sourceSha = addCommit(fixture.work, newEvidencePath, "{\"newEvidence\":true}\n", "add unclassified evidence under a legacy directory");
     git(fixture.work, ["push", "origin", "main"]);
     const { result } = await promote(fixture, sourceSha);
 
-    expect(classifyCompleteChangedPaths([newEvidencePath]).decision).toBe("NOT_APPLICABLE");
+    expect(developmentRoute).toMatchObject({
+      decision: "UNVERIFIED",
+      pathOwnership: [{ path: newEvidencePath, classification: "unresolved", unresolved: true }],
+    });
+    expect(result.qualificationCoverage.currentRouteDecision).toBe(developmentRoute.decision);
     expect(result.decision).toBe("UNVERIFIED");
     expect(result.qualificationCoverage.unresolvedPaths).toEqual([newEvidencePath]);
+  });
+
+  it("keeps registered M7R and scene-capacity ordinary-CI ownership out of unresolved routing", async () => {
+    const fixture = createFixture();
+    const paths = [
+      "docs/architecture/GROUND_GLASS_M7R_BROAD_E2E_QUALIFICATION_RECOVERY_REPORT.json",
+      "docs/architecture/ground-glass-m7r-e2e-recovery/capture/final/normalized-capture.json",
+      "src/render/sceneCapacityBenchmarkQualification.ts",
+      "src/tests/unit/sceneCapacityBenchmarkQualification.test.ts",
+    ];
+    let sourceSha = "";
+    for (let index = 0; index < paths.length; index += 1) {
+      sourceSha = addCommit(fixture.work, paths[index]!, `registered ordinary CI input ${index}\n`, `change ordinary CI input ${index}`);
+    }
+    git(fixture.work, ["push", "origin", "main"]);
+    const { result } = await promote(fixture, sourceSha);
+
+    expect(result.decision).toBe("QUALIFIED_WITH_LEGACY_ARCHIVAL");
+    expect(result.qualificationCoverage.currentRouteDecision).toBe("NOT_APPLICABLE");
+    expect(result.qualificationCoverage.unresolvedPaths).toEqual([]);
+    expect(result.qualificationCoverage.ordinaryCiOwnedPaths).toEqual(expect.arrayContaining([
+      { path: paths[0], owners: ["ordinary-ci:evidence:check:m7r"] },
+      { path: paths[1], owners: ["ordinary-ci:evidence:check:m7r"] },
+      { path: paths[2], owners: ["ordinary-ci:unit-tests"] },
+      { path: paths[3], owners: ["ordinary-ci:unit-tests"] },
+    ]));
+    expect(result.currentOwners).toContain("ordinary-ci:evidence:check:m7r");
+    expect(result.currentOwners).toContain("ordinary-ci:unit-tests");
+    expect(result.qualificationCoverage.nonEvidencePaths).toEqual([]);
+  });
+
+  it("keeps legitimate new architecture documentation non-applicable in the shared production route", async () => {
+    const fixture = createFixture();
+    const path = "docs/architecture/new-camera-movement-design.md";
+    const sourceSha = addCommit(fixture.work, path, "Design notes for a future lesson.\n", "add architecture design documentation");
+    git(fixture.work, ["push", "origin", "main"]);
+    const { result } = await promote(fixture, sourceSha);
+
+    expect(classifyCompleteChangedPaths([path])).toMatchObject({
+      decision: "NOT_APPLICABLE",
+      pathOwnership: [{ path, classification: "non-evidence" }],
+    });
+    expect(result.qualificationCoverage.currentRouteDecision).toBe("NOT_APPLICABLE");
+    expect(result.qualificationCoverage.nonEvidencePaths).toEqual([path]);
+    expect(result.qualificationCoverage.unresolvedPaths).toEqual([]);
+    expect(result.decision).toBe("QUALIFIED_WITH_LEGACY_ARCHIVAL");
+  });
+
+  it("fails closed for an unknown addition under a registered historical evidence root", async () => {
+    const fixture = createFixture();
+    const path = "docs/architecture/anatomy-gpu-blend-intermediate/unregistered-report.json";
+    const sourceSha = addCommit(fixture.work, path, "{\"unowned\":true}\n", "add unknown evidence under an audited archive root");
+    git(fixture.work, ["push", "origin", "main"]);
+    const { result } = await promote(fixture, sourceSha);
+
+    expect(classifyCompleteChangedPaths([path])).toMatchObject({
+      decision: "UNVERIFIED",
+      pathOwnership: [{ path, classification: "unresolved", unresolved: true }],
+    });
+    expect(result.qualificationCoverage.currentRouteDecision).toBe("UNVERIFIED");
+    expect(result.qualificationCoverage.unresolvedPaths).toEqual([path]);
   });
 
   it("invalidates an exact archive disposition when the protected file is renamed", async () => {

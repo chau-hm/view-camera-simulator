@@ -37,6 +37,26 @@
       "owner": "ordinary-ci:unit-tests"
     }
   ],
+  "legacyEvidenceRoots": [
+    "docs/architecture/anatomy-bellows-compositing-causal/",
+    "docs/architecture/anatomy-bellows-opacity-response/",
+    "docs/architecture/anatomy-dimmed-output-mechanism/",
+    "docs/architecture/anatomy-gpu-blend-intermediate/",
+    "docs/architecture/anatomy-native-webgpu-draw-boundary/",
+    "docs/architecture/anatomy-progressive-pass-boundary/",
+    "docs/architecture/anatomy-raw-framebuffer-parity/",
+    "docs/architecture/anatomy-renderable-contribution-investigation/",
+    "docs/architecture/anatomy-transparency-investigation/",
+    "docs/architecture/architecture-rise-material-aware-output/",
+    "docs/architecture/ground-glass-m7c-r187/",
+    "docs/architecture/ground-glass-m7d-r187-physical-coc/",
+    "docs/architecture/ground-glass-m7s-learning-drawer/",
+    "docs/architecture/ground-glass-m7t-interior-corner/",
+    "docs/architecture/ground-glass-m7x-development/",
+    "docs/architecture/observer-output-compositing/",
+    "docs/architecture/threejs-transparency-upstream-reproduction/",
+    "docs/architecture/view-camera-anatomy-material-aware/"
+  ],
   "unsupportedFamilies": {
     "M7S": "No evidence:check:m7s validator is registered; current report has no equivalent complete offline integrity validator.",
     "M7T": "No evidence:check:m7t validator is registered; retained report/capture fields do not provide an equivalent complete integrity validator.",
