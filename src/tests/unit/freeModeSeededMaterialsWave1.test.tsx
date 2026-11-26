@@ -41,6 +41,11 @@ import {
   resolveSceneVariationDescriptor,
 } from "../../scenes/sceneVariation";
 import type { SceneVariationDescriptor } from "../../types/sceneVariation";
+import {
+  canonicalGeometrySignature as geometrySignature,
+  completeSubjectSignature as renderSubjectSignature,
+  namedMaterialSignature as namedRoleSignature,
+} from "./helpers/canonicalSubjectSignatures";
 
 const SEEDS = [0, 1, 284719, 0xffff_ffff] as const;
 const FROZEN_FAMILY_COVERAGE_SEEDS = [
@@ -70,118 +75,34 @@ const descriptorFor = (
 const hashBytes = (bytes: Uint8Array): string =>
   createHash("sha256").update(bytes).digest("hex");
 
-const materialSignature = (material: THREE.Material): unknown => {
-  const candidate = material as THREE.Material & {
-    color?: THREE.Color;
-    roughness?: number;
-    metalness?: number;
-    normalScale?: THREE.Vector2;
-  };
-  const textureSlots = ["map", "roughnessMap", "normalMap"] as const;
-  return {
-    type: material.type,
-    color: candidate.color?.getHexString(),
-    roughness: candidate.roughness,
-    metalness: candidate.metalness,
-    normalScale: candidate.normalScale?.toArray(),
-    textures: textureSlots.map((slot) => {
-      const texture = (material as THREE.Material & Record<string, unknown>)[slot];
-      if (!(texture instanceof THREE.DataTexture)) return [slot, null];
-      const image = texture.image as { data: Uint8Array; width: number; height: number };
-      return [
-        slot,
-        hashBytes(image.data),
-        image.width,
-        image.height,
-        texture.repeat.toArray(),
-        texture.colorSpace,
-      ];
-    }),
-  };
-};
+const hash = (value: string): string => createHash("sha256").update(value).digest("hex");
+
+const SEEDED_MATERIAL_BATCHES = [
+  {
+    label: "seeds 0–3",
+    seeds: FROZEN_FAMILY_COVERAGE_SEEDS.slice(0, 4),
+    architectureDigest: "e4dfaf9d0c479bd1d14a49d5bff470f60d89a97fbe0fefa539537e73f0ce96d3",
+    tableDigest: "16c42a72bd9c5a1a3550ba0d319d32888d361e549190fe946b06f7ffff1f930e",
+  },
+  {
+    label: "seeds 4–7",
+    seeds: FROZEN_FAMILY_COVERAGE_SEEDS.slice(4, 8),
+    architectureDigest: "4c2a0fee1262af30407315361a8d2225e2d46ae035603a7466cf1073d7cf4533",
+    tableDigest: "76ca8690a3618fe21599f32e294081ec500a591c4dfe41057d205a5969814871",
+  },
+  {
+    label: "seeds 8–11",
+    seeds: FROZEN_FAMILY_COVERAGE_SEEDS.slice(8, 12),
+    architectureDigest: "a0fe38f918ffbf5c37f89596d19524e03665e1f25d4d872b668c52c6d4fc2c8b",
+    tableDigest: "8b5b2b48ec66a5c7ed2dd509ca775c745d46ba31a718ea5730b3affe3ba581d4",
+  },
+] as const;
 
 const materialFor = (root: THREE.Group, name: string): THREE.Material => {
   const object = root.getObjectByName(name);
   if (!(object instanceof THREE.Mesh)) throw new Error(`Missing mesh ${name}`);
   return Array.isArray(object.material) ? object.material[0]! : object.material;
 };
-
-const renderSubjectSignature = (root: THREE.Group): string => {
-  root.updateMatrixWorld(true);
-  const nodes: unknown[] = [];
-  root.traverse((object) => {
-    const mesh = object instanceof THREE.Mesh ? object : null;
-    const materials = mesh
-      ? (Array.isArray(mesh.material) ? mesh.material : [mesh.material])
-          .map(materialSignature)
-      : undefined;
-    nodes.push({
-      type: object.type,
-      name: object.name,
-      matrix: object.matrix.elements.map((value) => Number(value.toPrecision(12))),
-      geometry: mesh
-        ? { type: mesh.geometry.type, parameters: mesh.geometry.parameters }
-        : undefined,
-      materials,
-    });
-  });
-  return createHash("sha256").update(JSON.stringify(nodes)).digest("hex");
-};
-
-const geometrySignature = (root: THREE.Group): string => {
-  root.updateMatrixWorld(true);
-  const nodes: unknown[] = [];
-  root.traverse((object) => {
-    const mesh = object instanceof THREE.Mesh ? object : null;
-    const geometry = mesh?.geometry;
-    const attributes = geometry
-      ? Object.entries(geometry.attributes)
-          .map(([name, rawAttribute]) => {
-            const attribute = rawAttribute as THREE.BufferAttribute;
-            return [
-              name,
-              hashBytes(new Uint8Array(
-                attribute.array.buffer,
-                attribute.array.byteOffset,
-                attribute.array.byteLength,
-              )),
-            ];
-          })
-          .sort(([first], [second]) => String(first).localeCompare(String(second)))
-      : undefined;
-    nodes.push({
-      type: object.type,
-      name: object.name,
-      position: object.position.toArray(),
-      rotation: object.rotation.toArray(),
-      scale: object.scale.toArray(),
-      matrixWorld: object.matrixWorld.elements.map((value) => Number(value.toPrecision(12))),
-      userData: object.userData,
-      geometry: geometry
-        ? {
-            type: geometry.type,
-            parameters: geometry.parameters,
-            attributes,
-            index: geometry.index
-              ? hashBytes(new Uint8Array(
-                  geometry.index.array.buffer,
-                  geometry.index.array.byteOffset,
-                  geometry.index.array.byteLength,
-                ))
-              : null,
-          }
-        : undefined,
-    });
-  });
-  return createHash("sha256").update(JSON.stringify(nodes)).digest("hex");
-};
-
-const namedRoleSignature = (
-  root: THREE.Group,
-  names: readonly string[],
-): Readonly<Record<string, unknown>> => Object.fromEntries(
-  names.map((name) => [name, materialSignature(materialFor(root, name))]),
-);
 
 const surfaceMapSignature = (root: THREE.Group, names: readonly string[]): string =>
   JSON.stringify(namedRoleSignature(root, names));
@@ -255,6 +176,35 @@ const tableRoleNames = [
   "table-tilt-context-near-tray",
   "table-tilt-context-middle-canister",
 ] as const;
+
+const SEEDED_MATERIAL_CASES = [
+  ...SEEDED_MATERIAL_BATCHES.map(({ label, seeds, architectureDigest }) => ({
+    label: `Architecture + Foreground ${label}`,
+    sceneId: architectureForegroundScene.id,
+    seeds,
+    digest: architectureDigest,
+    make: (seed: number) => createArchitectureForegroundGroup({
+      presentation: ARCHITECTURE_FOREGROUND_PRESENTATION,
+      variationDescriptor: descriptorFor(architectureForegroundScene, seed),
+    }),
+    dispose: disposeArchitectureForegroundGroup,
+    names: architectureRoleNames,
+    mapNames: architectureRoleNames,
+  })),
+  ...SEEDED_MATERIAL_BATCHES.map(({ label, seeds, tableDigest }) => ({
+    label: `Table Tilt ${label}`,
+    sceneId: tableTiltScene.id,
+    seeds,
+    digest: tableDigest,
+    make: (seed: number) => createTableTiltGroup({
+      presentation: TABLE_TILT_PRESENTATION,
+      variationDescriptor: descriptorFor(tableTiltScene, seed),
+    }),
+    dispose: disposeTableTiltGroup,
+    names: tableRoleNames,
+    mapNames: ["table-tilt-tabletop", "table-tilt-context-near-tray"],
+  })),
+];
 
 afterEach(() => {
   cleanup();
@@ -371,14 +321,20 @@ describe("Free Mode seeded material subject factories", () => {
     });
     const table = createTableTiltGroup({ presentation: TABLE_TILT_PRESENTATION });
     try {
+      // Historical pre-courtyard source cec404a8 had signature 57f9feb2... and 66 nodes.
+      // Accepted #369 head 0ca1707e and merge 9e5a71be have 212 nodes; #350 keeps this
+      // accepted no-descriptor subject signature while adding seeded material options.
       expect(renderSubjectSignature(architecture)).toBe(
-        "57f9feb2d4e3a194d30bc35c526a7409b63994160dcea180e228aedfc5912e68",
+        "df9302abdd2e9f92c764a823803499ceae9be136fdb120901baae366d5bc7fe2",
       );
+      expect(geometrySignature(architecture, {
+        skipSubtreeNames: ["architecture-foreground-courtyard-environment"],
+      })).toBe("5eab841a88899a2e6a69fca2ba7c1bac689a23d963560860a0cc2369cf9445c5");
       expect(renderSubjectSignature(table)).toBe(
-        "d8bcb9595b6b55b12652dd541aff1d68ce18735da5e3e5303d205b82e92c27f1",
+        "3c415e52fede840a64a4ad2fd40957b6d059f3ee237c9c4f4b5415748629164d",
       );
       expect(geometrySignature(table)).toBe(
-        "eefdb7c6eabf7d8a3371cdfc594558165d250f97aeff7862236fe1223bab9c80",
+        "cd6af7323ca3e7136f95d8a5993bb3d312f896a75e4cf34b0f97f0ffdd16566d",
       );
       expect(architectureForegroundScene.sceneVariation).toEqual({ enabled: true, schemaVersion: 1 });
       expect(tableTiltScene.sceneVariation).toEqual({ enabled: true, schemaVersion: 1 });
@@ -422,37 +378,35 @@ describe("Free Mode seeded material subject factories", () => {
     }
   });
 
-  it.each([
-    { scene: architectureForegroundScene, make: (seed: number) => createArchitectureForegroundGroup({ presentation: ARCHITECTURE_FOREGROUND_PRESENTATION, variationDescriptor: descriptorFor(architectureForegroundScene, seed) }), names: architectureRoleNames },
-    { scene: tableTiltScene, make: (seed: number) => createTableTiltGroup({ presentation: TABLE_TILT_PRESENTATION, variationDescriptor: descriptorFor(tableTiltScene, seed) }), names: tableRoleNames },
-  ])("replays seed maps and varies valid material realizations across representative seeds for $scene.id", ({ scene, make, names }) => {
+  it.each(SEEDED_MATERIAL_CASES)("replays seed maps and varies valid material realizations for $label", ({
+    seeds,
+    sceneId,
+    digest,
+    make,
+    dispose,
+    names,
+    mapNames,
+  }) => {
     const signatures: string[] = [];
     const mapSignatures: string[] = [];
-    for (const seed of FROZEN_FAMILY_COVERAGE_SEEDS) {
+    for (const seed of seeds) {
       const group = make(seed);
       try {
         const signature = surfaceMapSignature(group, names);
         signatures.push(signature);
-        const mappedNames = scene.id === "table-tilt"
-          ? ["table-tilt-tabletop", "table-tilt-context-near-tray"]
-          : names;
-        mapSignatures.push(mapBytesSignature(group, mappedNames));
+        mapSignatures.push(mapBytesSignature(group, mapNames));
         const replay = make(seed);
         try {
           expect(surfaceMapSignature(replay, names)).toBe(signature);
         } finally {
-          if (scene.id === "architecture-foreground") {
-            disposeArchitectureForegroundGroup(replay);
-          } else {
-            disposeTableTiltGroup(replay);
-          }
+          dispose(replay);
         }
         for (const name of names) {
           const material = materialFor(group, name);
           expect(material).toBeInstanceOf(THREE.MeshStandardMaterial);
           if (!(material instanceof THREE.MeshStandardMaterial)) continue;
           const textures = [material.map, material.roughnessMap, material.normalMap];
-          if (scene.id === "table-tilt") {
+          if (sceneId === "table-tilt") {
             if (name === "table-tilt-apron-near" || name === "table-tilt-context-middle-canister") {
               expect(textures.every((texture) => texture === null)).toBe(true);
             } else {
@@ -478,15 +432,12 @@ describe("Free Mode seeded material subject factories", () => {
           }
         }
       } finally {
-        if (scene.id === "architecture-foreground") {
-          disposeArchitectureForegroundGroup(group);
-        } else {
-          disposeTableTiltGroup(group);
-        }
+        dispose(group);
       }
     }
-    expect(new Set(signatures).size).toBe(FROZEN_FAMILY_COVERAGE_SEEDS.length);
-    expect(new Set(mapSignatures).size).toBe(FROZEN_FAMILY_COVERAGE_SEEDS.length);
+    expect(new Set(signatures).size).toBe(seeds.length);
+    expect(new Set(mapSignatures).size).toBe(seeds.length);
+    expect(hash(JSON.stringify({ signatures, mapSignatures }))).toBe(digest);
   });
 
   it("records reviewed schema-v1 material-family map signatures for the four reference seeds", () => {

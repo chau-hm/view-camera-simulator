@@ -43,7 +43,14 @@
     {
       "id": "ground-glass-coordinates",
       "label": "Ground Glass coordinates and calibration",
-      "paths": ["src/render/**", "src/core/optics/calculateGroundGlassProjection.ts"],
+      "paths": [
+        "src/render/groundGlassRttOrientation.ts",
+        "src/render/groundGlassFilmPlaneProjection.ts",
+        "src/render/groundGlassFootprintCoordinates.ts",
+        "src/render/groundGlassPhysicalGrid.ts",
+        "src/render/planeOrientation.ts",
+        "src/core/optics/calculateGroundGlassProjection.ts"
+      ],
       "tests": [
         "src/tests/unit/groundGlassCoordinateContract.test.ts",
         "src/tests/unit/groundGlassFilmPlaneProjection.test.ts",
@@ -57,32 +64,140 @@
       "reason": "Renderer and film-plane changes can affect asymmetric physical-side and Raw/Upright output contracts."
     },
     {
+      "id": "render-source-supplement",
+      "label": "Broad renderer source with provisional coordinate coverage",
+      "paths": ["src/render/**"],
+      "coverage": "provisional",
+      "tests": [
+        "src/tests/unit/groundGlassCoordinateContract.test.ts",
+        "src/tests/unit/groundGlassFilmPlaneProjection.test.ts",
+        "src/tests/unit/groundGlassFootprintCoordinates.test.ts",
+        "src/tests/unit/groundGlassPhysicalGrid.test.ts",
+        "src/tests/unit/groundGlassPhysicalScale.test.ts",
+        "src/tests/unit/groundGlassRttOrientation.test.ts"
+      ],
+      "reason": "These coordinate checks are useful supplementary coverage for renderer changes, but a broad src/render match alone does not establish which renderer contract changed."
+    },
+    {
       "id": "renderer-lifecycle",
       "label": "WebGL RTT, frame freshness, and renderer lifecycle",
       "paths": [
         "src/render/GroundGlassRenderHost.tsx",
+        "src/render/GroundGlassRTT.tsx",
         "src/render/SceneRenderer.tsx",
         "src/render/SceneRenderer.ts",
-        "src/render/testing/**",
+        "src/render/groundGlassFrameRequest.ts",
+        "src/render/groundGlassFrameExecution.ts",
         "src/components/simulator/**"
       ],
       "tests": [
         "src/tests/unit/GroundGlassRenderHost.test.tsx",
+        "src/tests/unit/GroundGlassRTT.test.ts",
         "src/tests/unit/SceneRenderer.test.tsx",
         "src/tests/unit/observerRendererLifecycle.test.tsx",
         "src/tests/unit/groundGlassFrameRequest.test.ts",
         "src/tests/unit/groundGlassFrameExecution.test.ts",
         "src/tests/unit/groundGlassRttResources.test.ts",
-        "src/tests/unit/groundGlassRenderer.test.tsx"
+        "src/tests/unit/groundGlassRenderer.test.tsx",
+        "src/tests/unit/groundGlassApertureGatherPolicy.test.ts",
+        "src/tests/unit/groundGlassM6Presentation.test.ts"
       ],
       "e2eSpecs": ["src/tests/e2e/scene-switching.spec.ts"],
       "requiresE2E": true,
       "reason": "Unit lifecycle ownership is distinct from SPA navigation, detach, and real frame-delivery behavior."
     },
     {
-      "id": "webgpu-lifecycle",
-      "label": "WebGPU adapter and runtime contracts",
+      "id": "scene-subject-registry",
+      "label": "Scene subject registration and shared asset/resource ownership",
+      "paths": [
+        "src/render/sceneSubjectRegistry.tsx",
+        "src/render/assets/sceneAssetRegistry.ts"
+      ],
+      "tests": [
+        "src/tests/unit/sceneSubjectRegistry.test.tsx",
+        "src/tests/unit/sceneAssetRegistry.test.ts",
+        "src/tests/unit/sceneAssetMigration.test.ts",
+        "src/tests/unit/sharedSceneResourceLifecycle.test.ts",
+        "src/tests/unit/publicScenes.test.ts",
+        "src/tests/unit/sceneDefinitions.test.ts",
+        "src/tests/unit/simulatorRouteValidation.test.ts",
+        "src/tests/integration/scene-publication-gate.test.tsx",
+        "src/tests/integration/simulator-route-availability.test.tsx",
+        "src/tests/integration/sceneVariationRoute.test.tsx",
+        "src/tests/unit/tableTiltMountedVisibility.test.ts"
+      ],
+      "e2eSpecs": ["src/tests/e2e/scene-switching.spec.ts"],
+      "requiresE2E": true,
+      "reason": "Registry consistency, public scene availability, unique resource disposal, mounted asset construction, and SPA scene switching are separate contracts. This owner validates registry behavior, not every scene's geometry or materials."
+    },
+    {
+      "id": "table-tilt-mounted-geometry",
+      "label": "Table Tilt mounted geometry and scene inputs",
+      "paths": [
+        "src/render/TableTiltSubjectFactory.tsx",
+        "src/render/table-tilt/**",
+        "src/scenes/definitions/table-tilt.ts",
+        "src/scenes/presentation/tableTilt.ts",
+        "src/scenes/tableTiltGeometry.ts"
+      ],
+      "coverage": "provisional",
+      "tests": [
+        "src/tests/unit/tableTiltMountedVisibility.test.ts",
+        "src/tests/unit/tableTiltGeometry.test.ts",
+        "src/tests/unit/tableTiltOptics.test.ts",
+        "src/tests/unit/tableTiltTaskContent.test.ts",
+        "src/tests/unit/physicalTaskEvaluation.test.ts",
+        "src/tests/unit/focusLegibilitySurfaceDetail.test.ts",
+        "src/tests/unit/scheimpflugConstruction.test.ts",
+        "src/tests/unit/scheimpflugConstructionGeometry.test.ts",
+        "src/tests/unit/scheimpflugPhysicalFocusPropagation.test.ts",
+        "src/tests/unit/opticalSectionProjection.test.ts",
+        "src/tests/unit/sceneRichnessCoreFoundation.test.ts",
+        "src/tests/unit/geometryViewport.matrix.test.tsx"
+      ],
+      "e2eSpecs": ["src/tests/e2e/table-tilt.spec.ts"],
+      "requiresE2E": true,
+      "reason": "Table Tilt furnishing and mounted-asset inputs select their registered-scene visibility proof, geometry/optics and task consumers, plus the public browser flow. A mounted-camera height mutation is detected, but an exploratory sideboard horizontal-anchor mutation survived; until that furnishing position has an independent reference, this owner cannot alone establish complete coverage. Scene-tree changes also retain the separate incomplete scene-implementation owner."
+    },
+    {
+      "id": "webgpu-source-supplement",
+      "label": "Unclassified WebGPU implementation with provisional coverage",
       "paths": ["src/render/webgpu/**"],
+      "coverage": "provisional",
+      "reason": "The WebGPU directory contains CPU references, research helpers, evidence implementations, adapter code, and test controls. A directory match alone does not identify their direct contracts; unmapped files use full Vitest and remain incomplete. This broad owner does not impose GPU qualification on reference-only changes."
+    },
+    {
+      "id": "webgpu-b1-reference",
+      "label": "B1 CPU reconstruction reference",
+      "paths": ["src/render/webgpu/groundGlassB1Reference.ts"],
+      "coverage": "complete",
+      "tests": [
+        "src/tests/unit/groundGlassWebGpuB1Reference.test.ts",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts"
+      ],
+      "reason": "The direct B1 tests cover observed gather/center provenance, far-gather acceptance, source-color fallback, binary16 limits, alpha/compositing, and malformed inputs. The M7E Unit test independently recomputes B1 output in the active evidence evaluator. These CPU contracts do not prove native GPU execution."
+    },
+    {
+      "id": "webgpu-runtime-classification",
+      "label": "Mounted WebGPU runtime classification helper",
+      "paths": ["src/render/webgpu/groundGlassWebGpuRuntime.ts"],
+      "coverage": "complete",
+      "tests": ["src/tests/unit/groundGlassWebGpuRuntime.test.ts"],
+      "reason": "This pure classifier has a direct Unit owner for initialized WebGPU, WebGL2 compatibility, and unknown runtime evidence. The test protects classification semantics; it is not native-browser qualification."
+    },
+    {
+      "id": "webgpu-diagnostic-attribution",
+      "label": "WebGPU diagnostic attribution helpers",
+      "paths": ["src/render/webgpu/groundGlassWebGpuDiagnostics.ts"],
+      "coverage": "complete",
+      "tests": ["src/tests/unit/GroundGlassWebGPUAdapterDiagnostics.test.ts"],
+      "reason": "The direct Unit owner checks source-bound runtime and presentation diagnostic attribution. It does not establish adapter or device lifecycle behavior."
+    },
+    {
+      "id": "webgpu-lifecycle",
+      "label": "WebGPU adapter and device lifecycle qualification",
+      "paths": ["src/render/webgpu/GroundGlassWebGPUAdapter.tsx"],
+      "coverage": "provisional",
       "tests": [
         "src/tests/unit/groundGlassWebGpuRuntime.test.ts",
         "src/tests/unit/groundGlassWebGpuOpticalStateAdapter.test.ts",
@@ -92,7 +207,20 @@
       "e2eSpecs": ["src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts"],
       "requiresE2E": true,
       "nativeGpuRequired": true,
-      "reason": "Deterministic adapter tests do not replace explicit browser/device lifecycle qualification."
+      "incompleteReason": "The selected Unit checks and failure-host browser scenario do not map every adapter, asynchronous lifecycle, and resource transition in the adapter implementation. Full Vitest and explicit native-WebGPU evidence remain required; this owner cannot establish complete Affected coverage.",
+      "reason": "Adapter/device behavior is distinct from CPU reference correctness. The selected deterministic tests are useful supplements, while the native failure-host scenario and backend assertion preserve browser/device qualification."
+    },
+    {
+      "id": "webgpu-test-seam",
+      "label": "WebGPU development control and failure-injection seam",
+      "paths": ["src/render/webgpu/groundGlassWebGpuTestSeam.ts"],
+      "coverage": "provisional",
+      "tests": ["src/tests/unit/groundGlassWebGpuTestSeam.test.ts"],
+      "e2eSpecs": ["src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts"],
+      "requiresE2E": true,
+      "nativeGpuRequired": true,
+      "incompleteReason": "The Unit owner covers recovery-action routing, but this seam also exposes capture, synchronization, and failure-injection controls. Native lifecycle coverage does not map every exported control, so affected ownership remains provisional.",
+      "reason": "Changes to the seam can alter controls used by native adapter/device lifecycle qualification; they are separate from reference-only changes and retain the focused native failure-host contract."
     },
     {
       "id": "scene-publication",
@@ -151,11 +279,12 @@
         "scripts/historical-qualification-ci-gate.mjs",
         "scripts/run-m7r-evidence.mjs",
         "scripts/run-m7v-qualification.mjs",
-        "scripts/fetch-m7k-execution-source.mjs",
-        "src/render/testing/**"
+        "scripts/fetch-m7k-execution-source.mjs"
       ],
       "tests": [
         "src/tests/unit/historicalQualificationGate.test.ts",
+        "src/tests/unit/m7kCaptureWorkflow.test.ts",
+        "src/tests/unit/groundGlassM7mSceneReadiness.test.ts",
         "src/tests/unit/m7nRendererLifecycleEvidence.test.ts",
         "src/tests/unit/m7nRendererLifecycleTrace.test.ts",
         "src/tests/unit/m7rBroadE2eRecoveryEvidence.test.ts",
@@ -163,6 +292,109 @@
         "src/tests/unit/m7wQualificationEvidence.test.ts"
       ],
       "reason": "Current qualification decisions and provenance contracts are separate from frozen replay and application behavior."
+    },
+    {
+      "id": "historical-active-unit-contracts",
+      "label": "Active M7 evaluator, normalizer, replay, and provenance Unit contracts",
+      "paths": [
+        "scripts/evaluateM7*",
+        "scripts/normalizeM7*",
+        "scripts/run-m7*",
+        "scripts/m7*",
+        "scripts/replayM7*",
+        "scripts/migrateM7*",
+        "scripts/fetch-m7k-execution-source.mjs",
+        "scripts/historical-evidence-routing.mjs",
+        "scripts/historical-evidence-routing.d.mts",
+        "scripts/historical-evidence-manifest.json",
+        "src/render/groundGlassM7*",
+        "src/render/webgpu/groundGlassM7*",
+        "src/render/testing/groundGlassM7*",
+        "src/render/testing/m7nRendererLifecycleTrace.ts"
+      ],
+      "coverage": "provisional",
+      "tests": [
+        "src/tests/unit/groundGlassM7bLifecycleEvidence.test.ts",
+        "src/tests/unit/groundGlassM7cR187LifecycleEvidence.test.ts",
+        "src/tests/unit/groundGlassM7dPhysicalCocEvidence.test.ts",
+        "src/tests/unit/groundGlassM7eArtifactReplay.test.ts",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts",
+        "src/tests/unit/groundGlassM7eLosslessEvidenceJson.test.ts",
+        "src/tests/unit/groundGlassM7fPresentationEvidence.test.ts",
+        "src/tests/unit/groundGlassM7fReplayCli.test.ts",
+        "src/tests/unit/groundGlassM7gConsolidatedEvidence.test.ts",
+        "src/tests/unit/groundGlassM7hBroadE2eTriage.test.ts",
+        "src/tests/unit/groundGlassM7hCompareCli.test.ts",
+        "src/tests/unit/groundGlassM7iBroadE2eRemediation.test.ts",
+        "src/tests/unit/groundGlassM7jFourWorkerStability.test.ts",
+        "src/tests/unit/groundGlassM7kBroadE2eQualification.test.ts",
+        "src/tests/unit/groundGlassM7lLearningDrawerRemediation.test.ts",
+        "src/tests/unit/groundGlassM7mSceneReadiness.test.ts",
+        "src/tests/unit/m7gReplayOrchestration.test.ts",
+        "src/tests/unit/m7kCaptureWorkflow.test.ts",
+        "src/tests/unit/m7nRendererLifecycleEvidence.test.ts",
+        "src/tests/unit/m7nRendererLifecycleTrace.test.ts",
+        "src/tests/unit/m7oCanvasAssertionTimingEvidence.test.ts",
+        "src/tests/unit/m7pAssertionSchedulingEvidence.test.ts",
+        "src/tests/unit/m7qLightPeerTraceAbEvidence.test.ts",
+        "src/tests/unit/m7rBroadE2eRecoveryEvidence.test.ts",
+        "src/tests/unit/m7vE2eQualificationPolicy.test.ts",
+        "src/tests/unit/m7wQualificationEvidence.test.ts",
+        "src/tests/unit/historicalEvidenceRouting.test.ts",
+        "src/tests/unit/historicalQualificationGate.test.ts"
+      ],
+      "reason": "This broad family-prefix owner keeps all maintained active M7 Unit tests selected as supplementary coverage. A family-prefix match does not establish direct source-to-test ownership; unmatched paths use full Vitest and remain incomplete. Frozen archive replay is a separate B2 qualification."
+    },
+    {
+      "id": "historical-m7e-gather-b1-evidence",
+      "label": "M7E active gather/B1 evaluator contract",
+      "paths": ["src/render/webgpu/groundGlassM7eGatherB1Evidence.ts"],
+      "coverage": "complete",
+      "tests": ["src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts"],
+      "reason": "The active Unit contract recomputes the B1 result from fixed inputs and exercises mutated-output rejection, provenance, malformed inputs, and numeric boundaries. Frozen M7E archive replay remains a separate B2 qualification."
+    },
+    {
+      "id": "historical-m7m-scene-readiness",
+      "label": "M7M active scene-readiness evaluator",
+      "paths": [
+        "scripts/evaluateM7mSceneReadiness.ts",
+        "src/render/testing/groundGlassM7mSceneReadiness.ts"
+      ],
+      "coverage": "complete",
+      "tests": ["src/tests/unit/groundGlassM7mSceneReadiness.test.ts"],
+      "reason": "The direct tests exercise the readiness evaluator and production CLI, including contradictory qualification, evaluator/source provenance, and retained-source failures. Archive replay remains independent."
+    },
+    {
+      "id": "historical-m7n-renderer-lifecycle-evaluator",
+      "label": "M7N active renderer-lifecycle evaluator",
+      "paths": ["scripts/evaluateM7nRendererLifecycle.ts"],
+      "coverage": "complete",
+      "tests": ["src/tests/unit/m7nRendererLifecycleEvidence.test.ts"],
+      "reason": "The direct evaluator tests exercise the production-facing CLI and reject contradicted qualification, altered evidence digests, invalid provenance, and unavailable required traces. Historical/browser reproduction is separate."
+    },
+    {
+      "id": "historical-m7n-renderer-lifecycle-trace",
+      "label": "M7N trace-buffer contract",
+      "paths": ["src/render/testing/m7nRendererLifecycleTrace.ts"],
+      "coverage": "complete",
+      "tests": ["src/tests/unit/m7nRendererLifecycleTrace.test.ts"],
+      "reason": "Direct tests cover trace identity, ordering, bounded retention, immutable snapshots, and state gating. They establish the trace-buffer Unit contract only, not browser lifecycle qualification."
+    },
+    {
+      "id": "historical-evidence-routing",
+      "label": "Historical qualification change-routing contract",
+      "paths": ["scripts/historical-evidence-routing.mjs"],
+      "coverage": "complete",
+      "tests": ["src/tests/unit/historicalEvidenceRouting.test.ts"],
+      "reason": "The direct routing tests cover family dependency closure, exact source identity, changed-file discovery, pagination/staleness, renames, and fail-closed outcomes. Archive replay and provenance validation remain separate checks."
+    },
+    {
+      "id": "historical-m7n-renderer-lifecycle-normalizer",
+      "label": "M7N normalizer with partial direct coverage",
+      "paths": ["scripts/normalizeM7nRendererLifecycleCapture.mjs"],
+      "coverage": "provisional",
+      "tests": ["src/tests/unit/m7nRendererLifecycleEvidence.test.ts"],
+      "reason": "The current direct test checks sanitized failure paths and unavailable trace normalization, but does not cover the normalizer's full schema and status surface. Keep full-Vitest fallback and report affected ownership as incomplete."
     },
     {
       "id": "ui-and-layout",
@@ -189,6 +421,7 @@
     {
       "id": "ci-and-test-infrastructure",
       "label": "CI, test runner, package, and validation infrastructure",
+      "coverage": "provisional",
       "paths": [
         ".github/workflows/**",
         "scripts/**",
@@ -202,6 +435,20 @@
       "tests": [],
       "fullLocalCi": true,
       "reason": "Shared validation infrastructure changes require full local checks and the full Vitest suite."
+    },
+    {
+      "id": "local-ci-runner-contracts",
+      "label": "Local CI selection and reporting implementation",
+      "paths": [
+        "scripts/ci-local.mjs",
+        "scripts/e2e-spec-policy.mjs",
+        "scripts/local-ci/**"
+      ],
+      "tests": [
+        "src/tests/unit/localCiContracts.test.ts",
+        "src/tests/unit/e2eSpecPolicy.test.ts"
+      ],
+      "reason": "Local CI routing, runner execution, report completeness, and E2E policy have direct contract tests."
     }
   ]
 }

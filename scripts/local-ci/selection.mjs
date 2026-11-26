@@ -136,6 +136,7 @@ export function resolveOwnerSelection(changedPaths, owners, pathExists) {
   const allDevelopmentE2EOwnerIds = new Set();
   const reasons = [];
   const unknownPaths = [];
+  const provisionalPaths = [];
   const incompleteReasons = [];
   let fullVitest = false;
   let fullLocalCi = false;
@@ -148,6 +149,18 @@ export function resolveOwnerSelection(changedPaths, owners, pathExists) {
     if (matches.length === 0) {
       unknownPaths.push(changedPath);
       continue;
+    }
+
+    const completeMatches = matches.filter((owner) => owner.coverage !== "provisional");
+    const provisionalMatches = matches.filter((owner) => owner.coverage === "provisional");
+    if (provisionalMatches.length > 0 && completeMatches.length === 0) {
+      provisionalPaths.push(changedPath);
+      fullVitest = true;
+      for (const owner of provisionalMatches) {
+        const reason = `Only provisional ownership matched. ${owner.reason} Full Vitest was selected; affected coverage remains incomplete until a direct owner is established.`;
+        incompleteReasons.push({ path: changedPath, owner: owner.id, reason });
+        reasons.push({ path: changedPath, owner: owner.id, reason });
+      }
     }
 
     for (const owner of matches) {
@@ -204,6 +217,7 @@ export function resolveOwnerSelection(changedPaths, owners, pathExists) {
     allDevelopmentE2EOwnerIds: [...allDevelopmentE2EOwnerIds].sort(),
     reasons,
     unknownPaths,
+    provisionalPaths,
     staleTests,
     staleSpecs,
     incompleteReasons,
