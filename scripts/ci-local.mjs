@@ -675,11 +675,17 @@ async function main() {
         }
         report.execution.owners = selection.ownerIds;
         report.execution.selectionReasons = selection.reasons;
-        if (selection.unknownPaths.length > 0 || selection.staleTests.length > 0 || selection.staleSpecs.length > 0) {
+        if (
+          selection.unknownPaths.length > 0 ||
+          selection.provisionalPaths.length > 0 ||
+          selection.staleTests.length > 0 ||
+          selection.staleSpecs.length > 0
+        ) {
           report.execution.fallback = {
             kind: "full-vitest",
-            reason: "Unknown or stale ownership selected the broad Vitest fallback; the result remains INCOMPLETE until ownership is repaired.",
+            reason: "Unknown, provisional, or stale ownership selected the broad Vitest fallback; the result remains INCOMPLETE until direct ownership is established.",
             unknownPaths: selection.unknownPaths,
+            provisionalPaths: selection.provisionalPaths,
             staleTests: selection.staleTests,
             staleSpecs: selection.staleSpecs,
           };

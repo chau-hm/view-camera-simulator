@@ -17,6 +17,7 @@ import { CAMERA_CONSTANTS, DEFAULT_CAMERA_STATE } from "../../utils/constants";
 
 const assetKey = ARCHITECTURE_FOREGROUND_ASSET_KEY;
 const groundName = "architecture-foreground-ground";
+const courtyardName = "architecture-foreground-courtyard-environment";
 const wallMaterial = "architecture-foreground-plaster";
 const baseMaterial = "architecture-foreground-rusticated-stone";
 const pierMaterial = "architecture-foreground-mullion";
@@ -129,6 +130,67 @@ describe("registered Architecture + Foreground geometry", () => {
         blocker.material.dispose();
       }
       expect(probeSurface(subject, lens, target, sample).pass).toBe(true);
+    });
+  });
+
+  it("keeps the courtyard's near and middle paving neighborhoods open", () => {
+    withMountedSubject(subject => {
+      expect(subject.getObjectByName(courtyardName)).toBeDefined();
+      const lens = lensAt({ ...rise, ...solve });
+      for (const id of ["foreground-near", "foreground-middle"]) {
+        const { z } = geometry.focusTargetById(id).worldPosition;
+        for (const dz of [-140, 0, 140]) {
+          for (const x of [-1500, -750, 0, 750, 1500]) {
+            const point = worldPoint({ x, y: geometry.ground.y, z: z + dz });
+            const ray = new THREE.Raycaster(lens, point.clone().sub(lens).normalize());
+            const [first] = ray.intersectObject(subject);
+            expect(first?.object.name, `${id}: ${x}, ${z + dz}`).toBe(groundName);
+            expect(first.point.distanceTo(point) / toWorld(1)).toBeLessThan(0.25);
+          }
+        }
+      }
+    });
+  });
+
+  it.each([
+    { id: "foreground-middle", kind: "planter", size: [720, 690, 540], alongRay: 0.70 },
+    { id: "building-middle", kind: "gallery pier", size: [210, 2680, 210], alongRay: 0.78 },
+  ])("detects a grounded courtyard $kind on the $id ray", ({ id, kind, size, alongRay }) => {
+    withMountedSubject(subject => {
+      const courtyard = subject.getObjectByName(courtyardName)!;
+      const lens = lensAt({ ...rise, ...solve });
+      const target = geometry.focusTargetById(id);
+      const sample = target.worldPosition;
+      const before = probeSurface(subject, lens, target, sample);
+      expect(before.pass).toBe(true);
+
+      const [width, height, depth] = size;
+      const blocker = new THREE.Mesh(
+        new THREE.BoxGeometry(toWorld(width), toWorld(height), toWorld(depth)),
+        new THREE.MeshStandardMaterial({ color: "#c3b498" }),
+      );
+      let disposedGeometry = 0;
+      let disposedMaterial = 0;
+      blocker.geometry.addEventListener("dispose", () => disposedGeometry++);
+      blocker.material.addEventListener("dispose", () => disposedMaterial++);
+      blocker.name = "injected-courtyard-" + kind;
+      blocker.position.copy(lens).lerp(worldPoint(sample), alongRay);
+      blocker.position.y = toWorld(geometry.ground.y + height / 2);
+      courtyard.add(blocker);
+      subject.updateMatrixWorld(true);
+      try {
+        const blocked = probeSurface(subject, lens, target, sample);
+        expect(blocked.pass).toBe(false);
+        expect(blocked.hit).toBe(blocker.name);
+        expect(blocked.distanceErrorMm).toBeLessThan(-100);
+      } finally {
+        blocker.removeFromParent();
+        blocker.geometry.dispose();
+        blocker.material.dispose();
+      }
+      expect(probeSurface(subject, lens, target, sample)).toEqual(before);
+      expect(disposedGeometry).toBe(1);
+      expect(disposedMaterial).toBe(1);
     });
   });
 

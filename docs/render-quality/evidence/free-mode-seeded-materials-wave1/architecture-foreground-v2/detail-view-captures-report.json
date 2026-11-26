@@ -1,0 +1,263 @@
+{
+  "captureHead": "integration-working-tree",
+  "captureMode": "development-playwright-chromium",
+  "sceneId": "architecture-foreground",
+  "schemaVersion": 1,
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "devicePixelRatio": 1,
+  "renderQuality": "standard",
+  "seeds": [
+    0,
+    284719,
+    4294967295
+  ],
+  "observerPoseMustMatchAcrossSeeds": true,
+  "focusApertureAndMovementValuesMustMatchAcrossSeeds": true,
+  "detailViews": {
+    "front-facade": [
+      {
+        "filename": "architecture-foreground-v2-front-facade-seed-0.png",
+        "label": "Seed 0",
+        "cameraPosition": "5.600000,3.000000,-6.500000",
+        "orbitTarget": "0.000000,0.250000,6.900000",
+        "sha256": "1c4975427574ce43f17caea9b410d3c47399f2ef857ace340f32e52e041a58d1"
+      },
+      {
+        "filename": "architecture-foreground-v2-front-facade-seed-284719.png",
+        "label": "Seed 284719",
+        "cameraPosition": "5.600000,3.000000,-6.500000",
+        "orbitTarget": "0.000000,0.250000,6.900000",
+        "sha256": "ca2edd82995642c9830ec1660606ed984300af91da51fbd92a79f4d72b2bf802"
+      },
+      {
+        "filename": "architecture-foreground-v2-front-facade-seed-4294967295.png",
+        "label": "Seed 4294967295",
+        "cameraPosition": "5.600000,3.000000,-6.500000",
+        "orbitTarget": "0.000000,0.250000,6.900000",
+        "sha256": "8e3fd6b9563b4f13322a8bd2b47a7a12ad802e33362b7b3914c6ba33606d3453"
+      }
+    ],
+    "side": [
+      {
+        "filename": "architecture-foreground-v2-side-seed-0.png",
+        "label": "Seed 0",
+        "cameraPosition": "10.791942,3.000000,0.517927",
+        "orbitTarget": "0.000000,0.250000,6.900000",
+        "sha256": "0e13c4f2f3b54bae381eff87d5a35edc585febd1b8c8fe167a8c71d0b27728d1"
+      },
+      {
+        "filename": "architecture-foreground-v2-side-seed-284719.png",
+        "label": "Seed 284719",
+        "cameraPosition": "10.791942,3.000000,0.517927",
+        "orbitTarget": "0.000000,0.250000,6.900000",
+        "sha256": "a4062786e3ca6cb4303553e91fd28c651264e5f24c9a0f0d0f5c69bbbd2b2910"
+      },
+      {
+        "filename": "architecture-foreground-v2-side-seed-4294967295.png",
+        "label": "Seed 4294967295",
+        "cameraPosition": "10.791942,3.000000,0.517927",
+        "orbitTarget": "0.000000,0.250000,6.900000",
+        "sha256": "8fcaf37c57c2004579bc2247396ecb9f09949df33beb85210ad2d4b8ab31786b"
+      }
+    ],
+    "window-limestone": [
+      {
+        "filename": "architecture-foreground-v2-window-limestone-seed-0.png",
+        "label": "Seed 0",
+        "cameraPosition": "0.757545,0.517557,2.204433",
+        "orbitTarget": "0.000000,0.250000,6.900000",
+        "sha256": "7df614e4139dd29c01130b8046c9140cea7878f7c31930d30ea5e3fc0630fe4d"
+      },
+      {
+        "filename": "architecture-foreground-v2-window-limestone-seed-284719.png",
+        "label": "Seed 284719",
+        "cameraPosition": "0.757545,0.517557,2.204433",
+        "orbitTarget": "0.000000,0.250000,6.900000",
+        "sha256": "4d42b4e8cfeec1b93f845e774a1b41385160de067b13b404512adf4cf7fee852"
+      },
+      {
+        "filename": "architecture-foreground-v2-window-limestone-seed-4294967295.png",
+        "label": "Seed 4294967295",
+        "cameraPosition": "0.757545,0.517557,2.204433",
+        "orbitTarget": "0.000000,0.250000,6.900000",
+        "sha256": "0c034bf73e6bc75b6ae7438ba9c1c424f4359efa986c7ae839f7215d5b804a3a"
+      }
+    ],
+    "roofline-cornice": [
+      {
+        "filename": "architecture-foreground-v2-roofline-cornice-seed-0.png",
+        "label": "Seed 0",
+        "cameraPosition": "5.600000,3.000000,-6.500000",
+        "orbitTarget": "0.000000,0.250000,6.900000",
+        "sha256": "bc5195f1c883e0f2da2d5ba107be193464d3de46f32dd339cb412e50c5c60c6e"
+      },
+      {
+        "filename": "architecture-foreground-v2-roofline-cornice-seed-284719.png",
+        "label": "Seed 284719",
+        "cameraPosition": "5.600000,3.000000,-6.500000",
+        "orbitTarget": "0.000000,0.250000,6.900000",
+        "sha256": "9be91e49329d726747da3e0f96473066d49b8668dbf0a104393816b44cb9c495"
+      },
+      {
+        "filename": "architecture-foreground-v2-roofline-cornice-seed-4294967295.png",
+        "label": "Seed 4294967295",
+        "cameraPosition": "5.600000,3.000000,-6.500000",
+        "orbitTarget": "0.000000,0.250000,6.900000",
+        "sha256": "175573bc3864e1a7d05571780ea84bafe2f8538e73d5a5f0f32b4593308af221"
+      }
+    ],
+    "paving-close-up": [
+      {
+        "filename": "architecture-foreground-v2-paving-close-up-seed-0.png",
+        "label": "Seed 0",
+        "cameraPosition": "0.528625,2.233743,2.451865",
+        "orbitTarget": "0.000000,0.250000,6.900000",
+        "sha256": "74030ce766cab8a79ccdc7f4a1ad7ef0af3336a3e64c251f0c8226fc6e33493f"
+      },
+      {
+        "filename": "architecture-foreground-v2-paving-close-up-seed-284719.png",
+        "label": "Seed 284719",
+        "cameraPosition": "0.528625,2.233743,2.451865",
+        "orbitTarget": "0.000000,0.250000,6.900000",
+        "sha256": "79bef78b98ae4375bb23efbb116430e8594a67d74e25a040a6289a4d8fcadabe"
+      },
+      {
+        "filename": "architecture-foreground-v2-paving-close-up-seed-4294967295.png",
+        "label": "Seed 4294967295",
+        "cameraPosition": "0.528625,2.233743,2.451865",
+        "orbitTarget": "0.000000,0.250000,6.900000",
+        "sha256": "c63396c3bcfb04ad26b157344338bc9486b22d340d69d16367e85d9964c0a0b4"
+      }
+    ]
+  },
+  "groundGlassFrames": [
+    {
+      "seed": 0,
+      "state": {
+        "position": "5.600000,3.000000,-6.500000",
+        "target": "0.000000,0.250000,6.900000",
+        "viewFocus": "scene",
+        "focusDistanceMm": 9490,
+        "aperture": 11,
+        "movements": [
+          {
+            "standard": "front",
+            "controls": [
+              {
+                "label": "Rise",
+                "value": 0
+              },
+              {
+                "label": "Tilt",
+                "value": 0
+              },
+              {
+                "label": "Swing",
+                "value": 0
+              }
+            ]
+          }
+        ],
+        "rendererGeneration": "1"
+      },
+      "requestId": "gg-mwrys0ik-mvgjsnomo29-default-request-3",
+      "rtt": {
+        "requestId": "gg-mwrys0ik-mvgjsnomo29-default-request-3",
+        "completedRequestId": "gg-mwrys0ik-mvgjsnomo29-default-request-3",
+        "sceneId": "architecture-foreground",
+        "status": "completed",
+        "orientation": "raw",
+        "dofProcessingEnabled": "true"
+      }
+    },
+    {
+      "seed": 284719,
+      "state": {
+        "position": "5.600000,3.000000,-6.500000",
+        "target": "0.000000,0.250000,6.900000",
+        "viewFocus": "scene",
+        "focusDistanceMm": 9490,
+        "aperture": 11,
+        "movements": [
+          {
+            "standard": "front",
+            "controls": [
+              {
+                "label": "Rise",
+                "value": 0
+              },
+              {
+                "label": "Tilt",
+                "value": 0
+              },
+              {
+                "label": "Swing",
+                "value": 0
+              }
+            ]
+          }
+        ],
+        "rendererGeneration": "1"
+      },
+      "requestId": "gg-mwryubpj-p5jj2arn3z-default-request-3",
+      "rtt": {
+        "requestId": "gg-mwryubpj-p5jj2arn3z-default-request-3",
+        "completedRequestId": "gg-mwryubpj-p5jj2arn3z-default-request-3",
+        "sceneId": "architecture-foreground",
+        "status": "completed",
+        "orientation": "raw",
+        "dofProcessingEnabled": "true"
+      }
+    },
+    {
+      "seed": 4294967295,
+      "state": {
+        "position": "5.600000,3.000000,-6.500000",
+        "target": "0.000000,0.250000,6.900000",
+        "viewFocus": "scene",
+        "focusDistanceMm": 9490,
+        "aperture": 11,
+        "movements": [
+          {
+            "standard": "front",
+            "controls": [
+              {
+                "label": "Rise",
+                "value": 0
+              },
+              {
+                "label": "Tilt",
+                "value": 0
+              },
+              {
+                "label": "Swing",
+                "value": 0
+              }
+            ]
+          }
+        ],
+        "rendererGeneration": "1"
+      },
+      "requestId": "gg-mwrywngr-zpdqn8ri99g-default-request-3",
+      "rtt": {
+        "requestId": "gg-mwrywngr-zpdqn8ri99g-default-request-3",
+        "completedRequestId": "gg-mwrywngr-zpdqn8ri99g-default-request-3",
+        "sceneId": "architecture-foreground",
+        "status": "completed",
+        "orientation": "raw",
+        "dofProcessingEnabled": "true"
+      }
+    }
+  ],
+  "contactSheets": {
+    "front-facade": "architecture-foreground-v2-front-facade-seed-comparison.png",
+    "side": "architecture-foreground-v2-side-seed-comparison.png",
+    "window-limestone": "architecture-foreground-v2-window-limestone-seed-comparison.png",
+    "roofline-cornice": "architecture-foreground-v2-roofline-cornice-seed-comparison.png",
+    "paving-close-up": "architecture-foreground-v2-paving-close-up-seed-comparison.png"
+  },
+  "detailCrops": "Front facade, roofline and paving captures are native browser pixels cropped from clean Observer canvases without scaling or retouching; no brightness treatment or retouching was applied."
+}

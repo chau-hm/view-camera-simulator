@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "failedProductionRun": {
+    "runId": 45629905047,
+    "qualificationJobId": 139260050099,
+    "artifactId": 15028829816,
+    "artifactName": "historical-qualification-45629905047-1",
+    "artifactFile": "historical-qualification-result.json",
+    "artifactSha256": "ffed79b65d0ee6f236a156559f1f9c7f6c2d1b4105c189eecffa9a209188e6ce",
+    "previousProductionSha": "cee49160e9ae704a7aad2e2b8149fb72ddff965c",
+    "productionMergeSha": "3e12da370add0d9107684dbcf73530ef5806a44b",
+    "promotedMainSourceSha": "cec404a84f9469bd21dbc3813c327f831c370e60",
+    "treeSha": "e25187eb89d35eec53740881576fef6b3ed3d49b",
+    "mergeParents": [
+      "cee49160e9ae704a7aad2e2b8149fb72ddff965c",
+      "cec404a84f9469bd21dbc3813c327f831c370e60"
+    ],
+    "changedPathCount": 1979,
+    "changedPathSetSha256": "d757c764bc79669dac9cc8c47decb0f4e3c482a907e7f26b67f34628fdf1c9a0",
+    "originalDecision": "UNVERIFIED",
+    "originalBroadFallback": true,
+    "originalUnresolvedReasonCounts": {
+      "unsupported-or-unmapped-historical-family": 62,
+      "unmapped-evidence-verification-dependency": 75
+    },
+    "unsupportedFamilies": ["M7A", "M7B", "M7C", "M7D", "M7E", "M7S", "M7T", "M7U", "M7X"],
+    "historicalValidatorsPassed": 16,
+    "pinnedSourceFetchesPassed": 24,
+    "missingRequiredArtifacts": 0,
+    "deploymentJob": "skipped"
+  },
+  "successfulMainRunForPromotedSource": {
+    "runId": 45514655912,
+    "sourceSha": "cec404a84f9469bd21dbc3813c327f831c370e60",
+    "decision": "QUALIFIED",
+    "changedPathCount": 2,
+    "broadFallback": true,
+    "historicalValidatorsPassed": 16,
+    "ordinaryCiPassed": true,
+    "deploymentJob": "skipped",
+    "coverageLimit": "This incremental run did not qualify the complete cumulative production path range."
+  },
+  "policyIntroduction": {
+    "commit": "a0b2fa4b2b9acc323c64a057599d10d3063cef8b",
+    "tree": "9643611510e9856890934097250423b7de65ded4",
+    "prePolicyParent": "981fea7e0e969a7494ad58b319d906650ad7c891",
+    "unresolvedPathCountAcrossFullTree": 139,
+    "fullTreeUnresolvedReasonCounts": {
+      "unsupported-or-unmapped-historical-family": 62,
+      "unmapped-evidence-verification-dependency": 77
+    },
+    "additionalPreexistingPathsOutsideTheIncidentDiff": [
+      "src/render/sceneCapacityBenchmarkQualification.ts",
+      "src/tests/unit/sceneCapacityBenchmarkQualification.test.ts"
+    ]
+  }
+}

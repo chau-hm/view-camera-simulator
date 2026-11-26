@@ -1,0 +1,109 @@
+{
+  "captureMode": "candidate-family diagnostic; excluded from frozen twelve-seed coverage",
+  "sceneId": "architecture-foreground",
+  "seed": 14,
+  "schemaVersion": 1,
+  "viewport": {
+    "width": 1440,
+    "height": 1000
+  },
+  "devicePixelRatio": 1,
+  "renderQuality": "standard",
+  "state": {
+    "position": "5.600000,3.000000,-6.500000",
+    "target": "0.000000,0.250000,6.900000",
+    "viewFocus": "scene",
+    "focusDistanceMm": 9490,
+    "aperture": 11,
+    "movements": [
+      {
+        "standard": "front",
+        "controls": [
+          {
+            "label": "Rise",
+            "value": 0
+          },
+          {
+            "label": "Tilt",
+            "value": 0
+          },
+          {
+            "label": "Swing",
+            "value": 0
+          }
+        ]
+      }
+    ],
+    "rendererGeneration": "1"
+  },
+  "materials": {
+    "appearanceFamily": "cool-contemporary",
+    "plaster": {
+      "variationSeed": 1351411146,
+      "color": "#bac8cc",
+      "repeat": [
+        1,
+        1
+      ],
+      "roughness": 0.923,
+      "normalStrength": 0.144
+    },
+    "rusticatedLimestone": {
+      "variationSeed": 1144337901,
+      "color": "#b3b7b2",
+      "repeat": [
+        1.12,
+        2.1
+      ],
+      "roughness": 0.928,
+      "normalStrength": 0.228
+    },
+    "trim": {
+      "variationSeed": 2244731176,
+      "color": "#c0c8c8",
+      "roughness": 0.827
+    },
+    "cap": {
+      "variationSeed": 4082628931,
+      "color": "#e0e5e4",
+      "roughness": 0.879
+    },
+    "mullion": {
+      "variationSeed": 3231658841,
+      "color": "#a6b0af",
+      "roughness": 0.777
+    },
+    "roof": {
+      "variationSeed": 1537886531,
+      "color": "#697274",
+      "roughness": 0.944
+    },
+    "paving": {
+      "variationSeed": 3412281170,
+      "color": "#e1e5e4",
+      "roughness": 0.983
+    },
+    "curb": {
+      "variationSeed": 1116707002,
+      "color": "#aeb5b3",
+      "roughness": 0.837
+    },
+    "returns": {
+      "variationSeed": 4086923857,
+      "color": "#b9bfbd",
+      "roughness": 0.859
+    }
+  },
+  "observerCapture": {
+    "filename": "architecture-foreground-cool-contemporary-family-diagnostic.png",
+    "width": 514,
+    "height": 410,
+    "sha256": "b6ea5bac73845a0cb2b334e618be24b94263141154e4e5ceaacb8fb555e7922c"
+  },
+  "groundGlass": {
+    "requestId": "gg-mwrzcm2k-wlleke59rmq-default-request-3",
+    "completedRequestId": "gg-mwrzcm2k-wlleke59rmq-default-request-3",
+    "sceneId": "architecture-foreground",
+    "frameStatus": "completed"
+  }
+}
