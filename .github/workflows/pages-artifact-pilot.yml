@@ -19,6 +19,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+      - name: Test artifact and workflow contracts
+        run: node --test scripts/tests/pages-artifact.test.mjs
       - name: Build and identify candidate
         run: node scripts/pages-artifact.mjs prepare "$RUNNER_TEMP/pages-artifact"
       - name: Test prebuilt candidate
