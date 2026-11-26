@@ -2,7 +2,15 @@
 
 ## Source identity and environment
 
-The implementation base and exact-source GitHub baseline are both `879a50f9607bed848de02a7c358b8b9e2501d1a2` (`origin/main`, fetched for B6). Local profile runs used that checkout plus the B6 implementation diff in `.github/workflows/pages.yml`, `package.json`, and `playwright.production.config.ts`. The SHA-256 of those three-file diff at measurement time was `370f0a3b8ca88f6fbd96379d6f77ca6ef856ead6d8671579ebd468af7f3863f4`. The worktree was dirty by that declared diff; no application or test source was changed.
+The implementation base and exact-source GitHub baseline are both `879a50f9607bed848de02a7c358b8b9e2501d1a2` (`origin/main`, fetched for B6). Local measurements have two source states; the diff digest below applies only to the post-change measurements, not to the clean-base baselines.
+
+| Local evidence | Source state |
+|---|---|
+| Original Production Preview baseline, ordinary Chromium smoke baseline, initial typecheck/build measurements, and Vitest worker matrix | Clean checkout at `879a50f9607bed848de02a7c358b8b9e2501d1a2` |
+| Post-change standalone Preview, both CI-path Preview runs, build-output equivalence, post-change typecheck/lint, and Preview failure-propagation control | Base commit plus the B6 implementation diff in `.github/workflows/pages.yml`, `package.json`, and `playwright.production.config.ts`; diff SHA-256 `370f0a3b8ca88f6fbd96379d6f77ca6ef856ead6d8671579ebd468af7f3863f4` |
+| M7V before/after exact-SHA controls | Two isolated depth-50 checkouts of the same clean base SHA; one lacked the pinned source object and one ran the existing fetch before the test |
+
+No application or test source was changed. The local A/B used the same post-change source state, lockfile, Node version, browser, worker count, Playwright project, and `VITE_BASE_PATH=/`. GitHub and local durations are reported separately and are not treated as equivalent environments.
 
 | Environment | Value |
 |---|---|
@@ -12,8 +20,6 @@ The implementation base and exact-source GitHub baseline are both `879a50f9607be
 | Browser | Chromium 149.0.7827.55 (Playwright browser revision 1228) |
 | GitHub host | Ubuntu 26.04, image `ubuntu-26.04` version `20261116.202.1`; Node 24.22.3 |
 | GitHub billing data | `NOT_MEASURED` |
-
-The local A/B used the same source, lockfile, Node version, browser, worker count, Playwright project, and `VITE_BASE_PATH=/`. The implementation diff digest above identifies the B6 working-tree code used. GitHub and local durations are reported separately and are not treated as equivalent environments.
 
 ## Mandatory GitHub path at the baseline
 
