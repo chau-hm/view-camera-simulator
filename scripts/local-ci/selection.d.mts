@@ -19,6 +19,7 @@ export interface TestOwner {
   tests?: string[];
   e2eSpecs?: string[];
   reason: string;
+  coverage?: "complete" | "provisional";
   fullVitest?: boolean;
   fullLocalCi?: boolean;
   requiresE2E?: boolean;
@@ -37,6 +38,7 @@ export function resolveOwnerSelection(changedPaths: string[], owners: TestOwner[
   allDevelopmentE2EOwnerIds: string[];
   reasons: { path: string; owner: string; reason: string }[];
   unknownPaths: string[];
+  provisionalPaths: string[];
   staleTests: string[];
   staleSpecs: string[];
   incompleteReasons: { path: string; owner: string; reason: string }[];
