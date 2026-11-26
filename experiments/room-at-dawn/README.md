@@ -7,9 +7,37 @@ This is a **development-only photographic optics feasibility PoC**, not a produc
 - **Photographic optics feasibility:** PASS. The original procedural room renders through the canonical Ground Glass path; the user's manual comparisons show recognizable Focus/DOF, Front Tilt, and Front Swing effects.
 - **Complete renderer fidelity:** PARTIAL / NOT FULLY VALIDATED. Quantitative blur transfer, some foreground defocus, custom glass reflection parity, and native WebGPU remain incomplete.
 - **Production promotion:** DEFERRED.
-- **Development-only merge readiness:** BLOCKED by the required ordinary CI unit job failure on the final validation head; independent exact-head review found no separate code or documentation blocker, and external review remains pending.
+- **Development-only merge readiness:** BLOCKED by an ordinary-CI M7V source-baseline failure reproduced on both the integrated PR head and immutable current `main`. The same workflow failure prevents the ordinary Chromium smoke, production-preview isolation, and downstream M7R/M7V steps from running. No merge or deployment has occurred.
 
 The user's Tilt, Swing, and Focus comparisons are recorded as human-observed qualitative acceptance in [human-acceptance-v9](evidence/human-acceptance-v9/README.md). The original user screenshots were not available as files in the worktree or task attachments at closeout. Their observations are recorded without inventing capture identities, browser details, source revision, or composition.
+
+## Final integration and validation — 2026-11-26
+
+This section is the current status. The status matrix and closeout bullets later in this file are retained as the previous validation snapshot.
+
+- **Integrated main:** 879a50f9607bed848de02a7c358b8b9e2501d1a2.
+- **Integration merge commit:** 6df1c952d24fc80a863838cdb7958235302041cd; the merge was conflict-free and preserved the existing experiment. PR #359 includes the merged main commits.
+- **Prerequisites:** PR #365 merge cec404a84f9469bd21dbc3813c327f831c370e60, PR #374 merge 7c98b031f289953ac5c638d1973fbe8d7455fe57, and PR #375 merge 879a50f9607bed848de02a7c358b8b9e2501d1a2 are reachable from integrated main.
+- **Content pins:** all six audited files match their required SHA-256 values:
+
+  | File | SHA-256 |
+  |---|---|
+  | src/tests/unit/roomAtDawnCaptureSync.test.ts | ee7563ca79ca477988bcde5a7d515526b45506ba209bebe890150ae156a1b037 |
+  | experiments/room-at-dawn/capture-sync.cjs | d8ec1b767a648759cc0242c2b78ddb1a255befcd3ccf737cac8c464ccad10874 |
+  | src/tests/unit/roomAtDawnReflectionCapture.test.ts | b7993e6674135708663cc6f507c89d7104e31fb681ef0ca326f83dff95ee42ae |
+  | experiments/room-at-dawn/reflection-capture.js | 75b358799453fd9b5b8cde386b03cbbbfbfaa74a819f1d0325d1fcb27d678ebf |
+  | src/tests/unit/roomAtDawnComparisonCapture.test.ts | aca2d1ce20cd31c52dde8d5391371fc870af1574ec339d3ee25eb6c5c144d58c |
+  | experiments/room-at-dawn/comparison-capture.ts | 9f5747c40f86cc016a4f4a1bb09413ef3f5b969ef89bc7bc8a0969e5bd12b597 |
+
+- **Historical qualification:** complete 505-path local replay returned NOT_APPLICABLE, with no historical families and no broad fallback. Exact-head GitHub Historical Qualification passed in [workflow #45818844460](https://github.com/chau-hm/view-camera-simulator/actions/runs/45818844460).
+- **Focused local regression:** 26 files / 240 tests passed, including canonical signatures, Free Mode Seeded Materials, Scene Subject Registry, Ground Glass RTT/resources, canonical optics, and Room-at-Dawn experiment units. The local M7V policy test file also passes all 31 tests when its pinned source commit is available in repository history.
+- **Full local checks:** CSS, lint, typecheck, and production build passed; git diff --check passed. The full local suite reported all 4,527 tests passing, then Vitest exited nonzero on an onTaskUpdate worker timeout. The same full suite on immutable main passed 4,470/4,470 tests with a clean exit.
+- **Bounded experiment browser smoke:** the original room rendered through canonical Ground Glass for neutral, focus, positive Front Tilt, and positive Front Swing states. All captured frames were ready at 960×720; baked GI reported 302/302 expected and matched meshes with zero mismatches. The A/B harness passed reachable one-step focus capture, request/generation/frame provenance, preservation of A, stale-frame rejection, cancellation, and unmount cleanup.
+- **Production isolation:** Room-at-Dawn remains absent from the public catalog, guided tasks, and production SPA imports. The local production output had 58 files and contained no experiment entry, vendor source, GI bake, diagnostic UI, or capture-helper symbols. Shared DOF shaders and canonical optical calculations were not modified by this integration.
+- **Exact GitHub Actions:** PR #359 head 6df1c952d24fc80a863838cdb7958235302041cd run [#45818844460](https://github.com/chau-hm/view-camera-simulator/actions/runs/45818844460) passed Historical Qualification, lint, and typecheck, then failed in Unit and Integration Tests: 371/372 files and 4,516/4,527 tests passed; all 11 failures were in src/tests/unit/m7vE2eQualificationPolicy.test.ts. Ordinary Chromium smoke, production-preview WebGL isolation, M7R integrity, and the final M7V policy workflow step were skipped after the test failure.
+- **Failure comparison:** immutable current main head 879a50f9607bed848de02a7c358b8b9e2501d1a2 produced the same M7V failures in [main workflow #45813283621](https://github.com/chau-hm/view-camera-simulator/actions/runs/45813283621). The policy tests need pinned source commit 6e236d2ef4f248bfd3ad081d8d1786a7c0f8f382, 79 commits behind current main; the workflow fetches only 50 commits and fetches the pinned source after unit tests. This is a repository-level CI blocker, separate from the Room-at-Dawn changes. CI governance, qualification routing, and historical validators were left unchanged.
+- **Research closeout:** existing classifications and limitations above remain in force. Foreground ghosting remains unresolved; small-CoC sampling remains separate research; production HDR/GI, native WebGPU, and production scene integration remain deferred. Original human screenshots remain pending import and no screenshot provenance was invented.
+- **Decision:** keep PR #359 open and unmerged. Merge readiness is blocked until the shared CI failure is corrected outside this PoC integration and the required exact-head smoke/production-preview/M7R/M7V checks run. Broad E2E qualification is not newly claimed or required. The current [PR #359 Checks](https://github.com/chau-hm/view-camera-simulator/pull/359/checks) surface is authoritative for any later head; no merge or deploy was performed.
 
 ## Run the experiment
 
@@ -60,7 +88,7 @@ See [Architecture and lessons learned](ARCHITECTURE_AND_LESSONS_LEARNED.md) for 
 
 The evidence and remaining investigations are summarized in the separate [research backlog](RESEARCH_BACKLOG.md). No shared DOF algorithm, production optics model, public scene registry, guided task, or teaching scene was changed for closeout.
 
-## Final status matrix
+## Previous final status matrix (superseded by the integration update above)
 
 | Area | Final classification |
 |---|---|
@@ -85,7 +113,7 @@ The evidence and remaining investigations are summarized in the separate [resear
 | Ordinary CI | FAIL on final validation head `cc3c6114` (workflow #45657342967): lint/typecheck passed; unit/integration failed with the repeated main-baseline signature mismatches and full-suite timeouts described below |
 | Development-only Merge Readiness | BLOCKED by exact-head ordinary CI failure; independent internal review found no separate code or documentation blocker; normal external review remains pending |
 
-## Closeout evidence and validation
+## Previous closeout evidence and validation (superseded by the integration update above)
 
 - Historical qualification prerequisite PR #365 is merged into current main; its merge commit is integrated in this branch.
 - The six content-pinned audited capture dependency files retain their specified SHA-256 hashes.
