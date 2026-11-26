@@ -4,14 +4,17 @@ on:
   workflow_call:
     inputs:
       mode:
-        description: Use changed-file routing when called by application CI.
+        description: Use changed-file routing for development or cumulative baseline qualification for production releases.
         required: false
         type: string
         default: changed
     outputs:
       decision:
-        description: QUALIFIED, NOT_APPLICABLE, FAILED, or UNVERIFIED.
+        description: QUALIFIED, QUALIFIED_WITH_LEGACY_ARCHIVAL, NOT_APPLICABLE, FAILED, or UNVERIFIED.
         value: ${{ jobs.qualify.outputs.decision }}
+      mode:
+        description: Qualification mode executed by the reusable workflow.
+        value: ${{ jobs.qualify.outputs.mode }}
   workflow_dispatch:
     inputs:
       mode:
@@ -39,17 +42,24 @@ jobs:
       pull-requests: read
     outputs:
       decision: ${{ steps.qualify.outputs.decision }}
+      mode: ${{ steps.qualify.outputs.mode }}
     steps:
       - name: Checkout the event revision
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
+
+      - name: Reproduce the failed production route and verify cumulative recovery
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/run-historical-qualification-incident-regression.mjs
 
       - name: Classify changes and run required historical qualification
         id: qualify

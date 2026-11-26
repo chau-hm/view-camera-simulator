@@ -528,6 +528,52 @@ The canonical script should continue to:
 
 If `main` contains an unsafe incomplete feature, fix the integration workflow rather than making the release script selectively reconstruct production history.
 
+### Historical qualification and deployment state
+
+Git promotion and Pages deployment are separate outcomes. A successful merge
+and push advances `origin/production`; it does not establish that the resulting
+site was deployed. In particular, production branch HEAD is not a reliable
+proxy for the currently deployed revision after a failed CI gate or skipped
+deployment.
+
+Historical qualification has two policies. Pull requests and ordinary pushes
+qualify the changed paths and their registered evidence dependency closure. A
+production push proves the canonical merge from its event `before` and `after`
+objects, verifies the promoted second parent as a main revision, checks exact
+source and destination tree identity, and qualifies the cumulative range from
+the fixed historical policy baseline to that source. A successful incremental
+main workflow is not reused as proof that every cumulative archive was
+qualified. All currently registered historical validators run for production
+releases, and ordinary application CI, browser smoke, production preview,
+evidence integrity, and build checks still gate deployment.
+
+All event modes use the same evidence ownership classifier. A changed path can
+belong to a registered historical validator, an explicitly registered
+ordinary-CI owner, qualification infrastructure, legitimate non-evidence
+documentation, or an unresolved evidence dependency. `NOT_APPLICABLE` for an
+ordinary-CI-owned path means only that the historical archive lane does not
+run that owner twice; the corresponding ordinary check remains mandatory.
+Nested legacy evidence roots are fail-closed detection scopes, not archival
+exemptions, and unknown additions under them must be resolved during
+development qualification rather than first appearing in a production gate.
+
+The fixed baseline records exact pre-policy Git blob identities and explicit
+ownership/disposition metadata. Unchanged archival material without a current
+equivalent validator may be accepted only as a distinct
+`QUALIFIED_WITH_LEGACY_ARCHIVAL` production decision; that decision does not
+claim a validator passed or establish optical, renderer, or runtime
+correctness. Modifying, deleting, or renaming baseline content invalidates
+that disposition and returns the changed path to normal qualification. New
+unknown evidence stays fail-closed. A newly registered validator supersedes
+its family's archival-only disposition.
+
+Because production qualification always starts at the fixed baseline rather
+than the immediately preceding production commit, a failed cumulative release
+cannot disappear when a later production event has a small Git diff. The
+baseline is not a last-deployed marker, and this policy does not infer
+deployment success from production history. Do not bypass either qualification
+or the ordinary CI/deployment gates to recover a skipped release.
+
 ---
 
 ## 13. Validation strategy

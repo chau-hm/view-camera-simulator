@@ -1,10 +1,11 @@
-export type HistoricalQualificationDecision = "QUALIFIED" | "NOT_APPLICABLE" | "FAILED" | "UNVERIFIED";
+export type HistoricalQualificationDecision = "QUALIFIED" | "QUALIFIED_WITH_LEGACY_ARCHIVAL" | "NOT_APPLICABLE" | "FAILED" | "UNVERIFIED";
 
 export type HistoricalEvidenceFamily = Readonly<{
   id: string;
   owner?: string;
   alwaysInOrdinaryCi?: boolean;
   artifactRoots: readonly string[];
+  documentationPaths?: readonly string[];
   replaySourcePaths?: readonly string[];
   commands: readonly Readonly<{ name: string; args: readonly string[] }>[];
   requiredArtifacts: readonly string[];
@@ -15,6 +16,8 @@ export const HISTORICAL_EVIDENCE_MANIFEST: Readonly<{
   families: readonly HistoricalEvidenceFamily[];
   dependencies: Readonly<Record<string, readonly string[]>>;
   unsupportedFamilies: Readonly<Record<string, string>>;
+  ordinaryCiPaths: readonly Readonly<{ path: string; owner: string }>[];
+  legacyEvidenceRoots: readonly string[];
   sourcePins: readonly Readonly<{
     id: string;
     families: readonly string[];
@@ -25,6 +28,11 @@ export const HISTORICAL_EVIDENCE_MANIFEST: Readonly<{
   }>[];
 }>;
 
+export function validateEvidenceOwnershipDeclarations(manifest?: typeof HISTORICAL_EVIDENCE_MANIFEST): {
+  valid: boolean;
+  errors: string[];
+};
+
 export function classifyCompleteChangedPaths(changedPaths: string[]): {
   decision: HistoricalQualificationDecision;
   families: string[];
@@ -32,6 +40,13 @@ export function classifyCompleteChangedPaths(changedPaths: string[]): {
   broad: boolean;
   reasons: string[];
   currentOwners: string[];
+  pathOwnership: Array<{
+    path: string;
+    classification: "historical-validator" | "ordinary-ci" | "qualification-infrastructure" | "unresolved" | "non-evidence";
+    historicalValidators: string[];
+    ordinaryCiOwners: string[];
+    unresolved: boolean;
+  }>;
   unsupported: Array<{ id: string; reason: string }>;
 };
 
@@ -46,6 +61,13 @@ export function classifyChangedPaths(changedPaths: string[], options?: {
   broad: boolean;
   reasons: string[];
   currentOwners: string[];
+  pathOwnership: Array<{
+    path: string;
+    classification: "historical-validator" | "ordinary-ci" | "qualification-infrastructure" | "unresolved" | "non-evidence";
+    historicalValidators: string[];
+    ordinaryCiOwners: string[];
+    unresolved: boolean;
+  }>;
   unsupported: Array<{ id: string; reason: string }>;
 };
 
@@ -76,6 +98,13 @@ export function failedClosedRoute(reason: string): {
   broad: true;
   reasons: string[];
   currentOwners: string[];
+  pathOwnership: Array<{
+    path: string;
+    classification: "historical-validator" | "ordinary-ci" | "qualification-infrastructure" | "unresolved" | "non-evidence";
+    historicalValidators: string[];
+    ordinaryCiOwners: string[];
+    unresolved: boolean;
+  }>;
   unsupported: [];
 };
 

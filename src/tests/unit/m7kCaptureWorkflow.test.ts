@@ -357,6 +357,9 @@ describe("M7K capture workflow provenance", () => {
     expect(ciJob).not.toContain("!cancelled()");
     expect(ciJob).toContain("- historical-qualification");
     expect(ciJob).toContain("HISTORICAL_RESULT");
+    expect(ciJob).toContain("HISTORICAL_MODE");
+    expect(ciJob).toContain("GITHUB_EVENT_NAME");
+    expect(ciJob).toContain("GITHUB_REF");
     expect(ciJob).toContain("run: node scripts/historical-qualification-ci-gate.mjs");
     expect(workflow).toContain("  push:\n    branches:\n      - \"**\"\n");
     for (const provenanceFetchRequiredByVitest of [
@@ -368,9 +371,12 @@ describe("M7K capture workflow provenance", () => {
       "Fetch M7O Canvas assertion timing evidence source history",
       "Fetch M7P assertion scheduling evidence source history",
       "Fetch M7Q matched tracing A/B evidence source history",
+      "Fetch M7V reviewed source-declaration baseline",
     ]) {
       expect(ciJob).toContain(provenanceFetchRequiredByVitest);
     }
+    expect(ciJob.indexOf("name: Fetch M7V reviewed source-declaration baseline"))
+      .toBeLessThan(ciJob.indexOf("name: Unit and integration tests"));
     for (const archiveOnlyStep of [
       "Fetch M7E native capture source history",
       "Fetch M7J retained capture source history",
@@ -399,7 +405,6 @@ describe("M7K capture workflow provenance", () => {
     expect(ciJob).toContain("src/tests/e2e/smoke.spec.ts");
     expect(ciJob).toContain("src/tests/e2e/architecture-rise-webgpu-production.spec.ts");
     expect(ciJob).toContain("name: Fetch M7R retained baseline and analysis source history");
-    expect(ciJob).toContain("name: Fetch M7V reviewed source-declaration baseline");
     expect(ciJob).toContain("run: npm run evidence:check:m7r");
     expect(ciJob).toContain("run: npm run evidence:check:m7v");
     expect(ciJob.match(/npm run evidence:(?:check|replay):m7[a-z]/g)).toEqual([
@@ -411,7 +416,11 @@ describe("M7K capture workflow provenance", () => {
     expect(archiveWorkflow).toContain("  workflow_dispatch:");
     expect(archiveWorkflow).toContain("description: Run the complete verifiable historical archive.");
     expect(archiveWorkflow).toContain("          - full\n        default: full");
-    expect(archiveWorkflow).toContain("fetch-depth: 1");
+    expect(archiveWorkflow).toContain("fetch-depth: 0");
+    expect(archiveWorkflow).toContain("QUALIFIED_WITH_LEGACY_ARCHIVAL");
+    expect(archiveWorkflow).toContain("value: ${{ jobs.qualify.outputs.mode }}");
+    expect(archiveWorkflow).toContain("name: Reproduce the failed production route and verify cumulative recovery");
+    expect(archiveWorkflow).toContain("run: node scripts/run-historical-qualification-incident-regression.mjs");
     expect(archiveWorkflow).toContain("persist-credentials: false");
     expect(archiveWorkflow).toContain("pull-requests: read");
     expect(archiveWorkflow).toContain("node scripts/run-historical-qualification.mjs");
@@ -422,6 +431,7 @@ describe("M7K capture workflow provenance", () => {
       expect(evidenceManifest.families.some(({ id }) => id === family)).toBe(true);
     }
     expect(workflow).toContain("  historical-qualification:\n");
+    expect(workflow).toContain("mode: ${{ github.event_name == 'push' && github.ref == 'refs/heads/production' && 'production-release' || 'changed' }}");
     expect(workflow).toContain("  deploy:\n    if: github.event_name == 'push' && github.ref == 'refs/heads/production'\n    needs: ci\n");
   });
 });

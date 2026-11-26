@@ -40,6 +40,9 @@ jobs:
           FEATURE_GATE_RESULT: ${{ needs.feature-push-validation-gate.result }}
           HISTORICAL_RESULT: ${{ needs.historical-qualification.result }}
           HISTORICAL_DECISION: ${{ needs.historical-qualification.outputs.decision }}
+          HISTORICAL_MODE: ${{ needs.historical-qualification.outputs.mode }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          GITHUB_REF: ${{ github.ref }}
         run: node scripts/historical-qualification-ci-gate.mjs
 
       # Dedicated M7E–M7Q and M7W evidence commands run in the change-triggered
@@ -214,6 +217,14 @@ jobs:
             --retained-ref=refs/pull/316/head \
             --verify-path=package.json
 
+      - name: Fetch M7V reviewed source-declaration baseline
+        run: >-
+          node scripts/fetch-m7k-execution-source.mjs
+          --sha=6e236d2ef4f248bfd3ad081d8d1786a7c0f8f382
+          --verify-path=src/tests/e2e/smoke.spec.ts
+          --verify-path=src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts
+          --verify-path=src/tests/e2e/observer-environment-compatibility.spec.ts
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -231,14 +242,6 @@ jobs:
 
       - name: Type-check
         run: npm run typecheck
-
-      - name: Fetch M7V reviewed source-declaration baseline
-        run: >-
-          node scripts/fetch-m7k-execution-source.mjs
-          --sha=6e236d2ef4f248bfd3ad081d8d1786a7c0f8f382
-          --verify-path=src/tests/e2e/smoke.spec.ts
-          --verify-path=src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts
-          --verify-path=src/tests/e2e/observer-environment-compatibility.spec.ts
 
       - name: Unit and integration tests
         run: npm run test
@@ -392,7 +395,7 @@ jobs:
          needs.feature-push-routing.outputs.decision == 'no-commit'))
     uses: ./.github/workflows/historical-qualification.yml
     with:
-      mode: changed
+      mode: ${{ github.event_name == 'push' && github.ref == 'refs/heads/production' && 'production-release' || 'changed' }}
     permissions:
       contents: read
       pull-requests: read
