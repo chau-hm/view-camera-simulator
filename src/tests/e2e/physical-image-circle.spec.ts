@@ -1,5 +1,14 @@
 import { expect, test, type Locator } from "@playwright/test";
+import {
+  captureCoverageFrame,
+  coverageViewport,
+  expectCoverageContour,
+  prepareCoverageView,
+} from "./helpers/observerCoverageContour";
+import { architectureRiseContours } from "./helpers/coveragePixelReferences";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
+
+test.use(coverageViewport);
 
 const readFiniteAttribute = async (locator: Locator, name: string): Promise<number> => {
   const value = Number(await locator.getAttribute(name));
@@ -31,9 +40,10 @@ const expectGroundGlassAndSceneCoverageAgreement = async (
   return { sceneRadius, sceneOffsetX, sceneOffsetY };
 };
 
-test("3D Image Circle consumes the Ground Glass finite coverage state", async ({ page }) => {
+test("3D Image Circle consumes the Ground Glass finite coverage state", async ({ page }, testInfo) => {
   test.setTimeout(120_000);
-  await page.goto("/simulator/free/architecture-rise?rttDiagnostics=1");
+  await page.goto("/simulator/free/architecture-rise?seed=284719&sv=1&rttDiagnostics=1");
+  await prepareCoverageView(page);
 
   const scene = page.getByTestId("scene-canvas");
   const rtt = page.getByTestId("ground-glass-rtt");
@@ -45,16 +55,20 @@ test("3D Image Circle consumes the Ground Glass finite coverage state", async ({
   const neutral = await expectGroundGlassAndSceneCoverageAgreement(scene, rtt);
   expect(neutral.sceneOffsetX).toBeCloseTo(0, 5);
   expect(neutral.sceneOffsetY).toBeCloseTo(0, 5);
+  await expectCoverageContour(page, testInfo, "physical-circle-neutral", architectureRiseContours.neutral);
 
   const overlayTrigger = page.getByRole("button", { name: "View overlays" });
-  if (await overlayTrigger.isVisible()) await overlayTrigger.click();
-  await page.getByRole("button", { name: "Show Legends" }).click();
+  const showLegends = page.getByRole("button", { name: "Show Legends" });
+  if (!(await showLegends.isVisible())) await overlayTrigger.click();
+  await showLegends.click();
   await expect(page.getByText("Image circle (rose)", { exact: true })).toBeVisible();
 
   await setStepRangeInput(page, "Rise", 20);
   const risen = await expectGroundGlassAndSceneCoverageAgreement(scene, rtt);
   expect(risen.sceneOffsetY).toBeCloseTo(20, 5);
   expect(risen.sceneRadius).toBeCloseTo(neutral.sceneRadius, 5);
+  await expectCoverageContour(page, testInfo, "physical-circle-rise20",
+    architectureRiseContours.rise20, { reject: architectureRiseContours.neutral });
 
   await setStepRangeInput(page, "Rise", 40);
   const threshold = await expectGroundGlassAndSceneCoverageAgreement(scene, rtt);
@@ -78,8 +92,9 @@ test("3D Image Circle consumes the Ground Glass finite coverage state", async ({
   expect(stoppedDownState.sceneOffsetX).toBeCloseTo(wideApertureState.sceneOffsetX, 5);
   expect(stoppedDownState.sceneOffsetY).toBeCloseTo(wideApertureState.sceneOffsetY, 5);
 
-  if (await overlayTrigger.isVisible()) await overlayTrigger.click();
-  await page.getByRole("button", { name: "Hide Optical geometry" }).click();
+  const hideGeometry = page.getByRole("button", { name: "Hide Optical geometry" });
+  if (!(await hideGeometry.isVisible())) await overlayTrigger.click();
+  await hideGeometry.click();
   await expect(scene).toHaveAttribute("data-optical-geometry-visible", "false");
   await expect(scene).toHaveAttribute("data-image-circle-visible", "false");
   await expect(scene).toHaveAttribute("data-lens-coverage-visible", "false");
@@ -88,11 +103,16 @@ test("3D Image Circle consumes the Ground Glass finite coverage state", async ({
   await expect(page.getByText("Image circle (rose)", { exact: true })).not.toBeVisible();
   await expect(page.getByText("Coverage footprint (rose)", { exact: true })).not.toBeVisible();
 
+  const hiddenCircle = await captureCoverageFrame(page);
+
   await page.getByRole("button", { name: "Show Optical geometry" }).click();
   await expect(scene).toHaveAttribute("data-image-circle-visible", "true");
   await expect(scene).toHaveAttribute("data-lens-coverage-visible", "true");
   await expect(scene).toHaveAttribute("data-lens-coverage-kind", "parallel-circle");
   await expect(page.getByText("Image circle (rose)", { exact: true })).toBeVisible();
+
+  await expectCoverageContour(page, testInfo, "physical-circle-rise40-restored",
+    architectureRiseContours.rise40, { hidden: hiddenCircle, reject: architectureRiseContours.rise20 });
 
   await setStepRangeInput(page, "Tilt", 5);
   await expect(scene).toHaveAttribute("data-image-circle-visible", "false");
@@ -107,6 +127,9 @@ test("3D Image Circle consumes the Ground Glass finite coverage state", async ({
   await expect(rtt).toHaveAttribute("data-rtt-coverage-enabled", "true");
   await expect(page.getByText("Image circle (rose)", { exact: true })).not.toBeVisible();
   await expect(page.getByText("Coverage footprint (rose)", { exact: true })).toBeVisible();
+
+  await expectCoverageContour(page, testInfo, "physical-circle-tilt-conic",
+    architectureRiseContours.tilt, { reject: architectureRiseContours.rise40 });
 
   const conicAttributeNames = [
     "data-lens-coverage-center-world",
@@ -134,8 +157,8 @@ test("3D Image Circle consumes the Ground Glass finite coverage state", async ({
   expect(await Promise.all(conicAttributeNames.map((name) => scene.getAttribute(name))))
     .toEqual(wideOpenConicAttributes);
 
-  if (await overlayTrigger.isVisible()) await overlayTrigger.click();
-  await page.getByRole("button", { name: "Hide Optical geometry" }).click();
+  if (!(await hideGeometry.isVisible())) await overlayTrigger.click();
+  await hideGeometry.click();
   await expect(scene).toHaveAttribute("data-lens-coverage-visible", "false");
   await expect(scene).not.toHaveAttribute("data-lens-coverage-kind", /.+/);
   await expect(page.getByText("Coverage footprint (rose)", { exact: true })).not.toBeVisible();
