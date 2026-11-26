@@ -2,7 +2,7 @@
 
 ## Source identity and environment
 
-The implementation base and exact-source GitHub baseline are both `879a50f9607bed848de02a7c358b8b9e2501d1a2` (`origin/main`, fetched for B6). Local measurements have two source states; the diff digest below applies only to the post-change measurements, not to the clean-base baselines.
+The original implementation base and exact-source GitHub baseline were both `879a50f9607bed848de02a7c358b8b9e2501d1a2` (`origin/main` when B6 began). During B6, PR #373 advanced `main` to `489a04ff2b50bad887299791c94d035b176d44d7`; the B6 branch now includes that commit through merge `9f8013ce2942092a13666b6317d40a85f6e8e04f`. The original measurements remain tied to `879a50f`; current-base evidence is additive below. Local measurements have two source states; the diff digest below applies only to the post-change measurements, not to the clean-base baselines.
 
 | Local evidence | Source state |
 |---|---|
@@ -88,7 +88,24 @@ The historical decision, full suite, ordinary smoke, Preview, M7R and M7V all ra
 | M7V policy | 5s | Passed |
 | Workflow create-to-completion | 23m14s | Includes historical qualification; not runner usage |
 
-The 194s and 468s Preview durations, and 65s and 145s smoke durations, are two hosted samples with identical workflow/test code but different runs. This shows substantial run-to-run timing variation. The hosted logs do not separate Preview build, server startup, browser, rendering, screenshot, and teardown phases for the slower sample. Do not attribute the difference between those samples to the TypeScript-build change. The older 462s Preview run is another revision and also cannot establish a reduction. Hosted time saved, aggregate runner minutes, and billed cost remain `NOT_MEASURED`.
+The 194s and 468s Preview durations, and 65s and 145s smoke durations, are hosted samples with identical workflow/test code but different runs. A third original-base documentation-head run, [45829334486](https://github.com/chau-hm/view-camera-simulator/actions/runs/45829334486), passed 357 files / 4,470 Vitest cases, smoke 2/2 in 107s, and Preview 4/4 in 344s; its `ci` job took 14m13s. These samples show substantial run-to-run timing variation. The hosted logs do not separate Preview build, server startup, browser, rendering, screenshot, and teardown phases for the slower runs. Do not attribute the differences to the TypeScript-build change. The older 462s Preview run is another revision and also cannot establish a reduction. Hosted time saved, aggregate runner minutes, and billed cost remain `NOT_MEASURED`.
+
+## Current-base follow-up after PR #373
+
+PR #373 advanced `main` to `489a04ff2b50bad887299791c94d035b176d44d7`, including the M7V fetch-before-Vitest ordering and cumulative historical qualification changes. The following current-base run is separate from the original `879a50f` baseline above.
+
+| Hosted sample | Main run 45830917233 | B6 PR run 45833912048 |
+|---|---:|---:|
+| Source | Current `main` commit `489a04f` | Head `9f8013ce`; base `489a04f`; synthetic merge `2820c2b4dcdbd4260886e3bd6a3e9af7959348e6` |
+| Full Vitest | 210s step; 359 files / 4,504 cases passed | 199s step; 359 files / 4,504 cases passed |
+| Ordinary Chromium smoke | 61s; 2/2 passed | 57s; 2/2 passed |
+| Production Preview | 213s; 4/4 passed on the standalone checked-build path | 176s; 4/4 passed with `VCS_PREVIEW_TYPECHECK_PASSED=1` |
+| Typecheck / lint | 15s / 14s; passed | 15s / 14s; passed |
+| `ci` job duration | 589s | 539s |
+| Workflow create-to-completion | 15m27s | 14m44s |
+| M7R / M7V | Passed / passed | Passed / passed |
+
+These are one hosted run per path on the same base revision and the same 359-file / 4,504-case test inventory. The B6 run differs in Preview build preparation; it does not change application or test source. The observed Preview duration was 37s lower and the `ci` job 50s shorter on the B6 run. This single pair is not a repeatable controlled hosted A/B result: earlier optimized-path runs on the original base varied from 194s to 468s for Preview. Do not attribute the observed difference to the optimization or infer runner-minute savings. Hosted savings and billed cost remain `NOT_MEASURED`.
 
 ## Production Preview profile
 
