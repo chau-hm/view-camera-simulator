@@ -312,6 +312,7 @@
         "src/render/testing/groundGlassM7*",
         "src/render/testing/m7nRendererLifecycleTrace.ts"
       ],
+      "coverage": "provisional",
       "tests": [
         "src/tests/unit/groundGlassM7bLifecycleEvidence.test.ts",
         "src/tests/unit/groundGlassM7cR187LifecycleEvidence.test.ts",
@@ -342,7 +343,58 @@
         "src/tests/unit/historicalEvidenceRouting.test.ts",
         "src/tests/unit/historicalQualificationGate.test.ts"
       ],
-      "reason": "These active Unit tests import or execute the checked-in M7 evaluator, normalizer, replay, capture, source-fetch, routing, and policy implementations. They remain current contracts independent of archived replay qualification."
+      "reason": "This broad family-prefix owner keeps all maintained active M7 Unit tests selected as supplementary coverage. A family-prefix match does not establish direct source-to-test ownership; unmatched paths use full Vitest and remain incomplete. Frozen archive replay is a separate B2 qualification."
+    },
+    {
+      "id": "historical-m7e-gather-b1-evidence",
+      "label": "M7E active gather/B1 evaluator contract",
+      "paths": ["src/render/webgpu/groundGlassM7eGatherB1Evidence.ts"],
+      "coverage": "complete",
+      "tests": ["src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts"],
+      "reason": "The active Unit contract recomputes the B1 result from fixed inputs and exercises mutated-output rejection, provenance, malformed inputs, and numeric boundaries. Frozen M7E archive replay remains a separate B2 qualification."
+    },
+    {
+      "id": "historical-m7m-scene-readiness",
+      "label": "M7M active scene-readiness evaluator",
+      "paths": [
+        "scripts/evaluateM7mSceneReadiness.ts",
+        "src/render/testing/groundGlassM7mSceneReadiness.ts"
+      ],
+      "coverage": "complete",
+      "tests": ["src/tests/unit/groundGlassM7mSceneReadiness.test.ts"],
+      "reason": "The direct tests exercise the readiness evaluator and production CLI, including contradictory qualification, evaluator/source provenance, and retained-source failures. Archive replay remains independent."
+    },
+    {
+      "id": "historical-m7n-renderer-lifecycle-evaluator",
+      "label": "M7N active renderer-lifecycle evaluator",
+      "paths": ["scripts/evaluateM7nRendererLifecycle.ts"],
+      "coverage": "complete",
+      "tests": ["src/tests/unit/m7nRendererLifecycleEvidence.test.ts"],
+      "reason": "The direct evaluator tests exercise the production-facing CLI and reject contradicted qualification, altered evidence digests, invalid provenance, and unavailable required traces. Historical/browser reproduction is separate."
+    },
+    {
+      "id": "historical-m7n-renderer-lifecycle-trace",
+      "label": "M7N trace-buffer contract",
+      "paths": ["src/render/testing/m7nRendererLifecycleTrace.ts"],
+      "coverage": "complete",
+      "tests": ["src/tests/unit/m7nRendererLifecycleTrace.test.ts"],
+      "reason": "Direct tests cover trace identity, ordering, bounded retention, immutable snapshots, and state gating. They establish the trace-buffer Unit contract only, not browser lifecycle qualification."
+    },
+    {
+      "id": "historical-evidence-routing",
+      "label": "Historical qualification change-routing contract",
+      "paths": ["scripts/historical-evidence-routing.mjs"],
+      "coverage": "complete",
+      "tests": ["src/tests/unit/historicalEvidenceRouting.test.ts"],
+      "reason": "The direct routing tests cover family dependency closure, exact source identity, changed-file discovery, pagination/staleness, renames, and fail-closed outcomes. Archive replay and provenance validation remain separate checks."
+    },
+    {
+      "id": "historical-m7n-renderer-lifecycle-normalizer",
+      "label": "M7N normalizer with partial direct coverage",
+      "paths": ["scripts/normalizeM7nRendererLifecycleCapture.mjs"],
+      "coverage": "provisional",
+      "tests": ["src/tests/unit/m7nRendererLifecycleEvidence.test.ts"],
+      "reason": "The current direct test checks sanitized failure paths and unavailable trace normalization, but does not cover the normalizer's full schema and status surface. Keep full-Vitest fallback and report affected ownership as incomplete."
     },
     {
       "id": "ui-and-layout",

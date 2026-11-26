@@ -75,3 +75,55 @@ These tests include active routing and exact-source/provenance rejection behavio
 ## Routing regression evidence
 
 `src/tests/unit/localCiContracts.test.ts` uses the checked-in `scripts/local-ci/owners.json` and executes bounded Local CI runs in isolated temporary Git repositories with controlled Vitest and Playwright report producers. This verifies the emitted JSON fields for selected owners, provisional fallback, browser requirements, status, and `completeForRequestedScope`. It does not substitute fake runner output for the camera-mount or frame-execution mutation controls above.
+
+## Review-fix Round 2 — historical M7 ownership
+
+This correction starts from reviewed PR head `6f62416fe6305915836088957890ce11bfd7f902`. It does not change the B5 selection algorithm, B2 workflow, active historical validators, GitHub test coverage, or Core Regression candidate.
+
+The broad `historical-active-unit-contracts` owner is now explicitly `coverage: "provisional"`. It still adds the maintained M7 Unit test set for every matching path, but a family prefix alone cannot mark new source complete. The selector treats a provisional-only path as a full-Vitest fallback and retains `INCOMPLETE` even when the fallback runner passes.
+
+| Changed source | Direct owner and evidence | Affected classification |
+|---|---|---|
+| `src/render/webgpu/groundGlassM7zNewEvidence.ts` | Broad historical, WebGPU, and renderer supplements; no direct owner identified | Full Vitest; provisional path; `INCOMPLETE` |
+| `src/render/testing/groundGlassM7zNewEvaluator.ts` | Broad historical and renderer supplements; no direct owner identified | Full Vitest; provisional path; `INCOMPLETE` |
+| `scripts/evaluateM7zNewEvaluator.ts` | Broad historical and shared-script supplements; no direct owner identified | Full Local CI including full Vitest; provisional path; `INCOMPLETE` |
+| `scripts/normalizeM7zNewCapture.mjs` | Broad historical and shared-script supplements; no direct owner identified | Full Local CI including full Vitest; provisional path; `INCOMPLETE` |
+| `src/render/webgpu/groundGlassM7eGatherB1Evidence.ts` | Exact `historical-m7e-gather-b1-evidence` owner and direct `groundGlassM7eGatherB1Evidence.test.ts` | Complete for the active Unit contract; B2 replay remains separate |
+| `scripts/evaluateM7mSceneReadiness.ts`, `src/render/testing/groundGlassM7mSceneReadiness.ts` | Exact `historical-m7m-scene-readiness` owner and direct evaluator/CLI test | Complete for the active M7M evaluator contract; full Local CI runs |
+| `scripts/evaluateM7nRendererLifecycle.ts` | Exact evaluator owner and direct `m7nRendererLifecycleEvidence.test.ts` | Complete for the active evaluator Unit contract |
+| `src/render/testing/m7nRendererLifecycleTrace.ts` | Exact trace owner and direct `m7nRendererLifecycleTrace.test.ts` | Complete for the trace-buffer Unit contract; not browser lifecycle proof |
+| `scripts/historical-evidence-routing.mjs` | Exact routing owner and direct `historicalEvidenceRouting.test.ts` | Complete for active routing Unit behavior; full Local CI and B2 checks remain separate |
+| `scripts/fetch-m7k-execution-source.mjs` | Existing exact `evidence-and-ci-policy` owner and `m7kCaptureWorkflow.test.ts` | Complete for exact-source fetch contract; archive replay remains separate |
+| `scripts/normalizeM7nRendererLifecycleCapture.mjs` | Exact provisional owner and `m7nRendererLifecycleEvidence.test.ts` | Full Local CI fallback; `INCOMPLETE` because current normalization proof covers only sanitized failure paths and unavailable trace behavior |
+
+The complete classifications above are bounded to the named active Unit contracts. The broad historical owner continues to select additional tests additively. In particular, exact active evaluator ownership does not claim that frozen artifacts were replayed, exact archive SHAs and tree entries were revalidated, or a current browser/GPU scenario ran. Those remain separate B2 and specialized qualification responsibilities. Changes to unlisted M7 families, generic replay/runner scripts, declarations, or shared dependencies remain provisional until their direct impact is reviewed.
+
+`src/tests/unit/localCiContracts.test.ts` now exercises the actual checked-in manifest for all four unknown M7 examples, the reviewed M7E/M7M/M7N evaluator/trace/routing/fetch routes, the deliberately provisional M7N normalizer, and a mixed B1 + M7M + unknown-M7 change. Its bounded runner fixtures inspect emitted JSON rather than only selection-helper results:
+
+| Fixture | Emitted report evidence |
+|---|---|
+| Unknown M7 WebGPU implementation | `status: INCOMPLETE`, exit `2`, `completeForRequestedScope: false`, the changed file in `execution.changedFiles`, broad owners/reasons in `execution.owners` and `execution.selectionReasons`, `fallback.kind: full-vitest`, and a passing full Vitest step. |
+| Reviewed M7M evaluator | `status: PASS`, `completeForRequestedScope: true`, direct and broad owners present, no fallback, `repositoryCoverage: full-local-ci`, and a passing full-Vitest report containing the direct M7M test. |
+| Mixed B1 reference + M7M evaluator + unknown M7 WebGPU implementation | All direct owners/reasons remain in the report, the unknown source is in `fallback.provisionalPaths`, the full local steps pass, and the overall result remains `INCOMPLETE` with `completeForRequestedScope: false`. |
+
+These execution fixtures verify Local CI routing and report semantics using controlled fake runner output. They do not claim that the application, archived report, browser, or GPU behavior was executed by the fixture.
+
+### Round 2 local validation
+
+The recorded full Local CI run used the Round 2 working tree at commit `6f62416fe6305915836088957890ce11bfd7f902`, Node `v24.3.0`, npm `11.12.0`, macOS arm64, Vitest `3.2.7`, Playwright `1.61.1`, ESLint `9.39.5`, TypeScript `6.0.2`, and Vite `8.1.4`. The report recorded the worktree as dirty and stable during the run; its source-state fingerprint was `1aabe030d13af20f9ee068c9f669b72faa7c0bdce7222610acc5fc38b3fc498d`. Afterward, only this evidence document's validation/CI prose changed; the owner manifest and test code remained identical to the tested versions.
+
+| Check | Result |
+|---|---|
+| `npm run test -- --run src/tests/unit/localCiContracts.test.ts` | **PASS**, 55/55 tests. Includes actual affected-runner JSON checks for unknown M7, reviewed M7M, and mixed known/unknown M7 changes. |
+| Focused B1/M7E/M7M/M7N/routing/M7K/Table Tilt/frame/RTT suite | **PASS**, 13 files / 293 tests. The M7M isolated shallow-checkout replay test passed; the exact-source fetch tests passed. |
+| `npm run ci:local` | **PASS**, all five steps; full Vitest discovered 354 files / 4,410 cases, all passed. CSS structure, ESLint, TypeScript, and production build also passed. Vitest took 43.880 s; total Local CI took 71.677 s. |
+| Local ordinary Chromium, Production Preview, native WebGPU | **NOT_RUN** for this round. The change only alters affected ownership, and its emitted-report contract is verified by controlled runner fixtures; GitHub CI remains the independent application/browser merge gate. |
+| GitHub PR validation | Awaiting the Round 2 commit's authoritative synthetic-merge run. The prior #371 PR failure is recorded below and is not treated as passed based on push validation. |
+
+### Separate PR merge-context CI investigation
+
+The inherited failure evidence is tied to PR head `6f62416fe6305915836088957890ce11bfd7f902`. At the time of the failed authoritative run, PR metadata still listed base `9e5a71bee8e024a480acf17bb18763f3ef783039`; the actual synthetic merge checkout was `ea875a6f885ea8f14f1f33f35bc0b350bab43bbd`, combining feature head `6f62416...` with main `e96d0aec06a4d530c1dba1a25a8f41daacf111d7`.
+
+The PR change list contained the B5 documentation, owner manifest, Local CI selector/runner, and Local CI contract test; it did not change Free Mode production or test files. On the synthetic merge context, required PR run [45653654754](https://github.com/chau-hm/view-camera-simulator/actions/runs/45653654754) failed in `freeModeSeededMaterialsWave1.test.tsx` with two expected-signature mismatches and one five-second timeout; browser/evidence jobs were skipped. The main baseline run [45646165849](https://github.com/chau-hm/view-camera-simulator/actions/runs/45646165849) at `e96d0...` showed the same Free Mode failures plus a Scene Subject Registry timeout. The successful feature-push run [45653638200](https://github.com/chau-hm/view-camera-simulator/actions/runs/45653638200) was not equivalent to the authoritative PR check.
+
+The mainline issue was subsequently addressed independently by merged PR [#374](https://github.com/chau-hm/view-camera-simulator/pull/374), which restored seeded-material fixture/reference inputs and split grouped seed work without changing production code or increasing timeouts. Its exact-head Actions run [45668270725](https://github.com/chau-hm/view-camera-simulator/actions/runs/45668270725) passed. Current `main` at Round 2 validation was `7c98b031f289953ac5c638d1973fbe8d7455fe57`; its CI run [45725028209](https://github.com/chau-hm/view-camera-simulator/actions/runs/45725028209) passed (`ci` success, deploy skipped). This is evidence that the independent mainline failure was corrected; it does not establish that a new PR #371 synthetic merge check passes. The refreshed authoritative PR result must be inspected after the Round 2 commit is published.

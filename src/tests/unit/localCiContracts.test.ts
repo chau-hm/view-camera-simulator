@@ -485,29 +485,128 @@ describe("Local CI argument and ownership contracts", () => {
       "scripts/evaluateM7mSceneReadiness.ts",
     ]);
     expect(evaluator.ownerIds).toContain("historical-active-unit-contracts");
+    expect(evaluator.ownerIds).toContain("historical-m7m-scene-readiness");
     expect(evaluator.tests).toContain("src/tests/unit/groundGlassM7mSceneReadiness.test.ts");
     expect(evaluator.fullLocalCi).toBe(true);
+    expect(evaluator.fullVitest).toBe(false);
     expect(evaluator.incomplete).toBe(false);
 
     const routing = await resolveCheckedInOwnerSelection([
       "scripts/historical-evidence-routing.mjs",
     ]);
+    expect(routing.ownerIds).toContain("historical-evidence-routing");
     expect(routing.tests).toContain("src/tests/unit/historicalEvidenceRouting.test.ts");
     expect(routing.tests).toContain("src/tests/unit/m7kCaptureWorkflow.test.ts");
+    expect(routing.fullLocalCi).toBe(true);
+    expect(routing.incomplete).toBe(false);
 
     const provenance = await resolveCheckedInOwnerSelection([
       "scripts/fetch-m7k-execution-source.mjs",
     ]);
+    expect(provenance.ownerIds).toContain("evidence-and-ci-policy");
     expect(provenance.tests).toContain("src/tests/unit/m7kCaptureWorkflow.test.ts");
     expect(provenance.tests).toContain("src/tests/unit/groundGlassM7mSceneReadiness.test.ts");
+    expect(provenance.incomplete).toBe(false);
 
     const normalizer = await resolveCheckedInOwnerSelection([
       "scripts/normalizeM7nRendererLifecycleCapture.mjs",
     ]);
     expect(normalizer.ownerIds).toContain("historical-active-unit-contracts");
-    expect(normalizer.tests).toContain("src/tests/unit/m7nRendererLifecycleEvidence.test.ts");
+    expect(normalizer.ownerIds).toContain("historical-m7n-renderer-lifecycle-normalizer");
+    expect(normalizer.tests).toEqual([]);
     expect(normalizer.fullLocalCi).toBe(true);
-    expect(normalizer.incomplete).toBe(false);
+    expect(normalizer.fullVitest).toBe(true);
+    expect(normalizer.provisionalPaths).toEqual(["scripts/normalizeM7nRendererLifecycleCapture.mjs"]);
+    expect(normalizer.incomplete).toBe(true);
+    const manifest: { owners: { id: string; tests?: string[] }[] } = JSON.parse(
+      await readFile(path.join(process.cwd(), "scripts/local-ci/owners.json"), "utf8"),
+    );
+    expect(manifest.owners.find((owner) => owner.id === "historical-m7n-renderer-lifecycle-normalizer")?.tests)
+      .toContain("src/tests/unit/m7nRendererLifecycleEvidence.test.ts");
+
+    const m7nEvaluator = await resolveCheckedInOwnerSelection([
+      "scripts/evaluateM7nRendererLifecycle.ts",
+    ]);
+    expect(m7nEvaluator.ownerIds).toContain("historical-m7n-renderer-lifecycle-evaluator");
+    expect(m7nEvaluator.tests).toContain("src/tests/unit/m7nRendererLifecycleEvidence.test.ts");
+    expect(m7nEvaluator.fullVitest).toBe(false);
+    expect(m7nEvaluator.incomplete).toBe(false);
+
+    const trace = await resolveCheckedInOwnerSelection([
+      "src/render/testing/m7nRendererLifecycleTrace.ts",
+    ]);
+    expect(trace.ownerIds).toContain("historical-m7n-renderer-lifecycle-trace");
+    expect(trace.tests).toContain("src/tests/unit/m7nRendererLifecycleTrace.test.ts");
+    expect(trace.fullVitest).toBe(false);
+    expect(trace.incomplete).toBe(false);
+  });
+
+  it("keeps unknown M7 family-prefix paths provisional without an unrelated complete owner", async () => {
+    const unknownPaths = [
+      "src/render/webgpu/groundGlassM7zNewEvidence.ts",
+      "src/render/testing/groundGlassM7zNewEvaluator.ts",
+      "scripts/evaluateM7zNewEvaluator.ts",
+      "scripts/normalizeM7zNewCapture.mjs",
+    ];
+
+    for (const changed of unknownPaths) {
+      const selection = await resolveCheckedInOwnerSelection([changed]);
+      expect(selection.ownerIds).toContain("historical-active-unit-contracts");
+      expect(selection.ownerIds.some((ownerId) => [
+        "historical-m7e-gather-b1-evidence",
+        "historical-m7m-scene-readiness",
+        "historical-m7n-renderer-lifecycle-evaluator",
+        "historical-m7n-renderer-lifecycle-trace",
+        "historical-evidence-routing",
+        "evidence-and-ci-policy",
+      ].includes(ownerId))).toBe(false);
+      expect(selection.provisionalPaths).toContain(changed);
+      expect(selection.fullVitest).toBe(true);
+      expect(selection.incomplete).toBe(true);
+      expect(selection.tests).toEqual([]);
+      if (changed.startsWith("scripts/")) expect(selection.fullLocalCi).toBe(true);
+    }
+  });
+
+  it("keeps reviewed M7E source ownership separate from frozen archive replay", async () => {
+    const changed = "src/render/webgpu/groundGlassM7eGatherB1Evidence.ts";
+    const selection = await resolveCheckedInOwnerSelection([changed]);
+
+    expect(selection.ownerIds).toContain("historical-m7e-gather-b1-evidence");
+    expect(selection.ownerIds).toContain("historical-active-unit-contracts");
+    expect(selection.tests).toContain("src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts");
+    expect(selection.tests).toContain("src/tests/unit/groundGlassM7eArtifactReplay.test.ts");
+    expect(selection.fullVitest).toBe(false);
+    expect(selection.provisionalPaths).toEqual([]);
+    expect(selection.incomplete).toBe(false);
+    expect(selection.nativeGpuRequired).toBe(false);
+    expect(selection.e2eSpecs).toEqual([]);
+  });
+
+  it("combines reviewed owners but keeps a mixed change incomplete when one M7 source is unknown", async () => {
+    const unknown = "src/render/webgpu/groundGlassM7zNewEvidence.ts";
+    const selection = await resolveCheckedInOwnerSelection([
+      "src/render/webgpu/groundGlassB1Reference.ts",
+      "scripts/evaluateM7mSceneReadiness.ts",
+      unknown,
+    ]);
+
+    expect(selection.ownerIds).toEqual(expect.arrayContaining([
+      "webgpu-b1-reference",
+      "historical-m7m-scene-readiness",
+      "historical-active-unit-contracts",
+      "webgpu-source-supplement",
+    ]));
+    expect(selection.provisionalPaths).toContain(unknown);
+    expect(selection.fullVitest).toBe(true);
+    expect(selection.fullLocalCi).toBe(true);
+    expect(selection.incomplete).toBe(true);
+    expect(selection.tests).toEqual([]);
+    expect(new Set(selection.reasons.map((item) => item.path))).toEqual(new Set([
+      "src/render/webgpu/groundGlassB1Reference.ts",
+      "scripts/evaluateM7mSceneReadiness.ts",
+      unknown,
+    ]));
   });
 
   it("maps the B1 CPU reference to its direct contract tests without requiring native GPU proof", async () => {
@@ -1177,6 +1276,36 @@ describe("Local CI emitted report integration", () => {
     expect(result.report.limitations.join(" ")).toContain("Only provisional ownership matched");
   });
 
+  it("reports unknown M7 implementations as incomplete after their real affected-runner fallback passes", async () => {
+    const changed = "src/render/webgpu/groundGlassM7zNewEvidence.ts";
+    const fixture = await makeLocalCiRunnerFixture([changed]);
+    const result = await executeLocalCi(fixture, ["--mode=affected", "--base", fixture.base]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.report.status).toBe("INCOMPLETE");
+    expect(result.report.execution.completeForRequestedScope).toBe(false);
+    expect(result.report.execution.changedFiles).toEqual([changed]);
+    expect(result.report.execution.owners).toEqual(expect.arrayContaining([
+      "historical-active-unit-contracts",
+      "webgpu-source-supplement",
+      "render-source-supplement",
+    ]));
+    expect(result.report.execution.selectionReasons).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: changed, owner: "historical-active-unit-contracts" }),
+      expect.objectContaining({ path: changed, owner: "webgpu-source-supplement" }),
+    ]));
+    expect(result.report.execution.fallback).toMatchObject({
+      kind: "full-vitest",
+      provisionalPaths: [changed],
+      unknownPaths: [],
+    });
+    expect(result.report.execution.selectedTestFiles).toEqual(["Vitest configured discovery"]);
+    expect(result.report.steps).toMatchObject([
+      { runner: "vitest", mode: "full", status: "PASS", testFilesSelected: ["Vitest configured discovery"] },
+    ]);
+    expect(result.report.limitations.join(" ")).toContain("Only provisional ownership matched");
+  });
+
   it("keeps active historical Unit contracts visible in the full Local CI report", async () => {
     const changed = "scripts/evaluateM7mSceneReadiness.ts";
     const fixture = await makeLocalCiRunnerFixture([changed]);
@@ -1187,7 +1316,12 @@ describe("Local CI emitted report integration", () => {
     expect(result.report.execution.completeForRequestedScope).toBe(true);
     expect(result.report.execution.owners).toEqual(expect.arrayContaining([
       "historical-active-unit-contracts",
+      "historical-m7m-scene-readiness",
       "ci-and-test-infrastructure",
+    ]));
+    expect(result.report.execution.fallback).toBeNull();
+    expect(result.report.execution.selectionReasons).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: changed, owner: "historical-m7m-scene-readiness" }),
     ]));
     expect(result.report.execution.repositoryCoverage).toBe("full-local-ci");
     expect(result.report.execution.selectedTestFiles).toEqual(["Vitest configured discovery"]);
@@ -1200,6 +1334,43 @@ describe("Local CI emitted report integration", () => {
     ]);
     expect(result.report.steps.find((step: { runner: string }) => step.runner === "vitest").counts.files)
       .toContain("src/tests/unit/groundGlassM7mSceneReadiness.test.ts");
+  });
+
+  it("keeps a mixed reviewed and unknown M7 report incomplete despite passing full Local CI steps", async () => {
+    const b1Reference = "src/render/webgpu/groundGlassB1Reference.ts";
+    const evaluator = "scripts/evaluateM7mSceneReadiness.ts";
+    const unknown = "src/render/webgpu/groundGlassM7zNewEvidence.ts";
+    const fixture = await makeLocalCiRunnerFixture([b1Reference, evaluator, unknown]);
+    const result = await executeLocalCi(fixture, ["--mode=affected", "--base", fixture.base]);
+
+    expect(result.exitCode).toBe(2);
+    expect(result.report.status).toBe("INCOMPLETE");
+    expect(result.report.execution.completeForRequestedScope).toBe(false);
+    expect(result.report.execution.changedFiles).toEqual([evaluator, b1Reference, unknown].sort());
+    expect(result.report.execution.owners).toEqual(expect.arrayContaining([
+      "webgpu-b1-reference",
+      "historical-m7m-scene-readiness",
+      "historical-active-unit-contracts",
+      "webgpu-source-supplement",
+    ]));
+    expect(result.report.execution.selectionReasons).toEqual(expect.arrayContaining([
+      expect.objectContaining({ path: b1Reference, owner: "webgpu-b1-reference" }),
+      expect.objectContaining({ path: evaluator, owner: "historical-m7m-scene-readiness" }),
+      expect.objectContaining({ path: unknown, owner: "historical-active-unit-contracts" }),
+    ]));
+    expect(result.report.execution.fallback).toMatchObject({
+      kind: "full-vitest",
+      provisionalPaths: [unknown],
+      unknownPaths: [],
+    });
+    expect(result.report.execution.selectedTestFiles).toEqual(["Vitest configured discovery"]);
+    expect(result.report.steps.map((step: { id: string; status: string }) => [step.id, step.status])).toEqual([
+      ["css-structure", "PASS"],
+      ["lint", "PASS"],
+      ["typecheck", "PASS"],
+      ["full-vitest", "PASS"],
+      ["application-build", "PASS"],
+    ]);
   });
 
   it("reports affected browser contracts as incomplete when only an unrelated explicit smoke spec passes", async () => {
