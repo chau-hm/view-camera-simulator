@@ -250,6 +250,8 @@ jobs:
         run: npm run test:e2e -- --project=chromium --workers=1 src/tests/e2e/smoke.spec.ts
 
       - name: Verify production preview WebGL isolation
+        env:
+          VCS_PREVIEW_TYPECHECK_PASSED: "1"
         run: >-
           npm run test:e2e -- --config=playwright.production.config.ts
           --project=chromium-production-preview --workers=1
