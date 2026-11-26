@@ -6,7 +6,7 @@ Keep full GitHub Vitest, ordinary Chromium smoke, all four Production Preview ca
 
 The local matched comparison showed identical output hashes and four passing real browser tests on both paths, with a repeatable 9.5–10.7s reduction per preview invocation on macOS arm64. On the original base, optimized hosted Preview samples were 194s, 468s, and 344s on documentation-only heads, showing substantial run-to-run variation. After PR #373 advanced `main` to `489a04ff2b50bad887299791c94d035b176d44d7`, the unoptimized main run recorded Preview at 213s and B6's current-base PR run recorded 176s; this is one sample per path and does not establish a hosted saving. Hosted-runner time saved and billed-cost effects remain `NOT_MEASURED`.
 
-The same-source GitHub baseline exposed an M7V ordering failure. Move the existing exact-source fetch before full Vitest so its current Unit tests can resolve the pinned source in the depth-50 checkout. This preserves the source SHA, paths, assertions, policy, and later M7V qualification command.
+The same-source GitHub baseline exposed an M7V ordering failure. PR #373 moved the existing exact-source fetch before full Vitest on the current base, so the M7V Unit tests can resolve the pinned source in the depth-50 checkout. B6 preserves that ordering, source SHA, paths, assertions, policy, and qualification command.
 
 ## Candidate decisions
 
