@@ -1,6 +1,16 @@
 # CI simplification closeout
 
-**Disposition: `CI_SIMPLIFICATION_COMPLETE`.** The reviewed initiative is closed; future improvements remain possible. The original audit baseline is `658487f468d14d6129f4ac7091ebd71c32afd5ed`; the historical C5 closeout reference is `9608989875b425ff7f6dd8ae73782d9ff00db879`. The freshly fetched implementation base for this documentation is also `9608989875b425ff7f6dd8ae73782d9ff00db879` (2026-11-28 Hong Kong time). D1 is independent research, not a prerequisite for closing this initiative. The [command guide](CI_COMMANDS.md) records the current interface. A later, separately scoped [Evidence consolidation](EVIDENCE_COMMAND_CONSOLIDATION.md) migrates eligible aliases while retaining historical compatibility exceptions.
+**Disposition: `CI_SIMPLIFICATION_COMPLETE`.** The reviewed initiative is closed; future improvements remain possible. The original audit baseline is `658487f468d14d6129f4ac7091ebd71c32afd5ed`; the historical C5 closeout reference is `9608989875b425ff7f6dd8ae73782d9ff00db879`. The freshly fetched implementation base for this documentation is also `9608989875b425ff7f6dd8ae73782d9ff00db879` (2026-11-28 Hong Kong time). D1 is independent research, not a prerequisite for closing this initiative. The [command guide](CI_COMMANDS.md) records the current interface. [Final.1 Evidence consolidation](EVIDENCE_COMMAND_CONSOLIDATION.md) migrates eligible aliases while retaining historical compatibility exceptions.
+
+## Final.1 interface and policy alignment
+
+Final.1 consolidates 75 npm registrations to 50: 26 legacy aliases removed and one `evidence` dispatcher added. This is a physical command-interface reduction, not a measured runtime or cost saving. The dispatcher retains specialized operations and documented compatibility exceptions; further compatibility and research-command migrations are deferred pending separate evidence. See [Evidence consolidation](EVIDENCE_COMMAND_CONSOLIDATION.md) for mappings and historical qualification boundaries.
+
+The agent policy now prefers focused implementation feedback and affected validation for coordinated changes, escalating to full Local CI and targeted browser/native proof when evidence or risk requires it. Extended E2E remains available for broad regression. Mandatory authoritative GitHub application CI remains intact; local results and the non-authoritative Core pilot do not replace it. These instruction changes remove contradictions; future workload savings have not been measured.
+
+Status: `COMMAND_INTERFACE_CONSOLIDATED`; `AGENT_VALIDATION_POLICY_ALIGNED`; `MANDATORY_GITHUB_CI_PRESERVED`; `CI_SIMPLIFICATION_COMPLETE`.
+
+Parallel worktrees should follow the synchronization procedure below and reconcile command migrations against the [compatibility table](EVIDENCE_COMMAND_CONSOLIDATION.md) in their own branches, without overwriting other worktrees or historical evidence.
 
 ## Completed phases
 
@@ -23,7 +33,7 @@ GitHub merge identities were verified against current history. Each report is li
 
 ## Before and after
 
-Counts refer to the original audit and reviewed C5 reports, with the current base identical to C5. The successful [C5 runner log](https://github.com/chau-hm/view-camera-simulator/actions/runs/46021421686) reports 361 files and 4,520 passed cases. Full Vitest totals are successful runner results, not static declarations; unrelated scene and test additions must not be attributed to this initiative.
+Counts in this historical comparison refer to the original audit and reviewed C5 reports; Final.1 command counts are recorded above. The successful [C5 runner log](https://github.com/chau-hm/view-camera-simulator/actions/runs/46021421686) reports 361 files and 4,520 passed cases. Full Vitest totals are successful runner results, not static declarations; unrelated scene and test additions must not be attributed to this initiative.
 
 | Metric | Original baseline | C5 and current base |
 | --- | ---: | ---: |

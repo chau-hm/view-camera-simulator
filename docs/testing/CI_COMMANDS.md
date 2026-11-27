@@ -6,17 +6,17 @@ This is the canonical interface for developers and agents. The current npm regis
 
 ```bash
 npm run dev
-npm run ci:local:focused -- --tests src/tests/unit/<test-file>.test.ts
-npm run ci:local:focused -- --owner <owner-id>
+npm run ci:local:focused -- --tests src/tests/unit/thinLensModel.test.ts
+npm run ci:local:focused -- --owner canonical-optics
 npm run ci:local:affected -- --base origin/main
 npm run ci:local
 ```
 
-Start the server with `dev`. During implementation choose a real test file or an owner ID from `scripts/local-ci/owners.json` for quick feedback. Fetch the base and use Affected when the changed scope is understood; it includes committed and worktree changes. Read its report: provisional or unmapped ownership, missing required browser checks, unstable source, or other limitations may make the result `INCOMPLETE`, not a full pass. Use `--with-e2e` when owner-required browser coverage is needed. Add explicit browser/native proof where the contract requires it. Run full local CI when appropriate for the change; it covers CSS, lint, typecheck, full Vitest and build, but not browser, historical, or native qualification. GitHub PR validation is independently authoritative. Do not run the full suite after every small iteration.
+Start the server with `dev`. During implementation choose a real test file or an owner ID from `scripts/local-ci/owners.json` for quick feedback. Fetch the actual intended integration base (use it instead of `origin/main` for an integration-branch PR) and use Affected when the changed scope is understood; it includes committed and worktree changes. Read its report: provisional or unmapped ownership, missing required browser checks, unstable source, or other limitations may make the result `INCOMPLETE`, not a full pass. Inspect changed paths, selected owners and tests, browser contracts and executed/verified evidence, fallback, incomplete reasons, and exact source identity. Provisional or unmapped ownership retains full Vitest fallback and `INCOMPLETE`; a passing fallback does not prove ownership or browser/native qualification. Use `--with-e2e` when mapped owner-required browser coverage is needed. Add explicit browser/native proof where the contract requires it. Run full local CI when appropriate for the change; it covers CSS, lint, typecheck, full Vitest and build, but not browser, historical, or native qualification. GitHub PR validation is independently authoritative. Do not run the full suite after every small iteration.
 
 ## Tier 2: specialized validation
 
-`npm run test` is the full Vitest runner; it accepts Vitest arguments. `npm run lint`, `npm run typecheck`, `npm run check:css`, and `npm run build` are individual checks (`build` includes typechecking). `npm run test:e2e` is the low-level Playwright entry point and can run a broad browser suite. `npm run ci:local:e2e` orchestrates full local CI plus the extended serial development E2E suite and may be expensive. Use a specific browser target for ordinary changes rather than the whole matrix. `npm run ci:local:core` is a non-authoritative pilot, not a replacement for full Vitest. These commands differ in scope and none substitutes for the authoritative GitHub PR job.
+`npm run test` is the full Vitest runner; it accepts Vitest arguments. `npm run lint`, `npm run typecheck`, `npm run check:css`, and `npm run build` are individual checks (`build` includes typechecking). `npm run test:e2e` is the low-level Playwright entry point and can run a broad browser suite. `npm run ci:local:e2e` orchestrates full local CI plus the extended serial development E2E suite and may be expensive. Use a specific browser target for the changed contract. Reserve the extended matrix for an explicit packet or reviewed qualification requirement, broad risk that targeted suites cannot reasonably contain, or unbounded browser ownership. `npm run ci:local:core` is a non-authoritative pilot, not a replacement for full Vitest. These commands differ in scope and none substitutes for the authoritative GitHub PR job.
 
 ```bash
 npm run ci:local:focused -- --e2e-spec src/tests/e2e/smoke.spec.ts
