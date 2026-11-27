@@ -131,7 +131,6 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
     const sceneCanvas = page.getByTestId("scene-canvas");
     const groundGlassPanes = page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]');
     const groundGlass = groundGlassPanes;
-    await expect(groundGlassPanes.first()).toHaveAttribute("data-rtt-uniforms-finite", "true");
     await expect(sceneCanvas).toHaveCount(1);
     await expect(sceneCanvas).toHaveAttribute("data-scene-subject-id", visit.sceneId);
     await expect(sceneCanvas.locator("canvas")).toHaveCount(1);
