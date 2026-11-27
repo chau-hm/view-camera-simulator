@@ -1,6 +1,6 @@
 # CI simplification closeout
 
-**Disposition: `CI_SIMPLIFICATION_COMPLETE`.** The reviewed initiative is closed; future improvements remain possible. The original audit baseline is `658487f468d14d6129f4ac7091ebd71c32afd5ed`; the historical C5 closeout reference is `9608989875b425ff7f6dd8ae73782d9ff00db879`. The freshly fetched implementation base for this documentation is also `9608989875b425ff7f6dd8ae73782d9ff00db879` (2026-11-28 Hong Kong time). D1 is independent research, not a prerequisite for closing this initiative. The [command guide](CI_COMMANDS.md) preserves the existing interface.
+**Disposition: `CI_SIMPLIFICATION_COMPLETE`.** The reviewed initiative is closed; future improvements remain possible. The original audit baseline is `658487f468d14d6129f4ac7091ebd71c32afd5ed`; the historical C5 closeout reference is `9608989875b425ff7f6dd8ae73782d9ff00db879`. The freshly fetched implementation base for this documentation is also `9608989875b425ff7f6dd8ae73782d9ff00db879` (2026-11-28 Hong Kong time). D1 is independent research, not a prerequisite for closing this initiative. The [command guide](CI_COMMANDS.md) records the current interface. A later, separately scoped [Evidence consolidation](EVIDENCE_COMMAND_CONSOLIDATION.md) migrates eligible aliases while retaining historical compatibility exceptions.
 
 ## Completed phases
 
@@ -86,7 +86,7 @@ At closeout, open PRs were [#359](https://github.com/chau-hm/view-camera-simulat
 | Current-source M4/M5/M6 requalification; native lifecycle recovery | Historical evidence is not current native proof; [C5](TEST_CONSOLIDATION_C5.md). | Resolved native prerequisites and a separately scoped qualification; research unless a future release explicitly requires that contract. |
 | Production bundle module attribution | Runtime isolation observed; exact emitted module contribution unresolved; [C5](TEST_CONSOLIDATION_C5.md). | A specific bundle question and measurement method; development research. |
 | Development instrumentation relocation; Host State Provider owner injection | No safe relocation demonstrated; [C5](TEST_CONSOLIDATION_C5.md). | Separate ownership and behavior proof; development work. |
-| npm command removal or migration | Historical compatibility and package manifest dependencies; [qualification](HISTORICAL_EVIDENCE_QUALIFICATION.md). | Explicit migration with consumer and provenance evidence; maintenance, not required for release. |
+| Further npm command removal or migration | This later [Evidence consolidation](EVIDENCE_COMMAND_CONSOLIDATION.md) retains aliases with compatibility or provenance dependencies. | Any additional change requires separate consumer and provenance evidence; maintenance, not required for release. |
 | Additional affected-owner coverage | Provisional or unmapped contracts require conservative results; [B5](LOCAL_CI_B5_EVIDENCE.md). | Independent contract and mutation proof; development feedback. |
 | Potential test-audit skill | No new skill is needed to close the audit; [plan](TEST_AUDIT_PLAN.md). | Demonstrated recurring need; development only. |
 | Further CI timing or cost optimization | Hosted variance and billed costs remain unmeasured; [B6](CI_RUNTIME_PROFILE.md). | Measured opportunity and separate safety review; not required for release. |
