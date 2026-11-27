@@ -30,6 +30,29 @@ test("Ground Glass depth-edge fixture measures production gather visibility on r
   });
   console.info("Ground Glass DOF depth-edge fixture:", JSON.stringify(proof));
 
+  // Thin-lens reference in millimetres, calculated independently of the renderer.
+  // v = fD / (D - f), and the signed blur diameter is (f / N)(v_f / v - 1).
+  // The tolerance covers the fixture's quantized depth and 8-bit CoC storage.
+  const thinLensCoc = (distanceMm: number, focusMm: number, fNumber: number) => {
+    const focalLengthMm = 150;
+    const imageDistance = (subjectMm: number) =>
+      focalLengthMm * subjectMm / (subjectMm - focalLengthMm);
+    return focalLengthMm / fNumber * (imageDistance(focusMm) / imageDistance(distanceMm) - 1);
+  };
+  const referenceCases = [
+    { id: "focus-foreground-400-f2_8", focus: 400, aperture: 2.8, distance: 410, surface: "background" },
+    { id: "focus-near-far-390-f2_8", focus: 390, aperture: 2.8, distance: 400, surface: "foreground" },
+    { id: "focus-background-410-f1_4", focus: 410, aperture: 1.4, distance: 400, surface: "foreground" },
+  ] as const;
+  for (const reference of referenceCases) {
+    const result = proof.cases[reference.id];
+    const measured = reference.surface === "foreground"
+      ? result.foregroundCoCDiameterMm
+      : result.backgroundCoCDiameterMm;
+    const expected = thinLensCoc(reference.distance, reference.focus, reference.aperture);
+    expect(Math.abs(measured - expected), `${reference.id} signed CoC error in mm`).toBeLessThan(0.15);
+  }
+
   const focusedForeground = proof.cases["focus-foreground-400-f2_8"];
   expect(focusedForeground.foregroundCoCDiameterMm).toBe(0);
   expect(focusedForeground.backgroundCoCDiameterMm).toBeGreaterThan(0);
