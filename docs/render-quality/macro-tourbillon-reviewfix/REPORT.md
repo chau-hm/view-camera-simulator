@@ -45,7 +45,7 @@ The Macro Bellows scene Observer now targets the real dial datum at 300 mm on th
 
 - Public operation starts automatically at phase zero and uses the asset’s 60-second revolution.
 - Both separately owned watch objects sample one monotonic, scene-owned epoch; there is no second animation clock or extra requestAnimationFrame loop.
-- Explicit scene entry/reset advances the shared reset generation. Focus, aperture, loupe, grid, and ordinary controls do not reset it. Unmount has no running timer or subscription to cancel; the existing R3F and RTT request schedulers drive their respective samples.
+- Scene entry, including same-route re-entry through the public catalog, advances the shared reset generation. Store-level reset actions also advance it; Macro Bellows has no public Movement Reset button. Focus, aperture, loupe, grid, and ordinary controls do not reset it. Unmount has no running timer or subscription to cancel; the existing R3F and RTT request schedulers drive their respective samples.
 - The DEV-only `?macroWatchCage=static` option freezes evidence at canonical phase zero. Production remains animated.
 - Hardware paired samples differ by about 0.00014 rad (High); the tests also verify real cage transforms advance and reset on same-route re-entry. The cage is a rigid one-minute visual demonstration, not a simulated functioning escapement.
 
@@ -89,7 +89,7 @@ The capture recorded zero browser errors and eight existing Three.js `Clock` dep
 - Macro Bellows hardware E2E: 3/3 passed, including real cage transform progression, shared Observer/RTT time, ordinary-control non-reset, route re-entry reset, Raw/Upright grid and bellows metrics.
 - Hardware visual/performance capture: 1/1 passed after exercising the real public Observer zoom, overlay, focus, aperture, loupe, and Raw/Upright controls.
 - Cross-scene browser regressions: Macro DoF, Macro Oblique Plane, Macro Compound Movements, DoF Orientation, Architecture Rise Focus Range: 7/7 passed. SPA scene switching: 1/1. Architecture Foreground Rise: 2/2.
-- `npm run ci:local:e2e` was run twice. The first run exposed and led to a correction of a stale Architecture Rise route assertion; the focused Rise suite then passed. The second run passed CSS, lint, typecheck, full unit tests, build, and preceding E2E files, then stopped in the unrelated Architecture + Foreground Tilt + Focus spec: free-practice sharpness did not reach 70% at focus 6830 mm, and the guided Restart click timed out. These failures were not changed or attributed to the watch integration. The complete local E2E pipeline is therefore not green.
+- `npm run ci:local:e2e` was run twice. The first run exposed and led to a correction of a stale Architecture Rise route assertion; the focused Rise suite then passed. The second run passed CSS, lint, typecheck, full unit tests, build, and preceding E2E files, then stopped in the Architecture + Foreground Tilt + Focus spec: free-practice sharpness did not reach 70% at focus 6830 mm, and the guided Restart click timed out. Their relationship to the watch integration has not been established by a base/head comparison. The complete local E2E pipeline is therefore not green.
 - `git diff --check` passed on the final working diff before commit.
 
 ## Remaining limits

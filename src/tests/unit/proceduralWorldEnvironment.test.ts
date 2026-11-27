@@ -164,6 +164,36 @@ describe("renderer-owned world environment resources", () => {
     previousEnvironment.dispose();
   });
 
+  it("releases the watch softbox source, generator and target on each scene exit", () => {
+    const scene = new THREE.Scene();
+    const previous = new THREE.DataTexture();
+    scene.environment = previous;
+    scene.environmentIntensity = 0.35;
+    const targets = [createProcessedTarget(), createProcessedTarget()];
+    const targetDisposals = targets.map((target) => vi.spyOn(target, "dispose"));
+    const sourceDisposals: ReturnType<typeof vi.fn>[] = [];
+    vi.spyOn(THREE.PMREMGenerator.prototype, "fromEquirectangular")
+      .mockImplementation((source) => {
+        const onDispose = vi.fn();
+        source.addEventListener("dispose", onDispose);
+        sourceDisposals.push(onDispose);
+        return targets[sourceDisposals.length - 1];
+      });
+    const generatorDispose = vi.spyOn(THREE.PMREMGenerator.prototype, "dispose");
+    for (let entry = 0; entry < 2; entry += 1) {
+      const rig = createWorldEnvironmentRig(scene, {} as THREE.WebGLRenderer, watchStudioEnvironment);
+      expect(scene.environment).toBe(targets[entry].texture);
+      expect(sourceDisposals[entry]).toHaveBeenCalledTimes(1);
+      disposeWorldEnvironmentRig(scene, rig);
+      disposeWorldEnvironmentRig(scene, rig);
+      expect(scene.environment).toBe(previous);
+      expect(scene.environmentIntensity).toBe(0.35);
+      expect(targetDisposals[entry]).toHaveBeenCalledTimes(1);
+    }
+    expect(generatorDispose).toHaveBeenCalledTimes(2);
+    previous.dispose();
+  });
+
   it("suppresses a live owner rig without detaching its target and restores it on disposal", () => {
     const scene = new THREE.Scene();
     const previousEnvironment = new THREE.DataTexture();

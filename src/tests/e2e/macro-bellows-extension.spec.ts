@@ -219,6 +219,9 @@ test("Macro 1 keeps Ground Glass and scene rendering stable through auxiliary in
   await expect(sceneWebglCanvas).toHaveCount(1);
   await expect(groundGlassCanvas).toHaveCount(1);
   await expect(sceneCanvas).toHaveAttribute("data-scene-subject-id", "macro-bellows-extension");
+  // Circular distance remains valid when the 60-second phase wraps.
+  const angularDistance = (a: number, b: number) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
+  const clockwiseAdvance = (before: number, after: number) => (before - after + 2 * Math.PI) % (2 * Math.PI);
   const readCageAngle = async (canvas: Locator) => {
     const value = await canvas.getAttribute("data-macro-watch-cage-angle");
     return value === null ? Number.NaN : Number(value);
@@ -228,7 +231,7 @@ test("Macro 1 keeps Ground Glass and scene rendering stable through auxiliary in
   await waitForAcceptedRttFrame(groundGlassRtt);
   const initialObserverCageAngle = await readCageAngle(sceneWebglCanvas);
   const initialRttCageAngle = await readCageAngle(groundGlassCanvas);
-  expect(Math.abs(initialObserverCageAngle - initialRttCageAngle)).toBeLessThan(0.18);
+  expect(angularDistance(initialObserverCageAngle, initialRttCageAngle)).toBeLessThan(0.18);
   await expect(focus).toHaveValue("900");
   await expect(aperture).toHaveAttribute("data-selected-aperture", "5.6");
   await expect(readout).toContainText("180.0 mm");
@@ -246,9 +249,9 @@ test("Macro 1 keeps Ground Glass and scene rendering stable through auxiliary in
   await page.waitForTimeout(2_000);
   const advancedObserverCageAngle = await readCageAngle(sceneWebglCanvas);
   const advancedRttCageAngle = await readCageAngle(groundGlassCanvas);
-  expect(advancedObserverCageAngle).toBeLessThan(initialObserverCageAngle - 0.08);
-  expect(advancedRttCageAngle).toBeLessThan(initialRttCageAngle - 0.08);
-  expect(Math.abs(advancedObserverCageAngle - advancedRttCageAngle)).toBeLessThan(0.18);
+  expect(clockwiseAdvance(initialObserverCageAngle, advancedObserverCageAngle)).toBeGreaterThan(0.08);
+  expect(clockwiseAdvance(initialRttCageAngle, advancedRttCageAngle)).toBeGreaterThan(0.08);
+  expect(angularDistance(advancedObserverCageAngle, advancedRttCageAngle)).toBeLessThan(0.18);
 
   await page.getByRole("button", { name: "Focus loupe · 4× Ground Glass view", exact: true }).click();
   await expect(page.getByRole("button", { name: /Reset Ground Glass view/ })).toBeVisible();
@@ -262,7 +265,7 @@ test("Macro 1 keeps Ground Glass and scene rendering stable through auxiliary in
   await expect(readout).toContainText("4.00×");
   await expect(readout).toContainText("+2.00 stops");
   const afterFocusAndApertureCageAngle = await readCageAngle(sceneWebglCanvas);
-  expect(afterFocusAndApertureCageAngle).toBeLessThan(advancedObserverCageAngle);
+  expect(clockwiseAdvance(advancedObserverCageAngle, afterFocusAndApertureCageAngle)).toBeGreaterThan(0);
   const finalCircleRadiusMm = await expectMacroCoverageState(sceneCanvas, groundGlassRtt, readout, 435.93);
   expect(finalCircleRadiusMm).toBeGreaterThan(initialCircleRadiusMm);
   const finalFilmCenter = parseMmVector(await sceneCanvas.getAttribute("data-camera-film-center-world"));
@@ -298,7 +301,7 @@ test("Macro 1 keeps Ground Glass and scene rendering stable through auxiliary in
   await waitForAcceptedRttFrame(groundGlassRtt);
   await expect.poll(() => readCageAngle(sceneWebglCanvas), { timeout: 20_000 }).toBeGreaterThan(-0.18);
   await expect.poll(() => readCageAngle(groundGlassCanvas), { timeout: 25_000 }).toBeGreaterThan(-0.18);
-  expect(Math.abs(await readCageAngle(sceneWebglCanvas) - await readCageAngle(groundGlassCanvas))).toBeLessThan(0.18);
+  expect(angularDistance(await readCageAngle(sceneWebglCanvas), await readCageAngle(groundGlassCanvas))).toBeLessThan(0.18);
   expectNoBrowserErrors();
 });
 
