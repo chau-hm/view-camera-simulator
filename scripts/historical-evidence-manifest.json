@@ -20,6 +20,7 @@
     "scripts/historical-qualification-ci-gate.mjs",
     "scripts/run-historical-qualification.mjs",
     "src/tests/unit/historicalEvidenceRouting.test.ts",
+    "src/tests/unit/nativeWebGpuQualificationPrerequisite.test.ts",
     "src/tests/unit/historicalProductionRelease.test.ts",
     "src/tests/unit/historicalQualificationBaseline.test.ts",
     "src/tests/unit/historicalQualificationGate.test.ts",
