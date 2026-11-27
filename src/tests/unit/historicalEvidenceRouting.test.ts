@@ -213,6 +213,13 @@ describe("historical evidence change routing", () => {
     expect(classifyChangedPaths([]).decision).toBe("UNVERIFIED");
   });
 
+  it("routes the native qualification prerequisite policy test through all supported historical families", () => {
+    const result = classifyChangedPaths(["src/tests/unit/nativeWebGpuQualificationPrerequisite.test.ts"]);
+    expect(result.decision).toBe("QUALIFIED");
+    expect(result.families).toEqual(["M7E", "M7F", "M7G", "M7H", "M7I", "M7J", "M7K", "M7L", "M7M", "M7N", "M7O", "M7P", "M7Q", "M7W"]);
+    expect(result.reasons).toContain("shared-qualification-path:src/tests/unit/nativeWebGpuQualificationPrerequisite.test.ts");
+  });
+
   it("routes an M7E capture change through its standalone replay and M7G consumer", () => {
     expect(classifyChangedPaths([
       "docs/architecture/ground-glass-m7e-r187-gather-b1/captures/architecture-rise.json",
