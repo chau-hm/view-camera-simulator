@@ -7,13 +7,21 @@ This is a **development-only photographic optics feasibility PoC**, not a produc
 - **Photographic optics feasibility:** PASS. The original procedural room renders through the canonical Ground Glass path; the user's manual comparisons show recognizable Focus/DOF, Front Tilt, and Front Swing effects.
 - **Complete renderer fidelity:** PARTIAL / NOT FULLY VALIDATED. Quantitative blur transfer, some foreground defocus, custom glass reflection parity, and native WebGPU remain incomplete.
 - **Production promotion:** DEFERRED.
-- **Development-only merge readiness:** BLOCKED by an ordinary-CI M7V source-baseline failure reproduced on both the integrated PR head and immutable current `main`. The same workflow failure prevents the ordinary Chromium smoke, production-preview isolation, and downstream M7R/M7V steps from running. No merge or deployment has occurred.
+- **Development-only merge readiness:** pending exact-head GitHub validation and independent final review. The earlier M7V source-fetch ordering blocker was corrected on main by PR #373. No merge or deployment has occurred.
 
 The user's Tilt, Swing, and Focus comparisons are recorded as human-observed qualitative acceptance in [human-acceptance-v9](evidence/human-acceptance-v9/README.md). The original user screenshots were not available as files in the worktree or task attachments at closeout. Their observations are recorded without inventing capture identities, browser details, source revision, or composition.
 
-## Final integration and validation — 2026-11-26
+## Post-CI-simplification integration — 2026-11-28
 
-This section is the current status. The status matrix and closeout bullets later in this file are retained as the previous validation snapshot.
+This section supersedes the prior integration and CI status below; earlier research and evidence remain unchanged. Main `6fe97800c2de3f07bb0b073a902d48083910c17b` was integrated without conflicts in merge `dbd05d257b06f640002679acd48b83bb1042ecdd`. PRs #365, #373, #374, #375 and the subsequent CI consolidation changes are present. The exact M7V source baseline fetch now precedes unit tests. All six content pins listed below still match; current routing of the complete 505-path feature diff returns `NOT_APPLICABLE` without broad fallback.
+
+The affected run selected full Vitest due to unmapped experiment paths and provisional renderer-resource ownership, with scene-switching browser proof required. All 4,577 assertions passed, but the process exited nonzero on a Vitest `onTaskUpdate` worker timeout. Full local CI repeated that result; neither is a complete pass. CSS, lint, typecheck and a separately checked production build passed. The production output scan found no experiment entry, vendored room, bake reference or capture-helper identifiers. The exact-head hosted result, browser smoke and independent final verdict are recorded in the PR's current implementation handoff, rather than inferred from older runs.
+
+The earlier human acceptance and research classifications remain unchanged. Native WebGPU and production integration remain deferred; historical evidence integrity does not establish current native execution. Original human screenshot files remain pending import.
+
+## Prior integration and validation — 2026-11-26
+
+This is the previous validation snapshot; it does not describe current main or current CI status.
 
 - **Integrated main:** 879a50f9607bed848de02a7c358b8b9e2501d1a2.
 - **Integration merge commit:** 6df1c952d24fc80a863838cdb7958235302041cd; the merge was conflict-free and preserved the existing experiment. PR #359 includes the merged main commits.
