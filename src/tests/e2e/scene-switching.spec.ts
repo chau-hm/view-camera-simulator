@@ -1,5 +1,6 @@
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type ElementHandle, type Page } from "@playwright/test";
+import { getSceneById } from "../../scenes/definitions";
 
 type SceneVisit = {
   sceneId: string;
@@ -47,11 +48,21 @@ const openPublicScene = async (page: Page, visit: SceneVisit) => {
   await expect(link).toHaveAttribute("href", visit.href);
   await link.click();
   const expectedRoute = new URL(visit.href, page.url());
-  await expect(page).toHaveURL(
-    (actualRoute) =>
-      actualRoute.pathname === expectedRoute.pathname &&
-      actualRoute.search === expectedRoute.search,
-  );
+  const variation = getSceneById(visit.sceneId)?.sceneVariation;
+  await expect(page).toHaveURL((actualRoute) => {
+    if (actualRoute.pathname !== expectedRoute.pathname || actualRoute.hash !== expectedRoute.hash) return false;
+    const actualParams = new URLSearchParams(actualRoute.search);
+    if (variation?.enabled) {
+      const seeds = actualParams.getAll("seed");
+      const versions = actualParams.getAll("sv");
+      if (seeds.length !== 1 || !/^(0|[1-9][0-9]*)$/.test(seeds[0]!) ||
+          Number(seeds[0]) > 0xffff_ffff || versions.length !== 1 ||
+          versions[0] !== String(variation.schemaVersion)) return false;
+      actualParams.delete("seed");
+      actualParams.delete("sv");
+    }
+    return actualParams.toString() === expectedRoute.searchParams.toString();
+  });
 };
 
 test("public SPA scene switching keeps one current scene and its RTT renderer channels without reloads", async ({ page }) => {
@@ -73,9 +84,11 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
   await page.goto("/simulator/free/architecture-rise?keep=one&seed=123&other=two");
   await expect(page).toHaveURL((url) =>
     url.pathname === "/simulator/free/architecture-rise" &&
-    url.searchParams.get("seed") === null &&
-    url.searchParams.get("keep") === "one" &&
-    url.searchParams.get("other") === "two",
+    url.searchParams.getAll("seed").join() === "123" &&
+    url.searchParams.getAll("sv").join() === "1" &&
+    url.searchParams.getAll("keep").join() === "one" &&
+    url.searchParams.getAll("other").join() === "two" &&
+    [...url.searchParams.keys()].length === 4,
   );
   await page.goto("/scenes");
   const visits = await discoverPublicSceneVisits(page);
