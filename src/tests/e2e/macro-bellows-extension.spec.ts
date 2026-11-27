@@ -1,3 +1,4 @@
+import { cagePhaseError } from "./helpers/cagePhase";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
@@ -221,7 +222,10 @@ test("Macro 1 keeps Ground Glass and scene rendering stable through auxiliary in
   await expect(sceneCanvas).toHaveAttribute("data-scene-subject-id", "macro-bellows-extension");
   // Circular distance remains valid when the 60-second phase wraps.
   const angularDistance = (a: number, b: number) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
-  const clockwiseAdvance = (before: number, after: number) => (before - after + 2 * Math.PI) % (2 * Math.PI);
+  const sampleCage = async (canvas: Locator) => canvas.evaluate((element) => ({
+    angle: Number(element.getAttribute("data-macro-watch-cage-angle")),
+    time: performance.now(),
+  }));
   const readCageAngle = async (canvas: Locator) => {
     const value = await canvas.getAttribute("data-macro-watch-cage-angle");
     return value === null ? Number.NaN : Number(value);
@@ -249,10 +253,13 @@ test("Macro 1 keeps Ground Glass and scene rendering stable through auxiliary in
   await page.waitForTimeout(2_000);
   const advancedObserverCageAngle = await readCageAngle(sceneWebglCanvas);
   const advancedRttCageAngle = await readCageAngle(groundGlassCanvas);
-  expect(clockwiseAdvance(initialObserverCageAngle, advancedObserverCageAngle)).toBeGreaterThan(0.08);
-  expect(clockwiseAdvance(initialRttCageAngle, advancedRttCageAngle)).toBeGreaterThan(0.08);
+  expect(angularDistance(initialObserverCageAngle, advancedObserverCageAngle)).toBeGreaterThan(0.08);
+  expect(angularDistance(initialRttCageAngle, advancedRttCageAngle)).toBeGreaterThan(0.08);
   expect(angularDistance(advancedObserverCageAngle, advancedRttCageAngle)).toBeLessThan(0.18);
 
+  // Wait for a nonzero canonical phase so a reset during controls is detectable.
+  await expect.poll(async () => Math.abs(await readCageAngle(sceneWebglCanvas)), { timeout: 20_000 }).toBeGreaterThan(0.5);
+  const beforeControls = await sampleCage(sceneWebglCanvas);
   await page.getByRole("button", { name: "Focus loupe · 4× Ground Glass view", exact: true }).click();
   await expect(page.getByRole("button", { name: /Reset Ground Glass view/ })).toBeVisible();
   await expect.poll(() => readGridSpacing(grid)).toBeGreaterThan(initialGridSpacing * 3.9);
@@ -264,8 +271,6 @@ test("Macro 1 keeps Ground Glass and scene rendering stable through auxiliary in
   await expect(readout).toContainText("1:1");
   await expect(readout).toContainText("4.00×");
   await expect(readout).toContainText("+2.00 stops");
-  const afterFocusAndApertureCageAngle = await readCageAngle(sceneWebglCanvas);
-  expect(clockwiseAdvance(advancedObserverCageAngle, afterFocusAndApertureCageAngle)).toBeGreaterThan(0);
   const finalCircleRadiusMm = await expectMacroCoverageState(sceneCanvas, groundGlassRtt, readout, 435.93);
   expect(finalCircleRadiusMm).toBeGreaterThan(initialCircleRadiusMm);
   const finalFilmCenter = parseMmVector(await sceneCanvas.getAttribute("data-camera-film-center-world"));
@@ -284,6 +289,10 @@ test("Macro 1 keeps Ground Glass and scene rendering stable through auxiliary in
   await expect(aperture).toHaveAttribute("data-selected-aperture", "22");
   await expect.poll(readGain).toBeCloseTo(0.0625, 3);
   expect(await readGain()).toBeLessThan(0.25);
+  const afterControls = await sampleCage(sceneWebglCanvas);
+  // 0.2 rad allows approximately 1.9 s of render/observation lag, while
+  // rejecting a reset from the sampled nonzero phase.
+  expect(cagePhaseError(beforeControls.angle, afterControls.angle, afterControls.time - beforeControls.time)).toBeLessThan(0.2);
   expect(await readFiniteAttribute(sceneCanvas, "data-image-circle-radius-mm")).toBeCloseTo(finalCircleRadiusMm, 5);
   expect(await readGain()).toBeLessThan(oneToOneWideOpenGain);
 
