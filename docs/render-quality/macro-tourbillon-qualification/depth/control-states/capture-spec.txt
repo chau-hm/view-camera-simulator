@@ -1,0 +1,16 @@
+import { test, expect } from '@playwright/test';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { setStepRangeInput } from './src/tests/e2e/helpers/stepRangeInput';
+const scenes=['macro-depth-of-field','macro-oblique-plane','architecture-foreground'];
+for (const scene of scenes) test(scene, async ({page})=>{
+ await page.addInitScript(() => { (window as any).__groundGlassWebGpuM3TestControl = { adapterEvents: [] }; });
+ await page.goto(`/simulator/free/${scene}?rttDiagnostics=1&seed=4109674240&sv=1`);
+ const rtt=page.getByTestId('ground-glass-rtt').first(); await expect(rtt).toHaveAttribute('data-rtt-scene-id',scene);
+ await page.getByRole('combobox',{name:'Render quality',exact:true}).selectOption({label:'Standard'});
+ if(scene==='macro-depth-of-field') await page.getByRole('radiogroup',{name:'Aperture'}).getByRole('radio',{name:'f/5.6'}).check();
+ if(scene==='macro-oblique-plane'){await setStepRangeInput(page,'Front Tilt',6.3);await setStepRangeInput(page,'Focus distance',390)}
+ if(scene==='architecture-foreground'){await setStepRangeInput(page,'Rise',20);await setStepRangeInput(page,'Tilt',2);await setStepRangeInput(page,'Focus distance',6830);await page.getByRole('radiogroup',{name:'Aperture'}).getByRole('radio',{name:'f/8'}).check()}
+ await expect(rtt).toHaveAttribute('data-frame-result-status','completed',{timeout:60000});await expect(rtt).toHaveAttribute('data-rtt-final-contentful','true',{timeout:60000});await page.waitForTimeout(1000);
+ const grid=page.getByRole('checkbox',{name:'Grid',exact:true});if(await grid.count() && await grid.isChecked())await grid.uncheck();
+ const requestId=await rtt.getAttribute('data-frame-request-id');await expect.poll(async()=>page.evaluate((id)=>(window as any).__groundGlassWebGpuM3TestControl?.adapterEvents?.some((event:any)=>event.kind==='host-frame-result' && event.requestId===id && event.acceptedByHost===true && event.latestAcceptedRequestId===id) ?? false,requestId),{timeout:30000}).toBe(true); const attrs=await rtt.evaluate(el=>Object.fromEntries([...el.attributes].map(a=>[a.name,a.value]))); const canvas=rtt.locator('canvas').first();await canvas.evaluate(el=>{const b=el.getBoundingClientRect();for(const e of document.querySelectorAll<HTMLElement>("button,a[href],[role='button'],[data-testid='ground-glass-focus-label'],[data-testid='ground-glass-image-layer'] + div")){if(e.contains(el))continue;const r=e.getBoundingClientRect();if((r.width && r.height && r.left<b.right && r.right>b.left && r.top<b.bottom && r.bottom>b.top)||e.matches("[data-testid='ground-glass-focus-label'],[data-testid='ground-glass-image-layer'] + div"))e.style.visibility='hidden'}});await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve())))); const dest=process.env.SERIAL_DEPTH_OUT!;mkdirSync(dest,{recursive:true});await canvas.screenshot({path:`${dest}/${scene}.png`});writeFileSync(`${dest}/${scene}.json`,JSON.stringify({url:page.url(),attrs,acceptedByHost:true},null,2));
+});

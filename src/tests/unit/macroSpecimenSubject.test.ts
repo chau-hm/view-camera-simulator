@@ -35,6 +35,7 @@ describe("macro tourbillon watch physical renderer contract", () => {
     expect(registration.rttBounds).toEqual(macroBellowsExtensionWatchBoundsMm);
 
     const group = createMacroSpecimenGroup({ presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION });
+    try {
     const bounds = new THREE.Box3().setFromObject(group);
     expect(group.name).toBe("macro-bellows-extension-watch-head");
     expect(group.position.z).toBeCloseTo(MACRO_BELLOWS_WATCH.caseOriginMm.z / 1000, 9);
@@ -148,20 +149,28 @@ describe("macro tourbillon watch physical renderer contract", () => {
     expect((chapterFinish as THREE.MeshStandardMaterial).bumpScale).toBeCloseTo(0.00014, 9);
     expect(ratchetFinish.bumpScale).toBeCloseTo(0.000073, 9);
 
-    const secondGroup = createMacroSpecimenGroup({ presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION });
-    const secondChapter = secondGroup.getObjectByName("Satin Roman chapter ring") as THREE.Mesh;
-    expect(secondChapter.material).not.toBe(chapterFinish);
-    expect((secondChapter.material as THREE.MeshStandardMaterial).bumpScale).toBeCloseTo(0.00014, 9);
-
-    const nativeWatch = createTourbillonWatch({ includeStrap: false });
-    const nativeChapter = nativeWatch.materials.find(({ name }) => name === "Spun silver chapter ring") as THREE.MeshStandardMaterial;
-    const nativeRatchet = nativeWatch.materials.find(({ name }) => name === "Concentrically brushed ratchet steel") as THREE.MeshStandardMaterial;
-    expect(nativeChapter.bumpScale).toBeCloseTo(0.14, 6);
-    expect(nativeRatchet.bumpScale).toBeCloseTo(0.073, 6);
-    nativeWatch.dispose();
-    disposeMacroSpecimenGroup(secondGroup);
-    disposeMacroSpecimenGroup(group);
+    } finally { disposeMacroSpecimenGroup(group); }
   }, 15_000);
+
+  it("preserves native bump units and independently converted instances", () => {
+    const first = createMacroSpecimenGroup({ presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION });
+    const second = createMacroSpecimenGroup({ presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION });
+    const nativeWatch = createTourbillonWatch({ includeStrap: false });
+    try {
+      const firstChapter = first.getObjectByName("Satin Roman chapter ring") as THREE.Mesh;
+      const secondChapter = second.getObjectByName("Satin Roman chapter ring") as THREE.Mesh;
+      expect(firstChapter.material === secondChapter.material).toBe(false);
+      expect((secondChapter.material as THREE.MeshStandardMaterial).bumpScale).toBeCloseTo(0.00014, 9);
+      const nativeChapter = nativeWatch.materials.find(({ name }) => name === "Spun silver chapter ring") as THREE.MeshStandardMaterial;
+      const nativeRatchet = nativeWatch.materials.find(({ name }) => name === "Concentrically brushed ratchet steel") as THREE.MeshStandardMaterial;
+      expect(nativeChapter.bumpScale).toBeCloseTo(0.14, 6);
+      expect(nativeRatchet.bumpScale).toBeCloseTo(0.073, 6);
+    } finally {
+      nativeWatch.dispose();
+      disposeMacroSpecimenGroup(second);
+      disposeMacroSpecimenGroup(first);
+    }
+  });
 
   it("creates reproducible independent heads and disposes each owned resource once", () => {
     const first = createMacroSpecimenGroup({ presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION });

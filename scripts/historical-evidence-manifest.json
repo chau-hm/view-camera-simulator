@@ -29,6 +29,10 @@
   "broadFallback": "all-supported-families",
   "ordinaryCiPaths": [
     {
+      "path": "src/tests/unit/cagePhaseEvidence.test.ts",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
       "path": "src/render/sceneCapacityBenchmarkQualification.ts",
       "owner": "ordinary-ci:unit-tests"
     },

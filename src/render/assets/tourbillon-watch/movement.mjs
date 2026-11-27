@@ -363,23 +363,27 @@ function buildKeylessWorks(parent, materials, screw) {
   screw(keyless, 'Setting lever pivot screw', pivot, -4.14, 0.76, 0.316, materials.steelDark)
 }
 
+let ratchetPixels;
 function ratchetFacing(materials) {
   const size = 512
-  const data = new Uint8Array(size * size * 4)
-  for (let ix = 0; ix < size; ix++) {
-    const x = 2 * (ix + 0.5) / size - 1
-    for (let iy = 0; iy < size; iy++) {
-      const y = 2 * (iy + 0.5) / size - 1
-      const r = Math.hypot(x, y)
-      const groovePhase = FULL_TURN * r
-      const grooves = 17 * Math.sin(52 * groovePhase + 0.32 * Math.sin(7 * groovePhase))
-        + 5 * Math.sin(81 * groovePhase)
-      const height = Math.round(128 + THREE.MathUtils.smoothstep(r, 0.17, 0.32) * grooves)
-      const index = (iy * size + ix) * 4
-      data.set([height, height, height, 255], index)
+  if (!ratchetPixels) {
+    const data = new Uint8Array(size * size * 4)
+    for (let ix = 0; ix < size; ix++) {
+      const x = 2 * (ix + 0.5) / size - 1
+      for (let iy = 0; iy < size; iy++) {
+        const y = 2 * (iy + 0.5) / size - 1
+        const r = Math.hypot(x, y)
+        const groovePhase = FULL_TURN * r
+        const grooves = 17 * Math.sin(52 * groovePhase + 0.32 * Math.sin(7 * groovePhase))
+          + 5 * Math.sin(81 * groovePhase)
+        const height = Math.round(128 + THREE.MathUtils.smoothstep(r, 0.17, 0.32) * grooves)
+        const index = (iy * size + ix) * 4
+        data.set([height, height, height, 255], index)
+      }
     }
+    ratchetPixels = data
   }
-  const grain = new THREE.DataTexture(data, size, size, THREE.RGBAFormat)
+  const grain = new THREE.DataTexture(ratchetPixels.slice(), size, size, THREE.RGBAFormat)
   grain.name = 'Fine concentric ratchet tool marks'
   grain.generateMipmaps = true
   grain.minFilter = THREE.LinearMipmapLinearFilter

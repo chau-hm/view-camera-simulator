@@ -21,7 +21,7 @@ export const CAGE_REVOLUTION_SECONDS = 60;
  * millimetres, the dial faces +Z and the crown is on +X.
  */
 export function createTourbillonWatch({ includeStrap = true } = {}) {
-  const materials = createWatchMaterials();
+  const materials = createWatchMaterials({ includeStrap });
   const root = new THREE.Group();
   root.name = 'Tourbillon wristwatch';
   const head = new THREE.Group();

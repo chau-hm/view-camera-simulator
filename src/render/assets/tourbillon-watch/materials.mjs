@@ -5,18 +5,26 @@ const smoothstep = (low, high, x) => {
   return t * t * (3 - 2 * t);
 };
 
+// Only the finite set of authored procedural surfaces is cached; each texture
+// receives its own pixel buffer and remains independently disposable.
+const surfacePixels = new Map();
+
 function surfaceTexture(size, label, heightAt, grayscaleColor = false) {
   const channels = grayscaleColor ? 4 : 1;
-  const data = new Uint8Array(size * size * channels);
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const h = Math.round(255 * THREE.MathUtils.clamp(heightAt(x / size, y / size), 0, 1));
-      const offset = (y * size + x) * channels;
-      if (grayscaleColor) data.set([h, h, h, 255], offset);
-      else data[offset] = h;
+  let source = surfacePixels.get(label);
+  if (!source) {
+    source = new Uint8Array(size * size * channels);
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const h = Math.round(255 * THREE.MathUtils.clamp(heightAt(x / size, y / size), 0, 1));
+        const offset = (y * size + x) * channels;
+        if (grayscaleColor) source.set([h, h, h, 255], offset);
+        else source[offset] = h;
+      }
     }
+    surfacePixels.set(label, source);
   }
-  const texture = new THREE.DataTexture(data, size, size, grayscaleColor ? THREE.RGBAFormat : THREE.RedFormat);
+  const texture = new THREE.DataTexture(source.slice(), size, size, grayscaleColor ? THREE.RGBAFormat : THREE.RedFormat);
   texture.name = label;
   texture.generateMipmaps = true;
   texture.minFilter = THREE.LinearMipmapLinearFilter;
@@ -26,7 +34,7 @@ function surfaceTexture(size, label, heightAt, grayscaleColor = false) {
   return texture;
 }
 
-export function createWatchMaterials() {
+export function createWatchMaterials({ includeStrap = true } = {}) {
   const metal = (name, color, roughness, extra) =>
     new THREE.MeshStandardMaterial({ name, color, metalness: 0.92, roughness, ...extra });
   const soft = (name, color, roughness, extra) =>
@@ -56,12 +64,12 @@ export function createWatchMaterials() {
     const swirls = Math.cos(direction * 2) * 0.068 + Math.sin(r * 74 + direction) * 0.061;
     return 0.80 + (swirls + 0.11) * (1 - smoothstep(0.47, 0.66, r));
   }, true);
-  const pores = surfaceTexture(512, 'Leather grain', (u, v) => {
+  const pores = includeStrap ? surfaceTexture(512, 'Leather grain', (u, v) => {
     const warp = 0.6 * Math.sin(u * 126 + v * 151) + 0.25 * Math.cos(v * 472 - u * 173);
     const grain = Math.cos(u * 487 + warp) * Math.sin(v * 960 - warp);
     return 0.76 + 0.11 * grain + 0.075 * Math.sin(u * 1980 - v * 2419) * Math.cos(v * 1732) +
       0.055 * Math.cos(u * 167 + v * 154);
-  }, true);
+  }, true) : null;
 
   return {
     gold: metal('Polished rose gold', 0xd29a7d, 0.165),
@@ -95,9 +103,9 @@ export function createWatchMaterials() {
       clearcoat: 0.27, clearcoatRoughness: 0.08,
     }),
     rubber: soft('Black compression gasket', 0x2f2625, 0.82),
-    leather: soft('Dark chestnut calfskin', 0x40251a, 0.51, { map: pores, bumpMap: pores, bumpScale: 0.40 }),
+    ...(includeStrap ? { leather: soft('Dark chestnut calfskin', 0x40251a, 0.51, { map: pores, bumpMap: pores, bumpScale: 0.40 }),
     leatherEdge: soft('Burnished hide edge', 0x241710, 0.52),
     lining: soft('Matte saddle lining', 0x9d6847, 0.80, { bumpMap: pores, bumpScale: 0.08 }),
-    thread: soft('Saddle thread', 0xc29664, 0.86),
+    thread: soft('Saddle thread', 0xc29664, 0.86), } : {}),
   };
 }

@@ -103,9 +103,14 @@ describe("historical evidence change routing", () => {
     }
   });
 
+  it("routes the cage phase test to ordinary unit CI while unknown evidence remains unresolved", () => {
+    expect(classifyCompleteChangedPaths(["src/tests/unit/cagePhaseEvidence.test.ts"]).pathOwnership[0]).toMatchObject({ classification: "ordinary-ci", ordinaryCiOwners: ["ordinary-ci:unit-tests"], unresolved: false });
+    expect(classifyCompleteChangedPaths(["src/tests/unit/unregisteredEvidence.test.ts"]).decision).toBe("UNVERIFIED");
+  });
+
   it("rejects unregistered ordinary-CI owners and broad legacy roots", () => {
     const invalidOwner = structuredClone(HISTORICAL_EVIDENCE_MANIFEST);
-    Object.defineProperty(invalidOwner.ordinaryCiPaths[0], "owner", { value: "ordinary-ci:invented-check" });
+    Object.defineProperty(invalidOwner.ordinaryCiPaths.find(({ path }) => path === "src/render/sceneCapacityBenchmarkQualification.ts")!, "owner", { value: "ordinary-ci:invented-check" });
     expect(validateEvidenceOwnershipDeclarations(invalidOwner)).toMatchObject({
       valid: false,
       errors: ["ordinary-ci-owner-unregistered:path:src/render/sceneCapacityBenchmarkQualification.ts:ordinary-ci:invented-check"],
