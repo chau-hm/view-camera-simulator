@@ -14,7 +14,9 @@ import {
   determineQualificationDecision,
   failedClosedRoute,
   parseNameStatusZ,
+  validateEvidenceOwnershipDeclarations,
 } from "../../../scripts/historical-evidence-routing.mjs";
+import { HISTORICAL_QUALIFICATION_BASELINE } from "../../../scripts/historical-qualification-baseline.mjs";
 
 const allFamilies = HISTORICAL_EVIDENCE_MANIFEST.families
   .filter(({ alwaysInOrdinaryCi }) => alwaysInOrdinaryCi !== true)
@@ -64,7 +66,68 @@ describe("historical evidence change routing", () => {
       decision: "NOT_APPLICABLE",
       families: [],
       broad: false,
+      pathOwnership: [{
+        path: "src/components/simulator/SceneViewport.tsx",
+        classification: "non-evidence",
+        historicalValidators: [],
+        ordinaryCiOwners: [],
+        unresolved: false,
+      }],
     });
+  });
+
+  it("classifies an explicit legitimate architecture document consistently for development", () => {
+    expect(classifyCompleteChangedPaths(["docs/architecture/new-camera-movement-design.md"])).toMatchObject({
+      decision: "NOT_APPLICABLE",
+      pathOwnership: [{
+        path: "docs/architecture/new-camera-movement-design.md",
+        classification: "non-evidence",
+        historicalValidators: [],
+        ordinaryCiOwners: [],
+        unresolved: false,
+      }],
+    });
+  });
+
+  it("fails closed on unknown additions under registered or explicitly archive-named roots", () => {
+    for (const path of [
+      "docs/architecture/anatomy-gpu-blend-intermediate/unregistered-report.json",
+      "docs/architecture/opaque-archive-directory/new.json",
+      "docs/architecture/new-evidence-index.json",
+    ]) {
+      expect(classifyCompleteChangedPaths([path])).toMatchObject({
+        decision: "UNVERIFIED",
+        broad: true,
+        pathOwnership: [{ path, classification: "unresolved", unresolved: true }],
+      });
+    }
+  });
+
+  it("rejects unregistered ordinary-CI owners and broad legacy roots", () => {
+    const invalidOwner = structuredClone(HISTORICAL_EVIDENCE_MANIFEST);
+    Object.defineProperty(invalidOwner.ordinaryCiPaths[0], "owner", { value: "ordinary-ci:invented-check" });
+    expect(validateEvidenceOwnershipDeclarations(invalidOwner)).toMatchObject({
+      valid: false,
+      errors: ["ordinary-ci-owner-unregistered:path:src/render/sceneCapacityBenchmarkQualification.ts:ordinary-ci:invented-check"],
+    });
+
+    const broadRoot = structuredClone(HISTORICAL_EVIDENCE_MANIFEST);
+    Object.defineProperty(broadRoot.legacyEvidenceRoots, "0", { value: "docs/architecture/" });
+    expect(validateEvidenceOwnershipDeclarations(broadRoot).errors)
+      .toContain("legacy-evidence-roots-incomplete-or-too-broad");
+    expect(validateEvidenceOwnershipDeclarations(HISTORICAL_EVIDENCE_MANIFEST).valid).toBe(true);
+  });
+
+  it("keeps legacy detection roots explicit and covering every nested baseline archive", () => {
+    const roots = HISTORICAL_EVIDENCE_MANIFEST.legacyEvidenceRoots;
+    expect(roots).not.toContain("docs/architecture/");
+    for (const { path } of HISTORICAL_QUALIFICATION_BASELINE.entries.filter(({ disposition }) =>
+      disposition === "legacy-archival-unverified")) {
+      const parent = path.slice(0, path.lastIndexOf("/") + 1);
+      if (parent.startsWith("docs/architecture/") && parent !== "docs/architecture/") {
+        expect(roots.some((root) => parent.startsWith(root)), path).toBe(true);
+      }
+    }
   });
 
   it("accepts only the audited checkout bytes and fails closed for changed or missing test/helpers", () => {
@@ -159,6 +222,33 @@ describe("historical evidence change routing", () => {
     });
   });
 
+  it("routes both M7E architecture documents through the registered replay owner", () => {
+    expect(classifyChangedPaths([
+      "docs/architecture/GROUND_GLASS_M7E_R187_GATHER_B1.md",
+      "docs/architecture/GROUND_GLASS_M7E_R187_GATHER_B1_AUDIT.md",
+    ])).toMatchObject({
+      decision: "QUALIFIED",
+      families: ["M7E", "M7G", "M7H", "M7I", "M7J", "M7K", "M7L", "M7M", "M7Q"],
+      broad: false,
+    });
+  });
+
+  it("routes scene-capacity qualification source and test changes to their ordinary unit-test owner", () => {
+    expect(classifyChangedPaths([
+      "src/render/sceneCapacityBenchmarkQualification.ts",
+      "src/tests/unit/sceneCapacityBenchmarkQualification.test.ts",
+    ])).toMatchObject({
+      decision: "NOT_APPLICABLE",
+      families: [],
+      broad: false,
+      currentOwners: ["ordinary-ci:unit-tests"],
+      pathOwnership: [
+        expect.objectContaining({ classification: "ordinary-ci", ordinaryCiOwners: ["ordinary-ci:unit-tests"] }),
+        expect.objectContaining({ classification: "ordinary-ci", ordinaryCiOwners: ["ordinary-ci:unit-tests"] }),
+      ],
+    });
+  });
+
   it("routes multiple report families and closes shared report dependencies", () => {
     expect(classifyChangedPaths([
       "docs/architecture/GROUND_GLASS_M7H_BROAD_E2E_TRIAGE_REPORT.json",
@@ -232,10 +322,20 @@ describe("historical evidence change routing", () => {
       "package-lock.json",
       ".github/workflows/historical-qualification.yml",
       "scripts/historical-evidence-manifest.json",
+      "scripts/fixtures/historical-qualification-production-incident.json",
+      "scripts/historical-qualification-baseline.json",
+      "scripts/historical-qualification-baseline.d.mts",
+      "scripts/historical-qualification-baseline.mjs",
+      "scripts/historical-production-release.d.mts",
+      "scripts/historical-production-release.mjs",
+      "scripts/run-historical-qualification-incident-regression.mjs",
       "scripts/historical-evidence-routing.d.mts",
       "scripts/historical-qualification-ci-gate.d.mts",
       "src/tests/unit/historicalEvidenceRouting.test.ts",
       "src/tests/unit/historicalQualificationGate.test.ts",
+      "src/tests/unit/historicalProductionRelease.test.ts",
+      "src/tests/unit/historicalQualificationBaseline.test.ts",
+      "src/tests/unit/m7kCaptureWorkflow.test.ts",
     ]) {
       expect(classifyChangedPaths([path])).toMatchObject({ decision: "QUALIFIED", families: allFamilies, broad: true });
     }
@@ -258,6 +358,11 @@ describe("historical evidence change routing", () => {
       decision: "QUALIFIED",
       families: ["M7W"],
       currentOwners: ["ordinary-ci:evidence:check:m7v"],
+      pathOwnership: [expect.objectContaining({
+        classification: "historical-validator",
+        historicalValidators: ["M7W"],
+        ordinaryCiOwners: ["ordinary-ci:evidence:check:m7v"],
+      })],
     });
   });
 
@@ -268,6 +373,10 @@ describe("historical evidence change routing", () => {
       decision: "NOT_APPLICABLE",
       families: [],
       currentOwners: ["ordinary-ci:evidence:check:m7r"],
+      pathOwnership: [expect.objectContaining({
+        classification: "ordinary-ci",
+        ordinaryCiOwners: ["ordinary-ci:evidence:check:m7r"],
+      })],
     });
   });
 
@@ -291,6 +400,9 @@ describe("historical evidence change routing", () => {
   it("keeps fail-closed outcomes distinct from a successful or non-applicable route", () => {
     expect(determineQualificationDecision({ routeDecision: "NOT_APPLICABLE", hasFamilies: false })).toBe("NOT_APPLICABLE");
     expect(determineQualificationDecision({ routeDecision: "QUALIFIED", hasFamilies: true })).toBe("QUALIFIED");
+    expect(determineQualificationDecision({ routeDecision: "QUALIFIED_WITH_LEGACY_ARCHIVAL", hasFamilies: true })).toBe("QUALIFIED_WITH_LEGACY_ARCHIVAL");
+    expect(determineQualificationDecision({ routeDecision: "QUALIFIED_WITH_LEGACY_ARCHIVAL", hasFamilies: true, validatorFailure: true })).toBe("FAILED");
+    expect(determineQualificationDecision({ routeDecision: "QUALIFIED_WITH_LEGACY_ARCHIVAL", hasFamilies: true, sourceFailure: true })).toBe("UNVERIFIED");
     expect(determineQualificationDecision({ routeDecision: "QUALIFIED", hasFamilies: true, validatorFailure: true })).toBe("FAILED");
     expect(determineQualificationDecision({ routeDecision: "QUALIFIED", hasFamilies: true, sourceFailure: true, validatorFailure: true })).toBe("UNVERIFIED");
     expect(determineQualificationDecision({ routeDecision: "QUALIFIED", hasFamilies: true, sourceFailure: true })).toBe("UNVERIFIED");

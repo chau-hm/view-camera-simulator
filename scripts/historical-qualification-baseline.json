@@ -1,0 +1,1273 @@
+{
+  "schemaVersion": 1,
+  "policy": {
+    "id": "change-triggered-historical-qualification-v1",
+    "introducedBy": "PR #361",
+    "policyCommit": "a0b2fa4b2b9acc323c64a057599d10d3063cef8b",
+    "policyTree": "9643611510e9856890934097250423b7de65ded4",
+    "prePolicyParent": "981fea7e0e969a7494ad58b319d906650ad7c891",
+    "acceptedDisposition": "Unchanged baseline blobs may remain as explicitly unverified archive/documentation; this is not validator success."
+  },
+  "inventory": {
+    "entryCount": 139,
+    "sha256": "a6e664949cb9050de85f9dafb2ead7df549e236cbd431ff3144d5e7a75922d76",
+    "policyIntroductionRouterReasons": {
+      "unmapped-evidence-verification-dependency": 77,
+      "unsupported-or-unmapped-historical-family": 62
+    },
+    "derivation": "All tracked paths at policyCommit were classified by that commit’s historical-evidence router; entries include every unsupported-family and unmapped-evidence route, not only paths present in the later incident diff."
+  },
+  "entries": [
+    {
+      "path": "docs/architecture/GROUND_GLASS_M5Q_CONFIRMATORY_REPORT.json",
+      "blobSha": "047d262473a7508c7c72602a3642693f58df1033",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M5Q_QUALIFICATION_SUMMARY.json",
+      "blobSha": "e0526f464effd96a50e719513cf8a1218db0a98b",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M5Q_REVIEW_FIX_1_REPORT.json",
+      "blobSha": "5aaac4629559f3b248ee276bfaeb5cd28d19380b",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M5Q_REVIEW_FIX_2_REPORT.json",
+      "blobSha": "d0650e9819bdf2a875c973c2e58dc2ef4233301c",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:unit-tests:groundGlassM5sReference,groundGlassM5tReference,groundGlassM5uQuadrature (selected report fields)",
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M5R_REVIEW_FIX_1_REPORT.json",
+      "blobSha": "639039aa045f4138f76ccf3b0f17ba1bab4851fa",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M5S_REFERENCE_CONVERGENCE_REPORT.json",
+      "blobSha": "16507ab7cf61a39d526decafc62613d9047ea554",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:unit-tests:groundGlassM5sReference,groundGlassM5tReference (selected report fields)",
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M5S_REVIEW_FIX_1_REPORT.json",
+      "blobSha": "111181c9a3dc01eb392db0cf1dcdf5f34a53292b",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M5T_QUADRATURE_SPATIAL_VALIDATION_REPORT.json",
+      "blobSha": "440983ff2ef8a560975f576f5c29ace3b5bd48cd",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:unit-tests:groundGlassM5uQuadrature (selected report fields)",
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M5T_REVIEW_FIX_1_REPORT.json",
+      "blobSha": "44191adabeda6983ac1f04706d48015142887e96",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M5U_QUADRATURE_EFFICIENCY_REPORT.json",
+      "blobSha": "b233360ac25b5736abb36a2d1fd52c4eae42a380",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M5U_REVIEW_FIX_1_REPORT.json",
+      "blobSha": "8e5a0e3527b5f8652e469ceebebd9f47358c67eb",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M6B_PHYSICAL_OVERLAY_CONFORMANCE_REPORT.json",
+      "blobSha": "5f0eaccb794fdaa2ffac87f0b0036463a6578ad6",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M6B_REVIEW_FIX_1_REPORT.json",
+      "blobSha": "e45aa40d0935cc44a79f4cc20928301529712ee8",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M6C_ALPHA_CONFORMANCE_REPORT.json",
+      "blobSha": "84543d00cd32d58db31506a68ffb2cef4850f0b2",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M6C_REVIEW_FIX_1_REPORT.json",
+      "blobSha": "300891e7d9f8fb64d70bb75d1f2b8efb82dd7127",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M6D_OUTPUT_CONTRACT_REPORT.json",
+      "blobSha": "738a0c9925a8ad2239f065999475e3321a963f72",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M6_PRESENTATION_REPORT.json",
+      "blobSha": "51594a1580f605340d2b5e76ec11e705bcbcbcd2",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M6_REVIEW_FIX_1_REPORT.json",
+      "blobSha": "b0351de1fc9c2309db7cda8bb3feeb95520666ec",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M7A_RECOVERY_INTEGRATION.md",
+      "blobSha": "19694ec62a19720f165adf11b5cc0bd90deecb80",
+      "kind": "historical-documentation",
+      "disposition": "documentation-only",
+      "family": "M7A",
+      "ordinaryCiOwner": null,
+      "limitation": "Retained documentation; no validator establishes its historical technical claims."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M7A_RECOVERY_REPORT.json",
+      "blobSha": "2e6b2f2225dd74b41429295995f136c9ca18fdf9",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7A",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M7B_NATIVE_LIFECYCLE.md",
+      "blobSha": "df36c85a362d573053a21c4689c80033dc20f874",
+      "kind": "historical-documentation",
+      "disposition": "documentation-only",
+      "family": "M7B",
+      "ordinaryCiOwner": null,
+      "limitation": "Retained documentation; no validator establishes its historical technical claims."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M7B_NATIVE_LIFECYCLE_REPORT.json",
+      "blobSha": "2624fdfcf81210f001bf180f9aff865e8acc5922",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7B",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M7C_R187_RAW_LIFECYCLE.md",
+      "blobSha": "9363d571499b4e6adbb42e4bf386db7147af6a34",
+      "kind": "historical-documentation",
+      "disposition": "documentation-only",
+      "family": "M7C",
+      "ordinaryCiOwner": null,
+      "limitation": "Retained documentation; no validator establishes its historical technical claims."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M7C_R187_RAW_LIFECYCLE_REPORT.json",
+      "blobSha": "39be37082044db80a25fe4f562708ee40f11bf2a",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7C",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M7D_R187_PHYSICAL_COC.md",
+      "blobSha": "ac8bf6165a975e12bf0d07cb45b94875f1a1c87c",
+      "kind": "historical-documentation",
+      "disposition": "documentation-only",
+      "family": "M7D",
+      "ordinaryCiOwner": null,
+      "limitation": "Retained documentation; no validator establishes its historical technical claims."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M7D_R187_PHYSICAL_COC_REPORT.json",
+      "blobSha": "81489c4dbbefcafd6e3024c302ddfe5dd05957a7",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7D",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M7E_R187_GATHER_B1.md",
+      "blobSha": "81f0ed803175f29a41340ad952963ef719b1c9e5",
+      "kind": "validator-backed-documentation",
+      "disposition": "current-validator",
+      "family": "M7E",
+      "ordinaryCiOwner": null,
+      "limitation": "A change is routed through the registered M7E replay and its dependency closure; unchanged content is not treated as an archival validation result."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M7E_R187_GATHER_B1_AUDIT.md",
+      "blobSha": "f3aedd2b60e6d318047b98e7e2ae36e382a94717",
+      "kind": "validator-backed-documentation",
+      "disposition": "current-validator",
+      "family": "M7E",
+      "ordinaryCiOwner": null,
+      "limitation": "A change is routed through the registered M7E replay and its dependency closure; unchanged content is not treated as an archival validation result."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M7S_LEARNING_DRAWER_OPEN_STATE.md",
+      "blobSha": "388c5d1c2a34eb880c41f34accb774f8113d6702",
+      "kind": "historical-documentation",
+      "disposition": "documentation-only",
+      "family": "M7S",
+      "ordinaryCiOwner": null,
+      "limitation": "Retained documentation; no validator establishes its historical technical claims."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M7S_LEARNING_DRAWER_OPEN_STATE_REPORT.json",
+      "blobSha": "c74b194c7fb0adc76873a4706002590a01a037bb",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7S",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M7T_INTERIOR_CORNER_READINESS.md",
+      "blobSha": "7922365b56a0d75cd84d879883a7dc3fd14bce6d",
+      "kind": "historical-documentation",
+      "disposition": "documentation-only",
+      "family": "M7T",
+      "ordinaryCiOwner": null,
+      "limitation": "Retained documentation; no validator establishes its historical technical claims."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M7T_INTERIOR_CORNER_READINESS_REPORT.json",
+      "blobSha": "adae54cefd23f76571551cc187a3e8d08a8231b6",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7T",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M7U_SWING_INPUT_RELIABILITY.md",
+      "blobSha": "313a2980b870a9fd1c54028f62f02220ae2aa26b",
+      "kind": "historical-documentation",
+      "disposition": "documentation-only",
+      "family": "M7U",
+      "ordinaryCiOwner": null,
+      "limitation": "Retained documentation; no validator establishes its historical technical claims."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M7U_SWING_INPUT_RELIABILITY_REPORT.json",
+      "blobSha": "6f3f36a05542b838478515be792551aa52394020",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7U",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M7X_DEVELOPMENT_READINESS.md",
+      "blobSha": "a340dea14415be287fa590d3f85e31982fe969bc",
+      "kind": "historical-documentation",
+      "disposition": "documentation-only",
+      "family": "M7X",
+      "ordinaryCiOwner": null,
+      "limitation": "Retained documentation; no validator establishes its historical technical claims."
+    },
+    {
+      "path": "docs/architecture/GROUND_GLASS_M7X_DEVELOPMENT_READINESS_REPORT.json",
+      "blobSha": "fbf89e3fd169fa4ccfd3a7b0e89ab581c9cfeb2a",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7X",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/anatomy-bellows-compositing-causal/report.json",
+      "blobSha": "4427eb975fd4663452c7b072589d20b80a95b60a",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/anatomy-bellows-opacity-response/report.json",
+      "blobSha": "2c20565af68328ed690b7420f88bddb91777beb8",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/anatomy-dimmed-output-mechanism/report.json",
+      "blobSha": "788b795fdae6f19ebae35c59e358506cb16229ee",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/anatomy-dimmed-output-mechanism/selected-captures/material-aware-b0-front-standard.png",
+      "blobSha": "fd23d1907eb6d8a3a2c5102f86fd8bc0de36a363",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/anatomy-dimmed-output-mechanism/selected-captures/material-aware-b1-front-standard.png",
+      "blobSha": "367e40ee476f38c28f4f303e9ad5593c790c49d4",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/anatomy-dimmed-output-mechanism/selected-captures/material-aware-b2-front-standard.png",
+      "blobSha": "ec286fdaec9866f9c15c2a562d180ed2f8a84f77",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/anatomy-dimmed-output-mechanism/selected-captures/material-aware-b3-front-standard.png",
+      "blobSha": "75a38a18f09a3e19c3fc0b0d87f89e06c9cb24fa",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/anatomy-dimmed-output-mechanism/selected-captures/material-aware-b4-front-standard.png",
+      "blobSha": "4b73cebc2300d455e09e21311032aac2118492d2",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/anatomy-dimmed-output-mechanism/selected-captures/webgl-standard-front-standard.png",
+      "blobSha": "e19c025c3cf176bbd09ba1399cf271e65baadce5",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/anatomy-dimmed-output-mechanism/selected-captures/webgpu-standard-front-standard.png",
+      "blobSha": "9251d9d39980dce8d7153434c340ed80c32c9610",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/anatomy-gpu-blend-intermediate/report.json",
+      "blobSha": "80a864a3de4ff2baf0d02761f1043f0ec61c829d",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:unit-tests:anatomyGpuBlendIntermediate (selected report fields)",
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/anatomy-gpu-blend-intermediate/stage-captures/front-standard-native-material-aware-a2.png",
+      "blobSha": "fd23d1907eb6d8a3a2c5102f86fd8bc0de36a363",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/anatomy-gpu-blend-intermediate/stage-captures/front-standard-native-standard-a1.png",
+      "blobSha": "9251d9d39980dce8d7153434c340ed80c32c9610",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/anatomy-gpu-blend-intermediate/stage-captures/front-standard-webgl-a0.png",
+      "blobSha": "e19c025c3cf176bbd09ba1399cf271e65baadce5",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/anatomy-native-webgpu-draw-boundary/report.json",
+      "blobSha": "b99dd8eebc1e970e3425e5df355f4cb6a320efce",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/anatomy-progressive-pass-boundary/report.json",
+      "blobSha": "ca7b404d53608351874fd0d793e667b215121d25",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/anatomy-raw-framebuffer-parity/report.json",
+      "blobSha": "ec4561352709998ed58d10f83e3a2a48ad539c60",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/anatomy-renderable-contribution-investigation/report.json",
+      "blobSha": "0a97c882c801a2157289be058db2b7cfc887c5b6",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/anatomy-transparency-investigation/report.json",
+      "blobSha": "68a6f1eefd7698c8434f8b52a2f273928239dc1b",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/architecture-rise-material-aware-output/measurement-report.json",
+      "blobSha": "2f77bacb3679ebc0409c19406db577ca042ed226",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7c-r187/native-application/m7c-r187-native-raw-baseline.json",
+      "blobSha": "efdfc97cfa24f5204cdc2d508c0652fd4433c356",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7C",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7c-r187/native-failure-host/m7c-r187-d1-initialization-failure-cleans-acquired-resources-before-webgl-fallback-and-remains-sticky.json",
+      "blobSha": "7866119803793d76e2f22774bcfcb1b1dbbc946d",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7C",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7c-r187/native-failure-host/m7c-r187-d2-controlled-scene-render-submission-rejection-fails-the-whole-frame-and-falls-back-only-after-confirmed-cleanup.json",
+      "blobSha": "c225ecb0555402e50557b17311718dc8985d4c09",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7C",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7c-r187/native-failure-host/m7c-r187-d3-controlled-queue-completion-rejection-fails-the-whole-frame-and-falls-back-only-after-confirmed-cleanup.json",
+      "blobSha": "7be6f1abedc498d4d09362fc970268fc9ee2ddb9",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7C",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7c-r187/native-failure-host/m7c-r187-d4-failed-disposal-keeps-the-host-unavailable-and-prevents-a-replacement-generation.json",
+      "blobSha": "0a343ad5e2301404e4ef79accda1a0bcd5db0218",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7C",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7c-r187/native-failure-host/m7c-r187-d4-texture-display-submission-fails-the-whole-frame-and-falls-back-only-after-confirmed-cleanup.json",
+      "blobSha": "48d0ee80812314ece893bc8657328e3200453e62",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7C",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7c-r187/native-failure-host/m7c-r187-d5-pending-queue-retirement-integrity-r1.json",
+      "blobSha": "56d5575c71ce72dff8f2ad0d64c50672381d8d75",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7C",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7c-r187/native-failure-host/m7c-r187-d5-pending-queue-work-blocks-replacement-until-the-actual-adapter-operation-settles.json",
+      "blobSha": "c66170a2e33c63cb71fb82b2b1ced2d4902899c7",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7C",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7c-r187/native-failure-host/m7c-r187-d6-latest-request-wins-after-a-held-adapter-failure-and-an-out-of-order-fallback-completion.json",
+      "blobSha": "5cab9b4b13fe01e298e90363bfdcc8c3297704bb",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7C",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7c-r187/native-failure-host/m7c-r187-d8-webgpurenderer-on-its-webgl2-compatibility-backend-is-not-reported-as-native-and-falls-back-safely.json",
+      "blobSha": "3d7a4850e201288c45883bf3b5bb5eee9a3832f0",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7C",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7c-r187/native-failure-host/m7c-r187-m7a-explicit-retry-and-new-session-are-developer-actions-preserve-history-and-never-loop.json",
+      "blobSha": "723bfce5410aed4306c05748bbbda37d33ecb9f2",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7C",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7c-r187/native-failure-host/m7c-r187-m7a-injected-device-loss-uses-the-native-runtime-failure-and-cleanup-path.json",
+      "blobSha": "9b3fae63f19a015f46a47932e1e1c149cfb8b9ad",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7C",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7c-r187/native-failure-host/m7c-r187-m7b-current-webgl-context-loss-is-terminal-across-client-side-remount.json",
+      "blobSha": "2f3c137d170223f41f3d08ad9789b07b0dfe094c",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7C",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7c-r187/native-failure-host/m7c-r187-m7b-test-destroyed-gpudevice-resolves-its-actual-lost-promise-through-the-owned-failure-path.json",
+      "blobSha": "9caaa14336dfb3770902c25507faada499fa098b",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7C",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7c-r187/native-failure-host/m7c-r187-m7c-scene-navigation-during-pending-cleanup-does-not-publish-retired-output-or-retry-on-remount.json",
+      "blobSha": "32bfcd5be286fa3c494a84c1326d98b287766f4e",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7C",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7c-r187/production-preview/architecture-rise-production-webgl-isolation.json",
+      "blobSha": "8bced85204d7bb45d1aa0bc9295db00623959114",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7C",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7c-r187/unit-validation.json",
+      "blobSha": "dee4396b9e95a91fef4d62f4edf413fb03410a96",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7C",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/architecture-rise-production-webgl-isolation.json",
+      "blobSha": "c04a72d73b06e9d19cb86e8b6780e55df453ce20",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7D",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-after-submit-failure-evidence.json",
+      "blobSha": "4187565661368c0295f0e637f86f232981e5c553",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7D",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-coc-native-evidence.json",
+      "blobSha": "dbf4b2e5f4b59d24a6d8093043334076d3f8994c",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7D",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-physical-validity-after-submit-failure-evidence.json",
+      "blobSha": "3284ceb7e7b791dcfe722fad715c2695e1063f81",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7D",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-stale-resize-evidence.json",
+      "blobSha": "ac09ede76c85198f57235f4e398da612a5883095",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7D",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-stale-unmount-evidence.json",
+      "blobSha": "fb7a6b18415bfb491003d99e44cafd47eda14902",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7D",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/ground-glass-m4-unsupported-storage-evidence.json",
+      "blobSha": "8be0d5192df57a661c8b841f94e15904f97857a0",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7D",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/m7c-r187-native-raw-baseline.json",
+      "blobSha": "3cbfb51948a5c2475f98962e183426e61d20ea6d",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7D",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/m7d-focused-unit-validation-vitest.json",
+      "blobSha": "77827cf7a3f6c857db9a7eb37422ee17b216471f",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7D",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/m7d-review-fix-focused-vitest.json",
+      "blobSha": "ca525ca5951960d63b09d1efd2670629ef1dbb98",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7D",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7d-r187-physical-coc/captures/production-hostile-vite-flags/architecture-rise-production-webgl-isolation.json",
+      "blobSha": "5d0f4efc543b578f78df57dec3708a6ff569d08a",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7D",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7s-learning-drawer/capture/baseline-experiment.json",
+      "blobSha": "fb56d2c9fc47b8e8d6f0ec93c03354105aed6ceb",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7S",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7t-interior-corner/capture/final/attempt-summary.json",
+      "blobSha": "fa59e0abea8471e927c2ba660f9243d5b4651dd4",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7T",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7x-development/runtime/native-m3-raw-smoke.json",
+      "blobSha": "0f1479f6a1beff9bd2b1c401503ce194ebfccdd0",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7X",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7x-development/visual-baseline/webgl-raw-architecture-rise-focus-step-f8.png",
+      "blobSha": "6a20aac09b6af88d2e2bb6d4742de6b7fcf7402a",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7X",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7x-development/visual-baseline/webgl-reference.json",
+      "blobSha": "cf93bf12eeed7362da9cef418f820161f7eec43c",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7X",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7x-development/visual-baseline/webgpu-native-candidate.json",
+      "blobSha": "5c30393e96d35751c11b121ab66ed6a430b2f63c",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7X",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/ground-glass-m7x-development/visual-baseline/webgpu-raw-architecture-rise-focus-step-f8.png",
+      "blobSha": "9d1d7e4a9ae4f938c1370ab8bae794ded07d9351",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": "M7X",
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/observer-output-compositing/report.json",
+      "blobSha": "8886c328835139822b7305c6a7c9bb92fc5a7781",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/threejs-transparency-upstream-reproduction/report.json",
+      "blobSha": "866eb3dd4290dc407ebaf931a0418149b29edb85",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "docs/architecture/view-camera-anatomy-material-aware/report.json",
+      "blobSha": "e2fc8c0ee0c9825a5687adaa4a17177e172fc66f",
+      "kind": "archived-report-or-capture",
+      "disposition": "legacy-archival-unverified",
+      "family": null,
+      "ordinaryCiOwner": null,
+      "limitation": "No equivalent retained integrity validator is available; the exact blob is retained as pre-policy archive and is not reported as validated."
+    },
+    {
+      "path": "playwright.m7s-diagnostic.config.ts",
+      "blobSha": "1ce82a6f923f793dcae55a9145858422ad528900",
+      "kind": "qualification-tooling-or-config",
+      "disposition": "ordinary-ci-code",
+      "family": "M7S",
+      "ordinaryCiOwner": "ordinary-ci:lint-typecheck",
+      "limitation": "Ordinary CI statically checks this tooling/configuration; no historical archive validator is claimed."
+    },
+    {
+      "path": "scripts/build-interior-corner-seeded-materials-evidence.mjs",
+      "blobSha": "cc3fc0b4dcf19bac93ba6876d8bda9e51bb10364",
+      "kind": "qualification-tooling-or-config",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-typecheck",
+      "limitation": "Ordinary CI statically checks this tooling/configuration; no historical archive validator is claimed."
+    },
+    {
+      "path": "scripts/dream-loop/capture.mjs",
+      "blobSha": "25a03f1c30adb64f0868fdafcdeb0465b71b5e4a",
+      "kind": "qualification-tooling-or-config",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-typecheck",
+      "limitation": "Ordinary CI statically checks this tooling/configuration; no historical archive validator is claimed."
+    },
+    {
+      "path": "scripts/render-quality/rq1-capture-provenance.d.mts",
+      "blobSha": "5b2b1b95e6a46ad3e86209b6acbe57e0aacf7d25",
+      "kind": "qualification-tooling-or-config",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-typecheck",
+      "limitation": "Ordinary CI statically checks this tooling/configuration; no historical archive validator is claimed."
+    },
+    {
+      "path": "scripts/render-quality/rq1-capture-provenance.mjs",
+      "blobSha": "9ac544a53661cc6e21691603cf6bbdb1e7508825",
+      "kind": "qualification-tooling-or-config",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-typecheck",
+      "limitation": "Ordinary CI statically checks this tooling/configuration; no historical archive validator is claimed."
+    },
+    {
+      "path": "scripts/render-quality/rq1-capture.mjs",
+      "blobSha": "3c61317e2567bc0a14343075d702c6df69990218",
+      "kind": "qualification-tooling-or-config",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-typecheck",
+      "limitation": "Ordinary CI statically checks this tooling/configuration; no historical archive validator is claimed."
+    },
+    {
+      "path": "scripts/render-quality/rq1-capture.spec.ts",
+      "blobSha": "5707543b5b319dca4d0bcbc44dbfb70e38c5b8c0",
+      "kind": "qualification-tooling-or-config",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-typecheck",
+      "limitation": "Ordinary CI statically checks this tooling/configuration; no historical archive validator is claimed."
+    },
+    {
+      "path": "scripts/render-quality/rq1-native-capture-status.d.mts",
+      "blobSha": "2268cfca93c302d0b3b38c46feb94b589127c3b5",
+      "kind": "qualification-tooling-or-config",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-typecheck",
+      "limitation": "Ordinary CI statically checks this tooling/configuration; no historical archive validator is claimed."
+    },
+    {
+      "path": "scripts/render-quality/rq1-native-capture-status.mjs",
+      "blobSha": "f7882c869082ce785aeb75fc457ff340609178ce",
+      "kind": "qualification-tooling-or-config",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-typecheck",
+      "limitation": "Ordinary CI statically checks this tooling/configuration; no historical archive validator is claimed."
+    },
+    {
+      "path": "src/render/backend/anatomyBellowsDrawMetadataCapture.ts",
+      "blobSha": "44e844927cda8dbcb8362abf987f98b2d8ff7717",
+      "kind": "application-or-evidence-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-typecheck-build",
+      "limitation": "Ordinary application CI checks this source; this does not validate any retained archive payload."
+    },
+    {
+      "path": "src/render/backend/anatomyBellowsNativePipelineEvidence.ts",
+      "blobSha": "30244a05d1958011fe29acdcf54d9bfc3537dd16",
+      "kind": "application-or-evidence-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-typecheck-build",
+      "limitation": "Ordinary application CI checks this source; this does not validate any retained archive payload."
+    },
+    {
+      "path": "src/render/backend/anatomyNativeWebGpuDrawBoundaryCapture.ts",
+      "blobSha": "5c292ca60dcfa99ba22b9adee370040616ef9b8f",
+      "kind": "application-or-evidence-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-typecheck-build",
+      "limitation": "Ordinary application CI checks this source; this does not validate any retained archive payload."
+    },
+    {
+      "path": "src/render/groundGlassCleanupEvidence.ts",
+      "blobSha": "01eb65ed094c641ffe779305adbb20ccb5f19dbc",
+      "kind": "application-or-evidence-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-typecheck-build",
+      "limitation": "Ordinary application CI checks this source; this does not validate any retained archive payload."
+    },
+    {
+      "path": "src/render/groundGlassM7bLifecycleEvidence.ts",
+      "blobSha": "5166e939e49b53568d089eb7c5d8d998d7a475b9",
+      "kind": "application-or-evidence-source",
+      "disposition": "ordinary-ci-code",
+      "family": "M7B",
+      "ordinaryCiOwner": "ordinary-ci:lint-typecheck-build",
+      "limitation": "Ordinary application CI checks this source; this does not validate any retained archive payload."
+    },
+    {
+      "path": "src/render/groundGlassM7cR187LifecycleEvidence.ts",
+      "blobSha": "c56e3ca16dc9787812079b5769d82c0df38e6720",
+      "kind": "application-or-evidence-source",
+      "disposition": "ordinary-ci-code",
+      "family": "M7C",
+      "ordinaryCiOwner": "ordinary-ci:lint-typecheck-build",
+      "limitation": "Ordinary application CI checks this source; this does not validate any retained archive payload."
+    },
+    {
+      "path": "src/render/sceneCapacityBenchmarkQualification.ts",
+      "blobSha": "9085ea0a9e68611b27af37a95b7c6ade2415ab79",
+      "kind": "application-or-evidence-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-typecheck-build",
+      "limitation": "Ordinary application CI checks this source; this does not validate any retained archive payload."
+    },
+    {
+      "path": "src/render/webgpu/groundGlassM7dPhysicalCocEvidence.ts",
+      "blobSha": "af46721451d92dce7667ef5d39338d9402c17754",
+      "kind": "application-or-evidence-source",
+      "disposition": "ordinary-ci-code",
+      "family": "M7D",
+      "ordinaryCiOwner": "ordinary-ci:lint-typecheck-build",
+      "limitation": "Ordinary application CI checks this source; this does not validate any retained archive payload."
+    },
+    {
+      "path": "src/tests/benchmarks/anatomyBellowsCompositingQualification.ts",
+      "blobSha": "8195231c99fecb46c2f39e2c10c0438ab7af6d1f",
+      "kind": "test-or-diagnostic-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-and-typecheck",
+      "limitation": "Ordinary lint/typecheck covers this source; no historical archive validator is claimed."
+    },
+    {
+      "path": "src/tests/benchmarks/anatomyBellowsOpacityQualification.ts",
+      "blobSha": "20dd9ece18b4b536c41780ade09337fb14950cf5",
+      "kind": "test-or-diagnostic-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-and-typecheck",
+      "limitation": "Ordinary lint/typecheck covers this source; no historical archive validator is claimed."
+    },
+    {
+      "path": "src/tests/benchmarks/observerOutputCompositingEvidence.ts",
+      "blobSha": "a39d4773365ddf10317d0942243b5815d8a15370",
+      "kind": "test-or-diagnostic-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-and-typecheck",
+      "limitation": "Ordinary lint/typecheck covers this source; no historical archive validator is claimed."
+    },
+    {
+      "path": "src/tests/e2e/dream-loop-capture.spec.ts",
+      "blobSha": "a79a452059a4ed03208d6b02c13d86e1291f25d4",
+      "kind": "test-or-diagnostic-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-and-typecheck",
+      "limitation": "Ordinary lint/typecheck covers this source; no historical archive validator is claimed."
+    },
+    {
+      "path": "src/tests/e2e/helpers/groundGlassM7dEvidence.ts",
+      "blobSha": "55db23541107f6ff336f890b4f2d716e5d3d217c",
+      "kind": "test-or-diagnostic-source",
+      "disposition": "ordinary-ci-code",
+      "family": "M7D",
+      "ordinaryCiOwner": "ordinary-ci:lint-and-typecheck",
+      "limitation": "Ordinary lint/typecheck covers this source; no historical archive validator is claimed."
+    },
+    {
+      "path": "src/tests/e2e/m7s-learning-drawer-contract.diagnostic.ts",
+      "blobSha": "8d5910142f63227c6d6304e32cd802992bb79188",
+      "kind": "test-or-diagnostic-source",
+      "disposition": "ordinary-ci-code",
+      "family": "M7S",
+      "ordinaryCiOwner": "ordinary-ci:lint-and-typecheck",
+      "limitation": "Ordinary lint/typecheck covers this source; no historical archive validator is claimed."
+    },
+    {
+      "path": "src/tests/helpers/dreamLoopCaptureReadiness.ts",
+      "blobSha": "741352f063146d5af686c890d467a43907a436b0",
+      "kind": "test-or-diagnostic-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-and-typecheck",
+      "limitation": "Ordinary lint/typecheck covers this source; no historical archive validator is claimed."
+    },
+    {
+      "path": "src/tests/render-quality/e2e/render-quality-rq3a-capture.spec.ts",
+      "blobSha": "b241ae325e4e9930abeaf46572a9b51faa18a649",
+      "kind": "test-or-diagnostic-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-and-typecheck",
+      "limitation": "Ordinary lint/typecheck covers this source; no historical archive validator is claimed."
+    },
+    {
+      "path": "src/tests/render-quality/e2e/rq3b-nonparallel-illumination-capture.spec.ts",
+      "blobSha": "1d6f3db94bde1dbee1ab1fd613a6ab297d2af74b",
+      "kind": "test-or-diagnostic-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-and-typecheck",
+      "limitation": "Ordinary lint/typecheck covers this source; no historical archive validator is claimed."
+    },
+    {
+      "path": "src/tests/render-quality/e2e/rq3d-macro-capture-support.spec.ts",
+      "blobSha": "47ecc35386386150ffcf62392d0b39b385fdd858",
+      "kind": "test-or-diagnostic-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-and-typecheck",
+      "limitation": "Ordinary lint/typecheck covers this source; no historical archive validator is claimed."
+    },
+    {
+      "path": "src/tests/render-quality/e2e/rq3e-macro-oblique-capture.spec.ts",
+      "blobSha": "25ae826bfd766801b45187da9c3f095f5dd7f3da",
+      "kind": "test-or-diagnostic-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-and-typecheck",
+      "limitation": "Ordinary lint/typecheck covers this source; no historical archive validator is claimed."
+    },
+    {
+      "path": "src/tests/render-quality/e2e/rq3f-macro-compound-capture.spec.ts",
+      "blobSha": "81c33ce7d5cc2d44a2346f1dd7f376d08e5e4371",
+      "kind": "test-or-diagnostic-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-and-typecheck",
+      "limitation": "Ordinary lint/typecheck covers this source; no historical archive validator is claimed."
+    },
+    {
+      "path": "src/tests/render-quality/e2e/rq3g-macro-bellows-capture.spec.ts",
+      "blobSha": "0b4c4c471a79c789677bdf814dc1b0c418eefae0",
+      "kind": "test-or-diagnostic-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-and-typecheck",
+      "limitation": "Ordinary lint/typecheck covers this source; no historical archive validator is claimed."
+    },
+    {
+      "path": "src/tests/still-life-studio-e2e/still-life-studio-qualification.spec.ts",
+      "blobSha": "82e9ffda0b1c5e76797ed7f07977a0c7d6323b09",
+      "kind": "test-or-diagnostic-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:lint-and-typecheck",
+      "limitation": "Ordinary lint/typecheck covers this source; no historical archive validator is claimed."
+    },
+    {
+      "path": "src/tests/unit/anatomyBellowsCompositingQualification.test.ts",
+      "blobSha": "8cc902cfde0520a964a896be97defeed443433d2",
+      "kind": "unit-test-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:vitest",
+      "limitation": "The current unit test is executed by ordinary CI; this does not validate unrelated retained archive payloads."
+    },
+    {
+      "path": "src/tests/unit/anatomyBellowsDrawMetadataCapture.test.ts",
+      "blobSha": "f356cd2183867560dfcbd2cbbbda2a88235e6f79",
+      "kind": "unit-test-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:vitest",
+      "limitation": "The current unit test is executed by ordinary CI; this does not validate unrelated retained archive payloads."
+    },
+    {
+      "path": "src/tests/unit/anatomyBellowsNativePipelineEvidence.test.ts",
+      "blobSha": "0a18b8b52e3dd258777c6bc18c369480154557ca",
+      "kind": "unit-test-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:vitest",
+      "limitation": "The current unit test is executed by ordinary CI; this does not validate unrelated retained archive payloads."
+    },
+    {
+      "path": "src/tests/unit/anatomyBellowsOpacityQualification.test.ts",
+      "blobSha": "cb06dd6247cac35cc6f67a8713bc0f2c6a8df365",
+      "kind": "unit-test-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:vitest",
+      "limitation": "The current unit test is executed by ordinary CI; this does not validate unrelated retained archive payloads."
+    },
+    {
+      "path": "src/tests/unit/anatomyNativeWebGpuDrawBoundaryCapture.test.ts",
+      "blobSha": "f3e40614b5c7b87842db0d29299c258c0df310b2",
+      "kind": "unit-test-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:vitest",
+      "limitation": "The current unit test is executed by ordinary CI; this does not validate unrelated retained archive payloads."
+    },
+    {
+      "path": "src/tests/unit/dreamLoopCaptureReadiness.test.ts",
+      "blobSha": "0014c65b48fb83ba2a741a08af0591a801fa57aa",
+      "kind": "unit-test-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:vitest",
+      "limitation": "The current unit test is executed by ordinary CI; this does not validate unrelated retained archive payloads."
+    },
+    {
+      "path": "src/tests/unit/groundGlassCleanupEvidence.test.ts",
+      "blobSha": "8cb4a0828897b0668f95e9fd6bcefaf907bcf810",
+      "kind": "unit-test-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:vitest",
+      "limitation": "The current unit test is executed by ordinary CI; this does not validate unrelated retained archive payloads."
+    },
+    {
+      "path": "src/tests/unit/groundGlassM5qQualification.test.ts",
+      "blobSha": "b30fe8981999bc8feeb4af275c65b80d06519036",
+      "kind": "unit-test-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:vitest",
+      "limitation": "The current unit test is executed by ordinary CI; this does not validate unrelated retained archive payloads."
+    },
+    {
+      "path": "src/tests/unit/groundGlassM7bLifecycleEvidence.test.ts",
+      "blobSha": "35042263b5d976ee25ef5decac3a38fef93c9e71",
+      "kind": "unit-test-source",
+      "disposition": "ordinary-ci-code",
+      "family": "M7B",
+      "ordinaryCiOwner": "ordinary-ci:vitest",
+      "limitation": "The current unit test is executed by ordinary CI; this does not validate unrelated retained archive payloads."
+    },
+    {
+      "path": "src/tests/unit/groundGlassM7cR187LifecycleEvidence.test.ts",
+      "blobSha": "86af5d834b69e30f8d1b57060888af4e8ea0478e",
+      "kind": "unit-test-source",
+      "disposition": "ordinary-ci-code",
+      "family": "M7C",
+      "ordinaryCiOwner": "ordinary-ci:vitest",
+      "limitation": "The current unit test is executed by ordinary CI; this does not validate unrelated retained archive payloads."
+    },
+    {
+      "path": "src/tests/unit/groundGlassM7dPhysicalCocEvidence.test.ts",
+      "blobSha": "b6ef0425a80f54cfb6bef71f68fafca73f8d25af",
+      "kind": "unit-test-source",
+      "disposition": "ordinary-ci-code",
+      "family": "M7D",
+      "ordinaryCiOwner": "ordinary-ci:vitest",
+      "limitation": "The current unit test is executed by ordinary CI; this does not validate unrelated retained archive payloads."
+    },
+    {
+      "path": "src/tests/unit/observerOutputCompositingEvidence.test.ts",
+      "blobSha": "0a18c32941ecbb35a5f96d05b7bd0886aa9fa6c4",
+      "kind": "unit-test-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:vitest",
+      "limitation": "The current unit test is executed by ordinary CI; this does not validate unrelated retained archive payloads."
+    },
+    {
+      "path": "src/tests/unit/renderQualityRq1CaptureProvenance.test.ts",
+      "blobSha": "f5e7d4dd53683a51b455627506246e4ff2866277",
+      "kind": "unit-test-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:vitest",
+      "limitation": "The current unit test is executed by ordinary CI; this does not validate unrelated retained archive payloads."
+    },
+    {
+      "path": "src/tests/unit/sceneCapacityBenchmarkQualification.test.ts",
+      "blobSha": "ab6bbb33a2d00ccbc4cad58a4fb4e295683c8aa0",
+      "kind": "unit-test-source",
+      "disposition": "ordinary-ci-code",
+      "family": null,
+      "ordinaryCiOwner": "ordinary-ci:vitest",
+      "limitation": "The current unit test is executed by ordinary CI; this does not validate unrelated retained archive payloads."
+    }
+  ]
+}

@@ -328,7 +328,7 @@ For review-fix rounds, update the PR handoff with a compact `Since previous revi
 
 ## Validation policy
 
-Validation depth follows change risk, not delivery mode.
+Validation depth follows change risk, not delivery mode. Prefer focused checks during implementation; affected results are complete only when ownership and required browser evidence are complete. Core Regression is a non-authoritative pilot, not a substitute for full Vitest. Obtain real browser or native proof when the contract requires it. Preserve historical evidence and exact-source provenance. Report skipped, blocked, failed, incomplete and not-run checks honestly; avoid unrelated CI infrastructure changes. See [CI commands](docs/testing/CI_COMMANDS.md) for the operational interface.
 
 ### Level 0 — Micro
 

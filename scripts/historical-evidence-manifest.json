@@ -8,15 +8,55 @@
     "playwright.config.ts",
     "scripts/fetch-m7k-execution-source.mjs",
     "scripts/historical-evidence-manifest.json",
+    "scripts/fixtures/historical-qualification-production-incident.json",
+    "scripts/historical-production-release.d.mts",
+    "scripts/historical-production-release.mjs",
+    "scripts/historical-qualification-baseline.d.mts",
+    "scripts/historical-qualification-baseline.mjs",
+    "scripts/run-historical-qualification-incident-regression.mjs",
     "scripts/historical-evidence-routing.d.mts",
     "scripts/historical-evidence-routing.mjs",
     "scripts/historical-qualification-ci-gate.d.mts",
     "scripts/historical-qualification-ci-gate.mjs",
     "scripts/run-historical-qualification.mjs",
     "src/tests/unit/historicalEvidenceRouting.test.ts",
-    "src/tests/unit/historicalQualificationGate.test.ts"
+    "src/tests/unit/historicalProductionRelease.test.ts",
+    "src/tests/unit/historicalQualificationBaseline.test.ts",
+    "src/tests/unit/historicalQualificationGate.test.ts",
+    "src/tests/unit/m7kCaptureWorkflow.test.ts",
+    "scripts/historical-qualification-baseline.json"
   ],
   "broadFallback": "all-supported-families",
+  "ordinaryCiPaths": [
+    {
+      "path": "src/render/sceneCapacityBenchmarkQualification.ts",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "src/tests/unit/sceneCapacityBenchmarkQualification.test.ts",
+      "owner": "ordinary-ci:unit-tests"
+    }
+  ],
+  "legacyEvidenceRoots": [
+    "docs/architecture/anatomy-bellows-compositing-causal/",
+    "docs/architecture/anatomy-bellows-opacity-response/",
+    "docs/architecture/anatomy-dimmed-output-mechanism/",
+    "docs/architecture/anatomy-gpu-blend-intermediate/",
+    "docs/architecture/anatomy-native-webgpu-draw-boundary/",
+    "docs/architecture/anatomy-progressive-pass-boundary/",
+    "docs/architecture/anatomy-raw-framebuffer-parity/",
+    "docs/architecture/anatomy-renderable-contribution-investigation/",
+    "docs/architecture/anatomy-transparency-investigation/",
+    "docs/architecture/architecture-rise-material-aware-output/",
+    "docs/architecture/ground-glass-m7c-r187/",
+    "docs/architecture/ground-glass-m7d-r187-physical-coc/",
+    "docs/architecture/ground-glass-m7s-learning-drawer/",
+    "docs/architecture/ground-glass-m7t-interior-corner/",
+    "docs/architecture/ground-glass-m7x-development/",
+    "docs/architecture/observer-output-compositing/",
+    "docs/architecture/threejs-transparency-upstream-reproduction/",
+    "docs/architecture/view-camera-anatomy-material-aware/"
+  ],
   "unsupportedFamilies": {
     "M7S": "No evidence:check:m7s validator is registered; current report has no equivalent complete offline integrity validator.",
     "M7T": "No evidence:check:m7t validator is registered; retained report/capture fields do not provide an equivalent complete integrity validator.",
@@ -27,6 +67,10 @@
       "id": "M7E",
       "owner": "evidence:replay:m7e and the M7G child replay",
       "artifactRoots": ["docs/architecture/ground-glass-m7e-r187-gather-b1/"],
+      "documentationPaths": [
+        "docs/architecture/GROUND_GLASS_M7E_R187_GATHER_B1.md",
+        "docs/architecture/GROUND_GLASS_M7E_R187_GATHER_B1_AUDIT.md"
+      ],
       "replaySourcePaths": [
         "src/render/backend/groundGlassSceneCompatibility.ts",
         "src/render/webgpu/groundGlassApertureGatherQuality.ts",
