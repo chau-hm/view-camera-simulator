@@ -42,6 +42,13 @@ export function executeSourceValidators({ sourceSha, sourceTreeSha }, { reposito
     const sourceBlob = git(["rev-parse", `${sourceSha}:${path}`]);
     const trustedBlob = git(["rev-parse", `HEAD:${path}`]);
     if (sourceBlob !== trustedBlob) {
+      // Exact reviewed pre-consolidation and post-consolidation contracts. The
+      // source runs its own legacy npm commands; #389 retains their targets.
+      const consolidatedPairs = {
+        "package.json": ["15c2b4d2bc0f5e97b72ac7250b6b5f5ee445b066", "67632e46d4929703cfea38ebb7635f2f3bed58e0"],
+        "scripts/historical-evidence-manifest.json": ["93eefe0eb920838ee74cf9ee655c514b3761750d", "02d1c0ef34ab4aff8b7f23d2dd096075addeb63b"],
+      };
+      if (consolidatedPairs[path]?.[0] === sourceBlob && consolidatedPairs[path]?.[1] === trustedBlob) { contract[path] = sourceBlob; continue; }
       // The earlier audited router uses the same shared-infrastructure selector;
       // source ownership is classified separately by the current source-bound policy.
       if (path === "scripts/historical-evidence-routing.mjs" && sourceBlob === "3154067aa1e0de98b14b31ff7ccb513d607f5793" && trustedBlob === "f1e895f1db08b29a427c7500b24e4737b9800066") { contract[path] = sourceBlob; continue; }
