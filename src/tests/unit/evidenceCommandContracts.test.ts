@@ -34,10 +34,15 @@ describe("evidence command interface", () => {
     mkdirSync(join(temp, "scripts"));
     for (const file of ["evidence.mjs", "evidence-commands.mjs"]) cpSync(join(root, "scripts", file), join(temp, "scripts", file));
     const sentinel = join(temp, "should-not-run");
-    writeFileSync(join(temp, "scripts/run-m7h-triage.mjs"), `require("node:fs").writeFileSync(${JSON.stringify(sentinel)}, "ran");`);
-    for (const mode of ["help", "list"]) expect(spawnSync(process.execPath, [join(temp, "scripts/evidence.mjs"), mode]).status).toBe(0);
-    expect(() => readFileSync(sentinel)).toThrow();
     const target = join(temp, "scripts/run-m7h-triage.mjs");
+    writeFileSync(target, `import { writeFileSync } from "node:fs"; writeFileSync(${JSON.stringify(sentinel)}, "ran");`);
+    expect(spawnSync(process.execPath, [target]).status).toBe(0);
+    expect(readFileSync(sentinel, "utf8")).toBe("ran");
+    rmSync(sentinel);
+    for (const mode of ["help", "list"]) {
+      expect(spawnSync(process.execPath, [join(temp, "scripts/evidence.mjs"), mode]).status).toBe(0);
+      expect(() => readFileSync(sentinel)).toThrow();
+    }
     writeFileSync(target, 'console.log(JSON.stringify({cwd:process.cwd(),args:process.argv.slice(2)})); process.exit(Number(process.env.TEST_EXIT || 0));');
     const run = (exit: string) => spawnSync(process.execPath, [join(temp, "scripts/evidence.mjs"), "check", "m7h", "a path with spaces", "--last"], { cwd: root, env: { ...process.env, TEST_EXIT: exit }, encoding: "utf8" });
     expect(JSON.parse(run("0").stdout)).toEqual({ cwd: realpathSync(temp), args: ["--diagnostic", "a path with spaces", "--last"] });
