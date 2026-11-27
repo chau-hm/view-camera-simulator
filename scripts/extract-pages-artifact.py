@@ -3,6 +3,7 @@
 import pathlib
 import stat
 import sys
+import unicodedata
 import zipfile
 
 MAX_FILES = 10000
@@ -16,6 +17,8 @@ def extract(archive, destination):
         if not entries or len(entries) > MAX_FILES:
             raise ValueError("archive entry count out of bounds")
         seen = set()
+        portable_paths = {}
+        portable_files = set()
         total = 0
         for entry in entries:
             name = entry.filename
@@ -25,6 +28,22 @@ def extract(archive, destination):
                     any(ord(c) < 32 or ord(c) == 127 for c in name) or
                     ':' in parts[0]):
                 raise ValueError(f"unsafe archive path: {name!r}")
+            for part in parts:
+                stem = part.split('.', 1)[0].upper()
+                if (part.endswith((' ', '.')) or any(c in '<>:"|?*' for c in part) or
+                        stem in {'CON', 'PRN', 'AUX', 'NUL'} or
+                        (len(stem) == 4 and stem[:3] in {'COM', 'LPT'} and stem[3] in '123456789¹²³')):
+                    raise ValueError(f"non-portable archive component: {part!r}")
+            for index in range(1, len(parts) + 1):
+                prefix = '/'.join(parts[:index])
+                key = '/'.join(unicodedata.normalize('NFD', unicodedata.normalize('NFD', part).casefold()) for part in parts[:index])
+                if key in portable_paths and portable_paths[key] != prefix:
+                    raise ValueError(f"ambiguous archive path: {prefix!r}")
+                portable_paths[key] = prefix
+                if index == len(parts):
+                    if key in portable_files:
+                        raise ValueError(f"duplicate portable archive path: {prefix!r}")
+                    portable_files.add(key)
             if name in seen:
                 raise ValueError(f"duplicate archive path: {name!r}")
             seen.add(name)
@@ -42,6 +61,10 @@ def extract(archive, destination):
             parts = name.split('/')
             if any('/'.join(parts[:i]) in seen for i in range(1, len(parts))):
                 raise ValueError(f"archive path collision: {name!r}")
+        for key in portable_files:
+            parts = key.split('/')
+            if any('/'.join(parts[:i]) in portable_files for i in range(1, len(parts))):
+                raise ValueError(f"portable archive path collision: {key!r}")
         root.mkdir(mode=0o700, parents=False, exist_ok=False)
         for entry in entries:
             target = root.joinpath(*entry.filename.split('/'))

@@ -350,3 +350,26 @@ policy, main movement during verification, and any identity mismatch fail closed
 Actions artifact retention is
 finite; this preflight is not rollback storage, cross-run deployment or release
 approval. Production continues to use the existing isolated promotion path.
+
+Archive names are preserved exactly, but before creating the extraction
+directory the extractor compares every file and directory prefix using Unicode
+NFD, case folding, and NFD again. It rejects aliases rather than renaming them,
+including file/directory collisions and differing case or Unicode spellings of
+the same directory. As a conservative Windows-compatible subset it also rejects
+reserved device names, colon and other forbidden punctuation, and trailing dots
+or spaces. This policy covers those portability hazards; it does not claim to
+model every filesystem's naming rules. Archives remain bounded to 10,000 entries,
+512 MiB expanded, and 128 MiB transport, with regular files only.
+
+Each required job must belong to the selected run, attempt and source, and all
+required steps must have succeeded within that attempt. A partial rerun without
+complete attempt-specific evidence is rejected rather than reconstructed from
+other attempts. The current policy accepts one explicitly reviewed set of
+workflow versions. Before Release D production cutover, a separately reviewed
+integration must define compatibility for multiple reviewed workflow contract
+versions so newer CI routing can be accepted without unnecessarily excluding
+eligible retained artifacts from older contracts. Never accept new workflow
+versions merely because they are current. The currently reviewed Git blob pins
+are `37490702733b5130bd9ec125e0d41102751ed004` (Pages CI),
+`3a449d8f6f896c2cc38252209362daa0778dc6d6` (historical qualification), and
+`94b7feb1e0370ac020b24103f581dbc03a2f6643` (artifact pilot).

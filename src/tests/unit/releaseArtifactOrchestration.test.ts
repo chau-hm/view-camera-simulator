@@ -1,0 +1,81 @@
+import { describe, expect, it } from "vitest";
+import { writeFileSync, unlinkSync } from "node:fs";
+import { join } from "node:path";
+// @ts-expect-error JavaScript helper without declarations
+import { runPreflight } from "../../../scripts/release-artifact-preflight.mjs";
+// @ts-expect-error JavaScript fixture without declarations
+import { fixture } from "./helpers/releasePreflightFixture.mjs";
+// @ts-expect-error JavaScript helper without declarations
+import { contentDigest, inventory } from "../../../scripts/pages-artifact.mjs";
+
+type Fixture = ReturnType<typeof fixture>;
+function execute(f: Fixture) {
+  return runPreflight(f.args, { runCommand: f.command, tempRoot: f.root });
+}
+function assertNoSideEffects(f: Fixture) {
+  expect(f.staging()).toEqual([]);
+  expect(f.calls.filter(([bin]: string[]) => !["git", "gh", "python3"].includes(bin))).toEqual([]);
+  const gitCalls = f.calls.filter(([bin]: string[]) => bin === "git").map((call: string[]) => call[1]);
+  expect(gitCalls.every((command: string) => ["remote", "ls-remote", "rev-parse", "merge-base", "show"].includes(command))).toBe(true);
+  const ghCalls = f.calls.filter(([bin]: string[]) => bin === "gh");
+  expect(ghCalls.every((call: string[]) => (call[1] === "api" && call.length === 3) || (call[1] === "run" && call[2] === "view" && call.length === 9))).toBe(true);
+}
+function checkRejected(change: (f: Fixture) => void, message?: RegExp) {
+  const f = fixture();
+  try {
+    change(f);
+    expect(() => execute(f)).toThrow(message);
+    assertNoSideEffects(f);
+  } finally { f.cleanup(); }
+}
+
+describe("complete release preflight orchestration", () => {
+  it.each(["current", "older"]) ("accepts an eligible %s main candidate and cleans staging", (kind) => {
+    const f = fixture();
+    try {
+      if (kind === "current") f.main = f.localMain = f.finalMain = f.source;
+      const result = execute(f);
+      expect(result).toMatchObject({ status: "RELEASE_PREFLIGHT_VERIFIED", qualification: "RELEASE_QUALIFICATION_PENDING", deployment: "NOT_DEPLOYED", source: f.source, tree: f.tree, main: f.main, identity: { contentDigest: f.pin.contentDigest } });
+      expect(f.calls.some(([bin]: string[]) => bin === "python3")).toBe(true);
+      expect(f.calls.some((call: string[]) => call.join(" ").includes("attempts/2/jobs"))).toBe(true);
+      assertNoSideEffects(f);
+    } finally { f.cleanup(); }
+  });
+  it.each([
+    ["feature-only source", (f: Fixture) => { f.ancestry = false; }, /not an ancestor/],
+    ["unrelated source", (f: Fixture) => { f.ancestry = false; }, /not an ancestor/],
+    ["missing source", (f: Fixture) => { f.sourceExists = false; }, /missing/],
+    ["incomplete ancestry", (f: Fixture) => { f.ancestry = false; }, /not an ancestor/],
+    ["stale local main", (f: Fixture) => { f.localMain = f.source; }, /stale/],
+    ["wrong tree", (f: Fixture) => { f.selectedTree = f.main; }, /pin source or tree/],
+    ["wrong remote", (f: Fixture) => { f.remote = "https://example.com/other.git"; }, /Unexpected repository/],
+    ["workflow blob", (f: Fixture) => { f.blobs[".github/workflows/pages.yml"] = f.main; }, /Unreviewed workflow/],
+    ["failed CI", (f: Fixture) => { f.ciRun.conclusion = "failure"; }, /Untrusted run/],
+    ["pending CI", (f: Fixture) => { f.ciRun.status = "in_progress"; }, /Untrusted run/],
+    ["canceled CI", (f: Fixture) => { f.ciRun.conclusion = "cancelled"; }, /Untrusted run/],
+    ["pull request CI", (f: Fixture) => { f.ciRun.event = "pull_request"; }, /Untrusted run/],
+    ["feature push CI", (f: Fixture) => { f.ciRun.head_branch = "feature"; }, /Untrusted run/],
+    ["wrong CI workflow", (f: Fixture) => { f.ciRun.workflow_id = 1; }, /Untrusted run/],
+    ["missing CI job", (f: Fixture) => { f.ciJobs.pop(); }, /Required job/],
+    ["missing mandatory step", (f: Fixture) => { f.ciJobs[2].steps.shift(); }, /Required step/],
+    ["incomplete attempt jobs", (f: Fixture) => { f.incompleteJobs = true; }, /Incomplete or mismatched/],
+    ["skipped mandatory step", (f: Fixture) => { f.ciJobs[2].steps[0].conclusion = "skipped"; }, /Required step/],
+    ["inherited wrong job attempt", (f: Fixture) => { f.ciJobs[2].run_attempt = 1; }, /mismatched attempt/],
+    ["different producer source", (f: Fixture) => { f.producerRun.head_sha = f.main; }, /Untrusted run/],
+    ["wrong producer attempt", (f: Fixture) => { f.producerRun.run_attempt = 2; }, /Untrusted run/],
+    ["failed retained verification", (f: Fixture) => { f.producerJobs[0].steps.at(-1).conclusion = "failure"; }, /Required step/],
+    ["artifact association", (f: Fixture) => { f.artifact.workflow_run.id = 777; }, /mismatched artifact/],
+    ["missing artifact", (f: Fixture) => { f.missingArtifact = true; }, /not found/],
+    ["expired artifact", (f: Fixture) => { f.artifact.expired = true; }, /expired/],
+    ["transport digest", (f: Fixture) => { f.artifact.digest = `sha256:${"0".repeat(64)}`; }, /transport/],
+    ["transport size", (f: Fixture) => { f.artifact.size_in_bytes += 1; }, /transport/],
+    ["producer pin", (f: Fixture) => { f.log = f.log.replace(f.pin.sourceTree, f.main); }, /identity evidence/],
+    ["unsafe zip", (f: Fixture) => { f.packUnsafe(); }, undefined],
+    ["changed payload", (f: Fixture) => { writeFileSync(join(f.payload, ".nojekyll"), "changed"); f.pack(); }, /content mismatch/],
+    ["changed manifest", (f: Fixture) => { f.manifest.nodeVersion = "v24.4.0"; f.saveManifest(); f.pack(); }, /Pinned identity mismatch/],
+    ["changed payload and manifest", (f: Fixture) => { writeFileSync(join(f.payload, ".nojekyll"), "changed"); f.manifest.files = inventory(f.payload); f.manifest.contentDigest = contentDigest(f.manifest.files); f.saveManifest(); f.pack(); }, /Pinned identity mismatch/],
+    ["missing validation", (f: Fixture) => { unlinkSync(join(f.candidate, "validation.json")); f.pack(); }, /candidate entries/],
+    ["wrong lockfile", (f: Fixture) => { f.lock = Buffer.from("wrong lock"); }, /lockfile|provenance/],
+    ["main moved", (f: Fixture) => { f.finalMain = f.source; }, /main changed/],
+  ])("rejects %s and performs no publishing", (_label, change, message) => checkRejected(change as (f: Fixture) => void, message as RegExp | undefined));
+});
