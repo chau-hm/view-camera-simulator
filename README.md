@@ -200,28 +200,13 @@ npm install
 npm run dev
 ```
 
-Useful scripts:
+For quick feedback while implementing a change, run a focused test:
 
 ```bash
-npm run dev
-npm run build
-npm run lint
-npm run typecheck
-npm run check:css
-npm run test
-npm run test:watch
-npm run test:e2e
-npm run ci:local
-npm run ci:local:e2e
-npm run preview
+npm run ci:local:focused -- --tests src/tests/unit/<test-file>.test.ts
 ```
 
-## Testing
-
-The project uses Vitest for unit and integration tests and Playwright for
-browser end-to-end tests. `npm run ci:local` runs the local lint, typecheck,
-CSS structure, test, and build checks. `npm run ci:local:e2e` adds the
-Playwright suite.
+Use `npm run ci:local:affected -- --base origin/main` for mapped changes and inspect the report for incomplete ownership or required browser proof. Run `npm run ci:local` for full local CSS, lint, typecheck, Vitest and build validation when appropriate. GitHub PR CI independently runs the authoritative application checks. See the [command guide](docs/testing/CI_COMMANDS.md) for owner selection, browser qualification and specialized commands.
 
 ## CI/CD and deployment
 
