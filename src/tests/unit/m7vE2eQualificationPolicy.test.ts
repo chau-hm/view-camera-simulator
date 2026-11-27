@@ -414,10 +414,20 @@ describe("M7V E2E qualification lane and skip governance", () => {
 
   it("preserves the M7R historical report bytes and SHA-256 source claim", () => {
     const reportBytes = readFileSync(resolve(process.cwd(), "docs/architecture/GROUND_GLASS_M7R_BROAD_E2E_QUALIFICATION_RECOVERY_REPORT.json"));
-    expect(accepted.historicalReportSha256).toBe(accepted.matrix.provenance.historicalM7rReportSha256);
+    const actualSha256 = createHash("sha256").update(reportBytes).digest("hex");
+    expect(actualSha256).toBe(accepted.historicalReportSha256);
+    expect(actualSha256).toBe(accepted.matrix.provenance.historicalM7rReportSha256);
     expect(accepted.matrix.identities).toHaveLength(75);
     expect(accepted.historicalReport.summary).toMatchObject({ discovered: 278, passed: 118, unexpected: 85, skipped: 75 });
     expect(reportBytes.byteLength).toBeGreaterThan(0);
+  });
+
+  it("rejects changed historical report bytes against the original SHA claim", () => {
+    const reportBytes = readFileSync(resolve(process.cwd(), "docs/architecture/GROUND_GLASS_M7R_BROAD_E2E_QUALIFICATION_RECOVERY_REPORT.json"));
+    const changedBytes = Buffer.concat([reportBytes, Buffer.from(" ")]);
+    expect(JSON.parse(changedBytes.toString("utf8"))).toEqual(accepted.historicalReport);
+    const changedSha256 = createHash("sha256").update(changedBytes).digest("hex");
+    expect(() => expect(changedSha256).toBe(accepted.matrix.provenance.historicalM7rReportSha256)).toThrow();
   });
 
   it("collects static skip/fixme declarations and applicable conditional gates from TypeScript source", () => {
