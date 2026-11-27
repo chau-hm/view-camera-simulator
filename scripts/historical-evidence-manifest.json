@@ -4,6 +4,9 @@
   "sharedQualificationPaths": [
     ".github/workflows/",
     "package.json",
+    "scripts/evidence.mjs",
+    "scripts/evidence-commands.mjs",
+    "src/tests/unit/evidenceCommandContracts.test.ts",
     "package-lock.json",
     "playwright.config.ts",
     "scripts/fetch-m7k-execution-source.mjs",
@@ -126,7 +129,7 @@
         "src/utils/constants.ts"
       ],
       "commands": [
-        { "name": "M7F persisted presentation replay", "args": ["run", "evidence:replay:m7f", "--", "--report-output={temp}/m7f-standalone.json"] }
+        { "name": "M7F persisted presentation replay", "args": ["run", "evidence", "--", "replay", "m7f", "--report-output={temp}/m7f-standalone.json"] }
       ],
       "requiredArtifacts": ["docs/architecture/GROUND_GLASS_M7F_R187_PRESENTATION_REPORT.json", "docs/architecture/ground-glass-m7f-r187-presentation/m6d-composite.json", "docs/architecture/ground-glass-m7f-r187-presentation/m6b-conformance.json"],
       "qualificationLimitations": ["Offline replay checks persisted presentation evidence and does not execute a browser or GPU."],
@@ -137,7 +140,7 @@
       "owner": "evidence:report:m7g; it executes the fresh M7E and M7F child replays and validates consolidated evidence.",
       "artifactRoots": ["docs/architecture/ground-glass-m7g-r187/", "docs/architecture/GROUND_GLASS_M7G_R187_LIFECYCLE_CONSOLIDATION"],
       "commands": [
-        { "name": "M7G consolidated evidence replay", "args": ["run", "evidence:report:m7g", "--", "--report-output={temp}/m7g-report.json", "--evaluation-output={temp}/m7g-evaluation.json"] }
+        { "name": "M7G consolidated evidence replay", "args": ["run", "evidence", "--", "report", "m7g", "--report-output={temp}/m7g-report.json", "--evaluation-output={temp}/m7g-evaluation.json"] }
       ],
       "requiredArtifacts": ["docs/architecture/GROUND_GLASS_M7G_R187_LIFECYCLE_CONSOLIDATION_REPORT.json", "docs/architecture/ground-glass-m7g-r187/validation/broad-e2e-playwright.json"],
       "qualificationLimitations": ["Recorded partial qualification remains an accurate historical outcome; evidence integrity is evaluated separately."],
@@ -147,7 +150,7 @@
       "id": "M7H",
       "owner": "evidence:check:m7h",
       "artifactRoots": ["docs/architecture/ground-glass-m7h-broad-e2e/", "docs/architecture/GROUND_GLASS_M7H_BROAD_E2E_TRIAGE"],
-      "commands": [{ "name": "M7H report integrity", "args": ["run", "evidence:check:m7h"] }],
+      "commands": [{ "name": "M7H report integrity", "args": ["run", "evidence", "--", "check", "m7h"] }],
       "requiredArtifacts": ["docs/architecture/GROUND_GLASS_M7H_BROAD_E2E_TRIAGE_REPORT.json", "docs/architecture/ground-glass-m7g-r187/validation/broad-e2e-playwright.json"],
       "qualificationLimitations": ["M7H report and historical raw report must retain their declared digest relationship."],
       "activeTestOwner": "Full Vitest suite, including M7H evaluator tests."
@@ -156,7 +159,7 @@
       "id": "M7I",
       "owner": "evidence:check:m7i",
       "artifactRoots": ["docs/architecture/ground-glass-m7i-broad-e2e/", "docs/architecture/GROUND_GLASS_M7I_BROAD_E2E_REMEDIATION"],
-      "commands": [{ "name": "M7I report integrity", "args": ["run", "evidence:check:m7i"] }],
+      "commands": [{ "name": "M7I report integrity", "args": ["run", "evidence", "--", "check", "m7i"] }],
       "requiredArtifacts": ["docs/architecture/GROUND_GLASS_M7I_BROAD_E2E_REMEDIATION_REPORT.json", "docs/architecture/GROUND_GLASS_M7H_BROAD_E2E_TRIAGE_REPORT.json"],
       "qualificationLimitations": ["M7I consumes the M7H triage report as a pinned historical input."],
       "activeTestOwner": "Full Vitest suite, including M7I evaluator tests."
@@ -165,7 +168,7 @@
       "id": "M7J",
       "owner": "evidence:check:m7j",
       "artifactRoots": ["docs/architecture/ground-glass-m7j-four-worker/", "docs/architecture/GROUND_GLASS_M7J_FOUR_WORKER"],
-      "commands": [{ "name": "M7J report integrity", "args": ["run", "evidence:check:m7j"] }],
+      "commands": [{ "name": "M7J report integrity", "args": ["run", "evidence", "--", "check", "m7j"] }],
       "requiredArtifacts": ["docs/architecture/GROUND_GLASS_M7J_FOUR_WORKER_STABILITY_REPORT.json", "docs/architecture/GROUND_GLASS_M7I_BROAD_E2E_REMEDIATION_REPORT.json"],
       "qualificationLimitations": ["The capture source is retained at PR #308 and is checked at its exact commit and source-tree paths."],
       "activeTestOwner": "Full Vitest suite, including M7J evaluator tests."
@@ -175,8 +178,8 @@
       "owner": "Both evidence:check:m7k schema-v1 and selected schema-v2 invocations are separate mandatory archive checks.",
       "artifactRoots": ["docs/architecture/ground-glass-m7k-broad-e2e/", "docs/architecture/GROUND_GLASS_M7K_BROAD_E2E"],
       "commands": [
-        { "name": "M7K schema-v1 full-suite report", "args": ["run", "evidence:check:m7k"] },
-        { "name": "M7K schema-v2 selected report", "args": ["run", "evidence:check:m7k", "--", "--report-path=docs/architecture/ground-glass-m7k-broad-e2e/review-fix-r1/selected/qualification-report.json"] }
+        { "name": "M7K schema-v1 full-suite report", "args": ["run", "evidence", "--", "check", "m7k"] },
+        { "name": "M7K schema-v2 selected report", "args": ["run", "evidence", "--", "check", "m7k", "--report-path=docs/architecture/ground-glass-m7k-broad-e2e/review-fix-r1/selected/qualification-report.json"] }
       ],
       "requiredArtifacts": ["docs/architecture/GROUND_GLASS_M7K_BROAD_E2E_QUALIFICATION_REPORT.json", "docs/architecture/ground-glass-m7k-broad-e2e/review-fix-r1/selected/qualification-report.json"],
       "qualificationLimitations": ["Schema-v1 and schema-v2 represent different report revisions and must not be combined."],
@@ -186,7 +189,7 @@
       "id": "M7L",
       "owner": "evidence:check:m7l",
       "artifactRoots": ["docs/architecture/ground-glass-m7l-learning-drawer/", "docs/architecture/GROUND_GLASS_M7L_LEARNING_DRAWER"],
-      "commands": [{ "name": "M7L report integrity", "args": ["run", "evidence:check:m7l"] }],
+      "commands": [{ "name": "M7L report integrity", "args": ["run", "evidence", "--", "check", "m7l"] }],
       "requiredArtifacts": ["docs/architecture/GROUND_GLASS_M7L_LEARNING_DRAWER_REMEDIATION_REPORT.json", "docs/architecture/GROUND_GLASS_M7K_BROAD_E2E_QUALIFICATION_REPORT.json"],
       "qualificationLimitations": ["M7L validates its pinned M7K report and raw-capture digests."],
       "activeTestOwner": "Full Vitest suite, including M7L evaluator tests."
@@ -195,7 +198,7 @@
       "id": "M7M",
       "owner": "evidence:check:m7m",
       "artifactRoots": ["docs/architecture/ground-glass-m7m-scene-readiness/", "docs/architecture/GROUND_GLASS_M7M_SCENE_READINESS"],
-      "commands": [{ "name": "M7M report integrity", "args": ["run", "evidence:check:m7m"] }],
+      "commands": [{ "name": "M7M report integrity", "args": ["run", "evidence", "--", "check", "m7m"] }],
       "requiredArtifacts": ["docs/architecture/GROUND_GLASS_M7M_SCENE_READINESS_REPORT.json", "docs/architecture/GROUND_GLASS_M7L_LEARNING_DRAWER_REMEDIATION_REPORT.json"],
       "qualificationLimitations": ["The M7M report consumes historical M7K and M7L artifacts and verifies retained tooling source revisions."],
       "activeTestOwner": "Full Vitest suite, including M7M evaluator tests."
@@ -204,7 +207,7 @@
       "id": "M7N",
       "owner": "evidence:check:m7n",
       "artifactRoots": ["docs/architecture/ground-glass-m7n-renderer-lifecycle/", "docs/architecture/GROUND_GLASS_M7N_RENDERER_LIFECYCLE"],
-      "commands": [{ "name": "M7N report integrity", "args": ["run", "evidence:check:m7n"] }],
+      "commands": [{ "name": "M7N report integrity", "args": ["run", "evidence", "--", "check", "m7n"] }],
       "requiredArtifacts": ["docs/architecture/GROUND_GLASS_M7N_RENDERER_LIFECYCLE_REPORT.json"],
       "qualificationLimitations": ["The captured renderer lifecycle results remain historical observations, not current runtime proof."],
       "activeTestOwner": "Full Vitest suite, including M7N evaluator tests."
@@ -213,7 +216,7 @@
       "id": "M7O",
       "owner": "evidence:check:m7o",
       "artifactRoots": ["docs/architecture/ground-glass-m7o-canvas-timing/", "docs/architecture/GROUND_GLASS_M7O_CANVAS_ASSERTION_TIMING"],
-      "commands": [{ "name": "M7O report integrity", "args": ["run", "evidence:check:m7o"] }],
+      "commands": [{ "name": "M7O report integrity", "args": ["run", "evidence", "--", "check", "m7o"] }],
       "requiredArtifacts": ["docs/architecture/GROUND_GLASS_M7O_CANVAS_ASSERTION_TIMING_REPORT.json"],
       "qualificationLimitations": ["M7O validates persisted timing and capture artifacts; it does not establish current browser performance."],
       "activeTestOwner": "Full Vitest suite, including M7O evaluator tests."
@@ -222,7 +225,7 @@
       "id": "M7P",
       "owner": "evidence:check:m7p",
       "artifactRoots": ["docs/architecture/ground-glass-m7p-assertion-scheduling/", "docs/architecture/GROUND_GLASS_M7P_ASSERTION_SCHEDULING"],
-      "commands": [{ "name": "M7P report integrity", "args": ["run", "evidence:check:m7p"] }],
+      "commands": [{ "name": "M7P report integrity", "args": ["run", "evidence", "--", "check", "m7p"] }],
       "requiredArtifacts": ["docs/architecture/GROUND_GLASS_M7P_ASSERTION_SCHEDULING_REPORT.json"],
       "qualificationLimitations": ["M7P evidence records earlier failed observations without relabeling them as current application failures."],
       "activeTestOwner": "Full Vitest suite, including M7P evaluator tests and mutation coverage."
@@ -231,7 +234,7 @@
       "id": "M7Q",
       "owner": "evidence:check:m7q",
       "artifactRoots": ["docs/architecture/ground-glass-m7q-light-peer-trace-ab/", "docs/architecture/GROUND_GLASS_M7Q_LIGHT_PEER_TRACE_AB"],
-      "commands": [{ "name": "M7Q report integrity", "args": ["run", "evidence:check:m7q"] }],
+      "commands": [{ "name": "M7Q report integrity", "args": ["run", "evidence", "--", "check", "m7q"] }],
       "requiredArtifacts": ["docs/architecture/GROUND_GLASS_M7Q_LIGHT_PEER_TRACE_AB_REPORT.json"],
       "qualificationLimitations": ["The report records historical A/B tracing and retains source-tree and capture digest checks."],
       "activeTestOwner": "Full Vitest suite, including M7Q evaluator tests."
@@ -250,7 +253,7 @@
       "id": "M7W",
       "owner": "evidence:check:m7w",
       "artifactRoots": ["docs/architecture/ground-glass-m7w-qualification/", "docs/architecture/GROUND_GLASS_M7W_WEBGL_QUALIFICATION"],
-      "commands": [{ "name": "M7W report integrity", "args": ["run", "evidence:check:m7w"] }],
+      "commands": [{ "name": "M7W report integrity", "args": ["run", "evidence", "--", "check", "m7w"] }],
       "requiredArtifacts": ["docs/architecture/GROUND_GLASS_M7W_WEBGL_QUALIFICATION_REPORT.json", "docs/architecture/ground-glass-m7w-qualification/capture/execution-manifest.json", "docs/architecture/GROUND_GLASS_M7V_E2E_SKIP_GOVERNANCE_REPORT.json"],
       "qualificationLimitations": ["M7W validates retained captures against the M7V report but is not a replacement for mandatory current M7V policy validation."],
       "activeTestOwner": "Full Vitest suite, including M7W evaluator tests; M7V remains in ordinary CI."

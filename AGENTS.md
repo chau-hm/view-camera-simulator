@@ -328,62 +328,54 @@ For review-fix rounds, update the PR handoff with a compact `Since previous revi
 
 ## Validation policy
 
-Validation depth follows change risk, not delivery mode. Prefer focused checks during implementation; affected results are complete only when ownership and required browser evidence are complete. Core Regression is a non-authoritative pilot, not a substitute for full Vitest. Obtain real browser or native proof when the contract requires it. Preserve historical evidence and exact-source provenance. Report skipped, blocked, failed, incomplete and not-run checks honestly; avoid unrelated CI infrastructure changes. See [CI commands](docs/testing/CI_COMMANDS.md) for the operational interface.
+Select the smallest validation scope capable of proving the changed contract. Escalate when ownership, integration risk, or required evidence justifies it. Validation follows risk, not delivery mode. Report skipped, blocked, failed, incomplete and not-run checks honestly. Preserve historical evidence and exact-source provenance. See [CI commands](docs/testing/CI_COMMANDS.md) for syntax and report semantics.
 
 ### Level 0 — Micro
 
-Use the nearest evidence that directly proves the requested change.
-
-Typical checks:
-
-```bash
-# nearest focused test or relevant static check
-git diff --check
-git status --short
-```
-
-Do not run the full repository suite merely because a file was edited or because the change will be delivered through a PR.
-
-Do not add a new regression test for a reversible, low-impact change when the test would merely mirror the implementation.
-
-Once required focused evidence passes, do not broaden or repeat validation unless a new change, failure, or unresolved concern justifies it.
+Use the nearest meaningful focused test, relevant static check, or direct observable verification. Documentation-only or reversible changes may need proportionate non-runtime evidence. Before handoff run `git diff --check` and `git status --short`. Do not require full Local CI or the complete suite solely because a file was edited, a commit is created, or a PR is submitted. Do not add implementation-mirroring tests for reversible, low-impact changes. Stop when required evidence passes.
 
 ### Level 1 — Focused
 
-Run:
+Prefer the focused Local CI runner for a known contract, using an owner or explicit test:
 
-1. focused unit/integration tests;
-2. relevant typecheck, lint, CSS, or build check when the changed surface can affect it;
-3. `git diff --check`;
-4. `git status --short`.
+```bash
+npm run ci:local:focused -- --owner canonical-optics
+npm run ci:local:focused -- --tests src/tests/unit/thinLensModel.test.ts
+```
+
+A direct invocation such as `npm run test -- --run src/tests/unit/thinLensModel.test.ts` is also appropriate when simpler or necessary. Add relevant typecheck, lint, CSS, or build checks when the changed surface affects those contracts, not automatically after every iteration. A focused PASS proves only its selected scope; it is not complete affected coverage, full repository validation, native GPU qualification, or authoritative GitHub CI. Check the diff and worktree status before handoff.
 
 ### Level 2 — Coordinated integration
 
-Run affected suites first, then the repository integration checks when the integrated change crosses shared contracts:
+Start with `npm run ci:local:affected -- --base origin/main`, using the actual intended integration base instead when different. Inspect changed paths, selected owners and test files, provisional or unmapped ownership, required browser contracts, executed and verified browser evidence, full Vitest fallback, incomplete reasons, and exact source identity. If mapped owner-required browser coverage is missing, use `npm run ci:local:affected -- --base origin/main --with-e2e` with the appropriate base, and run any other matching browser checks required by the contract.
 
-```bash
-npm test
-npm run typecheck
-npm run lint
-npm run check:css
-npm run build
-git diff --check
-git status --short
-```
+Provisional or unmapped ownership retains the conservative full Vitest fallback and `INCOMPLETE` result; a passing fallback does not establish complete ownership or browser/native qualification. If selected owners and evidence cover the changed contracts, do not automatically rerun the full suite. Run `npm run ci:local` when broader integration risk justifies CSS, lint, typecheck, full Vitest and production build. Run individual checks for specific gaps rather than duplicating equivalent orchestration. Report remaining gaps; check the diff and worktree status before handoff.
 
-Do not mechanically require every repository-wide command when the coordinated change is still safely proven by a narrower set. Report what was not run and why.
+### Level 3 — High-risk simulation / merge-critical work
 
-### Level 3 / merge-critical high-risk work
+Use focused feedback during implementation, then affected validation and ownership inspection. Add full Local CI when integration risk requires it, and explicit browser, visual, Production Preview, or native GPU proof matched to the changed contracts. Obtain actual runtime evidence for renderer ownership, stale frames, resource disposal, optical correctness, and public task behaviour where required. Native selection must satisfy the selected test's feature gates, browser requirements, source compatibility and required-backend assertions; WebGL fallback, unit tests, and historical captures do not prove current native WebGPU. Production Preview and native qualification are distinct. The [command guide](docs/testing/CI_COMMANDS.md) provides targeted examples.
 
-Run Level 2 integration checks plus relevant E2E coverage.
+`npm run ci:local:e2e` is a broad regression route: use it when a packet or reviewed qualification/release process explicitly requires the extended development E2E matrix, browser regression risk cannot reasonably be contained by targeted suites, or relevant browser ownership cannot be bounded. Approaching merge, a renderer file change, a single public workflow, or a lifecycle contract alone does not require the entire matrix; run the relevant browser scenario instead.
 
-Run `npm run ci:local:e2e` when:
+### Choosing and reusing evidence
 
-- renderer-wide risk exists;
-- scene lifecycle or GPU ownership changed;
-- a public workflow requires E2E proof;
-- the work packet explicitly requires it;
-- the branch reaches a merge gate where E2E is relevant.
+| Situation | Preferred route |
+| --- | --- |
+| Small reversible change | Nearest meaningful proof |
+| One known contract | Focused owner or explicit test |
+| Multiple changed contracts | Affected validation |
+| Provisional or unknown owner | Conservative fallback and unresolved-owner reporting |
+| Shared integration risk | Full Local CI where justified |
+| Public interaction change | Relevant targeted browser test |
+| Renderer/device lifecycle change | Matching lifecycle and native proof |
+| Production bundle or isolation change | Production Preview |
+| Historical evidence dependency change | Applicable historical qualification |
+| Broad development-browser regression | Extended Local E2E |
+| PR merge validation | Authoritative GitHub CI |
+
+Reuse recorded local evidence within the work packet when it passed on the same verified source state; execute additional checks for missing contracts or new risks. Rerun when relevant source or tests, build/runtime configuration, or dependencies changed; evidence failed or was incomplete; source identity is uncertain; an independent qualification needs fresh execution; or the task requires repeated or matched runs. Never substitute stale reports from another commit, another worktree without matching source proof, interrupted or failed runs, or historical native captures for current proof. Avoid concurrent GPU-heavy browser workloads or full-suite jobs that compete for local resources.
+
+Local focused, affected, full Local CI and targeted browser/native checks provide implementation feedback. They do not replace independent authoritative GitHub PR validation: lint, typecheck, full Vitest, ordinary Chromium smoke, Production Preview, M7R integrity, M7V policy, and applicable historical qualification remain required. Core Regression is a non-authoritative pilot, not a replacement for full Vitest. An incomplete Affected result is not a complete pass. Local PASS alone does not authorize merge or deployment; the implementation agent is not the sole final reviewer when an independent merge verdict is required.
 
 ## Test-integrity rules
 
