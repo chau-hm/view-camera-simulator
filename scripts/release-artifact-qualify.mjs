@@ -29,6 +29,8 @@ const RELEASE_B_BLOBS = Object.freeze({
 
 export async function verifyReleaseBContract({ runGit = git, repositoryRoot = root } = {}) {
   for (const [path, expected] of Object.entries(RELEASE_B_BLOBS)) {
+    const onMain = await runGit(["rev-parse", "--verify", `refs/remotes/origin/main:${path}`], repositoryRoot, true);
+    if (onMain.status !== 0 || onMain.stdout.trim() !== expected) throw new Error(`release-b-reviewed-contract-not-on-main:${path}`);
     const tracked = await runGit(["rev-parse", "--verify", `HEAD:${path}`], repositoryRoot, true);
     if (tracked.status !== 0 || tracked.stdout.trim() !== expected) throw new Error(`release-b-reviewed-contract-not-integrated:${path}`);
     const unchanged = await runGit(["diff", "--quiet", "HEAD", "--", path], repositoryRoot, true);

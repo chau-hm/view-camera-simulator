@@ -28,11 +28,12 @@ describe("release artifact historical qualification", () => {
     };
     const runGit = async (args: string[]) => {
       if (args[0] === "diff") return { status: 0, stdout: "", stderr: "" };
-      const path = args.at(-1)!.replace(/^HEAD:/, "");
+      const path = args.at(-1)!.replace(/^(?:HEAD|refs\/remotes\/origin\/main):/, "");
       return { status: reviewed[path] ? 0 : 1, stdout: reviewed[path] ?? "", stderr: "" };
     };
     await expect(verifyReleaseBContract({ runGit })).resolves.toBeUndefined();
-    await expect(verifyReleaseBContract({ runGit: async () => ({ status: 1, stdout: "", stderr: "" }) })).rejects.toThrow("not-integrated");
+    await expect(verifyReleaseBContract({ runGit: async () => ({ status: 1, stdout: "", stderr: "" }) })).rejects.toThrow("not-on-main");
+    await expect(verifyReleaseBContract({ runGit: async (args: string[]) => args.at(-1)?.startsWith("HEAD:") ? { status: 1, stdout: "", stderr: "" } : runGit(args) })).rejects.toThrow("not-integrated");
     await expect(verifyReleaseBContract({ runGit: async (args: string[]) => args[0] === "diff" ? { status: 1, stdout: "", stderr: "" } : runGit(args) })).rejects.toThrow("modified");
   });
   it("binds fresh preflight, source planning and completed validation without deployment authority", async () => {
