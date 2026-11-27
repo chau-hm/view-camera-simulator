@@ -1,3 +1,4 @@
+import { cagePhaseError } from "./helpers/cagePhase";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 import { CAMERA_CONSTANTS } from "../../utils/constants";
@@ -29,6 +30,47 @@ const collectBrowserErrors = (page: Page) => {
   };
 };
 
+const waitForSceneSubject = async (page: Page, sceneId: string) => {
+  await expect(page.getByRole("region", { name: "Camera Controls" })).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("scene-canvas")).toHaveAttribute(
+    "data-scene-subject-id",
+    sceneId,
+    { timeout: 30_000 },
+  );
+};
+
+const waitForAcceptedRttFrame = async (rtt: Locator) => {
+  try {
+    await expect.poll(async () => {
+      const [lifecycle, status, requestId, completedId] = await Promise.all([
+        rtt.getAttribute("data-render-host-lifecycle"),
+        rtt.getAttribute("data-frame-result-status"),
+        rtt.getAttribute("data-frame-request-id"),
+        rtt.getAttribute("data-last-completed-request-id"),
+      ]);
+      return lifecycle === "ready" && status === "completed" &&
+        Boolean(requestId) && requestId === completedId;
+    }, { timeout: 25_000 }).toBe(true);
+  } catch (error) {
+    const diagnostics = await rtt.evaluate((element) => ({
+      data: Object.fromEntries(Array.from(element.attributes)
+        .filter((attribute) => attribute.name.startsWith("data-"))
+        .map(({ name, value }) => [name, value])),
+      canvases: Array.from(element.querySelectorAll("canvas"), (canvas) => {
+        const context = canvas.getContext("webgl2") ?? canvas.getContext("webgl");
+        return {
+          width: canvas.width,
+          height: canvas.height,
+          connected: canvas.isConnected,
+          contextLost: context?.isContextLost() ?? null,
+          contextError: context?.getError() ?? null,
+        };
+      }),
+    }));
+    throw new Error(`${error instanceof Error ? error.message : String(error)}\nGround Glass readiness evidence: ${JSON.stringify(diagnostics)}`);
+  }
+};
+
 const readGroundGlassGain = async (rtt: Locator) =>
   Number(await rtt.getAttribute("data-rtt-ground-glass-illuminance-gain"));
 
@@ -53,6 +95,7 @@ const expectMacroCoverageState = async (
   readout: Locator,
   expectedDiameterMm: number,
 ) => {
+  await waitForAcceptedRttFrame(rtt);
   await expect(scene).toHaveAttribute("data-image-circle-visible", "true");
   await expect(scene).toHaveAttribute("data-image-circle-ray-count", "12");
   await expect(rtt).toHaveAttribute("data-rtt-coverage-kind", "parallel-circle");
@@ -74,6 +117,7 @@ test("Macro 1 tracks canonical Image Circle growth and bellows exposure across f
   const expectNoBrowserErrors = collectBrowserErrors(page);
 
   await page.goto("/simulator/free/architecture-rise");
+  await waitForSceneSubject(page, "architecture-rise");
   await expect(page.getByRole("button", { name: "Infinity Reset" })).toBeVisible();
   await page.getByRole("button", { name: "Infinity Reset" }).click();
   await expect(page.getByText(/Focus: ∞/)).toBeVisible();
@@ -83,6 +127,7 @@ test("Macro 1 tracks canonical Image Circle growth and bellows exposure across f
   await expect(page).toHaveURL(/\/scenes$/);
   await page.locator('a[href="/simulator/free/macro-bellows-extension"]').click();
   await expect(page).toHaveURL(/\/simulator\/free\/macro-bellows-extension$/);
+  await waitForSceneSubject(page, "macro-bellows-extension");
 
   const sceneCanvas = page.getByTestId("scene-canvas");
   const groundGlassRtt = page.getByTestId("ground-glass-rtt");
@@ -141,7 +186,7 @@ test("Macro 1 tracks canonical Image Circle growth and bellows exposure across f
   await expect(readout).toContainText("4.00×");
   await expect(readout).toContainText("+2.00 stops");
   await expect(readout).toContainText("Life-size reproduction reached (1:1)");
-  await expect(readout).toContainText("specimen is now sharply reproduced");
+  await expect(taskView).toContainText("selected chapter-ring plane is now sharply reproduced");
   const finalCircleRadiusMm = await expectMacroCoverageState(sceneCanvas, groundGlassRtt, readout, 435.93);
   expect(finalCircleRadiusMm).toBeGreaterThan(middleCircleRadiusMm);
   await expect(aperture).toHaveAttribute("data-selected-aperture", "5.6");
@@ -171,9 +216,26 @@ test("Macro 1 keeps Ground Glass and scene rendering stable through auxiliary in
   const aperture = page.getByRole("radiogroup", { name: "Aperture" });
   const grid = page.getByTestId("ground-glass-grid");
 
+  await waitForSceneSubject(page, "macro-bellows-extension");
   await expect(sceneWebglCanvas).toHaveCount(1);
   await expect(groundGlassCanvas).toHaveCount(1);
   await expect(sceneCanvas).toHaveAttribute("data-scene-subject-id", "macro-bellows-extension");
+  // Circular distance remains valid when the 60-second phase wraps.
+  const angularDistance = (a: number, b: number) => Math.abs(Math.atan2(Math.sin(a - b), Math.cos(a - b)));
+  const sampleCage = async (canvas: Locator) => canvas.evaluate((element) => ({
+    angle: Number(element.getAttribute("data-macro-watch-cage-angle")),
+    time: performance.now(),
+  }));
+  const readCageAngle = async (canvas: Locator) => {
+    const value = await canvas.getAttribute("data-macro-watch-cage-angle");
+    return value === null ? Number.NaN : Number(value);
+  };
+  await expect.poll(async () => Number.isFinite(await readCageAngle(sceneWebglCanvas)), { timeout: 60_000 }).toBe(true);
+  await expect.poll(async () => Number.isFinite(await readCageAngle(groundGlassCanvas)), { timeout: 60_000 }).toBe(true);
+  await waitForAcceptedRttFrame(groundGlassRtt);
+  const initialObserverCageAngle = await readCageAngle(sceneWebglCanvas);
+  const initialRttCageAngle = await readCageAngle(groundGlassCanvas);
+  expect(angularDistance(initialObserverCageAngle, initialRttCageAngle)).toBeLessThan(0.18);
   await expect(focus).toHaveValue("900");
   await expect(aperture).toHaveAttribute("data-selected-aperture", "5.6");
   await expect(readout).toContainText("180.0 mm");
@@ -188,6 +250,16 @@ test("Macro 1 keeps Ground Glass and scene rendering stable through auxiliary in
   expect(initialGridSpacing).not.toBeCloseTo(20, 0);
   const initialSceneImage = await sceneWebglCanvas.screenshot({ animations: "disabled" });
 
+  await page.waitForTimeout(2_000);
+  const advancedObserverCageAngle = await readCageAngle(sceneWebglCanvas);
+  const advancedRttCageAngle = await readCageAngle(groundGlassCanvas);
+  expect(angularDistance(initialObserverCageAngle, advancedObserverCageAngle)).toBeGreaterThan(0.08);
+  expect(angularDistance(initialRttCageAngle, advancedRttCageAngle)).toBeGreaterThan(0.08);
+  expect(angularDistance(advancedObserverCageAngle, advancedRttCageAngle)).toBeLessThan(0.18);
+
+  // Wait for a nonzero canonical phase so a reset during controls is detectable.
+  await expect.poll(async () => Math.abs(await readCageAngle(sceneWebglCanvas)), { timeout: 20_000 }).toBeGreaterThan(0.5);
+  const beforeControls = await sampleCage(sceneWebglCanvas);
   await page.getByRole("button", { name: "Focus loupe · 4× Ground Glass view", exact: true }).click();
   await expect(page.getByRole("button", { name: /Reset Ground Glass view/ })).toBeVisible();
   await expect.poll(() => readGridSpacing(grid)).toBeGreaterThan(initialGridSpacing * 3.9);
@@ -217,18 +289,37 @@ test("Macro 1 keeps Ground Glass and scene rendering stable through auxiliary in
   await expect(aperture).toHaveAttribute("data-selected-aperture", "22");
   await expect.poll(readGain).toBeCloseTo(0.0625, 3);
   expect(await readGain()).toBeLessThan(0.25);
+  const afterControls = await sampleCage(sceneWebglCanvas);
+  // 0.2 rad allows approximately 1.9 s of render/observation lag, while
+  // rejecting a reset from the sampled nonzero phase.
+  expect(cagePhaseError(beforeControls.angle, afterControls.angle, afterControls.time - beforeControls.time)).toBeLessThan(0.2);
   expect(await readFiniteAttribute(sceneCanvas, "data-image-circle-radius-mm")).toBeCloseTo(finalCircleRadiusMm, 5);
   expect(await readGain()).toBeLessThan(oneToOneWideOpenGain);
+
+  // Macro Bellows exposes no movement-reset button. A public catalog re-entry
+  // starts this scene's shared cage clock at its canonical phase while keeping
+  // the ordinary free-scene optical state intact in the store.
+  await page.getByRole("link", { name: "All Scenes" }).click();
+  await expect(page).toHaveURL(/\/scenes$/);
+  await page.locator('article.scene-feature-card a.btn--primary[href="/simulator/free/macro-bellows-extension"]').click();
+  await expect(page).toHaveURL(/\/simulator\/free\/macro-bellows-extension$/);
+  await waitForSceneSubject(page, "macro-bellows-extension");
+  await expect(sceneCanvas).toHaveAttribute("data-scene-subject-id", "macro-bellows-extension");
+  await expect(sceneWebglCanvas).toHaveCount(1);
+  await expect(groundGlassCanvas).toHaveCount(1);
+  await waitForAcceptedRttFrame(groundGlassRtt);
+  await expect.poll(() => readCageAngle(sceneWebglCanvas), { timeout: 20_000 }).toBeGreaterThan(-0.18);
+  await expect.poll(() => readCageAngle(groundGlassCanvas), { timeout: 25_000 }).toBeGreaterThan(-0.18);
+  expect(angularDistance(await readCageAngle(sceneWebglCanvas), await readCageAngle(groundGlassCanvas))).toBeLessThan(0.18);
   expectNoBrowserErrors();
 });
 
 test("Macro 1 physical grid follows both Raw and Upright film-origin positions", async ({ page }, testInfo) => {
   test.setTimeout(60_000);
   await page.goto("/simulator/free/macro-bellows-extension");
-  const sceneCanvas = page.getByTestId("scene-canvas");
   const rttCanvas = page.locator(".groundglass-renderer-host canvas");
   const grid = page.getByTestId("ground-glass-grid");
-  await expect(sceneCanvas).toHaveAttribute("data-scene-subject-id", "macro-bellows-extension");
+  await waitForSceneSubject(page, "macro-bellows-extension");
   await expect(rttCanvas).toHaveCount(1);
   await expect(grid).toHaveAttribute("data-grid-mode", "physical");
 

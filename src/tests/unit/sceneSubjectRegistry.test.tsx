@@ -1134,6 +1134,7 @@ describe("scene subject registry", () => {
     "interior-corner",
     "macro-depth-of-field",
     "macro-oblique-plane",
+    "macro-bellows-extension",
     "still-life-studio",
   ] as const)(
     "%s uses one presentation placement and recipe on Observer and Ground Glass",
@@ -1154,8 +1155,9 @@ describe("scene subject registry", () => {
       });
       const expectedPlacement = resolvePresentationLightingPlacement(intent);
 
-      expect(observer.profile).toBe(TEACHING_PRESENTATION_LIGHTING_PROFILE);
-      expect(groundGlass.profile).toBe(TEACHING_PRESENTATION_LIGHTING_PROFILE);
+      const expectedProfile = intent.profile ?? TEACHING_PRESENTATION_LIGHTING_PROFILE;
+      expect(observer.profile).toBe(expectedProfile);
+      expect(groundGlass.profile).toBe(expectedProfile);
       expect(observer.placement).toEqual(expectedPlacement);
       expect(groundGlass.placement).toEqual(expectedPlacement);
     },

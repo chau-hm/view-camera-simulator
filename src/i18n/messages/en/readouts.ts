@@ -14,7 +14,7 @@ export const readoutsMessages = {
     requiredExtension: "Required bellows extension",
     availableTravel: "Available bellows travel",
     travelWarning: "Approaching the available bellows travel.",
-    lifeSize: "Life-size reproduction reached (1:1). The specimen is now sharply reproduced at the same size as the real subject.",
+    lifeSize: "Life-size reproduction reached (1:1). The selected focus plane is now sharply reproduced at the same size as the real subject.",
     note: "At the selected focus plane. Exposure compensation assumes a symmetric thin lens.",
   },
   controls: {

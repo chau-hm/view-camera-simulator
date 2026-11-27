@@ -536,6 +536,8 @@ export type AppStore = {
   selectedMovement: CameraMovementField | null;
   /** Route-based initialization key. */
   lastInitializedRouteKey?: string | null;
+  /** Mounted workspace identity used to reset scene-owned animation on re-entry. */
+  lastSimulatorWorkspaceEntryId?: string | null;
   /** Variant identity is separate from canonical camera, optics, and task state. */
   sceneVariantIdentity: SceneVariantIdentity | null;
   /** Router location key used to make implicit seed creation idempotent per entry. */
@@ -550,6 +552,8 @@ export type AppStore = {
   /** Actual mounted interactive lattice diagnostics; null when not mounted. */
   interactiveLatticeRuntimeInfo?: InteractiveLatticeRuntimeInfo | null;
   cameraMovementCalibrationSession: CameraMovementCalibrationSession;
+  /** Increments only for explicit scene entry/reset actions, not optical controls. */
+  sceneResetGeneration: number;
 
   /**
    * Publish or clear default-channel RTT diagnostics. When ownerId is given,
@@ -581,6 +585,8 @@ export type AppStore = {
     taskId?: string | null;
     calibrationEnabled?: boolean;
     lessonEntry?: boolean;
+    /** Unique to one mounted SimulatorWorkspace; stable across StrictMode effect replay. */
+    simulatorWorkspaceEntryId?: string;
   }) => void;
   /** Resolve URL-owned Free Mode variation state without initializing camera or task state. */
   resolveSceneVariantRoute: (input: {
@@ -667,6 +673,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
   selectedMovement: null,
   lastInitializedRouteKey: null,
+  lastSimulatorWorkspaceEntryId: null,
   sceneVariantIdentity: null,
   sceneVariantRouteKey: null,
   sceneVariantRouteStatus: "disabled",
@@ -674,6 +681,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   groundGlassRttRuntimeInfoByChannel: {},
   interactiveLatticeRuntimeInfo: null,
   cameraMovementCalibrationSession: createCalibrationSession(),
+  sceneResetGeneration: 0,
 
   setGroundGlassRttRuntimeInfo: (info, ownerId) =>
     set((state) => {
@@ -925,6 +933,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const focalLengthMm =
         scene?.cameraPreset.focalLengthMm ?? DEFAULT_CAMERA_STATE.focalLengthMm;
       return {
+        sceneResetGeneration: state.sceneResetGeneration + 1,
         camera: {
           ...state.camera,
           ...resolveCameraBodyReset(sceneId),
@@ -1119,10 +1128,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
         taskId,
         calibrationEnabled = false,
         lessonEntry = false,
+        simulatorWorkspaceEntryId,
       } = init;
       const routeKey = `${mode}:${sceneId}:${taskId ?? ""}:${calibrationEnabled ? "calibration" : ""}:${lessonEntry ? "lesson" : ""}`;
       if (state.lastInitializedRouteKey === routeKey) {
+        const enteredNewWorkspace = simulatorWorkspaceEntryId !== undefined &&
+          simulatorWorkspaceEntryId !== state.lastSimulatorWorkspaceEntryId;
         return {
+          sceneResetGeneration: state.sceneResetGeneration + (enteredNewWorkspace ? 1 : 0),
+          ...(simulatorWorkspaceEntryId !== undefined
+            ? { lastSimulatorWorkspaceEntryId: simulatorWorkspaceEntryId }
+            : {}),
           camera: {
             ...state.camera,
             ...resolveFiniteFocusRouteState(sceneId, state.camera),
@@ -1363,6 +1379,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       };
 
       return {
+        sceneResetGeneration: state.sceneResetGeneration + 1,
         camera: nextCamera,
         scene: {
           activeSceneId: sceneId,
@@ -1376,6 +1393,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
         ui: nextUi,
         selectedMovement: defaultMovement,
         lastInitializedRouteKey: routeKey,
+        ...(simulatorWorkspaceEntryId !== undefined
+          ? { lastSimulatorWorkspaceEntryId: simulatorWorkspaceEntryId }
+          : {}),
         cameraMovementCalibrationSession: nextCalibrationSession,
       };
     }),
@@ -1783,6 +1803,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
           neutral.lessonState,
         );
         return {
+          sceneResetGeneration: state.sceneResetGeneration + 1,
           camera: neutralCamera,
           scene: { ...state.scene, targetRegion: neutral.targetRegion },
           task: { ...state.task, currentTaskEvaluation: null },
@@ -1802,6 +1823,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
         ? state.camera.focalLengthMm
         : resetValues.focalLengthMm ?? state.camera.focalLengthMm;
       return {
+        sceneResetGeneration: state.sceneResetGeneration + 1,
         camera: {
           ...state.camera,
           ...resolveCameraBodyReset(sceneId),
@@ -1889,6 +1911,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       const selectableFocusRestart = supportsFocusStandard(nextSceneId);
 
       return {
+        sceneResetGeneration: state.sceneResetGeneration + 1,
         camera: {
           ...state.camera,
           activeSceneId: nextSceneId,
@@ -1957,6 +1980,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   resetCamera: () =>
     set((state) => ({
+      sceneResetGeneration: state.sceneResetGeneration + 1,
       camera: DEFAULT_CAMERA_STATE,
       scene: {
         activeSceneId: DEFAULT_CAMERA_STATE.activeSceneId,
@@ -1968,6 +1992,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       },
       selectedMovement: null,
       lastInitializedRouteKey: null,
+      lastSimulatorWorkspaceEntryId: null,
       sceneVariantIdentity: null,
       sceneVariantRouteKey: null,
       sceneVariantRouteStatus: "disabled",

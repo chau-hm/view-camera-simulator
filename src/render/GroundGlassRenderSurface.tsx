@@ -231,6 +231,15 @@ export const GroundGlassRenderSurface = ({
         data-rtt-profiling-gpu-queries-completed={rttRuntimeInfo?.profilingSnapshot?.profilingDiagnostics.queriesCompleted}
         data-rtt-profiling-gpu-pending-queries={rttRuntimeInfo?.profilingSnapshot?.profilingDiagnostics.pendingQueries}
         data-rtt-profiling-gpu-last-error={rttRuntimeInfo?.profilingSnapshot?.profilingDiagnostics.lastGpuQueryError ?? undefined}
+        data-rtt-profiling-snapshot={import.meta.env.DEV && rttRuntimeInfo?.profilingSnapshot
+          ? JSON.stringify(rttRuntimeInfo.profilingSnapshot)
+          : undefined}
+        data-rtt-scene-capacity={import.meta.env.DEV && rttRuntimeInfo?.sceneCapacity
+          ? JSON.stringify(rttRuntimeInfo.sceneCapacity)
+          : undefined}
+        data-rtt-renderer-stats={import.meta.env.DEV && rttRuntimeInfo?.rendererStats
+          ? JSON.stringify(rttRuntimeInfo.rendererStats)
+          : undefined}
         style={{ position: "absolute", inset: 0 }}
       >
         <GroundGlassRenderHost
