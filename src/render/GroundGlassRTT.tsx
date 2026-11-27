@@ -4,6 +4,15 @@ import * as THREE from "three";
 import { CAMERA_CONSTANTS } from "../utils/constants";
 import { ACCEPTABLE_COC_DIAMETER_MM } from "../core/optics/physicalSharpness";
 import { resolveGroundGlassRelativeIlluminance } from "../core/optics/groundGlassIlluminance";
+import {
+  readMacroSpecimenCageAngle,
+  updateMacroSpecimenCageAngle,
+} from "./MacroSpecimenSubjectFactory";
+import {
+  getMacroWatchCageAngle,
+  shouldFreezeMacroWatchCageForCapture,
+} from "./macroWatchCageClock";
+import { useAppStore } from "../state/appStore";
 
 const SKY_COLOR = new THREE.Color("#dfe5ec");
 const GROUND_GLASS_GL_OPTIONS = { preserveDrawingBuffer: false } as const;
@@ -338,6 +347,14 @@ function OffscreenRenderer({
       renderer.info.reset();
     };
   }, [gl, rttRendererMetricsEnabled]);
+
+  useEffect(() => () => {
+    if (!import.meta.env.DEV) return;
+    const canvas = gl.domElement;
+    if (typeof canvas.removeAttribute !== "function") return;
+    canvas.removeAttribute("data-macro-watch-cage-angle");
+    canvas.removeAttribute("data-macro-watch-crystal-visible");
+  }, [gl]);
 
   // RTT dimensions reference so both effect and frame loop can access current internal sizes
   const dimsRef = React.useRef(resolveGroundGlassRttDimensions({ logicalWidth: widthPx, logicalHeight: heightPx, renderQuality: renderQuality || "standard", devicePixelRatio: 1 }));
@@ -1394,6 +1411,39 @@ function OffscreenRenderer({
   useFrame((_state, frameDelta) => {
     const sourceRenderTarget = renderTarget.current;
     if (!sourceRenderTarget || !offscreenScene.current) return;
+    if (sceneDefinition.id === "macro-bellows-extension") {
+      const watchRoot = mountedSceneSubjectRef.current?.group;
+      if (watchRoot) {
+        updateMacroSpecimenCageAngle(
+          watchRoot,
+          getMacroWatchCageAngle(
+            useAppStore.getState().sceneResetGeneration,
+            undefined,
+            shouldFreezeMacroWatchCageForCapture(
+              typeof window === "undefined" ? "" : window.location.search,
+              import.meta.env.DEV,
+            ),
+          ),
+        );
+        if (import.meta.env.DEV) {
+          const diagnosticCanvas = gl.domElement;
+          const actualAngle = readMacroSpecimenCageAngle(watchRoot);
+          const crystalVisible = watchRoot.getObjectByName("front-sapphire")?.visible;
+          if (actualAngle !== null && typeof diagnosticCanvas.setAttribute === "function") {
+            diagnosticCanvas.setAttribute("data-macro-watch-cage-angle", String(actualAngle));
+          }
+          if (crystalVisible !== undefined && typeof diagnosticCanvas.setAttribute === "function") {
+            diagnosticCanvas.setAttribute("data-macro-watch-crystal-visible", String(crystalVisible));
+          }
+        }
+      }
+    } else if (import.meta.env.DEV) {
+      const diagnosticCanvas = gl.domElement;
+      if (typeof diagnosticCanvas.removeAttribute === "function") {
+        diagnosticCanvas.removeAttribute("data-macro-watch-cage-angle");
+        diagnosticCanvas.removeAttribute("data-macro-watch-crystal-visible");
+      }
+    }
     // A new accepted seed becomes visible to this frame loop before passive
     // effect cleanup replaces the owned scene subject. Do not publish or draw
     // an old-seed subject as a completed frame for the new request.

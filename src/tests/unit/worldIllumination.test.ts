@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { describe, expect, it, vi } from "vitest";
 import { INTERIOR_CORNER_PRESENTATION } from "../../scenes/presentation/interiorCorner";
 import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/architectureRise";
+import { MACRO_BELLOWS_EXTENSION_PRESENTATION } from "../../scenes/presentation/macroBellowsExtension";
 import { resolveSceneWorldIllumination } from "../../scenes/illumination/sceneWorldIllumination";
 import {
   EMPTY_WORLD_ILLUMINATION,
@@ -105,10 +106,48 @@ describe("world illumination contract", () => {
     expect(resolveSceneWorldIllumination("table-tilt")).toBe(EMPTY_WORLD_ILLUMINATION);
   });
 
-  it.each([
-    "table-tilt",
-    "macro-bellows-extension",
-  ])("returns an immutable empty fallback for %s", (sceneId) => {
+  it("resolves the accepted Macro Bellows watch softboxes in the scene's physical coordinate system", () => {
+    const resolved = resolveSceneWorldIllumination("macro-bellows-extension");
+    const datum = MACRO_BELLOWS_EXTENSION_PRESENTATION.geometry.MACRO_BELLOWS_WATCH.dialDatumMm;
+    const environment = resolved.environment;
+    if (!environment || environment.kind !== "procedural-softbox") {
+      throw new Error("Expected the Macro Bellows softbox environment");
+    }
+    expect(resolved.sources).toHaveLength(2);
+    expect(resolved.sources.map(({ id, color, intensity, castsShadow }) => ({
+      id, color, intensity, castsShadow,
+    }))).toEqual([
+      { id: "macro-bellows-watch-studio-fill", color: "#e7f4ff", intensity: 0.47, castsShadow: false },
+      { id: "macro-bellows-watch-studio-back", color: "#ffefe1", intensity: 1.66, castsShadow: false },
+    ]);
+    for (const source of resolved.sources) {
+      if (source.kind !== "directional") throw new Error("Expected a studio directional source");
+      expect(source.targetMm).toEqual(datum);
+    }
+    expect(environment).toMatchObject({
+      id: "macro-bellows-watch-procedural-softbox-environment",
+      kind: "procedural-softbox",
+      intensity: 0.76,
+      baseLinearColor: [0.105, 0.105, 0.105],
+    });
+    expect(environment.cards).toHaveLength(5);
+    expect(Object.isFrozen(resolved)).toBe(true);
+    expect(Object.isFrozen(resolved.sources)).toBe(true);
+    expect(Object.isFrozen(environment.cards)).toBe(true);
+    const firstWorldSource = resolved.sources[0]!;
+    if (firstWorldSource.kind !== "directional") {
+      throw new Error("Expected the studio fill to be directional");
+    }
+    const firstLight = worldIlluminationDirectionalToWorld(firstWorldSource);
+    firstLight.position.forEach((component, index) => {
+      expect(component).toBeCloseTo([-0.02, -0.018, 0.277][index]!, 12);
+    });
+    expect(firstLight).toMatchObject({
+      target: [0, 0, 0.3],
+    });
+  });
+
+  it.each(["table-tilt"])("returns an immutable empty fallback for %s", (sceneId) => {
     expect(resolveSceneWorldIllumination(sceneId)).toBe(EMPTY_WORLD_ILLUMINATION);
   });
 

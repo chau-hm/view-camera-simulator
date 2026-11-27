@@ -1,6 +1,6 @@
 import * as THREE from "three";
-import type { WorldProceduralSkyGroundEnvironment } from "./worldIlluminationContract";
-import { createProceduralSkyGroundTexture } from "./proceduralWorldEnvironment";
+import type { WorldProceduralEnvironment } from "./worldIlluminationContract";
+import { createProceduralWorldEnvironmentTexture } from "./proceduralWorldEnvironment";
 
 export type OwnedWorldEnvironmentTarget = Readonly<{
   texture: THREE.Texture;
@@ -26,7 +26,7 @@ export const createWorldEnvironmentRigFromTarget = <
 >(
   scene: THREE.Scene,
   renderTarget: Target,
-  environment: WorldProceduralSkyGroundEnvironment,
+  environment: WorldProceduralEnvironment,
 ): WorldEnvironmentRig<Target> => {
   const previousEnvironment = scene.environment;
   const previousEnvironmentIntensity = scene.environmentIntensity;
@@ -49,9 +49,9 @@ export const createWorldEnvironmentRigFromTarget = <
 export const createWorldEnvironmentRig = (
   scene: THREE.Scene,
   renderer: THREE.WebGLRenderer,
-  environment: WorldProceduralSkyGroundEnvironment,
+  environment: WorldProceduralEnvironment,
 ): WorldEnvironmentRig<THREE.WebGLRenderTarget> => {
-  const sourceTexture = createProceduralSkyGroundTexture(environment);
+  const sourceTexture = createProceduralWorldEnvironmentTexture(environment);
   let pmremGenerator: THREE.PMREMGenerator | undefined;
   let renderTarget: THREE.WebGLRenderTarget | undefined;
   let failure: unknown;

@@ -98,6 +98,8 @@ type SimulatorWorkspaceProps = {
 
 export type ExpandedViewport = "scene" | "groundGlass" | "geometry" | null;
 
+let nextSimulatorWorkspaceEntryId = 0;
+
 export const SimulatorWorkspace = ({
   mode,
   sceneId,
@@ -109,6 +111,7 @@ export const SimulatorWorkspace = ({
   simulateAssetFailure,
 }: SimulatorWorkspaceProps) => {
   const { t } = useTranslation();
+  const workspaceEntryIdRef = useRef<string | null>(null);
   const setMode = useAppStore((state) => state.setMode);
   const setActiveScene = useAppStore((state) => state.setActiveScene);
   const setActiveTask = useAppStore((state) => state.setActiveTask);
@@ -161,6 +164,11 @@ export const SimulatorWorkspace = ({
   );
 
   useEffect(() => {
+    if (workspaceEntryIdRef.current === null) {
+      nextSimulatorWorkspaceEntryId += 1;
+      workspaceEntryIdRef.current = `simulator-workspace-entry-${nextSimulatorWorkspaceEntryId}`;
+    }
+    const simulatorWorkspaceEntryId = workspaceEntryIdRef.current;
     const routeId = rendererLifecycleTraceEnabled
       ? `/simulator/${mode}/${sceneId}${taskId ? `/${taskId}` : ""}`
       : null;
@@ -193,6 +201,7 @@ export const SimulatorWorkspace = ({
           taskId: taskParam ?? null,
           calibrationEnabled,
           lessonEntry: guidedLessonEnabled || anatomyLessonEnabled,
+          simulatorWorkspaceEntryId,
         });
       } else {
         // fall back to individual setters if the initialize action isn't available

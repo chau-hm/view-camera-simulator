@@ -211,7 +211,7 @@ export const simulatorMessages = {
     scheimpflugReasonInvalidFocusPlane: "清晰焦平面不包含底片／鏡頭交線。",
   },
   geometry: {
-    macroSpecimenTarget: "標本硬幣",
+    macroTourbillonWatchTarget: "陀飛輪腕錶錶面",
     macroDepthNearTarget: "近處細節",
     macroDepthMiddleTarget: "中間細節",
     macroDepthFarTarget: "遠處細節",
@@ -383,7 +383,7 @@ export const simulatorMessages = {
         lifeSize: {
           title: "已達到等大重現",
           try: "停留在 1:1，將主體上一個 1 cm 的細節與一格 1 cm 的對焦屏網格比較。如對焦屏較暗，可開大光圈幫助查看。",
-          observe: "標本現在已清晰地以 1:1 等大重現。直徑 90 mm 的標本在對焦屏上約跨越九格 10 mm 網格。",
+          observe: "所選的章環平面現在已清晰地以 1:1 等大重現。腕錶錶殼直徑 42 mm，在對焦屏上約跨越四格 10 mm 網格。",
           whyItMatters: "大畫幅相機透過增加鏡頭至底片的距離達到等大。額外伸長仍會帶來曝光代價；實際使用時，攝影者常先開大光圈構圖及對焦，再於曝光前設定所需工作光圈。更高的放大倍率可能需要加長導軌或額外皮腔。",
           coverage: "在 1:1 時（影像距離約為 2f），模擬器目前固定角度的成像範圍模型投射出直徑 {{imageCircle}} 的成像圈，約為無限遠參考值的兩倍。縮短對焦距離時，後組向後移動，帶動底片平面離鏡頭更遠；4×5 底片畫幅的實際尺寸維持不變。伸長為 {{extension}}；皮腔因子 {{factor}} 需要 {{stops}} 曝光補償，在光圈不變時會令對焦屏變暗。成像圈是目前底片平面上的覆蓋範圍，並非主體影像。",
         },
