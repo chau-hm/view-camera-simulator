@@ -363,11 +363,17 @@ describe("M7P assertion scheduling evidence evaluator", () => {
     expect(result.issues).toContain("m7p-capture-source-identity-mismatch");
   });
 
-  it("rejects trace loss and invalid raw trace digests", async () => {
+  it.each([
+    ["trace data loss", "dataLossOccurred", true, "rawTraceSha256"],
+    ["invalid raw trace digest", "rawTraceSha256", "bad-digest", "dataLossOccurred"],
+  ])("rejects %s independently", async (_name, field, value, neighbor) => {
     const { report, summary } = await acceptedEvidence();
     const coverage = findCapture(summary, "P2", 1).diagnosticCoverage as JsonRecord;
-    coverage.dataLossOccurred = true;
-    coverage.rawTraceSha256 = "bad-digest";
+    const unchanged = coverage[neighbor];
+    expect(field === "dataLossOccurred" ? coverage[field] : coverage[neighbor]).toBe(false);
+    expect(String(field === "rawTraceSha256" ? coverage[field] : coverage[neighbor])).toMatch(/^[a-f0-9]{64}$/);
+    coverage[field] = value;
+    expect(coverage[neighbor]).toBe(unchanged);
     const result = await evaluateMutation(report, summary);
     expect(result.passed).toBe(false);
     expect(result.issues).toContain("m7p-trace-provenance-or-coverage-invalid");
@@ -393,11 +399,16 @@ describe("M7P assertion scheduling evidence evaluator", () => {
     expect(result.issues).toContain("m7p-unsupported-causal-claim");
   });
 
-  it("rejects GPU saturation or renderer-specific causation without direct evidence", async () => {
+  it.each([
+    ["GPU saturation", "gpuSaturationEstablished", "rendererSpecificMechanismEstablished"],
+    ["renderer-specific causation", "rendererSpecificMechanismEstablished", "gpuSaturationEstablished"],
+  ])("rejects unsupported %s independently", async (_name, field, neighbor) => {
     const { report } = await acceptedEvidence();
     const claims = (report.diagnosis as JsonRecord).claims as JsonRecord;
-    claims.gpuSaturationEstablished = true;
-    claims.rendererSpecificMechanismEstablished = true;
+    expect(claims[field]).toBe(false);
+    expect(claims[neighbor]).toBe(false);
+    claims[field] = true;
+    expect(claims[neighbor]).toBe(false);
     const result = await evaluateMutation(report);
     expect(result.passed).toBe(false);
     expect(result.issues).toContain("m7p-unsupported-causal-claim");
@@ -412,11 +423,21 @@ describe("M7P assertion scheduling evidence evaluator", () => {
     expect(result.issues).toContain("m7p-synthetic-result-mislabeled-as-historical-workload");
   });
 
-  it("requires the P5 control to prove bounded duration and actual Canvas observations", async () => {
+  it.each([
+    ["duration below the bound", "observedDurationMs", 5299],
+    ["duration above the bound", "observedDurationMs", 5601],
+    ["missing Canvas observation", "canvasBefore", false],
+    ["missing target renderer task observation", "taskObservedOnTargetRendererMainThread", false],
+  ])("rejects P5 %s independently", async (_name, field, value) => {
     const { report, summary } = await acceptedEvidence();
     const control = findCapture(summary, "P5", 1).syntheticControl as JsonRecord;
-    control.canvasBefore = false;
-    control.taskObservedOnTargetRendererMainThread = false;
+    const original = structuredClone(control);
+    expect(Number(original.observedDurationMs)).toBeGreaterThanOrEqual(5300);
+    expect(Number(original.observedDurationMs)).toBeLessThanOrEqual(5600);
+    expect(original.canvasBefore).toBe(true);
+    expect(original.taskObservedOnTargetRendererMainThread).toBe(true);
+    control[field] = value;
+    expect(control).toEqual({ ...original, [field]: value });
     const result = await evaluateMutation(report, summary);
     expect(result.passed).toBe(false);
     expect(result.issues).toContain("m7p-synthetic-intervention-evidence-invalid");
