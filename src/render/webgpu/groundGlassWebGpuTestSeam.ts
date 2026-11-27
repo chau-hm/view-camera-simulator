@@ -1115,13 +1115,6 @@ export const publishGroundGlassApertureGatherCaptureForTest = (
   control.apertureGatherCaptureReadback = readback;
 };
 
-export const clearGroundGlassApertureGatherCaptureForTest = (): void => {
-  const control = getControl();
-  if (!control) return;
-  control.apertureGatherCaptureReadback = null;
-  control.apertureGatherCaptureRequest = null;
-};
-
 export const holdGroundGlassApertureGatherReadbackForTest = async (): Promise<void> => {
   const control = getControl();
   if (!control?.holdApertureGatherReadback) return;
