@@ -246,6 +246,7 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
   await expect(reenteredScene).toHaveAttribute("data-scene-subject-id", "macro-bellows-extension");
   await expect(reenteredRtt).toHaveAttribute("data-rtt-scene-id", "macro-bellows-extension", { timeout: 60_000 });
   await expect(reenteredScene).toHaveAttribute("data-observer-environment-status", "active", { timeout: 60_000 });
+  await expect(reenteredRtt).toHaveAttribute("data-rtt-resource-generation", /^[1-9]\d*$/, { timeout: 60_000 });
   const reenteredOwnerId = await reenteredRtt.getAttribute("data-rtt-owner-id");
   const reenteredRendererGenerationId = await reenteredRtt.getAttribute("data-renderer-generation");
   expect(reenteredOwnerId).toBeTruthy();
