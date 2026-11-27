@@ -4,7 +4,7 @@
  * transaction; this function does not observe execution itself.
  */
 export interface GroundGlassA1FrameEvidence {
-  request: { requestId: string; sceneId: string; channelId: string };
+  request: { requestId: string; sceneId: string; channelId: string; rendererGeneration: string; subjectGeneration: number };
   completed: {
     requestId: string;
     sceneId: string;
@@ -24,7 +24,19 @@ export interface GroundGlassA1FrameEvidence {
     format: string;
     pixels: Uint8Array;
   };
-  preparation: { requestId: string; values: readonly number[] } | null;
+  preparation: {
+    requestId: string;
+    rendererGeneration: string;
+    subjectGeneration: number;
+    frameId: string;
+    focalLengthMm: number;
+    apertureFNumber: number;
+    imageDistanceMm: number;
+    filmWidthMm: number;
+    filmHeightMm: number;
+    renderWidthPx: number;
+    renderHeightPx: number;
+  } | null;
   executedPasses: readonly string[];
 }
 
@@ -40,6 +52,8 @@ export function evaluateGroundGlassA1Frame(
     completed.requestId !== request.requestId ||
     completed.sceneId !== request.sceneId ||
     completed.channelId !== request.channelId ||
+    completed.rendererGeneration !== request.rendererGeneration ||
+    completed.subjectGeneration !== request.subjectGeneration ||
     !completed.frameId || !completed.rendererGeneration ||
     completed.requiredOperations !== "all-completed" ||
     !Number.isInteger(completed.subjectGeneration) || completed.subjectGeneration < 1
@@ -56,8 +70,18 @@ export function evaluateGroundGlassA1Frame(
     issues.push("capture-transaction-mismatch");
   }
   if (
-    !preparation || preparation.requestId !== request.requestId ||
-    preparation.values.length === 0 || !preparation.values.every(Number.isFinite)
+    !preparation || !completed ||
+    preparation.requestId !== request.requestId ||
+    preparation.rendererGeneration !== request.rendererGeneration ||
+    preparation.subjectGeneration !== request.subjectGeneration ||
+    preparation.frameId !== completed.frameId ||
+    ![
+      preparation.focalLengthMm, preparation.apertureFNumber,
+      preparation.imageDistanceMm, preparation.filmWidthMm, preparation.filmHeightMm,
+      preparation.renderWidthPx, preparation.renderHeightPx,
+    ].every((value) => Number.isFinite(value) && value > 0) ||
+    !Number.isInteger(preparation.renderWidthPx) ||
+    !Number.isInteger(preparation.renderHeightPx)
   ) {
     issues.push("invalid-current-preparation");
   }
@@ -80,6 +104,12 @@ export function evaluateGroundGlassA1Frame(
       }
     }
     if (!nonuniform) issues.push("uniform-buffer");
+    let opaquePixels = 0;
+    for (let i = 3; i < pixels.length; i += 4) {
+      if (pixels[i] === 255) opaquePixels += 1;
+    }
+    if (opaquePixels !== width * height) issues.push("unexpected-alpha");
+
   }
 
   const expected = mode === "processed"
@@ -92,4 +122,23 @@ export function evaluateGroundGlassA1Frame(
     issues.push("unexpected-pass-execution");
   }
   return issues;
+}
+
+/** Fixed Architecture + Foreground reference at seed 284719 and matched optics. */
+export function evaluateA1ReferenceOccupancy(pixels: Uint8Array): boolean {
+  if (pixels.length !== 32 * 32 * 4) return false;
+  const mean = (centerX: number, centerY: number) => {
+    let sum = 0;
+    for (let y = centerY - 1; y <= centerY + 1; y += 1) {
+      for (let x = centerX - 1; x <= centerX + 1; x += 1) {
+        const offset = (y * 32 + x) * 4;
+        if (pixels[offset + 3] !== 255) return NaN;
+        sum += pixels[offset] + pixels[offset + 1] + pixels[offset + 2];
+      }
+    }
+    return sum / 27;
+  };
+  // In the pinned reference, the lower-right building and central foreground
+  // occupy distinct projected regions. This is not a scene-independent test.
+  return mean(28, 28) - mean(16, 16) > 50;
 }

@@ -35,6 +35,82 @@
     {
       "path": "src/tests/unit/sceneCapacityBenchmarkQualification.test.ts",
       "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/10-ground-glass-diagnostic-qualification.md",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "scripts/ground-glass-a1/capture.mjs",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "scripts/ground-glass-a1/assess.mjs",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "scripts/ground-glass-a1/rtt-tap.txt",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "scripts/ground-glass-a1/source-injection.mjs",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "src/tests/unit/groundGlassA1SourceInjection.test.ts",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "scripts/validate-a1-retained-evidence.mjs",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "scripts/validate-a1-retained-evidence.d.mts",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "src/tests/unit/a1RetainedEvidence.test.ts",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/control-bypass-final32.rgba",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/control-bypass.json",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/control-next-request-final32.rgba",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/control-next-request.json",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/control-previous-request-final32.rgba",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/control-previous-request.json",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/depth-edge.json",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/record.json",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/stress-1-final32.rgba",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/stress-1.json",
+      "owner": "ordinary-ci:unit-tests"
     }
   ],
   "legacyEvidenceRoots": [

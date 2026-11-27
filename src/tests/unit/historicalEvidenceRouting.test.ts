@@ -249,6 +249,34 @@ describe("historical evidence change routing", () => {
     });
   });
 
+  it("routes exact A1 retained evidence inputs to their unit integrity owner and fails closed for neighbors", () => {
+    const paths = [
+      "docs/architecture/environment-readiness/10-ground-glass-diagnostic-qualification.md",
+      "docs/architecture/environment-readiness/a1-evidence/record.json",
+      "docs/architecture/environment-readiness/a1-evidence/depth-edge.json",
+      "scripts/validate-a1-retained-evidence.mjs",
+      "src/tests/unit/a1RetainedEvidence.test.ts",
+      "scripts/ground-glass-a1/capture.mjs",
+      "scripts/ground-glass-a1/assess.mjs",
+      "scripts/ground-glass-a1/rtt-tap.txt",
+      "scripts/ground-glass-a1/source-injection.mjs",
+      "src/tests/unit/groundGlassA1SourceInjection.test.ts",
+    ];
+    const result = classifyChangedPaths(paths);
+    expect(result.decision).toBe("NOT_APPLICABLE");
+    expect(result.currentOwners).toContain("ordinary-ci:unit-tests");
+    expect(result.pathOwnership.every((item) =>
+      item.classification === "ordinary-ci" && item.ordinaryCiOwners.includes("ordinary-ci:unit-tests")
+    )).toBe(true);
+    expect(classifyChangedPaths([
+      "docs/architecture/environment-readiness/a1-evidence/unknown-capture.json",
+    ]).decision).toBe("UNVERIFIED");
+    for (const family of ["M7S", "M7T", "M7U"]) {
+      expect(classifyChangedPaths([`docs/architecture/ground-glass-${family.toLowerCase()}-new/report.json`]).decision)
+        .toBe("UNVERIFIED");
+    }
+  });
+
   it("routes multiple report families and closes shared report dependencies", () => {
     expect(classifyChangedPaths([
       "docs/architecture/GROUND_GLASS_M7H_BROAD_E2E_TRIAGE_REPORT.json",
