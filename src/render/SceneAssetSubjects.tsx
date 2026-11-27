@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useState } from "react";
-import { useThree } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import type * as THREE from "three";
 import {
   ARCHITECTURE_RISE_ASSET_KEY,
@@ -42,6 +42,15 @@ import { MACRO_BELLOWS_EXTENSION_PRESENTATION } from "../scenes/presentation/mac
 import { MACRO_DEPTH_OF_FIELD_PRESENTATION } from "../scenes/presentation/macroDepthOfField";
 import { MACRO_OBLIQUE_PLANE_PRESENTATION } from "../scenes/presentation/macroObliquePlane";
 import { MACRO_COMPOUND_MOVEMENTS_PRESENTATION } from "../scenes/presentation/macroCompoundMovements";
+import { useAppStore } from "../state/appStore";
+import {
+  getMacroWatchCageAngle,
+  shouldFreezeMacroWatchCageForCapture,
+} from "./macroWatchCageClock";
+import {
+  readMacroSpecimenCageAngle,
+  updateMacroSpecimenCageAngle,
+} from "./MacroSpecimenSubjectFactory";
 
 type RegisteredAssetProps<K extends SceneAssetKey> = {
   assetKey: K;
@@ -334,11 +343,50 @@ export const ViewCameraAnatomySubject = () => (
   />
 );
 
+const MacroWatchCageAnimator = () => {
+  const scene = useThree((state) => state.scene);
+  const canvas = useThree((state) => state.gl.domElement);
+  const sceneResetGeneration = useAppStore((state) => state.sceneResetGeneration);
+
+  useFrame(() => {
+    const root = scene.getObjectByName("macro-bellows-extension-watch-head");
+    if (!root) return;
+    const freezeAtCanonicalPhase = shouldFreezeMacroWatchCageForCapture(
+      typeof window === "undefined" ? "" : window.location.search,
+      import.meta.env.DEV,
+    );
+    updateMacroSpecimenCageAngle(
+      root,
+      getMacroWatchCageAngle(sceneResetGeneration, undefined, freezeAtCanonicalPhase),
+    );
+    if (import.meta.env.DEV) {
+      const actualAngle = readMacroSpecimenCageAngle(root);
+      const crystalVisible = root.getObjectByName("front-sapphire")?.visible;
+      if (actualAngle !== null) {
+        canvas.setAttribute("data-macro-watch-cage-angle", String(actualAngle));
+      }
+      if (crystalVisible !== undefined) {
+        canvas.setAttribute("data-macro-watch-crystal-visible", String(crystalVisible));
+      }
+    }
+  });
+
+  useLayoutEffect(() => () => {
+    canvas.removeAttribute("data-macro-watch-cage-angle");
+    canvas.removeAttribute("data-macro-watch-crystal-visible");
+  }, [canvas]);
+
+  return null;
+};
+
 export const MacroSpecimenSubject = () => (
-  <RegisteredSceneAsset
-    assetKey={MACRO_BELLOWS_EXTENSION_ASSET_KEY}
-    request={macroBellowsExtensionRequest}
-  />
+  <>
+    <RegisteredSceneAsset
+      assetKey={MACRO_BELLOWS_EXTENSION_ASSET_KEY}
+      request={macroBellowsExtensionRequest}
+    />
+    <MacroWatchCageAnimator />
+  </>
 );
 
 export const MacroDepthOfFieldSubject = () => (

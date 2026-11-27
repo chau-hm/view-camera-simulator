@@ -103,9 +103,14 @@ describe("historical evidence change routing", () => {
     }
   });
 
+  it("routes the cage phase test to ordinary unit CI while unknown evidence remains unresolved", () => {
+    expect(classifyCompleteChangedPaths(["src/tests/unit/cagePhaseEvidence.test.ts"]).pathOwnership[0]).toMatchObject({ classification: "ordinary-ci", ordinaryCiOwners: ["ordinary-ci:unit-tests"], unresolved: false });
+    expect(classifyCompleteChangedPaths(["src/tests/unit/unregisteredEvidence.test.ts"]).decision).toBe("UNVERIFIED");
+  });
+
   it("rejects unregistered ordinary-CI owners and broad legacy roots", () => {
     const invalidOwner = structuredClone(HISTORICAL_EVIDENCE_MANIFEST);
-    Object.defineProperty(invalidOwner.ordinaryCiPaths[0], "owner", { value: "ordinary-ci:invented-check" });
+    Object.defineProperty(invalidOwner.ordinaryCiPaths.find(({ path }) => path === "src/render/sceneCapacityBenchmarkQualification.ts")!, "owner", { value: "ordinary-ci:invented-check" });
     expect(validateEvidenceOwnershipDeclarations(invalidOwner)).toMatchObject({
       valid: false,
       errors: ["ordinary-ci-owner-unregistered:path:src/render/sceneCapacityBenchmarkQualification.ts:ordinary-ci:invented-check"],
@@ -204,6 +209,36 @@ describe("historical evidence change routing", () => {
     } finally { rmSync(temp, { recursive: true, force: true }); }
   });
 
+  it("audits the current tourbillon producer and each of its local inputs", () => {
+    const owner = "src/tests/render-quality/e2e/macro-tourbillon-reviewfix-capture.spec.ts";
+    const files = [owner, "src/tests/e2e/helpers/stepRangeInput.ts", "playwright.macro-tourbillon-hardware.config.ts"];
+    expect(runtimeLocalImportClosure(owner)).toEqual(files.slice(0, 2).sort());
+    for (const file of files) expect(classifyChangedPaths([file])).toMatchObject({ decision: "NOT_APPLICABLE" });
+    expect(classifyChangedPaths([owner, "src/tests/render-quality/e2e/unknown-capture.spec.ts"]))
+      .toMatchObject({ decision: "UNVERIFIED", broad: true });
+    const temp = mkdtempSync(resolve(tmpdir(), "tourbillon-capture-audit-"));
+    try {
+      mkdirSync(resolve(temp, "scripts"), { recursive: true });
+      writeFileSync(resolve(temp, "scripts/historical-evidence-manifest.json"), readFileSync(resolve(process.cwd(), "scripts/historical-evidence-manifest.json")));
+      writeFileSync(resolve(temp, "routing.mjs"), readFileSync(resolve(process.cwd(), "scripts/historical-evidence-routing.mjs")));
+      for (const file of files) {
+        const target = resolve(temp, file);
+        mkdirSync(dirname(target), { recursive: true });
+        writeFileSync(target, readFileSync(resolve(process.cwd(), file)));
+      }
+      for (const file of files) {
+        const target = resolve(temp, file);
+        const original = readFileSync(target);
+        writeFileSync(target, "changed");
+        for (const trigger of files) {
+          const result = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", `import { classifyChangedPaths } from './routing.mjs'; console.log(JSON.stringify(classifyChangedPaths(${JSON.stringify([trigger])})));`], { cwd: temp, encoding: "utf8" }));
+          expect(result.decision).toBe("UNVERIFIED");
+        }
+        writeFileSync(target, original);
+      }
+    } finally { rmSync(temp, { recursive: true, force: true }); }
+  });
+
   it("treats a verified empty event diff as non-applicable while unavailable paths fail closed", () => {
     expect(classifyCompleteChangedPaths([])).toMatchObject({
       decision: "NOT_APPLICABLE",
@@ -211,6 +246,13 @@ describe("historical evidence change routing", () => {
       reasons: ["complete-changed-file-set-is-empty"],
     });
     expect(classifyChangedPaths([]).decision).toBe("UNVERIFIED");
+  });
+
+  it("routes the native qualification prerequisite policy test through all supported historical families", () => {
+    const result = classifyChangedPaths(["src/tests/unit/nativeWebGpuQualificationPrerequisite.test.ts"]);
+    expect(result.decision).toBe("QUALIFIED");
+    expect(result.families).toEqual(["M7E", "M7F", "M7G", "M7H", "M7I", "M7J", "M7K", "M7L", "M7M", "M7N", "M7O", "M7P", "M7Q", "M7W"]);
+    expect(result.reasons).toContain("shared-qualification-path:src/tests/unit/nativeWebGpuQualificationPrerequisite.test.ts");
   });
 
   it("routes an M7E capture change through its standalone replay and M7G consumer", () => {

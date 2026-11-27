@@ -205,7 +205,7 @@ export const simulatorMessageKeys = {
     scheimpflugReasonInvalidFocusPlane: "simulator.viewport.scheimpflugReasonInvalidFocusPlane",
   },
   geometry: {
-    macroSpecimenTarget: "simulator.geometry.macroSpecimenTarget",
+    macroTourbillonWatchTarget: "simulator.geometry.macroTourbillonWatchTarget",
     macroDepthNearTarget: "simulator.geometry.macroDepthNearTarget",
     macroDepthMiddleTarget: "simulator.geometry.macroDepthMiddleTarget",
     macroDepthFarTarget: "simulator.geometry.macroDepthFarTarget",

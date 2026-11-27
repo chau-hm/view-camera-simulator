@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "9608989875b425ff7f6dd8ae73782d9ff00db879",
+  "classification": "SOURCE_REVISION_GATE_DENIED",
+  "classificationBasis": "Source v2 versus pinned v1 guard, directly evaluated Vite policy and browser request/attempt evidence; selectionReason webgl-default is separately demonstrated by pure policy test, not a DOM field.",
+  "environment": {
+    "os": "macOS 27.0.1 arm64",
+    "node": "24.3.0",
+    "vite": "8.1.4",
+    "three": "r187",
+    "playwright": "1.61.1",
+    "browser": "Chrome 158.0.8127.88",
+    "mode": "headed Chrome, local development Vite",
+    "flags": {
+      "DEV": true,
+      "VITE_GROUND_GLASS_WEBGPU_RAW_PILOT": "true",
+      "VITE_GROUND_GLASS_WEBGPU_M6_PRESENTATION": "true",
+      "VITE_GROUND_GLASS_WEBGPU_TEST_SEAM": "true",
+      "VITE_GROUND_GLASS_WEBGPU_M6_R187_QUALIFICATION": "true"
+    }
+  },
+  "browserProbe": {
+    "rawDebug": false,
+    "attributes": {
+      "data-rtt-scene-id": "architecture-rise",
+      "data-three-revision": "187",
+      "data-policy-requested-backend": "default",
+      "data-policy-selected-backend": "webgl",
+      "data-policy-evidence-revisions": null,
+      "data-pilot-retry-status": "none",
+      "data-render-host-lifecycle": "ready",
+      "data-mounted-renderer-family": "webgl-renderer",
+      "data-actual-execution-api": "webgl2",
+      "data-internal-fallback": "none",
+      "data-application-fallback": "not-observed",
+      "data-renderer-generation": "gg-mwz64vau-rwi53te3rc-default-generation-1",
+      "data-frame-request-id": "gg-mwz64vau-rwi53te3rc-default-request-2",
+      "data-last-completed-request-id": "gg-mwz64vau-rwi53te3rc-default-request-2",
+      "data-frame-result-status": "completed",
+      "data-attempted-backend": "webgl",
+      "data-backend-attempt-status": "mounted"
+    },
+    "policy": {
+      "buildEnabled": false,
+      "pureBuildEnabled": false,
+      "harnessFlagsAuthorized": true,
+      "historicalM6EvidenceMatches": false
+    },
+    "nativeAttemptGenerations": [],
+    "eventKinds": [
+      "host-attached",
+      "host-request-accepted",
+      "host-attached",
+      "host-request-accepted",
+      "host-request-accepted",
+      "host-request-accepted",
+      "host-request-accepted",
+      "renderer-mounted",
+      "host-request-accepted",
+      "host-frame-result",
+      "host-request-accepted",
+      "host-request-accepted",
+      "host-frame-result",
+      "host-frame-result",
+      "host-frame-result"
+    ],
+    "pageErrors": []
+  },
+  "independentBrowserCapability": {
+    "present": true,
+    "adapterReturned": true,
+    "deviceSucceeded": true,
+    "relevantFeatures": [
+      "timestamp-query",
+      "float32-filterable"
+    ],
+    "error": null
+  },
+  "nativeM3RawV2": {
+    "status": "passed",
+    "tests": 1,
+    "retries": 0,
+    "rendererFamily": "webgpu-renderer",
+    "executionApi": "webgpu",
+    "internalFallback": "none",
+    "evidenceRevision": "m3-architecture-rise-raw-rtt-native-r187-v2",
+    "evidence": "scripts/render-quality/rq2.1-native-m3.spec.ts current run; contentful accepted frame and SPA cleanup assertions passed"
+  },
+  "nativeM7g": {
+    "status": "blocked",
+    "exitCode": 1,
+    "firstFailedAssertion": "expected webgpu-renderer, observed webgl-renderer",
+    "actualExecutionApiAssertionReached": false,
+    "barrierStatus": "not reached"
+  },
+  "limits": [
+    "Standalone GPU capability is not M6 evidence or proof of hardware acceleration.",
+    "Policy selection reason is not exposed in the DOM.",
+    "M7G and M6 remain unqualified; no retained evidence or authorization changed."
+  ]
+}

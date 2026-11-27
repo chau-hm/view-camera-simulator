@@ -562,18 +562,14 @@ const exerciseSharedReplacement = (
 };
 
 describe("static teaching scene asset migrations", () => {
-  it("disposes each Macro asset instance without sharing or invalidating another instance", () => {
-    const macroAssets = [
-      [MACRO_BELLOWS_EXTENSION_ASSET_KEY, { presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION }],
-      [MACRO_DEPTH_OF_FIELD_ASSET_KEY, { presentation: MACRO_DEPTH_OF_FIELD_PRESENTATION }],
-      [MACRO_OBLIQUE_PLANE_ASSET_KEY, { presentation: MACRO_OBLIQUE_PLANE_PRESENTATION }],
-      [MACRO_COMPOUND_MOVEMENTS_ASSET_KEY, { presentation: MACRO_COMPOUND_MOVEMENTS_PRESENTATION }],
-    ] as const;
-
-    macroAssets.forEach(([assetKey, request]) => {
-      expectInstanceOwnedResourcesDisposedOnce(assetKey, request);
-      expectAssetInstancesOwnDisjointResources(assetKey, request);
-    });
+  it.each([
+    [MACRO_BELLOWS_EXTENSION_ASSET_KEY, { presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION }],
+    [MACRO_DEPTH_OF_FIELD_ASSET_KEY, { presentation: MACRO_DEPTH_OF_FIELD_PRESENTATION }],
+    [MACRO_OBLIQUE_PLANE_ASSET_KEY, { presentation: MACRO_OBLIQUE_PLANE_PRESENTATION }],
+    [MACRO_COMPOUND_MOVEMENTS_ASSET_KEY, { presentation: MACRO_COMPOUND_MOVEMENTS_PRESENTATION }],
+  ] as const)("disposes %s without invalidating another instance", (assetKey, request) => {
+    expectInstanceOwnedResourcesDisposedOnce(assetKey, request);
+    expectAssetInstancesOwnDisjointResources(assetKey, request);
   });
 
   it("disposes SA3B per-instance resources once through the production registry", () => {
@@ -845,7 +841,7 @@ describe("static teaching scene asset migrations", () => {
       MACRO_BELLOWS_EXTENSION_ASSET_KEY,
       { presentation: MACRO_BELLOWS_EXTENSION_PRESENTATION },
       countFactoryCalls(macroBellowsExtensionFactorySpy),
-      "macro-bellows-extension-subject",
+      "macro-bellows-extension-watch-head",
       "macro-bellows-extension",
     );
     exerciseReplacement(

@@ -13,6 +13,12 @@ vi.mock("../render/backend/rendererBackend", async (importOriginal) => {
 
 vi.mock("@react-three/fiber", () => ({
   Canvas: () => null,
+  useThree: (selector: (state: { scene: { getObjectByName: () => null }; gl: { domElement: HTMLCanvasElement } }) => unknown) =>
+    selector({
+      scene: { getObjectByName: () => null },
+      gl: { domElement: document.createElement("canvas") },
+    }),
+  useFrame: () => undefined,
 }));
 
 vi.mock("@react-three/drei", () => ({

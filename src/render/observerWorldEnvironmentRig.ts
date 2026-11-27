@@ -1,8 +1,8 @@
 import * as THREE from "three";
 import type { WebGPURenderer } from "three/webgpu";
 import { resolveObserverRendererRuntime } from "./backend/observerVisualPipelineCapabilities";
-import { createProceduralSkyGroundTexture } from "./proceduralWorldEnvironment";
-import type { WorldProceduralSkyGroundEnvironment } from "./worldIlluminationContract";
+import { createProceduralWorldEnvironmentTexture } from "./proceduralWorldEnvironment";
+import type { WorldProceduralEnvironment } from "./worldIlluminationContract";
 import {
   createWorldEnvironmentRig,
   createWorldEnvironmentRigFromTarget,
@@ -41,14 +41,14 @@ export class UnsupportedObserverEnvironmentRendererError extends Error {
 const realizeWebGpuEnvironment = async (
   scene: THREE.Scene,
   renderer: unknown,
-  environment: WorldProceduralSkyGroundEnvironment,
+  environment: WorldProceduralEnvironment,
   isCurrent: () => boolean,
   loadPmremFactory: LoadWebGpuPmremGeneratorFactory,
 ): Promise<WorldEnvironmentRig | null> => {
   const createGenerator = await loadPmremFactory();
   if (!isCurrent()) return null;
 
-  const sourceTexture = createProceduralSkyGroundTexture(environment);
+  const sourceTexture = createProceduralWorldEnvironmentTexture(environment);
   let generator: WebGpuPmremGenerator | undefined;
   let renderTarget: OwnedWorldEnvironmentTarget | undefined;
   let failure: unknown;
@@ -98,7 +98,7 @@ const realizeWebGpuEnvironment = async (
 export const createObserverWorldEnvironmentRig = (
   scene: THREE.Scene,
   renderer: unknown,
-  environment: WorldProceduralSkyGroundEnvironment,
+  environment: WorldProceduralEnvironment,
   isCurrent: () => boolean = () => true,
   loadPmremFactory: LoadWebGpuPmremGeneratorFactory = loadWebGpuPmremGeneratorFactory,
 ): ObserverWorldEnvironmentRigResult => {

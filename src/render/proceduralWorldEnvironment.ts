@@ -1,5 +1,9 @@
 import * as THREE from "three";
-import type { WorldProceduralSkyGroundEnvironment } from "./worldIlluminationContract";
+import type {
+  WorldProceduralEnvironment,
+  WorldProceduralSkyGroundEnvironment,
+  WorldProceduralSoftboxEnvironment,
+} from "./worldIlluminationContract";
 
 export const PROCEDURAL_WORLD_ENVIRONMENT_WIDTH = 128;
 export const PROCEDURAL_WORLD_ENVIRONMENT_HEIGHT = 64;
@@ -124,3 +128,82 @@ export const createProceduralSkyGroundTexture = (
   texture.needsUpdate = true;
   return texture;
 };
+
+/** Deterministic half-float softbox map matching the accepted watch studio. */
+export const createProceduralSoftboxPixels = (
+  environment: WorldProceduralSoftboxEnvironment,
+): Uint16Array => {
+  const width = 512;
+  const height = 256;
+  const pixels = new Uint16Array(width * height * 4);
+  const halfFloat = THREE.DataUtils.toHalfFloat;
+  const cards = environment.cards.map((card) => {
+    const direction = new THREE.Vector3(...card.direction).normalize();
+    const horizontal = new THREE.Vector3()
+      .crossVectors(new THREE.Vector3(0, 1, 0), direction)
+      .normalize();
+    const vertical = new THREE.Vector3().crossVectors(direction, horizontal);
+    return { ...card, direction, horizontal, vertical };
+  });
+  const direction = new THREE.Vector3();
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const theta = (x + 0.5) / width * Math.PI * 2;
+      const phi = (y + 0.5) / height * Math.PI;
+      direction.set(
+        -Math.sin(phi) * Math.cos(theta),
+        -Math.cos(phi),
+        Math.sin(phi) * Math.sin(theta),
+      );
+      let red = environment.baseLinearColor[0];
+      let green = environment.baseLinearColor[1];
+      let blue = environment.baseLinearColor[2];
+      for (const card of cards) {
+        const depth = direction.dot(card.direction);
+        if (depth <= 0) continue;
+        const horizontal = Math.abs(direction.dot(card.horizontal) / depth) /
+          card.horizontalHalfAngleRad;
+        const vertical = Math.abs(direction.dot(card.vertical) / depth) /
+          card.verticalHalfAngleRad;
+        const contribution = card.intensity * Math.exp(
+          -0.85 * (horizontal ** 6 + vertical ** 6),
+        );
+        red += contribution * card.tintLinearRgb[0];
+        green += contribution * card.tintLinearRgb[1];
+        blue += contribution * card.tintLinearRgb[2];
+      }
+      const offset = (y * width + x) * 4;
+      pixels[offset] = halfFloat(red);
+      pixels[offset + 1] = halfFloat(green);
+      pixels[offset + 2] = halfFloat(blue);
+      pixels[offset + 3] = halfFloat(1);
+    }
+  }
+  return pixels;
+};
+
+export const createProceduralSoftboxTexture = (
+  environment: WorldProceduralSoftboxEnvironment,
+): THREE.DataTexture => {
+  const texture = new THREE.DataTexture(
+    createProceduralSoftboxPixels(environment),
+    512,
+    256,
+    THREE.RGBAFormat,
+    THREE.HalfFloatType,
+  );
+  texture.name = `${environment.id}-source`;
+  texture.mapping = THREE.EquirectangularReflectionMapping;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  texture.needsUpdate = true;
+  return texture;
+};
+
+export const createProceduralWorldEnvironmentTexture = (
+  environment: WorldProceduralEnvironment,
+): THREE.DataTexture => environment.kind === "procedural-sky-ground"
+  ? createProceduralSkyGroundTexture(environment)
+  : createProceduralSoftboxTexture(environment);
