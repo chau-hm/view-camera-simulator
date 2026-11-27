@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { HISTORICAL_EVIDENCE_MANIFEST } from "../../../scripts/historical-evidence-routing.mjs";
 // @ts-expect-error JavaScript helper without declarations
-import { qualifyCandidate } from "../../../scripts/release-artifact-qualify.mjs";
+import { qualifyCandidate, verifyReleaseBContract } from "../../../scripts/release-artifact-qualify.mjs";
 
 const source = "a".repeat(40), tree = "b".repeat(40), main = "c".repeat(40);
 const args = [source, "10", "2", "20", "1", "30"];
@@ -20,6 +20,21 @@ function fixture() {
 }
 
 describe("release artifact historical qualification", () => {
+  it("requires the reviewed Release B implementation to be tracked and unchanged", async () => {
+    const reviewed: Record<string, string> = {
+      "scripts/release-artifact-preflight.mjs": "c9b3414d84c9b1a2e233cf27e71c6092b1fa05cd",
+      "scripts/extract-pages-artifact.py": "716bdcc4e0f5ee7d74dbe68faf702672b9919914",
+      "scripts/pages-artifact.mjs": "585ac9b44a75bc2f2652247965c4cfc5c03a065a",
+    };
+    const runGit = async (args: string[]) => {
+      if (args[0] === "diff") return { status: 0, stdout: "", stderr: "" };
+      const path = args.at(-1)!.replace(/^HEAD:/, "");
+      return { status: reviewed[path] ? 0 : 1, stdout: reviewed[path] ?? "", stderr: "" };
+    };
+    await expect(verifyReleaseBContract({ runGit })).resolves.toBeUndefined();
+    await expect(verifyReleaseBContract({ runGit: async () => ({ status: 1, stdout: "", stderr: "" }) })).rejects.toThrow("not-integrated");
+    await expect(verifyReleaseBContract({ runGit: async (args: string[]) => args[0] === "diff" ? { status: 1, stdout: "", stderr: "" } : runGit(args) })).rejects.toThrow("modified");
+  });
   it("binds fresh preflight, source planning and completed validation without deployment authority", async () => {
     const f = fixture();
     const result = await qualifyCandidate(args, f);

@@ -1,5 +1,4 @@
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { planMainSource } from "./historical-production-release.mjs";
@@ -18,6 +17,26 @@ const git = async (args, cwd = root, allowFailure = false) => {
   if (!allowFailure && response.status !== 0) throw new Error(`git-${args[0]}-failed:${response.stderr.slice(-1000)}`);
   return allowFailure ? response : response.stdout;
 };
+
+// Release B's reviewed implementation and its transitive artifact helpers must
+// be tracked at HEAD and unmodified before this CLI imports them. A future
+// reviewed Release B policy update must explicitly update these identities.
+const RELEASE_B_BLOBS = Object.freeze({
+  "scripts/release-artifact-preflight.mjs": "c9b3414d84c9b1a2e233cf27e71c6092b1fa05cd",
+  "scripts/extract-pages-artifact.py": "716bdcc4e0f5ee7d74dbe68faf702672b9919914",
+  "scripts/pages-artifact.mjs": "585ac9b44a75bc2f2652247965c4cfc5c03a065a",
+});
+
+export async function verifyReleaseBContract({ runGit = git, repositoryRoot = root } = {}) {
+  for (const [path, expected] of Object.entries(RELEASE_B_BLOBS)) {
+    const tracked = await runGit(["rev-parse", "--verify", `HEAD:${path}`], repositoryRoot, true);
+    if (tracked.status !== 0 || tracked.stdout.trim() !== expected) throw new Error(`release-b-reviewed-contract-not-integrated:${path}`);
+    const unchanged = await runGit(["diff", "--quiet", "HEAD", "--", path], repositoryRoot, true);
+    if (unchanged.status !== 0) throw new Error(`release-b-reviewed-contract-modified:${path}`);
+    const actual = await runGit(["hash-object", "--", path], repositoryRoot, true);
+    if (actual.status !== 0 || actual.stdout.trim() !== expected) throw new Error(`release-b-reviewed-contract-modified:${path}`);
+  }
+}
 
 /** Re-establishes preflight; injected functions are for controlled tests only. */
 export async function qualifyCandidate(args, { preflight, planner = planMainSource, execute = executeSourceValidators, runGit = git, repositoryRoot = root } = {}) {
@@ -64,7 +83,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   try {
     if (resolve(process.cwd()) !== root) throw new Error("qualification-must-run-from-repository-root");
     // This fixed local import is deliberately fail-closed until Release B lands.
-    if (!existsSync(resolve(root, "scripts/release-artifact-preflight.mjs"))) throw new Error("release-b-preflight-not-integrated");
+    await verifyReleaseBContract();
     const { runPreflight } = await import(/* @vite-ignore */ new URL("./release-artifact-preflight.mjs", import.meta.url).href);
     const result = await qualifyCandidate(process.argv.slice(2), { preflight: runPreflight });
     console.log(JSON.stringify(result, null, 2));

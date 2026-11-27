@@ -165,7 +165,9 @@ is `node scripts/release-artifact-qualify.mjs <source-sha> <ci-run-id>
 <ci-attempt> <producer-run-id> <producer-attempt> <artifact-id>`. It directly
 invokes that local preflight, plans the same source/tree, executes validators
 on that source, and rechecks main; a caller-provided result file is not trusted.
-If the preflight module is absent, it fails closed. Its versioned output records
+Before importing Release B, it requires the reviewed preflight and its artifact
+helpers to be tracked at HEAD and byte-identical to the reviewed blobs. Missing,
+untracked, modified or unreviewed versions fail closed. Its versioned output records
 candidate provenance, baseline, cumulative coverage, actual validator and fetch
 outcomes, timings and `NOT_DEPLOYED`; it grants no deployment authorization.
 The current reviewed workflow-version policy remains fail-closed. A separately
