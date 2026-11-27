@@ -109,7 +109,7 @@ A prospective feature source that is not yet merged to `main` can be checked wit
 With Node.js 24 and project dependencies installed:
 
 ```bash
-npm run evidence:qualification:historical -- --files=docs/architecture/GROUND_GLASS_M7K_BROAD_E2E_QUALIFICATION_REPORT.json
+npm run evidence -- qualify --files=docs/architecture/GROUND_GLASS_M7K_BROAD_E2E_QUALIFICATION_REPORT.json
 ```
 
 This runs the mapped validator closure and checks required sources. `--all` runs all supported families. Because M7S–M7U currently have no complete verifiers, a full run reports `UNVERIFIED` for those known gaps even if every supported validator passes.

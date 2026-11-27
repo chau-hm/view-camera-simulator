@@ -578,27 +578,14 @@ or the ordinary CI/deployment gates to recover a skipped release.
 
 ## 13. Validation strategy
 
-Validation follows complexity, not PR existence.
+Validation follows complexity and changed contracts, not PR existence. See [CI commands](testing/CI_COMMANDS.md) for the operational interface.
 
-### Micro
+- **Micro:** nearest meaningful proof and diff/status checks; avoid full CI and implementation-mirroring tests for trivial reversible changes.
+- **Focused:** prefer focused Local CI during implementation, adding relevant static checks when needed.
+- **Coordinated:** start with Affected against the intended base, inspect ownership and evidence completeness, and escalate only for actual gaps or integration risk. Provisional or unmapped owners retain the conservative fallback and incomplete status.
+- **High-risk:** add full Local CI when justified and targeted browser, Production Preview, or native proof for the actual contract. Extended Local E2E is an explicit broad-regression escalation, not an automatic consequence of a merge, renderer change, or individual workflow.
 
-Nearest meaningful proof plus diff/status checks.
-
-Avoid full CI and avoid implementation-mirroring tests for trivial reversible changes.
-
-### Focused
-
-Focused tests plus relevant type/lint/build/CSS checks where applicable.
-
-### Coordinated
-
-Affected suites first; repository integration checks when shared contracts are involved.
-
-### High-risk
-
-Integration checks plus relevant E2E when the public browser flow, renderer lifecycle, or high-risk simulation behaviour requires it.
-
-Stop broadening validation once the required evidence passes unless new evidence creates a reason to continue.
+Reuse evidence only for the same verified source state and rerun when changes, incomplete evidence, or independent qualification require it. Stop broadening once the required evidence passes. Local results are implementation feedback; independent authoritative GitHub CI remains required, including full Vitest and applicable browser and historical checks.
 
 ---
 
