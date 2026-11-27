@@ -69,6 +69,46 @@ export async function discoverProductionRelease(event, {
   const verifiedMainSha = (await runGit(["rev-parse", "refs/remotes/origin/main^{commit}"], repositoryRoot)).trim();
   await isAncestor(runGit, sourceSha, "refs/remotes/origin/main", repositoryRoot, "promoted-source-is-not-a-verified-main-revision");
 
+  const eventDiff = await runGit(["diff", "--name-status", "-M", "-z", beforeSha, afterSha], repositoryRoot);
+  const eventChangedPaths = parseNameStatusZ(eventDiff);
+  const cumulative = await discoverCumulativeSource({ sourceSha, sourceTreeSha }, { runGit, repositoryRoot, baseline, baselineIdentity });
+  return {
+    ...cumulative,
+    eventChangedPaths,
+    reasons: [
+      "canonical-production-merge-topology-verified-from-git-objects",
+      "promoted-source-is-an-ancestor-of-the-fetched-origin-main-revision",
+      "production-release-qualification-range-is-policy-baseline-to-promoted-source",
+      "all-registered-historical-validators-run-for-production-releases",
+      ...cumulative.reasons.filter((reason) => !["release-qualification-range-is-policy-baseline-to-selected-source", "all-registered-historical-validators-selected-for-release"].includes(reason)),
+    ],
+    releaseProof: {
+      eventBeforeSha: beforeSha,
+      eventAfterSha: afterSha,
+      promotedSourceSha: sourceSha,
+      verifiedMergeParents: parents,
+      destinationTreeSha: destinationTree,
+      sourceTreeSha,
+      fetchedMainSha: verifiedMainSha,
+      sourceIsVerifiedMainAncestor: true,
+      ...cumulative.releaseProof,
+      eventChangedPathCount: eventChangedPaths.length,
+    },
+  };
+}
+
+/** Shared baseline-to-source planning; this is not artifact authorization. */
+export async function discoverCumulativeSource({ sourceSha, sourceTreeSha }, {
+  runGit,
+  repositoryRoot = process.cwd(),
+  baseline = HISTORICAL_QUALIFICATION_BASELINE,
+  baselineIdentity = HISTORICAL_QUALIFICATION_BASELINE_IDENTITY,
+} = {}) {
+  if (typeof runGit !== "function") throw new Error("cumulative-source-git-client-unavailable");
+  await requireCommit(runGit, sourceSha, "qualification-source", repositoryRoot);
+  const actualSourceTree = (await runGit(["rev-parse", `${sourceSha}^{tree}`], repositoryRoot)).trim();
+  if (!shaPattern.test(sourceTreeSha ?? "") || actualSourceTree !== sourceTreeSha) throw new Error("qualification-source-tree-mismatch");
+  const baselineStartedAt = Date.now();
   const baselineCommit = baseline?.policy?.policyCommit;
   const baselineTreeSha = baseline?.policy?.policyTree;
   await requireCommit(runGit, baselineCommit, "legacy-baseline", repositoryRoot);
@@ -84,8 +124,8 @@ export async function discoverProductionRelease(event, {
   if (!baselineIntegrity.valid) throw new Error(`legacy-baseline-integrity-failed:${baselineIntegrity.errors.join(",")}`);
   const baselineResolution = resolveBaselineDispositions({ baseline, sourceTree, currentValidatorFamilies: registeredFamilies });
 
-  const eventDiff = await runGit(["diff", "--name-status", "-M", "-z", beforeSha, afterSha], repositoryRoot);
-  const eventChangedPaths = parseNameStatusZ(eventDiff);
+  const baselineMs = Date.now() - baselineStartedAt;
+  const routingStartedAt = Date.now();
   const qualificationDiff = await runGit(["diff", "--name-status", "-M", "-z", baselineCommit, sourceSha], repositoryRoot);
   const qualificationPaths = parseNameStatusZ(qualificationDiff);
   const invalidatedPaths = new Set(baselineResolution.invalidated.map(({ path }) => path));
@@ -102,10 +142,8 @@ export async function discoverProductionRelease(event, {
   const historicalLegacyCount = (baselineDispositionCounts["legacy-archival-unverified"] ?? 0) +
     (baselineDispositionCounts["documentation-only"] ?? 0);
   const reasons = [
-    "canonical-production-merge-topology-verified-from-git-objects",
-    "promoted-source-is-an-ancestor-of-the-fetched-origin-main-revision",
-    "production-release-qualification-range-is-policy-baseline-to-promoted-source",
-    "all-registered-historical-validators-run-for-production-releases",
+    "release-qualification-range-is-policy-baseline-to-selected-source",
+    "all-registered-historical-validators-selected-for-release",
     ...(routing.reasons ?? []),
   ];
   const decision = routing.decision === "UNVERIFIED"
@@ -126,7 +164,6 @@ export async function discoverProductionRelease(event, {
     decision,
     families: validatorFamilies,
     changedPaths: qualificationPaths,
-    eventChangedPaths,
     broad: routing.broad === true,
     reasons,
     unsupported: routing.unsupported ?? [],
@@ -137,14 +174,8 @@ export async function discoverProductionRelease(event, {
       "ordinary-ci:application-ci",
     ])],
     releaseProof: {
-      eventBeforeSha: beforeSha,
-      eventAfterSha: afterSha,
       promotedSourceSha: sourceSha,
-      verifiedMergeParents: parents,
-      destinationTreeSha: destinationTree,
       sourceTreeSha,
-      fetchedMainSha: verifiedMainSha,
-      sourceIsVerifiedMainAncestor: true,
       policyIdentity: {
         id: baseline.policy.id,
         commit: baselineCommit,
@@ -154,10 +185,10 @@ export async function discoverProductionRelease(event, {
         inventoryEntryCount: baseline.entries.length,
         inventorySha256: baseline.inventory.sha256,
       },
-      eventChangedPathCount: eventChangedPaths.length,
       cumulativeQualificationPathCount: qualificationPaths.length,
       historicalValidatorScope: "all-registered-automatic-families",
     },
+    planningTimings: { baselineMs, routingMs: Date.now() - routingStartedAt },
     qualificationCoverage: {
       currentRouteDecision: routing.decision,
       newlyRoutedReasons: routing.reasons ?? [],
@@ -181,4 +212,19 @@ export async function discoverProductionRelease(event, {
       exactMainWorkflowEvidenceReused: false,
     },
   };
+}
+
+/** Plans an exact source on fetched main. This does not verify an artifact or authorize release. */
+export async function planMainSource({ repository, sourceSha, sourceTreeSha, expectedMainSha }, options = {}) {
+  const runGit = options.runGit;
+  const repositoryRoot = options.repositoryRoot ?? process.cwd();
+  if (typeof runGit !== "function") throw new Error("source-plan-git-client-unavailable");
+  if (repository !== HISTORICAL_EVIDENCE_MANIFEST.repository) throw new Error("source-plan-repository-mismatch");
+  await requireCommit(runGit, sourceSha, "qualification-source", repositoryRoot);
+  await runGit(["fetch", "--no-tags", "origin", "refs/heads/main:refs/remotes/origin/main"], repositoryRoot);
+  const fetchedMainSha = (await runGit(["rev-parse", "refs/remotes/origin/main^{commit}"], repositoryRoot)).trim();
+  if (!shaPattern.test(fetchedMainSha) || (expectedMainSha && fetchedMainSha !== expectedMainSha)) throw new Error("source-plan-main-identity-mismatch");
+  await isAncestor(runGit, sourceSha, fetchedMainSha, repositoryRoot, "source-plan-source-not-on-main");
+  const plan = await discoverCumulativeSource({ sourceSha, sourceTreeSha }, options);
+  return { ...plan, planOnly: true, fetchedMainSha };
 }

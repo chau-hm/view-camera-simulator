@@ -5,7 +5,7 @@ import { spawnSync } from "node:child_process";
 import { afterEach, describe, expect, it } from "vitest";
 import { HISTORICAL_EVIDENCE_MANIFEST, classifyCompleteChangedPaths } from "../../../scripts/historical-evidence-routing.mjs";
 import { calculateBaselineInventoryDigest } from "../../../scripts/historical-qualification-baseline.mjs";
-import { discoverProductionRelease } from "../../../scripts/historical-production-release.mjs";
+import { discoverCumulativeSource, discoverProductionRelease, planMainSource } from "../../../scripts/historical-production-release.mjs";
 
 const activeFixtures: string[] = [];
 const shaPattern = /^[0-9a-f]{40}$/;
@@ -147,6 +147,45 @@ describe("production historical release proof", () => {
       blobSha: fixture.baseline.entries[0]!.blobSha,
       disposition: "legacy-archival-unverified",
     }));
+  });
+
+  it("shares cumulative planning between production and exact source", async () => {
+    const fixture = createFixture();
+    const sourceSha = addCommit(fixture.work, "src/ordinary-change.ts", "export const changed = true;\n", "ordinary main change");
+    git(fixture.work, ["push", "origin", "main"]);
+    const { result } = await promote(fixture, sourceSha);
+    const sourceTreeSha = git(fixture.work, ["rev-parse", `${sourceSha}^{tree}`]);
+    const sourcePlan = await discoverCumulativeSource({ sourceSha, sourceTreeSha }, {
+      runGit, repositoryRoot: fixture.work, baseline: fixture.baseline, baselineIdentity: fixture.baselineIdentity,
+    });
+    expect(sourcePlan.decision).toBe(result.decision);
+    expect(sourcePlan.changedPaths).toEqual(result.changedPaths);
+    expect(sourcePlan.families).toEqual(result.families);
+    expect(sourcePlan.qualificationCoverage).toEqual(result.qualificationCoverage);
+    expect(sourcePlan.releaseProof.policyIdentity).toEqual(result.releaseProof.policyIdentity);
+    await expect(discoverCumulativeSource({ sourceSha, sourceTreeSha: "f".repeat(40) }, {
+      runGit, repositoryRoot: fixture.work, baseline: fixture.baseline, baselineIdentity: fixture.baselineIdentity,
+    })).rejects.toThrow("qualification-source-tree-mismatch");
+  });
+
+  it("plans an eligible exact main source without claiming artifact validation", async () => {
+    const fixture = createFixture();
+    const sourceSha = addCommit(fixture.work, "src/a.ts", "export {};\n", "selected source");
+    const sourceTreeSha = git(fixture.work, ["rev-parse", `${sourceSha}^{tree}`]);
+    const newer = addCommit(fixture.work, "src/b.ts", "export {};\n", "later main");
+    git(fixture.work, ["push", "origin", "main"]);
+    const options = { runGit, repositoryRoot: fixture.work, baseline: fixture.baseline, baselineIdentity: fixture.baselineIdentity };
+    const source = { repository, sourceSha, sourceTreeSha, expectedMainSha: newer };
+    const plan = await planMainSource(source, options);
+    expect(plan.planOnly).toBe(true);
+    expect(plan.fetchedMainSha).toBe(newer);
+    expect(plan.changedPaths).toContain("src/a.ts");
+    expect(plan.changedPaths).not.toContain("src/b.ts");
+    await expect(planMainSource({ ...source, repository: "invalid" }, options)).rejects.toThrow("source-plan-repository-mismatch");
+    await expect(planMainSource({ ...source, expectedMainSha: sourceSha }, options)).rejects.toThrow("source-plan-main-identity-mismatch");
+    await expect(planMainSource({ ...source, sourceTreeSha: "f".repeat(40) }, options)).rejects.toThrow("qualification-source-tree-mismatch");
+    const unrelated = git(fixture.work, ["commit-tree", sourceTreeSha, "-p", fixture.baselineCommit, "-m", "feature-only"]);
+    await expect(planMainSource({ ...source, sourceSha: unrelated }, options)).rejects.toThrow("source-plan-source-not-on-main");
   });
 
   it("rejects a tree mismatch even when the merge parents look canonical", async () => {
