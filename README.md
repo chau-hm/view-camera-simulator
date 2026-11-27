@@ -307,3 +307,46 @@ then inspect its source/tree, pin, Preview, upload and fresh-download verificati
 result, and lack of deployment. The pilot is not a release authorization. Main-CI integration is deferred until the separate CI
 routing work stabilizes. Until then this pilot adds a separate build; it does
 not reduce the existing production CI or establish a deployable release.
+
+### Trusted artifact preflight
+
+Release B provides a **non-publishing** preflight for an explicitly selected
+source, successful main CI run and attempt, successful artifact-pilot run and
+attempt, and retained artifact ID. It neither deploys nor performs cumulative
+production release qualification. With Node 24, Python 3, authenticated `gh`
+with read access to repository contents and Actions, and a freshly fetched
+`origin/main`, run:
+
+```bash
+git fetch origin
+node scripts/release-artifact-preflight.mjs \
+  <source-commit-sha> <ci-run-id> <ci-attempt> \
+  <producer-run-id> <producer-attempt> <artifact-id>
+```
+
+Standard output is a JSON result; standard error provides the operator summary
+or a failure reason. A successful result is `RELEASE_PREFLIGHT_VERIFIED`,
+`RELEASE_QUALIFICATION_PENDING`, `NOT_DEPLOYED`. An unsuccessful preflight
+returns nonzero. No application build or production ref change takes place.
+
+The policy checks the canonical repository, authoritative main ancestry, exact
+source tree and pinned reviewed workflow definitions, exact run IDs, attempts,
+events, branches, required job and step conclusions. Workflow IDs and Git blob
+identities are intentionally narrow; an independently reviewed policy update is
+required when those workflows change. Successful jobs and main source history
+are trusted; this is not protection against a compromised GitHub service,
+runner or authorized modification of source and supporting scripts.
+
+The selected artifact must be unexpired and associated with the producer run.
+The producer's successful job log must bind its artifact ID to both the original
+pre-Preview identity and retained identity. The downloaded archive must match
+GitHub's exact size and SHA-256; a bounded temporary extraction rejects unsafe
+paths, duplicate paths, links and unsupported entries. The Release A verifier
+then compares the entire retrieved candidate with the **original logged pin**,
+including source, tree, manifest and payload digests; it checks validation
+metadata, producing run/attempt and the source lockfile. Staging is removed on
+completion. Missing logs, expired artifacts, inaccessible runs, changed workflow
+policy, main movement during verification, and any identity mismatch fail closed.
+Actions artifact retention is
+finite; this preflight is not rollback storage, cross-run deployment or release
+approval. Production continues to use the existing isolated promotion path.
