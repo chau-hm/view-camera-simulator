@@ -1,0 +1,3077 @@
+{
+  "browserControlFields": [
+    {
+      "field": "initialRawDebug",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:760",
+      "propertyAccesses": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4956",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4956",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:935"
+      ]
+    },
+    {
+      "field": "adapterAttemptGenerations",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:761",
+      "propertyAccesses": [
+        "scripts/render-quality/rq2.1-native-m3.spec.ts:164",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1063",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1064",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:173",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:327",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:341",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:460",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:487",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:519",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:540",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:698",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:731",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:766",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:777",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:785",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:794",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:796",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:804",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:811",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:826",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:845",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:847",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:886",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:921",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:972",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:988",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:1013",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:1256",
+        "src/tests/e2e/ground-glass-webgpu-r187-app-pilot.spec.ts:207",
+        "src/tests/e2e/ground-glass-webgpu-r187-app-pilot.spec.ts:254"
+      ]
+    },
+    {
+      "field": "adapterEvents",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:762",
+      "propertyAccesses": [
+        "scripts/render-quality/rq1-capture.spec.ts:189",
+        "scripts/render-quality/rq2.1-native-m3.spec.ts:151",
+        "src/render/webgpu/groundGlassM7fPresentationEvidence.ts:288",
+        "src/render/webgpu/groundGlassM7fPresentationEvidence.ts:294",
+        "src/render/webgpu/groundGlassM7fPresentationEvidence.ts:438",
+        "src/render/webgpu/groundGlassM7fPresentationEvidence.ts:445",
+        "src/render/webgpu/groundGlassM7fPresentationEvidence.ts:497",
+        "src/render/webgpu/groundGlassM7fPresentationEvidence.ts:504",
+        "src/render/webgpu/groundGlassM7fPresentationEvidence.ts:777",
+        "src/render/webgpu/groundGlassM7fPresentationEvidence.ts:783",
+        "src/render/webgpu/groundGlassM7fPresentationEvidence.ts:845",
+        "src/render/webgpu/groundGlassM7fPresentationEvidence.ts:872",
+        "src/render/webgpu/groundGlassM7fPresentationEvidence.ts:878",
+        "src/render/webgpu/groundGlassM7fPresentationEvidence.ts:1296",
+        "src/render/webgpu/groundGlassM7gConsolidatedEvidence.ts:302",
+        "src/render/webgpu/groundGlassM7gConsolidatedEvidence.ts:520",
+        "src/render/webgpu/groundGlassM7gConsolidatedEvidence.ts:539",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1075",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1076",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1076",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:2214",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:4931",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5132",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:102",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:154",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:319",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:325",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:354",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:360",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:410",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:512",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:527",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:529",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:587",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:593",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:601",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:657",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:675",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:678",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:684",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:723",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:734",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:754",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:870",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:878",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:903",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:911",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:964",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:975",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:991",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:993",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:1044",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:1136",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:1191",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:1212",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:1231",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:1239",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:1258",
+        "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:252",
+        "src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts:1014",
+        "src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts:1113",
+        "src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts:1120",
+        "src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts:1120",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:347",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:363",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:416",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:483",
+        "src/tests/e2e/ground-glass-webgpu-m7g-lifecycle.spec.ts:23",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1134",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1301",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1324",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1445",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1533",
+        "src/tests/e2e/ground-glass-webgpu-r187-app-pilot.spec.ts:164",
+        "src/tests/render-quality/e2e/render-quality-rq3a-capture.spec.ts:121",
+        "src/tests/render-quality/e2e/rq3b-nonparallel-illumination-capture.spec.ts:80",
+        "src/tests/render-quality/e2e/rq3d-macro-capture-support.spec.ts:43",
+        "src/tests/render-quality/e2e/rq3e-macro-oblique-capture.spec.ts:59",
+        "src/tests/render-quality/e2e/rq3f-macro-compound-capture.spec.ts:60",
+        "src/tests/render-quality/e2e/rq3g-macro-bellows-capture.spec.ts:61",
+        "src/tests/unit/groundGlassM7fPresentationEvidence.test.ts:349",
+        "src/tests/unit/groundGlassM7fPresentationEvidence.test.ts:605",
+        "src/tests/unit/groundGlassM7fPresentationEvidence.test.ts:605",
+        "src/tests/unit/groundGlassM7fPresentationEvidence.test.ts:973",
+        "src/tests/unit/groundGlassM7fPresentationEvidence.test.ts:976",
+        "src/tests/unit/groundGlassM7gConsolidatedEvidence.test.ts:258"
+      ]
+    },
+    {
+      "field": "configuredFailurePoints",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:763",
+      "propertyAccesses": [
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:60",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:172"
+      ]
+    },
+    {
+      "field": "failurePoint",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:764",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassM7fPresentationEvidence.ts:1125",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1181",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1182",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1182",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:2081",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5038",
+        "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:1088",
+        "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:1111",
+        "src/tests/unit/groundGlassM7fPresentationEvidence.test.ts:1001"
+      ]
+    },
+    {
+      "field": "failurePoints",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:766",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1180",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1183",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:60"
+      ]
+    },
+    {
+      "field": "forceWebGlCompatibilityBackend",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:768",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1052"
+      ]
+    },
+    {
+      "field": "m6bCalibrationFixture",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:770",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:940",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:965",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:991",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1047",
+        "src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts:113",
+        "src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts:119",
+        "src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts:128",
+        "src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts:974",
+        "src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts:975",
+        "src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts:1110",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:87",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:136"
+      ]
+    },
+    {
+      "field": "m6cAlphaFixture",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:772",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:956",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1018",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1032",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1039",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:53",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:125",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:330",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:393",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:399",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:404",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:457",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:463",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:471"
+      ]
+    },
+    {
+      "field": "m6cAlphaCaptureRequest",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:773",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:998",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:999",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:57",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:395",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:459"
+      ]
+    },
+    {
+      "field": "m6cAlphaCaptureReadback",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:774",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1007",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:56",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:61",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:65",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:394",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:406",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:410",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:458",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:473",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:478"
+      ]
+    },
+    {
+      "field": "requestM6cAlphaCapture",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:775",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1014",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:53",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:58",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:393",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:396",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:457",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:460"
+      ]
+    },
+    {
+      "field": "holdAdapterOperationAfterFailure",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:776",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1251",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1255"
+      ]
+    },
+    {
+      "field": "adapterOperationBarrierReached",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:777",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1252",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1256",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:1197"
+      ]
+    },
+    {
+      "field": "releaseAdapterOperation",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:778",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1254",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1257",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:1211"
+      ]
+    },
+    {
+      "field": "holdQueueCompletion",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:779",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1189",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1193",
+        "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:821"
+      ]
+    },
+    {
+      "field": "queueCompletionBarrierReached",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:780",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1190",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1194",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:556",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:558",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:582",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:663",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:897",
+        "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:831"
+      ]
+    },
+    {
+      "field": "releaseQueueCompletion",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:781",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1192",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1195",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:582",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:583",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:677",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:909",
+        "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:848"
+      ]
+    },
+    {
+      "field": "holdPresentationQueueCompletion",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:782",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1204",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1208",
+        "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:1214"
+      ]
+    },
+    {
+      "field": "presentationQueueCompletionBarrierReached",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:783",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1205",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1209",
+        "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:1223"
+      ]
+    },
+    {
+      "field": "releasePresentationQueueCompletion",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:784",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1207",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1210",
+        "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:1233"
+      ]
+    },
+    {
+      "field": "holdNextM5CompositeGenerationId",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:786",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1222",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1224",
+        "src/tests/e2e/ground-glass-webgpu-m7g-lifecycle.spec.ts:54"
+      ]
+    },
+    {
+      "field": "m5CompositeBarrierReached",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:787",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1225",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1243",
+        "src/tests/e2e/ground-glass-webgpu-m7g-lifecycle.spec.ts:55",
+        "src/tests/e2e/ground-glass-webgpu-m7g-lifecycle.spec.ts:78"
+      ]
+    },
+    {
+      "field": "heldM5CompositeIdentity",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:788",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1226",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1244",
+        "src/tests/e2e/ground-glass-webgpu-m7g-lifecycle.spec.ts:56",
+        "src/tests/e2e/ground-glass-webgpu-m7g-lifecycle.spec.ts:81"
+      ]
+    },
+    {
+      "field": "releaseM5Composite",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:789",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1236",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1245",
+        "src/tests/e2e/ground-glass-webgpu-m7g-lifecycle.spec.ts:127"
+      ]
+    },
+    {
+      "field": "holdFrameRequestId",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:790",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1272",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1277"
+      ]
+    },
+    {
+      "field": "holdNextCompletedFrame",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:791",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1272",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1274",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1278"
+      ]
+    },
+    {
+      "field": "heldFrameRequestId",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:792",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1275",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1279",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:1220"
+      ]
+    },
+    {
+      "field": "releaseHeldFrame",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:793",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1276",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1280",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:1237"
+      ]
+    },
+    {
+      "field": "physicalCocProbeRequest",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:794",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1082",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1083",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:713",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1103",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1203",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1424",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1511"
+      ]
+    },
+    {
+      "field": "physicalCocProbeReadback",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:795",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1091",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:607",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:608",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:712",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1102",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1202",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1422",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1443",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1477",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1509",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1530",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1563"
+      ]
+    },
+    {
+      "field": "forcePhysicalCocUnsupported",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:796",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1055"
+      ]
+    },
+    {
+      "field": "holdPhysicalCocProbeReadback",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:797",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1163",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1167",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1423",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1510"
+      ]
+    },
+    {
+      "field": "physicalCocProbeReadbackBarrierReached",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:798",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1164",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1168",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1434",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1521"
+      ]
+    },
+    {
+      "field": "releasePhysicalCocProbeReadback",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:799",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1166",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1169",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1439",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1528"
+      ]
+    },
+    {
+      "field": "apertureGatherCaptureRequest",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:800",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1096",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1097",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:293",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:2082",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:4974",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:4996",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5083",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5111",
+        "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:176",
+        "src/tests/e2e/ground-glass-webgpu-m7g-lifecycle.spec.ts:57",
+        "src/tests/e2e/ground-glass-webgpu-m7g-lifecycle.spec.ts:119"
+      ]
+    },
+    {
+      "field": "apertureGatherCaptureReadback",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:801",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1115",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:292",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:316",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:334",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:371",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:2087",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:2107",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:4975",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:4997",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5001",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5004",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5010",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5084",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5112",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5142",
+        "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:175",
+        "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:186",
+        "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:190",
+        "src/tests/e2e/ground-glass-webgpu-m7g-lifecycle.spec.ts:62",
+        "src/tests/e2e/ground-glass-webgpu-m7g-lifecycle.spec.ts:124",
+        "src/tests/e2e/ground-glass-webgpu-m7g-lifecycle.spec.ts:173"
+      ]
+    },
+    {
+      "field": "apertureGatherCapturePublications",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:802",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1106",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1107",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:2108",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5013",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5102",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5145",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5167",
+        "src/tests/e2e/ground-glass-webgpu-m7g-lifecycle.spec.ts:63",
+        "src/tests/e2e/ground-glass-webgpu-m7g-lifecycle.spec.ts:175"
+      ]
+    },
+    {
+      "field": "holdApertureGatherReadback",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:803",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1120",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1124",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:4973",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5082",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5110"
+      ]
+    },
+    {
+      "field": "apertureGatherReadbackBarrierReached",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:804",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1121",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1125",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:4979",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5088",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5116"
+      ]
+    },
+    {
+      "field": "releaseApertureGatherReadback",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:805",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1123",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1126",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:4998",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5095",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5128"
+      ]
+    },
+    {
+      "field": "groundGlassB1BoundaryProbeRequest",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:806",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1142",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1143",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:1313"
+      ]
+    },
+    {
+      "field": "groundGlassB1BoundaryProbeReadback",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:807",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1151",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:1312",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:1323",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:1340"
+      ]
+    },
+    {
+      "field": "requestGroundGlassB1BoundaryProbe",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:809",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1158",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:1311",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:1314"
+      ]
+    },
+    {
+      "field": "requestApertureGatherCapture",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:811",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1137",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:291",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:302",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:2080",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:2088",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:4972",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:4976",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5037",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5039",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5047",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5048",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5081",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5085",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5109",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:5113",
+        "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:174",
+        "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:181"
+      ]
+    },
+    {
+      "field": "pilotRecoveryActionHandlers",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:813",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:849",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:852",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:853",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:858",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:870",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:874",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:876",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:880"
+      ]
+    },
+    {
+      "field": "requestGroundGlassPilotRecoveryAction",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:814",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:857",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:881",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:783",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:809",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:830",
+        "src/tests/unit/groundGlassWebGpuTestSeam.test.ts:48"
+      ]
+    },
+    {
+      "field": "deviceLossTriggers",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:819",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:892",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:895",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:898",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:901",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:902",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:903",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:904"
+      ]
+    },
+    {
+      "field": "requestGroundGlassDeviceLoss",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:820",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:897",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:905",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:867"
+      ]
+    },
+    {
+      "field": "deviceDestroyTriggers",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:822",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:916",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:919",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:922",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:925",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:926",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:927",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:928"
+      ]
+    },
+    {
+      "field": "requestGroundGlassDeviceDestroy",
+      "declaredAt": "src/render/webgpu/groundGlassWebGpuTestSeam.ts:823",
+      "propertyAccesses": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:921",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:929",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:900",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:923"
+      ]
+    }
+  ],
+  "browserControlMethod": "Syntactic property names from the control type, with same-name property accesses in tracked src/scripts; hits are candidates, not guaranteed control aliases. Bracket or dynamically constructed properties are not captured.",
+  "sourceCommit": "f2a55e62853a237953b3c1484b72a1d311328910",
+  "method": "TypeScript syntax-tree identifiers in tracked src/ and scripts/; calls are syntactic direct calls, imports include type-only and mixed imports, other references may include types or indirect references. Browser global fields and historical artifacts are covered by the audit prose. References do not prove execution.",
+  "symbols": [
+    {
+      "symbol": "GroundGlassM6bPresentationEffectOverrides",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 21,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts:25",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:14",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:53",
+        "src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts:117",
+        "src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts:685",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:85",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:243"
+      ],
+      "group": "D",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassM6bPresentationFixtureEvidence",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 27,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts:26",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:13",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:54",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:989",
+        "src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts:112",
+        "src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts:494",
+        "src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts:665",
+        "src/tests/e2e/ground-glass-webgpu-m6b-conformance.spec.ts:666",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:122",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:137"
+      ],
+      "group": "D",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassM6bCalibrationFixtureControl",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 50,
+      "kind": "type",
+      "imports": [],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:770"
+      ],
+      "group": "D",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassM6cAlphaCaptureRequest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 58,
+      "kind": "type",
+      "imports": [],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:773",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:996"
+      ],
+      "group": "D",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassM6cAlphaCaptureReadback",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 60,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:114",
+          "kind": "type-only",
+          "from": "./groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:15",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2263",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2398",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2549",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:774",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1004",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:50",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:72",
+        "src/tests/e2e/ground-glass-webgpu-m6c-alpha.spec.ts:120"
+      ],
+      "group": "D",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassM6cAlphaFixtureControl",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 118,
+      "kind": "type",
+      "imports": [],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:772"
+      ],
+      "group": "D",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassApertureGatherCaptureRequest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 128,
+      "kind": "type",
+      "imports": [],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:800",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1094"
+      ],
+      "group": "E",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassM6dCompositeContractProbeCase",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 142,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/render/webgpu/groundGlassM6dCompositeContractProbe.ts:7",
+          "kind": "type-only",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/groundGlassM6dCompositeContractProbe.ts:96",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:172"
+      ],
+      "group": "E",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassM6dCompositeContractProbeReadback",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 151,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:115",
+          "kind": "type-only",
+          "from": "./groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/render/webgpu/groundGlassM6dCompositeContractProbe.ts:8",
+          "kind": "type-only",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:3451",
+        "src/render/webgpu/groundGlassM6dCompositeContractProbe.ts:46",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:442"
+      ],
+      "group": "E",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassB1BoundaryProbeRequest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 176,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/render/webgpu/groundGlassB1BoundaryProbe.ts:13",
+          "kind": "type-only",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/groundGlassB1BoundaryProbe.ts:164",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:806",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1140"
+      ],
+      "group": "E",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassB1BoundaryProbeCaseReadback",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 180,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/render/webgpu/groundGlassB1BoundaryProbe.ts:11",
+          "kind": "type-only",
+          "from": "./groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:5",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/groundGlassB1BoundaryProbe.ts:251",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:219",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:214",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:526",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:531"
+      ],
+      "group": "E",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassB1BoundaryProbeReadback",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 200,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "scripts/replayM7eEvidence.ts:22",
+          "kind": "type-only",
+          "from": "../src/render/webgpu/groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/render/webgpu/groundGlassB1BoundaryProbe.ts:12",
+          "kind": "type-only",
+          "from": "./groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/render/webgpu/groundGlassM7eGatherB1Evidence.ts:29",
+          "kind": "type-only",
+          "from": "./groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/render/webgpu/groundGlassM7eReportReplay.ts:23",
+          "kind": "type-only",
+          "from": "./groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:9",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:6",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "scripts/replayM7eEvidence.ts:36",
+        "scripts/replayM7eEvidence.ts:45",
+        "scripts/replayM7eEvidence.ts:169",
+        "scripts/replayM7eEvidence.ts:169",
+        "src/render/webgpu/groundGlassB1BoundaryProbe.ts:176",
+        "src/render/webgpu/groundGlassM7eGatherB1Evidence.ts:179",
+        "src/render/webgpu/groundGlassM7eGatherB1Evidence.ts:528",
+        "src/render/webgpu/groundGlassM7eReportReplay.ts:239",
+        "src/render/webgpu/groundGlassM7eReportReplay.ts:240",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:807",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1148",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:1308",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:241",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:542",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:543",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:544",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:545",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:546",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:546",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:547"
+      ],
+      "group": "E",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassGpuPassTiming",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 222,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:113",
+          "kind": "type-only",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:822",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2626",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2627",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2628",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2629",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2632",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:253",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:254",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:255",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:258",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:271",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:272",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:273"
+      ],
+      "group": "E",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassApertureGatherOperationName",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 231,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:111",
+          "kind": "type-only",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:1210",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2631",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:3351",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:244",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:257"
+      ],
+      "group": "E",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassApertureGatherTargetAllocation",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 243,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:112",
+          "kind": "type-only",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:1213",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:360"
+      ],
+      "group": "E",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassApertureGatherPerformanceEvidence",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 252,
+      "kind": "type",
+      "imports": [],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:352"
+      ],
+      "group": "E",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassFramePerformanceEvidence",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 266,
+      "kind": "type",
+      "imports": [],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:715"
+      ],
+      "group": "E",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassApertureGatherCaptureReadback",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 276,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "scripts/m7eEvidenceReplayLoader.ts:12",
+          "kind": "type-only",
+          "from": "../src/render/webgpu/groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:109",
+          "kind": "type-only",
+          "from": "./groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/render/webgpu/groundGlassM7eGatherB1Evidence.ts:28",
+          "kind": "type-only",
+          "from": "./groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:10",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:12",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:4",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "scripts/m7eEvidenceReplayLoader.ts:82",
+        "scripts/m7eEvidenceReplayLoader.ts:172",
+        "scripts/m7eEvidenceReplayLoader.ts:233",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:3489",
+        "src/render/webgpu/groundGlassM7eGatherB1Evidence.ts:106",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:801",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1102",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:137",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:139",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:174",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:176",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:288",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:377",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:451",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:517",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:664",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:688",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:820",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:881",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:912",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:966",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:1007",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:1032",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:1105",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:1368",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:2369",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:2508",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:2515",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:3821",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:3822",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:4356",
+        "src/tests/e2e/ground-glass-webgpu-aperture-gather-app.spec.ts:4357",
+        "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:229",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:42",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:341",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:347",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:352",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:357",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:360",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:365",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:372",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:373",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:446",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:447",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:447",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:448",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:449",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:450",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:451",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:452",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:457",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:465",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:472",
+        "src/tests/unit/groundGlassM7eGatherB1Evidence.test.ts:477"
+      ],
+      "group": "E",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassApertureGatherCapturePublication",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 445,
+      "kind": "type",
+      "imports": [],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:802"
+      ],
+      "group": "E",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassM5rNearFixtureReadback",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 455,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:110",
+          "kind": "type-only",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:964",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:383"
+      ],
+      "group": "E",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassPhysicalCocProbeKernelOverride",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 481,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:103",
+          "kind": "type-only",
+          "from": "./groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:16",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:449",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2934",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:491",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:333",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:371",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:373",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:388",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:398",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:454",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:594"
+      ],
+      "group": "E",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassPhysicalCocControlledKernelCase",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 489,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:101",
+          "kind": "type-only",
+          "from": "./groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:15",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:464",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2926",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:547",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:325",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:457"
+      ],
+      "group": "E",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassPhysicalCocControlledKernelReadback",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 495,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:102",
+          "kind": "type-only",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:465",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:3152",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:541"
+      ],
+      "group": "E",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassPhysicalCocProbeSample",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 509,
+      "kind": "type",
+      "imports": [],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:540"
+      ],
+      "group": "E",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassPhysicalCocProbeReadback",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 526,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:108",
+          "kind": "type-only",
+          "from": "./groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:17",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:1601",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:3175",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:795",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1088",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:604"
+      ],
+      "group": "E",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassPhysicalCocProbeRequest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 544,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:18",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:794",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1080",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:704",
+        "src/tests/e2e/ground-glass-webgpu-physical-coc-app.spec.ts:1195"
+      ],
+      "group": "E",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassWebGpuTestFailurePoint",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 550,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:13",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:763",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:764",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:766",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1176",
+        "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:237",
+        "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:1070"
+      ],
+      "group": "A",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassM5CompositeLifecycleIdentity",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 572,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:132",
+          "kind": "type-only",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:3360",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:700",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:788",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1218"
+      ],
+      "group": "A",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassWebGpuTestEvent",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 581,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:14",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/tests/e2e/ground-glass-webgpu-m7g-lifecycle.spec.ts:4",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:725",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1072",
+        "src/tests/e2e/ground-glass-webgpu-m6-presentation.spec.ts:251",
+        "src/tests/e2e/ground-glass-webgpu-m7g-lifecycle.spec.ts:22",
+        "src/tests/e2e/ground-glass-webgpu-m7g-lifecycle.spec.ts:151"
+      ],
+      "group": "A",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassWebGpuTestEventWithSequence",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 725,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:9",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:762",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:153"
+      ],
+      "group": "A",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassWebGpuAttemptIdentity",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 729,
+      "kind": "type",
+      "imports": [],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:742",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1058"
+      ],
+      "group": "A",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "createGroundGlassWebGpuAttemptIdentity",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 737,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/GroundGlassRenderHost.tsx:32",
+          "kind": "runtime-or-mixed",
+          "from": "./webgpu/groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:135",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/GroundGlassRenderHost.tsx:350",
+        "src/render/GroundGlassRenderHost.tsx:385",
+        "src/render/GroundGlassRenderHost.tsx:421",
+        "src/render/GroundGlassRenderHost.tsx:473",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:1897"
+      ],
+      "otherReferences": [],
+      "group": "A",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "GroundGlassWebGpuTestControl",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 758,
+      "kind": "type",
+      "imports": [
+        {
+          "at": "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:8",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/tests/unit/groundGlassWebGpuTestSeam.test.ts:6",
+          "kind": "type-only",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:828",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:835",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:23",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:57",
+        "src/tests/e2e/ground-glass-webgpu-failure-host.spec.ts:308",
+        "src/tests/unit/groundGlassWebGpuTestSeam.test.ts:38"
+      ],
+      "group": "A",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "registerGroundGlassPilotRecoveryActionForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 840,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/GroundGlassRenderHost.tsx:35",
+          "kind": "runtime-or-mixed",
+          "from": "./webgpu/groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/GroundGlassRenderHost.tsx:305",
+        "src/tests/unit/groundGlassWebGpuTestSeam.test.ts:39"
+      ],
+      "otherReferences": [
+        "src/tests/unit/GroundGlassRenderHost.test.tsx:164",
+        "src/tests/unit/groundGlassWebGpuTestSeam.test.ts:20"
+      ],
+      "group": "A",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "registerGroundGlassDeviceLossTriggerForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 886,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:133",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4859"
+      ],
+      "otherReferences": [],
+      "group": "B",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "registerGroundGlassDeviceDestroyTriggerForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 910,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:134",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4888"
+      ],
+      "otherReferences": [],
+      "group": "B",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "initialGroundGlassRawDebugForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 934,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/components/layout/SimulatorWorkspace.tsx:56",
+          "kind": "runtime-or-mixed",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/components/layout/SimulatorWorkspace.tsx:530"
+      ],
+      "group": "A",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "isGroundGlassM6bCalibrationFixtureEnabledForScene",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 937,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/components/simulator/GroundGlassViewport.tsx:5",
+          "kind": "runtime-or-mixed",
+          "from": "../../render/webgpu/groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/render/GroundGlassRenderer.tsx:36",
+          "kind": "runtime-or-mixed",
+          "from": "./webgpu/groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/components/simulator/GroundGlassViewport.tsx:118",
+        "src/render/GroundGlassRenderer.tsx:195",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:947"
+      ],
+      "otherReferences": [],
+      "group": "D",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "isGroundGlassM6bCalibrationFixtureEnabledForRequest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 944,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:119",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2012",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2063",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2750",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4308",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:957",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:964"
+      ],
+      "otherReferences": [],
+      "group": "D",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "isGroundGlassM6cAlphaFixtureEnabledForRequest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 949,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:120",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2075",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2302",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2759"
+      ],
+      "otherReferences": [],
+      "group": "D",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "resolveGroundGlassM6bPresentationStateForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 960,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:129",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2059",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2745"
+      ],
+      "otherReferences": [],
+      "group": "D",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "publishGroundGlassM6bPresentationEvidenceForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 988,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:127",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4317"
+      ],
+      "otherReferences": [],
+      "group": "D",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "consumeGroundGlassM6cAlphaCaptureForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 996,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:121",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4341"
+      ],
+      "otherReferences": [],
+      "group": "D",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "publishGroundGlassM6cAlphaCaptureForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1003,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:123",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2274",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2552"
+      ],
+      "otherReferences": [],
+      "group": "D",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "registerGroundGlassM6cAlphaCaptureTriggerForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1010,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:126",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4422",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4927"
+      ],
+      "otherReferences": [],
+      "group": "D",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "holdGroundGlassM6cAlphaReadbackForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1017,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:122",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2434"
+      ],
+      "otherReferences": [],
+      "group": "C",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "recordGroundGlassM6cAlphaTargetAllocatedForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1031,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:124",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2388"
+      ],
+      "otherReferences": [],
+      "group": "D",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "recordGroundGlassM6cAlphaTargetDisposedForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1038,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:125",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2528",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2529"
+      ],
+      "otherReferences": [],
+      "group": "D",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "recordGroundGlassM6bFixtureResourceDisposedForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1046,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:128",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2172"
+      ],
+      "otherReferences": [],
+      "group": "D",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "forceGroundGlassWebGlCompatibilityBackendForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1051,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:143",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4437"
+      ],
+      "otherReferences": [],
+      "group": "A",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "forceGroundGlassPhysicalCocUnsupportedForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1054,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:144",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4542"
+      ],
+      "otherReferences": [],
+      "group": "E",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "recordGroundGlassWebGpuAdapterAttemptForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1057,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:130",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4432"
+      ],
+      "otherReferences": [],
+      "group": "A",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "recordGroundGlassWebGpuTestEvent",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1072,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/GroundGlassRenderHost.tsx:34",
+          "kind": "runtime-or-mixed",
+          "from": "./webgpu/groundGlassWebGpuTestSeam"
+        },
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:131",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/GroundGlassRenderHost.tsx:168",
+        "src/render/GroundGlassRenderHost.tsx:206",
+        "src/render/GroundGlassRenderHost.tsx:348",
+        "src/render/GroundGlassRenderHost.tsx:383",
+        "src/render/GroundGlassRenderHost.tsx:419",
+        "src/render/GroundGlassRenderHost.tsx:471",
+        "src/render/GroundGlassRenderHost.tsx:554",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2026",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2149",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2234",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2796",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:3375",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4220",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4380",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4392",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4459",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4863",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4878",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4895",
+        "src/render/webgpu/groundGlassWebGpuTestSeam.ts:1065"
+      ],
+      "otherReferences": [],
+      "group": "A",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "consumeGroundGlassPhysicalCocProbeRequestForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1079,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:104",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2922"
+      ],
+      "otherReferences": [],
+      "group": "E",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "publishGroundGlassPhysicalCocProbeReadbackForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1087,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:136",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:3192"
+      ],
+      "otherReferences": [],
+      "group": "E",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "consumeGroundGlassApertureGatherCaptureForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1094,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:137",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:3232"
+      ],
+      "otherReferences": [],
+      "group": "E",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "publishGroundGlassApertureGatherCaptureForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1101,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:139",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4163"
+      ],
+      "otherReferences": [],
+      "group": "E",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "holdGroundGlassApertureGatherReadbackForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1118,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:107",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:3505"
+      ],
+      "otherReferences": [],
+      "group": "C",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "registerGroundGlassApertureGatherCaptureTriggerForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1132,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:141",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4414",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4925"
+      ],
+      "otherReferences": [],
+      "group": "E",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "consumeGroundGlassB1BoundaryProbeForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1140,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:138",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:3233"
+      ],
+      "otherReferences": [],
+      "group": "E",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "publishGroundGlassB1BoundaryProbeForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1147,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:140",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:3486"
+      ],
+      "otherReferences": [],
+      "group": "E",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "registerGroundGlassB1BoundaryProbeTriggerForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1154,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:142",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4418",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4926"
+      ],
+      "otherReferences": [],
+      "group": "E",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "holdGroundGlassPhysicalCocProbeReadbackForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1161,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:106",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:3060"
+      ],
+      "otherReferences": [],
+      "group": "C",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "throwIfGroundGlassWebGpuFailureInjected",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1175,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:145",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2199",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2794",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2811",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2867",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2892",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:3311",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:3315",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:3412",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:3504",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4274",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4283",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4295",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4349",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4706",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4788",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4795"
+      ],
+      "otherReferences": [],
+      "group": "B",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "holdGroundGlassWebGpuQueueCompletion",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1187,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:118",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:2793",
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4282"
+      ],
+      "otherReferences": [],
+      "group": "C",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "holdGroundGlassWebGpuPresentationQueueCompletion",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1202,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:116",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4280"
+      ],
+      "otherReferences": [],
+      "group": "C",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "holdGroundGlassM5CompositeForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1217,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:117",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:3397"
+      ],
+      "otherReferences": [],
+      "group": "C",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "holdGroundGlassWebGpuOperationAfterFailure",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1249,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:105",
+          "kind": "runtime-or-mixed",
+          "from": "./groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/webgpu/GroundGlassWebGPUAdapter.tsx:4408"
+      ],
+      "otherReferences": [],
+      "group": "C",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "holdGroundGlassFrameResultForTest",
+      "declaringFile": "src/render/webgpu/groundGlassWebGpuTestSeam.ts",
+      "line": 1264,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/render/GroundGlassRenderHost.tsx:33",
+          "kind": "runtime-or-mixed",
+          "from": "./webgpu/groundGlassWebGpuTestSeam"
+        }
+      ],
+      "calls": [
+        "src/render/GroundGlassRenderHost.tsx:495"
+      ],
+      "otherReferences": [],
+      "group": "C",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Control access: DEV && VITE_GROUND_GLASS_WEBGPU_TEST_SEAM=true; pure identity/type helpers do not necessarily use this gate."
+    },
+    {
+      "symbol": "M7N_RENDERER_LIFECYCLE_TRACE_CAPACITY",
+      "declaringFile": "src/render/testing/m7nRendererLifecycleTrace.ts",
+      "line": 1,
+      "kind": "value",
+      "imports": [],
+      "calls": [],
+      "otherReferences": [
+        "src/render/testing/m7nRendererLifecycleTrace.ts:90"
+      ],
+      "group": "F",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Trace runtime: DEV && VITE_M7N_RENDERER_LIFECYCLE_TRACE=true; pure collector/identity types and constants are separately callable."
+    },
+    {
+      "symbol": "M7N_RENDERER_LIFECYCLE_TRACE_SCHEMA_VERSION",
+      "declaringFile": "src/render/testing/m7nRendererLifecycleTrace.ts",
+      "line": 2,
+      "kind": "value",
+      "imports": [],
+      "calls": [],
+      "otherReferences": [
+        "src/render/testing/m7nRendererLifecycleTrace.ts:136"
+      ],
+      "group": "F",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Trace runtime: DEV && VITE_M7N_RENDERER_LIFECYCLE_TRACE=true; pure collector/identity types and constants are separately callable."
+    },
+    {
+      "symbol": "RendererLifecycleTraceSurface",
+      "declaringFile": "src/render/testing/m7nRendererLifecycleTrace.ts",
+      "line": 4,
+      "kind": "type",
+      "imports": [],
+      "calls": [],
+      "otherReferences": [
+        "src/render/testing/m7nRendererLifecycleTrace.ts:14",
+        "src/render/testing/m7nRendererLifecycleTrace.ts:29"
+      ],
+      "group": "F",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Trace runtime: DEV && VITE_M7N_RENDERER_LIFECYCLE_TRACE=true; pure collector/identity types and constants are separately callable."
+    },
+    {
+      "symbol": "RendererLifecycleTraceValue",
+      "declaringFile": "src/render/testing/m7nRendererLifecycleTrace.ts",
+      "line": 11,
+      "kind": "type",
+      "imports": [],
+      "calls": [],
+      "otherReferences": [
+        "src/render/testing/m7nRendererLifecycleTrace.ts:21",
+        "src/render/testing/m7nRendererLifecycleTrace.ts:36",
+        "src/render/testing/m7nRendererLifecycleTrace.ts:71",
+        "src/render/testing/m7nRendererLifecycleTrace.ts:73"
+      ],
+      "group": "F",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Trace runtime: DEV && VITE_M7N_RENDERER_LIFECYCLE_TRACE=true; pure collector/identity types and constants are separately callable."
+    },
+    {
+      "symbol": "RendererLifecycleTraceInput",
+      "declaringFile": "src/render/testing/m7nRendererLifecycleTrace.ts",
+      "line": 13,
+      "kind": "type",
+      "imports": [],
+      "calls": [],
+      "otherReferences": [
+        "src/render/testing/m7nRendererLifecycleTrace.ts:49",
+        "src/render/testing/m7nRendererLifecycleTrace.ts:54",
+        "src/render/testing/m7nRendererLifecycleTrace.ts:70",
+        "src/render/testing/m7nRendererLifecycleTrace.ts:102",
+        "src/render/testing/m7nRendererLifecycleTrace.ts:153",
+        "src/render/testing/m7nRendererLifecycleTrace.ts:217"
+      ],
+      "group": "F",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Trace runtime: DEV && VITE_M7N_RENDERER_LIFECYCLE_TRACE=true; pure collector/identity types and constants are separately callable."
+    },
+    {
+      "symbol": "RendererLifecycleTraceEvent",
+      "declaringFile": "src/render/testing/m7nRendererLifecycleTrace.ts",
+      "line": 24,
+      "kind": "type",
+      "imports": [],
+      "calls": [],
+      "otherReferences": [
+        "src/render/testing/m7nRendererLifecycleTrace.ts:45",
+        "src/render/testing/m7nRendererLifecycleTrace.ts:49",
+        "src/render/testing/m7nRendererLifecycleTrace.ts:54",
+        "src/render/testing/m7nRendererLifecycleTrace.ts:94",
+        "src/render/testing/m7nRendererLifecycleTrace.ts:106"
+      ],
+      "group": "F",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Trace runtime: DEV && VITE_M7N_RENDERER_LIFECYCLE_TRACE=true; pure collector/identity types and constants are separately callable."
+    },
+    {
+      "symbol": "RendererLifecycleTraceSnapshot",
+      "declaringFile": "src/render/testing/m7nRendererLifecycleTrace.ts",
+      "line": 39,
+      "kind": "type",
+      "imports": [],
+      "calls": [],
+      "otherReferences": [
+        "src/render/testing/m7nRendererLifecycleTrace.ts:50",
+        "src/render/testing/m7nRendererLifecycleTrace.ts:55",
+        "src/render/testing/m7nRendererLifecycleTrace.ts:164"
+      ],
+      "group": "F",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Trace runtime: DEV && VITE_M7N_RENDERER_LIFECYCLE_TRACE=true; pure collector/identity types and constants are separately callable."
+    },
+    {
+      "symbol": "RendererLifecycleTraceCollector",
+      "declaringFile": "src/render/testing/m7nRendererLifecycleTrace.ts",
+      "line": 48,
+      "kind": "type",
+      "imports": [],
+      "calls": [],
+      "otherReferences": [
+        "src/render/testing/m7nRendererLifecycleTrace.ts:89",
+        "src/render/testing/m7nRendererLifecycleTrace.ts:149",
+        "src/render/testing/m7nRendererLifecycleTrace.ts:151"
+      ],
+      "group": "F",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Trace runtime: DEV && VITE_M7N_RENDERER_LIFECYCLE_TRACE=true; pure collector/identity types and constants are separately callable."
+    },
+    {
+      "symbol": "RendererLifecycleTraceRuntime",
+      "declaringFile": "src/render/testing/m7nRendererLifecycleTrace.ts",
+      "line": 53,
+      "kind": "type",
+      "imports": [],
+      "calls": [],
+      "otherReferences": [
+        "src/render/testing/m7nRendererLifecycleTrace.ts:150"
+      ],
+      "group": "F",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Trace runtime: DEV && VITE_M7N_RENDERER_LIFECYCLE_TRACE=true; pure collector/identity types and constants are separately callable."
+    },
+    {
+      "symbol": "createRendererLifecycleTraceCollector",
+      "declaringFile": "src/render/testing/m7nRendererLifecycleTrace.ts",
+      "line": 87,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/tests/unit/m7nRendererLifecycleTrace.test.ts:3",
+          "kind": "runtime-or-mixed",
+          "from": "../../render/testing/m7nRendererLifecycleTrace"
+        }
+      ],
+      "calls": [
+        "src/render/testing/m7nRendererLifecycleTrace.ts:185",
+        "src/tests/unit/m7nRendererLifecycleTrace.test.ts:11",
+        "src/tests/unit/m7nRendererLifecycleTrace.test.ts:28",
+        "src/tests/unit/m7nRendererLifecycleTrace.test.ts:53",
+        "src/tests/unit/m7nRendererLifecycleTrace.test.ts:95",
+        "src/tests/unit/m7nRendererLifecycleTrace.test.ts:117",
+        "src/tests/unit/m7nRendererLifecycleTrace.test.ts:134",
+        "src/tests/unit/m7nRendererLifecycleTrace.test.ts:149",
+        "src/tests/unit/m7nRendererLifecycleTrace.test.ts:173",
+        "src/tests/unit/m7nRendererLifecycleTrace.test.ts:183"
+      ],
+      "otherReferences": [],
+      "group": "F",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Trace runtime: DEV && VITE_M7N_RENDERER_LIFECYCLE_TRACE=true; pure collector/identity types and constants are separately callable."
+    },
+    {
+      "symbol": "createRendererLifecycleTraceRuntime",
+      "declaringFile": "src/render/testing/m7nRendererLifecycleTrace.ts",
+      "line": 147,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/tests/unit/m7nRendererLifecycleTrace.test.ts:4",
+          "kind": "runtime-or-mixed",
+          "from": "../../render/testing/m7nRendererLifecycleTrace"
+        }
+      ],
+      "calls": [
+        "src/render/testing/m7nRendererLifecycleTrace.ts:183",
+        "src/tests/unit/m7nRendererLifecycleTrace.test.ts:115"
+      ],
+      "otherReferences": [],
+      "group": "F",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Trace runtime: DEV && VITE_M7N_RENDERER_LIFECYCLE_TRACE=true; pure collector/identity types and constants are separately callable."
+    },
+    {
+      "symbol": "M7nRendererLifecycleTraceApi",
+      "declaringFile": "src/render/testing/m7nRendererLifecycleTrace.ts",
+      "line": 163,
+      "kind": "type",
+      "imports": [],
+      "calls": [],
+      "otherReferences": [
+        "src/render/testing/m7nRendererLifecycleTrace.ts:169"
+      ],
+      "group": "F",
+      "decision": "R \u2014 retained contract type",
+      "gate": "Trace runtime: DEV && VITE_M7N_RENDERER_LIFECYCLE_TRACE=true; pure collector/identity types and constants are separately callable."
+    },
+    {
+      "symbol": "shouldEnableRendererLifecycleTrace",
+      "declaringFile": "src/render/testing/m7nRendererLifecycleTrace.ts",
+      "line": 173,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/tests/unit/m7nRendererLifecycleTrace.test.ts:5",
+          "kind": "runtime-or-mixed",
+          "from": "../../render/testing/m7nRendererLifecycleTrace"
+        }
+      ],
+      "calls": [
+        "src/render/testing/m7nRendererLifecycleTrace.ts:178",
+        "src/tests/unit/m7nRendererLifecycleTrace.test.ts:127",
+        "src/tests/unit/m7nRendererLifecycleTrace.test.ts:128",
+        "src/tests/unit/m7nRendererLifecycleTrace.test.ts:129",
+        "src/tests/unit/m7nRendererLifecycleTrace.test.ts:130"
+      ],
+      "otherReferences": [],
+      "group": "F",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Trace runtime: DEV && VITE_M7N_RENDERER_LIFECYCLE_TRACE=true; pure collector/identity types and constants are separately callable."
+    },
+    {
+      "symbol": "rendererLifecycleTraceEnabled",
+      "declaringFile": "src/render/testing/m7nRendererLifecycleTrace.ts",
+      "line": 178,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/app/pages.tsx:19",
+          "kind": "runtime-or-mixed",
+          "from": "../render/testing/m7nRendererLifecycleTrace"
+        },
+        {
+          "at": "src/components/layout/SimulatorWorkspace.tsx:73",
+          "kind": "runtime-or-mixed",
+          "from": "../../render/testing/m7nRendererLifecycleTrace"
+        },
+        {
+          "at": "src/components/simulator/SceneViewport.tsx:39",
+          "kind": "runtime-or-mixed",
+          "from": "../../render/testing/m7nRendererLifecycleTrace"
+        },
+        {
+          "at": "src/components/simulator/useObserverRendererLifecycle.ts:9",
+          "kind": "runtime-or-mixed",
+          "from": "../../render/testing/m7nRendererLifecycleTrace"
+        },
+        {
+          "at": "src/render/GroundGlassRenderHost.tsx:50",
+          "kind": "runtime-or-mixed",
+          "from": "./testing/m7nRendererLifecycleTrace"
+        },
+        {
+          "at": "src/render/SceneRenderer.tsx:95",
+          "kind": "runtime-or-mixed",
+          "from": "./testing/m7nRendererLifecycleTrace"
+        }
+      ],
+      "calls": [],
+      "otherReferences": [
+        "src/app/pages.tsx:33",
+        "src/app/pages.tsx:37",
+        "src/app/pages.tsx:44",
+        "src/app/pages.tsx:192",
+        "src/app/pages.tsx:234",
+        "src/components/layout/SimulatorWorkspace.tsx:164",
+        "src/components/layout/SimulatorWorkspace.tsx:167",
+        "src/components/layout/SimulatorWorkspace.tsx:170",
+        "src/components/layout/SimulatorWorkspace.tsx:206",
+        "src/components/layout/SimulatorWorkspace.tsx:215",
+        "src/components/simulator/SceneViewport.tsx:103",
+        "src/components/simulator/SceneViewport.tsx:286",
+        "src/components/simulator/SceneViewport.tsx:300",
+        "src/components/simulator/SceneViewport.tsx:305",
+        "src/components/simulator/useObserverRendererLifecycle.ts:84",
+        "src/components/simulator/useObserverRendererLifecycle.ts:106",
+        "src/components/simulator/useObserverRendererLifecycle.ts:140",
+        "src/components/simulator/useObserverRendererLifecycle.ts:186",
+        "src/components/simulator/useObserverRendererLifecycle.ts:190",
+        "src/components/simulator/useObserverRendererLifecycle.ts:202",
+        "src/components/simulator/useObserverRendererLifecycle.ts:277",
+        "src/render/GroundGlassRenderHost.tsx:193",
+        "src/render/GroundGlassRenderHost.tsx:218",
+        "src/render/GroundGlassRenderHost.tsx:240",
+        "src/render/GroundGlassRenderHost.tsx:244",
+        "src/render/GroundGlassRenderHost.tsx:334",
+        "src/render/GroundGlassRenderHost.tsx:441",
+        "src/render/GroundGlassRenderHost.tsx:455",
+        "src/render/GroundGlassRenderHost.tsx:545",
+        "src/render/GroundGlassRenderHost.tsx:586",
+        "src/render/SceneRenderer.tsx:1758",
+        "src/render/SceneRenderer.tsx:1782",
+        "src/render/SceneRenderer.tsx:1816",
+        "src/render/SceneRenderer.tsx:2248",
+        "src/render/testing/m7nRendererLifecycleTrace.ts:184",
+        "src/render/testing/m7nRendererLifecycleTrace.ts:193",
+        "src/render/testing/m7nRendererLifecycleTrace.ts:219"
+      ],
+      "group": "F",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Trace runtime: DEV && VITE_M7N_RENDERER_LIFECYCLE_TRACE=true; pure collector/identity types and constants are separately callable."
+    },
+    {
+      "symbol": "allocateRendererLifecycleMountIdentity",
+      "declaringFile": "src/render/testing/m7nRendererLifecycleTrace.ts",
+      "line": 190,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/components/simulator/SceneViewport.tsx:37",
+          "kind": "runtime-or-mixed",
+          "from": "../../render/testing/m7nRendererLifecycleTrace"
+        }
+      ],
+      "calls": [
+        "src/components/simulator/SceneViewport.tsx:104"
+      ],
+      "otherReferences": [],
+      "group": "F",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Trace runtime: DEV && VITE_M7N_RENDERER_LIFECYCLE_TRACE=true; pure collector/identity types and constants are separately callable."
+    },
+    {
+      "symbol": "recordRendererLifecycleEvent",
+      "declaringFile": "src/render/testing/m7nRendererLifecycleTrace.ts",
+      "line": 216,
+      "kind": "value",
+      "imports": [
+        {
+          "at": "src/app/pages.tsx:18",
+          "kind": "runtime-or-mixed",
+          "from": "../render/testing/m7nRendererLifecycleTrace"
+        },
+        {
+          "at": "src/components/layout/SimulatorWorkspace.tsx:72",
+          "kind": "runtime-or-mixed",
+          "from": "../../render/testing/m7nRendererLifecycleTrace"
+        },
+        {
+          "at": "src/components/simulator/SceneViewport.tsx:38",
+          "kind": "runtime-or-mixed",
+          "from": "../../render/testing/m7nRendererLifecycleTrace"
+        },
+        {
+          "at": "src/components/simulator/useObserverRendererLifecycle.ts:8",
+          "kind": "runtime-or-mixed",
+          "from": "../../render/testing/m7nRendererLifecycleTrace"
+        },
+        {
+          "at": "src/render/GroundGlassRenderHost.tsx:49",
+          "kind": "runtime-or-mixed",
+          "from": "./testing/m7nRendererLifecycleTrace"
+        },
+        {
+          "at": "src/render/SceneRenderer.tsx:94",
+          "kind": "runtime-or-mixed",
+          "from": "./testing/m7nRendererLifecycleTrace"
+        }
+      ],
+      "calls": [
+        "src/app/pages.tsx:37",
+        "src/app/pages.tsx:44",
+        "src/app/pages.tsx:62",
+        "src/app/pages.tsx:193",
+        "src/components/layout/SimulatorWorkspace.tsx:171",
+        "src/components/layout/SimulatorWorkspace.tsx:178",
+        "src/components/layout/SimulatorWorkspace.tsx:206",
+        "src/components/layout/SimulatorWorkspace.tsx:215",
+        "src/components/simulator/SceneViewport.tsx:306",
+        "src/components/simulator/SceneViewport.tsx:313",
+        "src/components/simulator/SceneViewport.tsx:328",
+        "src/components/simulator/SceneViewport.tsx:339",
+        "src/components/simulator/SceneViewport.tsx:520",
+        "src/components/simulator/useObserverRendererLifecycle.ts:108",
+        "src/components/simulator/useObserverRendererLifecycle.ts:142",
+        "src/components/simulator/useObserverRendererLifecycle.ts:190",
+        "src/components/simulator/useObserverRendererLifecycle.ts:202",
+        "src/components/simulator/useObserverRendererLifecycle.ts:277",
+        "src/render/GroundGlassRenderHost.tsx:193",
+        "src/render/GroundGlassRenderHost.tsx:218",
+        "src/render/GroundGlassRenderHost.tsx:244",
+        "src/render/GroundGlassRenderHost.tsx:334",
+        "src/render/GroundGlassRenderHost.tsx:441",
+        "src/render/GroundGlassRenderHost.tsx:455",
+        "src/render/GroundGlassRenderHost.tsx:545",
+        "src/render/GroundGlassRenderHost.tsx:586",
+        "src/render/SceneRenderer.tsx:1760",
+        "src/render/SceneRenderer.tsx:1770",
+        "src/render/SceneRenderer.tsx:1784",
+        "src/render/SceneRenderer.tsx:1820",
+        "src/render/SceneRenderer.tsx:1838",
+        "src/render/SceneRenderer.tsx:1852",
+        "src/render/SceneRenderer.tsx:1868",
+        "src/render/SceneRenderer.tsx:2250"
+      ],
+      "otherReferences": [],
+      "group": "F",
+      "decision": "R \u2014 referenced; preserve contract",
+      "gate": "Trace runtime: DEV && VITE_M7N_RENDERER_LIFECYCLE_TRACE=true; pure collector/identity types and constants are separately callable."
+    }
+  ],
+  "productionBuild": {
+    "command": "npm run build",
+    "sourceCommit": "f2a55e62853a237953b3c1484b72a1d311328910",
+    "node": "v24.3.0",
+    "vite": "8.1.4",
+    "three": "0.187.0",
+    "base": "/view-camera-simulator/",
+    "mode": "production",
+    "viteAndGroundGlassEnvironment": "unset",
+    "artifacts": [
+      {
+        "path": "assets/GroundGlassWebGPUAdapter-CzadZE68.js",
+        "bytes": 124046,
+        "sha256": "951be66c9fe66a2326d3f4ea19ce45ec7a94ebe70536434ebc1780fc65db7792"
+      },
+      {
+        "path": "assets/SimulatorWorkspace-eOj_QOtx.js",
+        "bytes": 453269,
+        "sha256": "de9ee39eac3d8c846f82d3100fc684e8286af873971056bdaf1ad0338c5a1311"
+      },
+      {
+        "path": "assets/architecture-foreground.webp",
+        "bytes": 75176,
+        "sha256": "0cd116d1a2ae08cb6fe5b6ddf984b7c1a5a09a956b7298f98e6eef71cb789cc3"
+      },
+      {
+        "path": "assets/architecture-rise.webp",
+        "bytes": 51674,
+        "sha256": "de6404ed282e8f81de4aa840e6477da78c345145b03e5f250f23389d142483c2"
+      },
+      {
+        "path": "assets/favicon.ico",
+        "bytes": 7467,
+        "sha256": "2f80a30193a98be3563d7a9a87fb3602f72149efc28b6c49e4ec9dba1cc0b50c"
+      },
+      {
+        "path": "assets/generated/fringe-club/stage-2h/package-manifest.json",
+        "bytes": 2828,
+        "sha256": "872deb97af8329454fbde9b56cf99b3ff4ce8fa816c189ab61c9ca49e6b06f24"
+      },
+      {
+        "path": "assets/generated/fringe-club/stage-2h/preferred-runtime-candidate.glb",
+        "bytes": 3379292,
+        "sha256": "1f15e04fa6161e327d6f4f89f9b011f3b8f41bcf305e7ee2e3a1a127fef93b8e"
+      },
+      {
+        "path": "assets/icon-original.png",
+        "bytes": 1456412,
+        "sha256": "17551eb0a82ad1bd83f9b9d00266d2ebcad22c1f267f0435050c95c3a98e4608"
+      },
+      {
+        "path": "assets/index-C8nslgKJ.css",
+        "bytes": 102643,
+        "sha256": "8fc3e59ff069ca97c0ed24f028b3d9f0bfe994658fb5d2d4fd3f0e73c1708c54"
+      },
+      {
+        "path": "assets/index-DRUX6X3G.js",
+        "bytes": 903638,
+        "sha256": "d96048e7c82620fd71523010fe8ab3bb08e9164982c5e0a7180308b9e06d51c9"
+      },
+      {
+        "path": "assets/interior-corner.webp",
+        "bytes": 39688,
+        "sha256": "556a07031d590626caf185e94ff2c6fb24123601f88946d37b277d70bb53b0f6"
+      },
+      {
+        "path": "assets/landing/final-cta.webp",
+        "bytes": 89746,
+        "sha256": "59feb56abc705651ff63569289fdc025c5104820f4653ea7c49ed0e0ecc775b6"
+      },
+      {
+        "path": "assets/landing/fundamentals-focus-plane.webp",
+        "bytes": 94802,
+        "sha256": "9132007cf91781762358cfcf9d4f4513e8e91e9ffc498072b96704c6e6e198fe"
+      },
+      {
+        "path": "assets/landing/fundamentals-ground-glass.webp",
+        "bytes": 102270,
+        "sha256": "99ebc4fb9cafd818a96bf5d90e3aab466e47bc17ee5563de0780fb9f8792a823"
+      },
+      {
+        "path": "assets/landing/fundamentals-optical-geometry.webp",
+        "bytes": 74596,
+        "sha256": "64a658f568e625b7c1712431a8d8a2d6d9e9855ff87ff6677cac602a5903ccf5"
+      },
+      {
+        "path": "assets/landing/fundamentals-perspective-control.webp",
+        "bytes": 140834,
+        "sha256": "ef1b2f7769c66d72783d3aac263453387135cb20dfb01978f1537b27d837a824"
+      },
+      {
+        "path": "assets/landing/hero-1024.webp",
+        "bytes": 72972,
+        "sha256": "c28a09369e0e8b893061c2fe5de1864d48047619763e89eb3a6fab2744ac2d51"
+      },
+      {
+        "path": "assets/landing/hero-1672.webp",
+        "bytes": 157470,
+        "sha256": "639030a4cb73fc8b5e8b8c696fce9bad675c1437a89f9103d57d7838ee35ea59"
+      },
+      {
+        "path": "assets/landing/hero-640.webp",
+        "bytes": 35136,
+        "sha256": "2035aa50f0c6dbfd5d357af586cec68b2d800d10d2625cd0291d92ba64ae32c0"
+      },
+      {
+        "path": "assets/landing/hero.png",
+        "bytes": 2225947,
+        "sha256": "f88042b807db6ae25323adc002c81e160e706e65468c9777d3d1abd6530e6623"
+      },
+      {
+        "path": "assets/landing/visualize-3d-scene.webp",
+        "bytes": 87352,
+        "sha256": "ee16e2c08a70955cdeefe22d7f567f7768db3a005ea0974b1a3b4099807256d7"
+      },
+      {
+        "path": "assets/landing/visualize-geometry.webp",
+        "bytes": 107206,
+        "sha256": "d29e40a0059fce770bcaeb400ae1c1d933d0ed2888aa4d7fb8d8a0012d467fda"
+      },
+      {
+        "path": "assets/landing/visualize-ground-glass.webp",
+        "bytes": 110834,
+        "sha256": "a3b46f524e78db8a686188e34c60cd8a5547070567707da0043e2847600ed4f8"
+      },
+      {
+        "path": "assets/landing/why-camera-movements.webp",
+        "bytes": 118206,
+        "sha256": "33fcad5eccedb2e99876550e3f914357444e45c49e80d0a5b825d49b22f5cb16"
+      },
+      {
+        "path": "assets/landing/why-control-before-shot.webp",
+        "bytes": 140628,
+        "sha256": "a122d16a5406c97709f17d6605aafae295ea18699376c2d1c72d338e5c1cd16d"
+      },
+      {
+        "path": "assets/landing/why-large-format-learning.webp",
+        "bytes": 157300,
+        "sha256": "84ff4709d84360268567a104cf6dd779aa5d1420132e9ef87b142f0e3cba4343"
+      },
+      {
+        "path": "assets/macro-bellows-extension.webp",
+        "bytes": 77868,
+        "sha256": "f31c2757a3bb891a4abb864b7ee98b257113829d5632504ea64425b6cb0071df"
+      },
+      {
+        "path": "assets/macro-compound-movements.webp",
+        "bytes": 70148,
+        "sha256": "2eaef007716a76165fb36af4fcac1a10173b63a5da6a4f1f1a2d51b17345b0c2"
+      },
+      {
+        "path": "assets/macro-depth-of-field.webp",
+        "bytes": 60834,
+        "sha256": "ceb31c277996e0ab81d45bf4e6402304eb4d5a56f64c68cf125e491401bb8eb2"
+      },
+      {
+        "path": "assets/macro-oblique-plane.webp",
+        "bytes": 102918,
+        "sha256": "f72516cb4ab880d1df187a1542a95e85078db292e026c43765d737067a65a15a"
+      },
+      {
+        "path": "assets/mirror-shift.webp",
+        "bytes": 32220,
+        "sha256": "d3ef62fcdc5388dfc25aad5d65845be0686ed4762c4a27e3f5cf9cf1ae594871"
+      },
+      {
+        "path": "assets/oblique-architecture.webp",
+        "bytes": 48096,
+        "sha256": "056b9f10840ca08626412c43cf08168d40af3564a30aaf358b99e70784f0cdc9"
+      },
+      {
+        "path": "assets/oblique-tabletop.webp",
+        "bytes": 33792,
+        "sha256": "b78db61e53cb98467fd02fcdf3489acfbace75ae033acec5383e0b44f6c355ec"
+      },
+      {
+        "path": "assets/react-BwGFFZJM.js",
+        "bytes": 8708,
+        "sha256": "1c456a63242a98fbeb412e994656b060a3243900b30a296b47ef2b50135aa50d"
+      },
+      {
+        "path": "assets/react-fiber-BGRwGTNw.js",
+        "bytes": 924396,
+        "sha256": "45c477671c8a74951cd6e669b41ea7c59337b31944e6118711f142ade9b3a5fe"
+      },
+      {
+        "path": "assets/react-runtime-CFdvXQJG.js",
+        "bytes": 181789,
+        "sha256": "552ac4c95d2f6709fd219230c1e0dd6b2e8ac61ed5158647a5f2b94dceed9767"
+      },
+      {
+        "path": "assets/rolldown-runtime-QTnfLwEv.js",
+        "bytes": 694,
+        "sha256": "5db5ba82eef00d1dee7e86e663098c9427d01183a88d357437daff295aec3e75"
+      },
+      {
+        "path": "assets/scene-view-camera-anatomy.webp",
+        "bytes": 35910,
+        "sha256": "f5e3cedd543dd4b99e4e62b5eae4cc2b63fd9ddb2b46ad39ed42a841ba4130d7"
+      },
+      {
+        "path": "assets/shelf-swing.webp",
+        "bytes": 36082,
+        "sha256": "ae0776b6b34120f0862fdce7c9d5f0fc036154bacb62d1989a147f6c1bd61792"
+      },
+      {
+        "path": "assets/still-life-studio.webp",
+        "bytes": 8246,
+        "sha256": "f30b7fa7af681a4d9fecf0216a9aafffec997b49b2bef8b5c57599c20b3309b5"
+      },
+      {
+        "path": "assets/table-tilt.webp",
+        "bytes": 41248,
+        "sha256": "c4b903a650249586471ae4a8e4055abe92e38b74db3c4bd1724f1c946e2ab706"
+      },
+      {
+        "path": "assets/three-CQk4CGqO.js",
+        "bytes": 225726,
+        "sha256": "f10a34c33bb68762c1d857d84247433a4049279925eaf09b8c9e834673e13394"
+      },
+      {
+        "path": "assets/three-stdlib-Cxw2KCsn.js",
+        "bytes": 14357,
+        "sha256": "eaefd53052dfa13fb24bc5cecebd85f6b8b84e34335805adfaa0139106d8f2d3"
+      },
+      {
+        "path": "assets/three-webgpu-C1okyZIw.js",
+        "bytes": 421481,
+        "sha256": "542db343a0250137117d9e4efce1c97229c664fb6450003bbd023d96aafee66d"
+      },
+      {
+        "path": "assets/two-targets-illustration.webp",
+        "bytes": 35740,
+        "sha256": "66c3f0afd602b024a3292a7b43cc79fc0df7d22ff38ed0aa370affd6a8a4ec8d"
+      },
+      {
+        "path": "assets/understanding-camera-movements.webp",
+        "bytes": 34694,
+        "sha256": "460f6afe1f6856c8a63d1bf682d8c6fb5471c45478fa2f4cfda7dca032d1ea2a"
+      },
+      {
+        "path": "assets/vendor-Ch_qpgZg.js",
+        "bytes": 143250,
+        "sha256": "3fde822814b15465256f9751ae223a2f7ee0290c2dd97cea9cf8b4343b859bc3"
+      },
+      {
+        "path": "assets/view-camera-app-icon-128.png",
+        "bytes": 19320,
+        "sha256": "aab575fe9c13e1742ce9bf9f6f579794790a7fa21999e1f8a0a4b5b2d000be9e"
+      },
+      {
+        "path": "assets/view-camera-app-icon-16.png",
+        "bytes": 729,
+        "sha256": "6a7ecaae016769be1e7187b1a0ffc6cd37bb2b19edfca23f99243f3cde5405b0"
+      },
+      {
+        "path": "assets/view-camera-app-icon-180.png",
+        "bytes": 35137,
+        "sha256": "c38f6843bf1291b2a8fb6c623e8201190a3b5441ffb2fe164e0c0458dc9d3d01"
+      },
+      {
+        "path": "assets/view-camera-app-icon-192.png",
+        "bytes": 39349,
+        "sha256": "d7ebee912515520f23d9f28b0655025b8342953e94f99376622e6ed73a7695b5"
+      },
+      {
+        "path": "assets/view-camera-app-icon-32.png",
+        "bytes": 2013,
+        "sha256": "08ddf436f93fc10107d7c202fba12a85dc0f941e5f6f41a63eb196154a36cff1"
+      },
+      {
+        "path": "assets/view-camera-app-icon-512.png",
+        "bytes": 255046,
+        "sha256": "da096e24bceee67f045a2750b5c527b11f8e2ea88dfda7ead05436388a34a91a"
+      },
+      {
+        "path": "assets/view-camera-app-icon.png",
+        "bytes": 1010615,
+        "sha256": "99b5abfe9b152a5a149cd5e2b13063d516749f4695d0c62025cd379e31cde7d2"
+      },
+      {
+        "path": "assets/view-camera-hero-illustration.png",
+        "bytes": 212980,
+        "sha256": "884aa262219ae9ff0df8adbf4b80106dddfcf8b6a4cb2c65d5076414efb2a63b"
+      },
+      {
+        "path": "favicon.ico",
+        "bytes": 7467,
+        "sha256": "2f80a30193a98be3563d7a9a87fb3602f72149efc28b6c49e4ec9dba1cc0b50c"
+      },
+      {
+        "path": "icons.svg",
+        "bytes": 5031,
+        "sha256": "b45fa506195cfcdef406ba9f0c77b36ddc1a7c224040926ec70abc2fdea7b93a"
+      },
+      {
+        "path": "index.html",
+        "bytes": 2595,
+        "sha256": "d34a2196b3a68545372f6a9dffff84071a9a6abbfbb2a32580abc74374ff5a98"
+      }
+    ]
+  }
+}
