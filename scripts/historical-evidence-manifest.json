@@ -24,6 +24,7 @@
     "src/tests/unit/historicalSourceExecution.test.ts",
     "src/tests/unit/releaseArtifactQualification.test.ts",
     "src/tests/unit/historicalEvidenceRouting.test.ts",
+    "src/tests/unit/nativeWebGpuQualificationPrerequisite.test.ts",
     "src/tests/unit/historicalProductionRelease.test.ts",
     "src/tests/unit/historicalQualificationBaseline.test.ts",
     "src/tests/unit/historicalQualificationGate.test.ts",
@@ -32,6 +33,10 @@
   ],
   "broadFallback": "all-supported-families",
   "ordinaryCiPaths": [
+    {
+      "path": "src/tests/unit/cagePhaseEvidence.test.ts",
+      "owner": "ordinary-ci:unit-tests"
+    },
     {
       "path": "src/render/sceneCapacityBenchmarkQualification.ts",
       "owner": "ordinary-ci:unit-tests"

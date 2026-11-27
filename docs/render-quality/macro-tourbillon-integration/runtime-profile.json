@@ -1,0 +1,50 @@
+{
+  "sceneId": "macro-bellows-extension",
+  "cameraState": {
+    "focalLengthMm": 150,
+    "focusDistanceMm": 300,
+    "apertureFNumber": 5.6,
+    "cageAngleRad": 0
+  },
+  "browser": {
+    "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/149.0.7827.55 Safari/537.36",
+    "devicePixelRatio": 1,
+    "backend": "webgl2",
+    "vendor": "Google Inc. (Google)",
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+  },
+  "sampling": {
+    "frameCadenceSamples": 60,
+    "gpuQuerySamples": 56,
+    "groundGlassCadenceMs": {
+      "p50": 562.6000000238419,
+      "p95": 610.6000000238419,
+      "approxFps": 1.691360530411799
+    },
+    "groundGlassGpuMs": {
+      "p50": 416.844126,
+      "p95": 489.56191699999994
+    },
+    "physicalDofGpuMs": {
+      "p50": 340.554207,
+      "p95": 370.522624
+    },
+    "sceneRenderPassGpuMs": {
+      "p50": 75.840083,
+      "p95": 136.471958
+    }
+  },
+  "rendererResources": {
+    "geometries": 205,
+    "textures": 15
+  },
+  "subject": {
+    "meshes": 263,
+    "uniqueGeometries": 204,
+    "uniqueMaterials": 17,
+    "uniqueTextures": 4,
+    "triangles": 398954,
+    "instancedMeshes": 0
+  },
+  "measurementLimit": "Headless ANGLE SwiftShader software rendering; not representative of hardware-accelerated browser performance."
+}
