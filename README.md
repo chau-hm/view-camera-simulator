@@ -307,3 +307,9 @@ then inspect its source/tree, pin, Preview, upload and fresh-download verificati
 result, and lack of deployment. The pilot is not a release authorization. Main-CI integration is deferred until the separate CI
 routing work stabilizes. Until then this pilot adds a separate build; it does
 not reduce the existing production CI or establish a deployable release.
+
+The exact-source historical qualification command and its non-publishing
+boundary are described in the [historical qualification guide](docs/testing/HISTORICAL_EVIDENCE_QUALIFICATION.md#exact-source-release-qualification-integration-dependency).
+It requires the reviewed Release B preflight to be integrated first; until then
+it fails closed. Neither preflight nor historical qualification authorizes
+production deployment.
