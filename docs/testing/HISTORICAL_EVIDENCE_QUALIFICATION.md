@@ -137,7 +137,7 @@ The corrected feature-push run [#45239461270](https://github.com/chau-hm/view-ca
 
 The targeted local M7F/M7G comparison measured the standalone M7F replay at 460 ms and M7G at 54,918 ms. Both commands exited successfully. The standalone and child report SHA-256 were identical (`50e0928061c2ccc31aa3d18cd8b46ee917266bc51393773ab934bafcc3fa9033`); both named capture source SHA `b10118bd0f656296451520ba10f4d32347a9a552`, replay source SHA `981fea7e0e969a7494ad58b319d906650ad7c891`, and 17 passed scenarios with no failed, blocked, or not-run scenarios. M7G retained `partially-qualified` as its historical qualification state while evidence integrity passed. This local run's final archive decision was `UNVERIFIED` because the sandbox denied writing Git's `FETCH_HEAD`; the validators and route comparison themselves passed. The clean shallow-checkout GitHub run #45239461270 proves the corrected archive and source-provenance path.
 
-### Exact-source release qualification (integration dependency)
+### Exact-source release qualification
 
 The cumulative baseline-to-source planner is shared with the production-event
 adapter. The production adapter still verifies the production merge topology,
@@ -160,7 +160,7 @@ cumulative changed paths are computed independently from the immutable baseline.
 The executor verifies all required validator and pinned-source results, then
 removes its checkout. It does not rerun ordinary CI or build the Pages artifact.
 
-The planned operator command, once the reviewed Release B preflight is merged,
+The operator command, using the merged reviewed Release B preflight,
 is `node scripts/release-artifact-qualify.mjs <source-sha> <ci-run-id>
 <ci-attempt> <producer-run-id> <producer-attempt> <artifact-id>`. It directly
 invokes that local preflight, plans the same source/tree, executes validators
@@ -174,3 +174,5 @@ outcomes, timings and `NOT_DEPLOYED`; it grants no deployment authorization.
 The current reviewed workflow-version policy remains fail-closed. A separately
 reviewed multi-version policy, durable retention and deployment authorization
 remain future integration work before Release D.
+
+Cumulative classification uses current reviewed ownership policy and raw Git blob bytes from the selected source for content-sensitive capture audits; missing or unreadable blobs fail closed. Source execution and the composed qualification both require the complete manifest-derived source-pin inventory, including exact commits, retained refs, verification paths and counts. M7W dynamic paths come from the selected source’s reconciliation document. Legacy archival dispositions remain unverified and qualification grants no deployment authority.

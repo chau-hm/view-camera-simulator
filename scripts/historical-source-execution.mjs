@@ -1,3 +1,4 @@
+import { expectedSourcePins, verifySourcePins } from "./historical-source-pins.mjs";
 import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -9,14 +10,16 @@ import { HISTORICAL_EVIDENCE_MANIFEST } from "./historical-evidence-routing.mjs"
 const CONTRACT_PATHS = ["scripts/run-historical-qualification.mjs", "scripts/historical-evidence-routing.mjs", "scripts/historical-evidence-manifest.json", "scripts/historical-qualification-baseline.json", "scripts/fetch-m7k-execution-source.mjs", "package.json", "package-lock.json"];
 // Narrow compatibility for this PR's routing registration only. The historical
 // source runner has the same validators and pins before these paths existed.
-const ALLOWED_ADDED_PATHS = new Set(["scripts/historical-source-execution.mjs", "scripts/release-artifact-qualify.mjs", "src/tests/unit/historicalSourceExecution.test.ts", "src/tests/unit/releaseArtifactQualification.test.ts"]);
+const ALLOWED_ADDED_PATHS = new Set(["scripts/historical-source-execution.mjs", "scripts/historical-source-pins.mjs", "src/tests/unit/historicalSourcePins.test.ts", "src/tests/unit/nativeWebGpuQualificationPrerequisite.test.ts", "scripts/release-artifact-qualify.mjs", "src/tests/unit/historicalSourceExecution.test.ts", "src/tests/unit/releaseArtifactQualification.test.ts"]);
 const pattern = /^[a-f0-9]{40}$/;
 
 export function compatibleHistoricalManifest(source, trusted) {
   if (!Array.isArray(source?.sharedQualificationPaths) || !Array.isArray(trusted?.sharedQualificationPaths)) return false;
-  const { sharedQualificationPaths: sourcePaths, ...sourcePolicy } = source;
-  const { sharedQualificationPaths: trustedPaths, ...trustedPolicy } = trusted;
-  if (JSON.stringify(sourcePolicy) !== JSON.stringify(trustedPolicy)) return false;
+  const { sharedQualificationPaths: sourcePaths, ordinaryCiPaths: sourceCi, ...sourcePolicy } = source;
+  const { sharedQualificationPaths: trustedPaths, ordinaryCiPaths: trustedCi, ...trustedPolicy } = trusted;
+  if (JSON.stringify(sourcePolicy) !== JSON.stringify(trustedPolicy) || !Array.isArray(sourceCi) || !Array.isArray(trustedCi)) return false;
+  const extraCi = trustedCi.filter((entry) => !sourceCi.some((old) => JSON.stringify(old) === JSON.stringify(entry)));
+  if (sourceCi.some((entry) => !trustedCi.some((current) => JSON.stringify(current) === JSON.stringify(entry))) || extraCi.some((entry) => JSON.stringify(entry) !== JSON.stringify({ path: "src/tests/unit/cagePhaseEvidence.test.ts", owner: "ordinary-ci:unit-tests" }))) return false;
   const oldPaths = new Set(sourcePaths), currentPaths = new Set(trustedPaths);
   return oldPaths.size === sourcePaths.length && currentPaths.size === trustedPaths.length &&
     [...oldPaths].every((path) => currentPaths.has(path)) &&
@@ -24,7 +27,7 @@ export function compatibleHistoricalManifest(source, trusted) {
 }
 
 /** Executes the existing historical runner on a detached source. This is evidence, not release authorization. */
-export function executeSourceValidators({ sourceSha, sourceTreeSha }, { repositoryRoot = process.cwd(), run = spawnSync, tempRoot = tmpdir() } = {}) {
+export function executeSourceValidators({ sourceSha, sourceTreeSha }, { repositoryRoot = process.cwd(), run = spawnSync, tempRoot = tmpdir(), pinInventory = expectedSourcePins } = {}) {
   if (!pattern.test(sourceSha ?? "") || !pattern.test(sourceTreeSha ?? "")) throw new Error("source-execution-identity-invalid");
   const root = resolve(repositoryRoot);
   const call = (command, args, cwd, env = process.env) => {
@@ -39,6 +42,9 @@ export function executeSourceValidators({ sourceSha, sourceTreeSha }, { reposito
     const sourceBlob = git(["rev-parse", `${sourceSha}:${path}`]);
     const trustedBlob = git(["rev-parse", `HEAD:${path}`]);
     if (sourceBlob !== trustedBlob) {
+      // The earlier audited router uses the same shared-infrastructure selector;
+      // source ownership is classified separately by the current source-bound policy.
+      if (path === "scripts/historical-evidence-routing.mjs" && sourceBlob === "3154067aa1e0de98b14b31ff7ccb513d607f5793" && trustedBlob === "f1e895f1db08b29a427c7500b24e4737b9800066") { contract[path] = sourceBlob; continue; }
       if (path !== "scripts/historical-evidence-manifest.json" || !compatibleHistoricalManifest(
         JSON.parse(call("git", ["show", `${sourceSha}:${path}`], root)),
         JSON.parse(call("git", ["show", `HEAD:${path}`], root)),
@@ -75,8 +81,9 @@ export function executeSourceValidators({ sourceSha, sourceTreeSha }, { reposito
     const families = HISTORICAL_EVIDENCE_MANIFEST.families.filter(({ alwaysInOrdinaryCi }) => alwaysInOrdinaryCi !== true);
     const expected = families.flatMap((family) => family.commands.map((command) => `${family.id}:${command.name}`));
     if (families.some(({ id }) => id === "M7F") && families.some(({ id }) => id === "M7G")) expected.push("M7F:standalone versus M7G child replay equivalence");
+    const expectedPins = pinInventory(sourceSha, families.map(({ id }) => id), root);
     const actual = (report.validators ?? []).map((entry) => `${entry.family}:${entry.name}`);
-    if (report.checkedOutSha !== sourceSha || report.decision !== "QUALIFIED" || JSON.stringify(report.families) !== JSON.stringify(families.map(({ id }) => id)) || JSON.stringify(actual) !== JSON.stringify(expected) || report.validators.some((entry) => entry.exitCode !== 0 || entry.signal || entry.error) || report.sourceFetches.some((entry) => entry.exitCode !== 0) || report.missingArtifacts.length || report.unsupported.length) throw new Error("source-execution-evidence-incomplete");
+    if (report.checkedOutSha !== sourceSha || report.decision !== "QUALIFIED" || JSON.stringify(report.families) !== JSON.stringify(families.map(({ id }) => id)) || JSON.stringify(actual) !== JSON.stringify(expected) || report.validators.some((entry) => entry.exitCode !== 0 || entry.signal || entry.error) || !verifySourcePins(report.sourceFetches, expectedPins) || report.missingArtifacts.length || report.unsupported.length) throw new Error("source-execution-evidence-incomplete");
     if (git(["rev-parse", "HEAD"], checkout) !== sourceSha || git(["rev-parse", "HEAD^{tree}"], checkout) !== sourceTreeSha || git(["status", "--porcelain"], checkout)) throw new Error("source-execution-checkout-mutated");
     return { evidenceOnly: true, cleanup: "REMOVED_ON_SUCCESS", scopeSelector: "scripts/historical-evidence-routing.mjs", sourceSha, sourceTreeSha, qualificationManifestBlob: contract["scripts/historical-evidence-manifest.json"], checkoutMs, installMs, executionMs, validators: report.validators, sourceFetches: report.sourceFetches, missingArtifacts: report.missingArtifacts, families: report.families };
   } finally {

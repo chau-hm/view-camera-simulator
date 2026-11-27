@@ -20,6 +20,8 @@
     "scripts/historical-qualification-ci-gate.mjs",
     "scripts/run-historical-qualification.mjs",
     "scripts/historical-source-execution.mjs",
+    "scripts/historical-source-pins.mjs",
+    "src/tests/unit/historicalSourcePins.test.ts",
     "scripts/release-artifact-qualify.mjs",
     "src/tests/unit/historicalSourceExecution.test.ts",
     "src/tests/unit/releaseArtifactQualification.test.ts",

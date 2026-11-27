@@ -1,4 +1,4 @@
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -124,6 +124,47 @@ async function promote(fixture: ReturnType<typeof createFixture>, sourceSha: str
   });
   return { after, result };
 }
+
+describe("source-bound production routing", () => {
+  it("uses selected Git bytes despite modified or missing checkout files", async () => {
+    const fixture = createFixture();
+    const owner = "src/tests/render-quality/e2e/macro-tourbillon-reviewfix-capture.spec.ts";
+    const helper = "src/tests/e2e/helpers/stepRangeInput.ts";
+    const config = "playwright.macro-tourbillon-hardware.config.ts";
+    for (const path of [owner, helper, config]) {
+      const dest = resolve(fixture.work, path);
+      mkdirSync(resolve(dest, ".."), { recursive: true });
+      writeFileSync(dest, readFileSync(resolve(process.cwd(), path)));
+    }
+    git(fixture.work, ["add", owner, helper, config]);
+    git(fixture.work, ["commit", "-m", "audited bytes"]);
+    const accepted = git(fixture.work, ["rev-parse", "HEAD"]);
+    writeFileSync(resolve(fixture.work, helper), "changed helper");
+    git(fixture.work, ["add", helper]);
+    git(fixture.work, ["commit", "-m", "changed helper"]);
+    const changed = git(fixture.work, ["rev-parse", "HEAD"]);
+    const plan = async (sourceSha: string) => discoverCumulativeSource({ sourceSha, sourceTreeSha: git(fixture.work, ["rev-parse", `${sourceSha}^{tree}`]) }, { runGit, repositoryRoot: fixture.work, baseline: fixture.baseline, baselineIdentity: fixture.baselineIdentity });
+    expect((await plan(accepted)).decision).not.toBe("UNVERIFIED");
+    expect((await plan(changed)).decision).toBe("UNVERIFIED");
+    writeFileSync(resolve(fixture.work, helper), readFileSync(resolve(process.cwd(), helper)));
+    expect((await plan(changed)).decision).toBe("UNVERIFIED");
+    rmSync(resolve(fixture.work, helper));
+    expect((await plan(accepted)).decision).not.toBe("UNVERIFIED");
+    git(fixture.work, ["rm", "-f", helper]);
+    git(fixture.work, ["commit", "-m", "missing helper"]);
+    const missing = git(fixture.work, ["rev-parse", "HEAD"]);
+    mkdirSync(resolve(fixture.work, helper, ".."), { recursive: true });
+    writeFileSync(resolve(fixture.work, helper), readFileSync(resolve(process.cwd(), helper)));
+    expect((await plan(missing)).decision).toBe("UNVERIFIED");
+    git(fixture.work, ["add", helper]);
+    writeFileSync(resolve(fixture.work, owner), "changed owner");
+    git(fixture.work, ["add", owner]);
+    git(fixture.work, ["commit", "-m", "changed test"]);
+    const changedOwner = git(fixture.work, ["rev-parse", "HEAD"]);
+    writeFileSync(resolve(fixture.work, owner), readFileSync(resolve(process.cwd(), owner)));
+    expect((await plan(changedOwner)).decision).toBe("UNVERIFIED");
+  });
+});
 
 describe("production historical release proof", () => {
   it("accepts only an exact two-parent promotion whose source is on main and tree matches", async () => {

@@ -1,3 +1,4 @@
+import { expectedSourcePins, verifySourcePins } from "./historical-source-pins.mjs";
 import { spawnSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -41,7 +42,7 @@ export async function verifyReleaseBContract({ runGit = git, repositoryRoot = ro
 }
 
 /** Re-establishes preflight; injected functions are for controlled tests only. */
-export async function qualifyCandidate(args, { preflight, planner = planMainSource, execute = executeSourceValidators, runGit = git, repositoryRoot = root } = {}) {
+export async function qualifyCandidate(args, { preflight, planner = planMainSource, execute = executeSourceValidators, runGit = git, repositoryRoot = root, pinInventory = expectedSourcePins } = {}) {
   if (!Array.isArray(args) || args.length !== 6 || !sha.test(args[0] ?? "") || !args.slice(1).every((v) => /^[1-9][0-9]{0,15}$/.test(v))) throw new Error("qualification-identifiers-invalid");
   if (typeof preflight !== "function") throw new Error("trusted-release-preflight-unavailable");
   const startedAt = Date.now();
@@ -58,7 +59,7 @@ export async function qualifyCandidate(args, { preflight, planner = planMainSour
   const requiredFamilies = HISTORICAL_EVIDENCE_MANIFEST.families.filter(({ alwaysInOrdinaryCi }) => alwaysInOrdinaryCi !== true);
   const requiredValidators = requiredFamilies.flatMap((family) => family.commands.map((command) => `${family.id}:${command.name}`));
   if (requiredFamilies.some(({ id }) => id === "M7F") && requiredFamilies.some(({ id }) => id === "M7G")) requiredValidators.push("M7F:standalone versus M7G child replay equivalence");
-  if (!evidence?.evidenceOnly || evidence.sourceSha !== source || evidence.sourceTreeSha !== candidate.tree || !sha.test(evidence.qualificationManifestBlob ?? "") || !Array.isArray(evidence.validators) || JSON.stringify(evidence.validators.map((v) => `${v.family}:${v.name}`)) !== JSON.stringify(requiredValidators) || evidence.validators.some((v) => v.exitCode !== 0 || v.signal || v.error) || !Array.isArray(evidence.sourceFetches) || evidence.sourceFetches.some((v) => v.exitCode !== 0) || evidence.missingArtifacts?.length || JSON.stringify(evidence.families) !== JSON.stringify(plan.families) || JSON.stringify(plan.families) !== JSON.stringify(requiredFamilies.map(({ id }) => id))) throw new Error("qualification-validator-evidence-mismatch");
+  if (!evidence?.evidenceOnly || evidence.sourceSha !== source || evidence.sourceTreeSha !== candidate.tree || !sha.test(evidence.qualificationManifestBlob ?? "") || !Array.isArray(evidence.validators) || JSON.stringify(evidence.validators.map((v) => `${v.family}:${v.name}`)) !== JSON.stringify(requiredValidators) || evidence.validators.some((v) => v.exitCode !== 0 || v.signal || v.error) || !verifySourcePins(evidence.sourceFetches, pinInventory(source, requiredFamilies.map(({ id }) => id), repositoryRoot)) || evidence.missingArtifacts?.length || JSON.stringify(evidence.families) !== JSON.stringify(plan.families) || JSON.stringify(plan.families) !== JSON.stringify(requiredFamilies.map(({ id }) => id))) throw new Error("qualification-validator-evidence-mismatch");
   const refs = (await runGit(["ls-remote", "--heads", "origin", "refs/heads/main"], repositoryRoot)).trim().split(/\s+/);
   if (refs[0] !== candidate.main || refs[1] !== "refs/heads/main") throw new Error("qualification-main-moved");
   const ownershipCounts = (plan.qualificationCoverage.pathOwnership ?? []).reduce((counts, entry) => {

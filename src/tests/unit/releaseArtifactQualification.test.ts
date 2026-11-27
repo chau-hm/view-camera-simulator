@@ -1,4 +1,7 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
+// @ts-expect-error JavaScript helper without declarations
+import { expectedSourcePins } from "../../../scripts/historical-source-pins.mjs";
 import { HISTORICAL_EVIDENCE_MANIFEST } from "../../../scripts/historical-evidence-routing.mjs";
 // @ts-expect-error JavaScript helper without declarations
 import { qualifyCandidate, verifyReleaseBContract } from "../../../scripts/release-artifact-qualify.mjs";
@@ -11,12 +14,14 @@ validators.push({ family: "M7F", name: "standalone versus M7G child replay equiv
 function fixture() {
   const candidate = { status: "RELEASE_PREFLIGHT_VERIFIED", qualification: "RELEASE_QUALIFICATION_PENDING", deployment: "NOT_DEPLOYED", repository: "chau-hm/view-camera-simulator", source, tree, main, ci: { runId: "10", attempt: 2 }, producer: { runId: "20", attempt: 1 }, artifact: { id: "30", transportDigest: `sha256:${"d".repeat(64)}` }, identity: { sourceCommit: source, sourceTree: tree, manifestSha256: "e".repeat(64), contentDigest: "f".repeat(64) } };
   const plan = { planOnly: true, decision: "QUALIFIED_WITH_LEGACY_ARCHIVAL", fetchedMainSha: main, releaseProof: { promotedSourceSha: source, sourceTreeSha: tree, policyIdentity: { commit: "baseline" } }, qualificationCoverage: { unresolvedPaths: [] as string[], legacyDispositions: [{ path: "archive" }] }, unsupported: [], families: families.map(({ id }) => id), changedPaths: ["src/a"], planningTimings: { baselineMs: 1, routingMs: 1 } };
-  const evidence = { evidenceOnly: true, sourceSha: source, sourceTreeSha: tree, qualificationManifestBlob: "f".repeat(40), families: families.map(({ id }) => id), validators: validators.map((v) => ({ ...v })), sourceFetches: [{ exitCode: 0 }], missingArtifacts: [], checkoutMs: 1, installMs: 1, executionMs: 1 };
+  const pins = expectedSourcePins(source, families.map(({ id }) => id), process.cwd(), (path: string) => readFileSync(path));
+  const pinInventory = () => pins;
+  const evidence = { evidenceOnly: true, sourceSha: source, sourceTreeSha: tree, qualificationManifestBlob: "f".repeat(40), families: families.map(({ id }) => id), validators: validators.map((v) => ({ ...v })), sourceFetches: pins.map((pin: object) => ({ ...pin, exitCode: 0 })), missingArtifacts: [], checkoutMs: 1, installMs: 1, executionMs: 1 };
   const preflight = vi.fn(async () => candidate);
   const planner = vi.fn(async () => plan);
   const execute = vi.fn(async () => evidence);
   const runGit = vi.fn(async () => `${main}\trefs/heads/main\n`);
-  return { candidate, plan, evidence, preflight, planner, execute, runGit };
+  return { candidate, plan, evidence, preflight, planner, execute, runGit, pinInventory };
 }
 
 describe("release artifact historical qualification", () => {

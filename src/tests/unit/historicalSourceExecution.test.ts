@@ -2,12 +2,15 @@ import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSyn
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+// @ts-expect-error JavaScript helper without declarations
+import { expectedSourcePins } from "../../../scripts/historical-source-pins.mjs";
 import { HISTORICAL_EVIDENCE_MANIFEST } from "../../../scripts/historical-evidence-routing.mjs";
 // @ts-expect-error JavaScript helper without declarations
 import { compatibleHistoricalManifest, executeSourceValidators } from "../../../scripts/historical-source-execution.mjs";
 
 const sourceSha = "a".repeat(40), sourceTreeSha = "b".repeat(40);
 const families = HISTORICAL_EVIDENCE_MANIFEST.families.filter(({ alwaysInOrdinaryCi }) => !alwaysInOrdinaryCi);
+const pinInventory = () => expectedSourcePins(sourceSha, families.map(({ id }) => id), process.cwd(), (path: string) => readFileSync(path));
 const validators = families.flatMap((family) => family.commands.map((command) => ({ family: family.id, name: command.name, exitCode: 0 })));
 validators.push({ family: "M7F", name: "standalone versus M7G child replay equivalence", exitCode: 0 });
 
@@ -41,15 +44,15 @@ describe("exact-source historical validation evidence", () => {
           else stdout = mode === "incompatible" && args[1]!.startsWith("HEAD:") ? "c".repeat(40) : "d".repeat(40);
         }
       } else if (command === process.execPath) {
-        const report = { checkedOutSha: sourceSha, decision: "QUALIFIED", families: families.map(({ id }) => id), validators: validators.map((v, i) => ({ ...v, exitCode: mode === "validator-failure" && i === 0 ? 1 : 0 })), sourceFetches: [{ id: "fixture", exitCode: mode === "fetch-failure" ? 1 : 0 }], missingArtifacts: mode === "missing-artifact" ? ["missing"] : [], unsupported: [] };
+        const report = { checkedOutSha: sourceSha, decision: "QUALIFIED", families: families.map(({ id }) => id), validators: validators.map((v, i) => ({ ...v, exitCode: mode === "validator-failure" && i === 0 ? 1 : 0 })), sourceFetches: pinInventory().map((pin: object, i: number) => ({ ...pin, exitCode: mode === "fetch-failure" && i === 0 ? 1 : 0 })), missingArtifacts: mode === "missing-artifact" ? ["missing"] : [], unsupported: [] };
         writeFileSync(options.env.HISTORICAL_QUALIFICATION_RESULT_PATH!, JSON.stringify(report));
       }
       return { status: ((command === "npm" && mode === "install-failure") || (command === process.execPath && mode === "runner-failure")) ? 1 : 0, stdout, stderr: "", signal: null };
     };
     try {
       if (mode === "success") {
-        expect(executeSourceValidators({ sourceSha, sourceTreeSha }, { repositoryRoot: root, tempRoot: root, run })).toMatchObject({ evidenceOnly: true, sourceSha, sourceTreeSha });
-      } else expect(() => executeSourceValidators({ sourceSha, sourceTreeSha }, { repositoryRoot: root, tempRoot: root, run })).toThrow();
+        expect(executeSourceValidators({ sourceSha, sourceTreeSha }, { repositoryRoot: root, tempRoot: root, run, pinInventory })).toMatchObject({ evidenceOnly: true, sourceSha, sourceTreeSha });
+      } else expect(() => executeSourceValidators({ sourceSha, sourceTreeSha }, { repositoryRoot: root, tempRoot: root, run, pinInventory })).toThrow();
       expect(readdirSync(root)).toEqual([]);
       expect(calls.filter(([command]) => command === "npm").every(([, action]) => action === "ci")).toBe(true);
       expect(calls.some((call) => call.includes("push") || call.includes("deploy-pages") || call.includes("build"))).toBe(false);

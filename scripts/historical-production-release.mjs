@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { HISTORICAL_EVIDENCE_MANIFEST, classifyCompleteChangedPaths, parseNameStatusZ } from "./historical-evidence-routing.mjs";
 import { HISTORICAL_QUALIFICATION_BASELINE, HISTORICAL_QUALIFICATION_BASELINE_IDENTITY, parseGitTreeZ, resolveBaselineDispositions, verifyBaselineManifest } from "./historical-qualification-baseline.mjs";
 
@@ -133,7 +134,13 @@ export async function discoverCumulativeSource({ sourceSha, sourceTreeSha }, {
   const unreportedInvalidations = [...invalidatedPaths].filter((path) => !discoveredPaths.has(path));
   if (unreportedInvalidations.length > 0) throw new Error(`baseline-invalidation-missing-from-change-discovery:${unreportedInvalidations.join(",")}`);
 
-  const routing = classifyCompleteChangedPaths(qualificationPaths);
+  // Hash raw Git blob bytes from the selected source, never orchestration files.
+  const readContent = (path) => {
+    const result = spawnSync("git", ["show", `${sourceSha}:${path}`], { cwd: repositoryRoot, maxBuffer: 32 * 1024 * 1024 });
+    if (result.error || result.status !== 0 || !Buffer.isBuffer(result.stdout)) throw new Error("source-content-unavailable");
+    return result.stdout;
+  };
+  const routing = classifyCompleteChangedPaths(qualificationPaths, { readContent });
   const baselineDispositionCounts = countBy(baselineResolution.unchanged, ({ disposition }) => disposition);
   const familyOwners = {
     ...baselineDispositionCounts,

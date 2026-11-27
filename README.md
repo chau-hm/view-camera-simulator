@@ -294,9 +294,8 @@ routing work stabilizes. Until then this pilot adds a separate build; it does
 not reduce the existing production CI or establish a deployable release.
 
 The exact-source historical qualification command and its non-publishing
-boundary are described in the [historical qualification guide](docs/testing/HISTORICAL_EVIDENCE_QUALIFICATION.md#exact-source-release-qualification-integration-dependency).
-It requires the reviewed Release B preflight to be integrated first; until then
-it rejects reviewed preflight code missing from fetched main, untracked at HEAD, or locally modified. Neither preflight nor historical qualification authorizes
+boundary are described in the [historical qualification guide](docs/testing/HISTORICAL_EVIDENCE_QUALIFICATION.md#exact-source-release-qualification).
+It requires the reviewed Release B preflight and rejects code missing from fetched main, untracked at HEAD, or locally modified. Neither preflight nor historical qualification authorizes
 production deployment.
 
 ### Trusted artifact preflight
