@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { writeFileSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 // @ts-expect-error JavaScript helper without declarations
-import { runPreflight } from "../../../scripts/release-artifact-preflight.mjs";
+import { runPreflight, verifyRun } from "../../../scripts/release-artifact-preflight.mjs";
 // @ts-expect-error JavaScript fixture without declarations
 import { fixture } from "./helpers/releasePreflightFixture.mjs";
 // @ts-expect-error JavaScript helper without declarations
@@ -61,7 +61,7 @@ describe("complete release preflight orchestration", () => {
     ["incomplete attempt jobs", (f: Fixture) => { f.incompleteJobs = true; }, /Incomplete or mismatched/],
     ["skipped mandatory step", (f: Fixture) => { f.ciJobs[2].steps[0].conclusion = "skipped"; }, /Required step/],
     ["inherited wrong job attempt", (f: Fixture) => { f.ciJobs[2].run_attempt = 1; }, /mismatched attempt/],
-    ["different producer source", (f: Fixture) => { f.producerRun.head_sha = f.main; }, /Untrusted run/],
+    ["independently valid producer run for another source", (f: Fixture) => { f.producerRun.head_sha = f.main; verifyRun(f.producerRun, { id: "456", attempt: "1", source: f.main, path: ".github/workflows/pages-artifact-pilot.yml", event: "workflow_dispatch", workflowId: 432187587 }); }, /Untrusted run/],
     ["wrong producer attempt", (f: Fixture) => { f.producerRun.run_attempt = 2; }, /Untrusted run/],
     ["failed retained verification", (f: Fixture) => { f.producerJobs[0].steps.at(-1).conclusion = "failure"; }, /Required step/],
     ["artifact association", (f: Fixture) => { f.artifact.workflow_run.id = 777; }, /mismatched artifact/],
