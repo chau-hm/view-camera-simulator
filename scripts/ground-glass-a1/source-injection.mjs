@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-export const REVIEWED_RENDERER_SHA256 = "9ef5066b6a62731884a16253572a61a884739c1ee7cdea0fbdbb723be9b510bf";
+export const REVIEWED_RENDERER_SHA256 = "cdf84ad1530a62624c321112faf1973ede45e13afca541554c1241febb37fd3e";
 
 export function requireReviewedRenderer(source) {
   if (createHash("sha256").update(source).digest("hex") !== REVIEWED_RENDERER_SHA256) {

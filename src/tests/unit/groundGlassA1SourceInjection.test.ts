@@ -31,9 +31,10 @@ describe("A1 test-only renderer instrumentation", () => {
 
   it("pins the reviewed capture, assessment and tap and wires the validated transform", () => {
     const expected: Record<string, string> = {
-      "capture.mjs": "633cfa6536c19514a414ffb257d66cab6d41d2061a81c80aabe46090c3a83558",
-      "assess.mjs": "ff56ffe4f6e7d33edd07d4edbafcba1259b49343ee1bb2eaf96a41c636f665fd",
-      "rtt-tap.txt": "4b3c46a62737d5cf658a4d95838eafc0f5ec14eb6a934edeff6a6ff5a90b10a5",
+      "pixel-provenance.mjs": "5b8dc09d3a74c4fbb9feca4e046f329a2074ddc46501e3cba316998010746d78",
+      "capture.mjs": "b1ea7fabdea548652cc183ab372a0c9011b22063a4e5b27c6ae3fc9e9715b764",
+      "assess.mjs": "8c281f87590b7bb9064b3118c7bedee87cff805aa62c02109bbe77f0e6c4866f",
+      "rtt-tap.txt": "f84eff912eb816af8a99ca50ae22d637779a46ccb5f3e0d8bb8ab55fa5bbbf1b",
     };
     for (const [file, digest] of Object.entries(expected)) {
       const data = readFileSync("scripts/ground-glass-a1/" + file);

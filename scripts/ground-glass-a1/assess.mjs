@@ -1,3 +1,4 @@
+import { evaluatePixelProvenance } from "./pixel-provenance.mjs";
 import { readFile, writeFile } from "node:fs/promises";
 import { compareGroundGlassOrientations } from "../../src/tests/e2e/helpers/groundGlassA1Orientation.ts";
 import { evaluateA1ReferenceOccupancy, evaluateGroundGlassA1Frame } from "../../src/tests/e2e/helpers/groundGlassA1Frame.ts";
@@ -9,6 +10,14 @@ const root = pathToFileURL(resolve(process.argv[2]) + "/");
 async function load(name) {
   const observed = JSON.parse(await readFile(new URL(name + ".json", root), "utf8"));
   const pixels = await readFile(new URL(name + "-final32.rgba", root));
+  for (const target of ["raw", "final"]) {
+    const source = await readFile(new URL(name + "-" + target + ".rgba", root));
+    const sample = target === "final" ? pixels : await readFile(new URL(name + "-raw32.rgba", root));
+    const provenance = observed.pixelProvenance?.[target];
+    const provenanceIssues = evaluatePixelProvenance(source, sample, provenance, observed.completion?.frameId);
+    if (provenance?.sourceWidth !== (target === "raw" ? observed.width : observed.finalWidth) || provenance?.sourceHeight !== (target === "raw" ? observed.height : observed.finalHeight)) provenanceIssues.push("source-dimension-mismatch");
+    if (provenanceIssues.length) throw new Error("Invalid pixel provenance: " + name + " " + provenanceIssues.join(","));
+  }
   if (!observed.preparationFinite) throw new Error("Nonfinite or missing captured preparation: " + name);
   const accepted = observed.acceptedUi;
   if (!accepted || accepted["data-frame-request-id"] !== observed.request.requestId ||
@@ -89,6 +98,10 @@ if (evaluateGroundGlassA1Frame(rawFrame, "processed").length ||
     rawRecord.completion.generation.generationId !== uprightRecord.completion.generation.generationId ||
     rawRecord.subjectGeneration !== uprightRecord.subjectGeneration ||
     rawRecord.width !== uprightRecord.width || rawRecord.height !== uprightRecord.height ||
+    rawRecord.finalWidth !== uprightRecord.finalWidth || rawRecord.finalHeight !== uprightRecord.finalHeight ||
+    rawRecord.nearM !== uprightRecord.nearM || rawRecord.farM !== uprightRecord.farM ||
+    rawRecord.renderQuality !== uprightRecord.renderQuality ||
+    rawRecord.acceptedUi["data-policy-selected-backend"] !== uprightRecord.acceptedUi["data-policy-selected-backend"] ||
     rawRecord.adapter !== uprightRecord.adapter ||
     JSON.stringify(rawRecord.projection) !== JSON.stringify(uprightRecord.projection) ||
     JSON.stringify(Object.fromEntries(Object.entries(rawRecord.cameraState).filter(([key]) => key !== "groundGlassAssistEnabled"))) !==
@@ -114,7 +127,11 @@ const orientationFaults = {
   vertical: compareGroundGlassOrientations(rawPixels, reflect(rawPixels, false, true), 32, 32, 2, 5),
   unchanged: compareGroundGlassOrientations(rawPixels, rawPixels, 32, 32, 2, 5),
 };
+const currentSource = await readFile(new URL("control-next-request-final.rgba", root));
+const previousPixels = await readFile(new URL("control-previous-request-final32.rgba", root));
+const stalePixelIssues = evaluatePixelProvenance(currentSource, previousPixels, nextRecord.pixelProvenance.final, nextRecord.completion.frameId);
 const results = {
+  stalePixelIssues,
   orientation,
   orientationFaults,
   referenceOccupancy: evaluateA1ReferenceOccupancy(uprightPixels),
@@ -127,6 +144,6 @@ const results = {
 };
 await writeFile(new URL("./assessment.json", root), JSON.stringify(results, null, 2) + "\n");
 console.log(JSON.stringify(results));
-if (!results.referenceOccupancy || !orientation.accepted || Object.values(orientationFaults).some((fault) => fault.accepted) || results.current.length || results.bypass.length || results.next.length ||
+if (!stalePixelIssues.includes("pixel-provenance-mismatch") || !results.referenceOccupancy || !orientation.accepted || Object.values(orientationFaults).some((fault) => fault.accepted) || results.current.length || results.bypass.length || results.next.length ||
   !results.bypassAsProcessed.includes("unexpected-pass-execution") ||
   !results.previousFrameOfferedToNewRequest.includes("incomplete-current-frame")) process.exitCode = 1;

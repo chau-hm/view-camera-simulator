@@ -1,4 +1,6 @@
+import { makePixelProvenance } from "./pixel-provenance.mjs";
 import { instrumentRenderer, requireReviewedRenderer } from "./source-injection.mjs";
+import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
@@ -17,6 +19,11 @@ const launchArgs = ["--use-angle=metal","--enable-unsafe-swiftshader"];
 const port = Number(process.env.A0_PORT ?? 4377);
 const base = "http://127.0.0.1:" + port;
 const tap = await readFile(new URL("./rtt-tap.txt", import.meta.url),"utf8");
+const producerDigests = {};
+for (const file of ["capture.mjs", "assess.mjs", "source-injection.mjs", "rtt-tap.txt", "pixel-provenance.mjs"]) {
+  producerDigests[file] = createHash("sha256").update(await readFile(new URL("./" + file, import.meta.url))).digest("hex");
+}
+const trackedChanges = execFileSync("git", ["-C", sourceRoot, "status", "--porcelain", "--untracked-files=normal"], { encoding: "utf8" });
 const server = await createServer({
   root:sourceRoot, server:{host:"127.0.0.1",port,strictPort:true,watch:null}, plugins:[{
     name:"a1-test-only-frame-observation",
@@ -100,15 +107,22 @@ try {
     await page.waitForFunction(()=>Boolean(globalThis.__a0Result),null,{timeout:35_000});
     const result=await page.evaluate(()=>{const result=globalThis.__a0Result;globalThis.__a0Request=null;return result;});
     if(result.request.requestId!==ui["data-frame-request-id"])throw Error("Tap did not match reviewed current request");
-    const {raw,final,raw32,final32,coc,depth,...data}=result;
+    const {raw,final,coc,depth,...data}=result;
+    const sourcePixels = Buffer.from(raw, "base64");
+    const finalPixels = Buffer.from(final, "base64");
+    const rawSample = makePixelProvenance(sourcePixels, data.width, data.height, data.completion.frameId);
+    const finalSample = makePixelProvenance(finalPixels, data.finalWidth, data.finalHeight, data.completion.frameId);
+    const raw32 = rawSample.sample.toString("base64");
+    const final32 = finalSample.sample.toString("base64");
+    data.pixelProvenance = { raw: rawSample.evidence, final: finalSample.evidence };
     const path=name=>resolve(output,tag+"-"+name);
     for(const [label,encoded] of Object.entries({raw,final,raw32,final32})){
       if(!encoded)continue;
       const pixels=Buffer.from(encoded,"base64");
-      const [width,height]=label.endsWith("32")?[32,32]:[data.width,data.height];
+      const [width,height]=label.endsWith("32")?[32,32]:label === "final" ? [data.finalWidth,data.finalHeight] : [data.width,data.height];
       if(pixels.length!==4*width*height)throw Error("Unexpected RGBA target type for "+label);
       await writeFile(path(label+".png"),png(width,height,pixels));
-      if(label.endsWith("32"))await writeFile(path(label+".rgba"),pixels);
+      await writeFile(path(label+".rgba"),pixels);
     }
     if(depth)await writeFile(path("depth80x64.rgba"),Buffer.from(depth,"base64"));
     if(coc)await writeFile(path("coc.bin.gz"),gzipSync(Buffer.from(coc,"base64")));
@@ -122,7 +136,7 @@ try {
     }
     const profileText=await page.getByTestId("ground-glass-profiling-snapshot").textContent().catch(()=>null);
     await writeFile(resolve(output,tag+".json"),JSON.stringify({
-      ...data,ui,acceptedUi,cameraState,url:page.url(),seed,browser:browser.version(),launchArgs,source:execFileSync("git",["-C",sourceRoot,"rev-parse","HEAD"],{encoding:"utf8"}).trim(),
+      ...data,ui,acceptedUi,cameraState,url:page.url(),seed,browser:browser.version(),launchArgs,producerDigests,trackedSourceClean: !trackedChanges.trim(),source:execFileSync("git",["-C",sourceRoot,"rev-parse","HEAD"],{encoding:"utf8"}).trim(),
       profile:profileText ? JSON.parse(profileText) : null,
     },null,2)+"\n");
     console.log(variant,tag,data.nearM,data.farM,data.diagnostics?.rawColorVariance,data.diagnostics?.finalColorVariance,data.passes.join(","));
@@ -132,7 +146,7 @@ try {
   await setStep("Tilt",6.6);
   await setStep("Focus distance",7750);
   await radio("f/11").check();
-  for(let i=1;i<=1;i++)await probe("stress-"+i,false);
+  for(let i=1;i<=1;i++)await probe("stress-"+i,process.env.A1_GRID === "1");
   if(mode.startsWith("extent")){
     await setStep("Tilt",2);
     await setStep("Focus distance",6830);

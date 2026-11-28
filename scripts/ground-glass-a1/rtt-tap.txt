@@ -17,8 +17,6 @@
         };
         const raw = pixels(sourceRenderTarget);
         const final = pixels(finalRT);
-        const raw32 = pixels(rawDiagnosticRT);
-        const final32 = pixels(finalDiagnosticRT);
         const coc = rawDebug ? null : pixels(cocRT);
 
         const project = point => {
@@ -120,8 +118,8 @@
           request:frameRequest, preparation:preparedDofState, preparationFinite, expectedSubjectGeneration:auditExpectedSubjectGeneration, subjectGeneration:sceneSubjectGenerationRef.current,
           diagnostics:runtime, passes:auditPasses, sourceCpuMs:auditSourceCpuMs,
           cpuReadbackAndSurveyMs:performance.now()-startedReadbacks,
-          width:widths[0], height:widths[1], raw:encode(raw), final:encode(final),
-          raw32:encode(raw32), final32:encode(final32), coc:coc && encode(coc), depth,
+          width:widths[0], height:widths[1], finalWidth:finalRT.width, finalHeight:finalRT.height, raw:encode(raw), final:encode(final),
+          coc:coc && encode(coc), depth,
           cocPixelType:coc?.constructor.name, cocStorageMaxMm,
           footprintStorageMaxMm, cocWidth:cocRT.width, cocHeight:cocRT.height, patches, grid,
         };
