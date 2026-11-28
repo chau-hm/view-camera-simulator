@@ -1,0 +1,20 @@
+{
+  "sourceHead": "e7980c9ecfe3baad1dee11df89fd8a31ba4ad26c",
+  "browser": "Chromium headless, ANGLE SwiftShader WebGL2",
+  "observerRenderer": "WebGLRenderer",
+  "observerToneMapping": "ACESFilmicToneMapping",
+  "observerToneMappingExposure": 1,
+  "observerOutputColorSpace": "srgb",
+  "observerEnvironment": false,
+  "observerCameraRuntimePositionMetres": [0, 0, -0.15],
+  "observerCameraForward": [0, 0, 1],
+  "groundGlassDisplayExposure": 19,
+  "groundGlassColorPath": "HDR HalfFloat",
+  "bakeMatched": "302/302",
+  "displayReferredLuma8": {
+    "wide": {"mean": 1.607, "fractionAtMost5": 0.9098},
+    "desk": {"mean": 0.299, "fractionAtMost5": 0.9971},
+    "depth": {"mean": 3.862, "fractionAtMost5": 0.7760}
+  },
+  "limitations": "The old Observer had no independent completed-frame identity; Ground Glass request was current. The corrected camera is 0.15 m forward, so after images have different viewpoint. Screenshot pixel values are not linear scene radiance."
+}

@@ -1,0 +1,1060 @@
+{
+  "version": 1,
+  "startedAt": "2026-11-24T14:28:11.944Z",
+  "timeOrigin": 5152.5,
+  "entries": [
+    {
+      "kind": "initial-state",
+      "timeMs": 5152.5,
+      "payload": {
+        "request": {
+          "requestId": "room-request-6",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-5",
+          "channelId": "default"
+        },
+        "camera": {
+          "focalLengthMm": 90,
+          "aperture": 5.6,
+          "focusDistanceMm": 2000,
+          "focusStandard": "front",
+          "frontRiseMm": 0,
+          "frontShiftMm": 0,
+          "frontTiltDeg": 0,
+          "frontSwingDeg": 0,
+          "rearRiseMm": 0,
+          "rearShiftMm": 0,
+          "rearTiltDeg": 0,
+          "rearSwingDeg": 0,
+          "cameraBodyPitchDeg": 0,
+          "cameraBodyPivotWorld": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "viewpointAnchor": "mid",
+          "cameraRigPlacement": {
+            "kind": "identity",
+            "rigOriginWorld": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "basePitchDeg": 0
+          },
+          "activeSceneId": "architecture-rise",
+          "activeTaskId": null,
+          "mode": "free",
+          "groundGlassAssistEnabled": false,
+          "gridEnabled": true,
+          "geometryView": "side",
+          "focusMode": "finite",
+          "lastFiniteFocusDepthMm": 2000,
+          "mirrorShiftLessonState": {
+            "rigLateralMm": 0
+          }
+        },
+        "presetKey": "depth",
+        "subjectMode": "room",
+        "renderQuality": "low",
+        "rawDebug": false,
+        "hdr": true,
+        "displayExposure": 18.1,
+        "reflectionsEnabled": true
+      }
+    },
+    {
+      "kind": "runtime-observation",
+      "timeMs": 5156.899999976158,
+      "payload": {
+        "request": {
+          "requestId": "room-request-6",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-5",
+          "channelId": "default"
+        },
+        "projectionMatrix": [
+          1.4841076802572453,
+          0,
+          0,
+          0,
+          0,
+          1.8551346003215567,
+          0,
+          0,
+          0,
+          0,
+          -1.0018198362147406,
+          -1,
+          0,
+          0,
+          -0.020018198362147407,
+          0
+        ],
+        "cameraConfigurationOk": true,
+        "uniformPreparationError": null
+      }
+    },
+    {
+      "kind": "frame-completed",
+      "timeMs": 5156.899999976158,
+      "payload": {
+        "frame": {
+          "status": "completed",
+          "generation": {
+            "generationId": "room-generation-5",
+            "channelId": "default"
+          },
+          "request": {
+            "requestId": "room-request-6",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "frameId": "room-generation-5:frame:22",
+          "requiredOperations": "all-completed"
+        }
+      }
+    },
+    {
+      "kind": "state-committed",
+      "timeMs": 5159.699999928474,
+      "payload": {
+        "request": {
+          "requestId": "room-request-6",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-5",
+          "channelId": "default"
+        },
+        "camera": {
+          "focalLengthMm": 90,
+          "aperture": 5.6,
+          "focusDistanceMm": 2000,
+          "focusStandard": "front",
+          "frontRiseMm": 0,
+          "frontShiftMm": 0,
+          "frontTiltDeg": 0,
+          "frontSwingDeg": 0,
+          "rearRiseMm": 0,
+          "rearShiftMm": 0,
+          "rearTiltDeg": 0,
+          "rearSwingDeg": 0,
+          "cameraBodyPitchDeg": 0,
+          "cameraBodyPivotWorld": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "viewpointAnchor": "mid",
+          "cameraRigPlacement": {
+            "kind": "identity",
+            "rigOriginWorld": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "basePitchDeg": 0
+          },
+          "activeSceneId": "architecture-rise",
+          "activeTaskId": null,
+          "mode": "free",
+          "groundGlassAssistEnabled": false,
+          "gridEnabled": true,
+          "geometryView": "side",
+          "focusMode": "finite",
+          "lastFiniteFocusDepthMm": 2000,
+          "mirrorShiftLessonState": {
+            "rigLateralMm": 0
+          }
+        },
+        "lensCenterWorld": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "filmPlane": {
+          "point": {
+            "x": 0,
+            "y": 0,
+            "z": -94.24083769633508
+          },
+          "normal": {
+            "x": 0,
+            "y": 0,
+            "z": 1
+          },
+          "distance": -94.24083769633508
+        },
+        "filmPlaneCornersWorld": {
+          "topLeft": {
+            "x": -63.5,
+            "y": 50.8,
+            "z": -94.24083769633508
+          },
+          "topRight": {
+            "x": 63.5,
+            "y": 50.8,
+            "z": -94.24083769633508
+          },
+          "bottomLeft": {
+            "x": -63.5,
+            "y": -50.8,
+            "z": -94.24083769633508
+          },
+          "bottomRight": {
+            "x": 63.5,
+            "y": -50.8,
+            "z": -94.24083769633508
+          }
+        },
+        "focusPlane": {
+          "point": {
+            "x": 0,
+            "y": 0,
+            "z": 2000
+          },
+          "normal": {
+            "x": 0,
+            "y": 0,
+            "z": 1
+          },
+          "distance": 2000
+        },
+        "imageDistanceMm": 94.24083769633508,
+        "presetKey": "depth",
+        "subjectMode": "room",
+        "renderQuality": "low",
+        "rawDebug": false,
+        "previewMode": "upright",
+        "hdr": true,
+        "displayExposure": 18.1,
+        "reflectionsEnabled": true
+      }
+    },
+    {
+      "kind": "focus-input",
+      "timeMs": 5162.100000023842,
+      "payload": {
+        "focusDistanceMm": 990,
+        "trusted": false
+      }
+    },
+    {
+      "kind": "state-committed",
+      "timeMs": 5164.399999976158,
+      "payload": {
+        "request": {
+          "requestId": "room-request-7",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-5",
+          "channelId": "default"
+        },
+        "camera": {
+          "focalLengthMm": 90,
+          "aperture": 5.6,
+          "focusDistanceMm": 990,
+          "focusStandard": "front",
+          "frontRiseMm": 0,
+          "frontShiftMm": 0,
+          "frontTiltDeg": 0,
+          "frontSwingDeg": 0,
+          "rearRiseMm": 0,
+          "rearShiftMm": 0,
+          "rearTiltDeg": 0,
+          "rearSwingDeg": 0,
+          "cameraBodyPitchDeg": 0,
+          "cameraBodyPivotWorld": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "viewpointAnchor": "mid",
+          "cameraRigPlacement": {
+            "kind": "identity",
+            "rigOriginWorld": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "basePitchDeg": 0
+          },
+          "activeSceneId": "architecture-rise",
+          "activeTaskId": null,
+          "mode": "free",
+          "groundGlassAssistEnabled": false,
+          "gridEnabled": true,
+          "geometryView": "side",
+          "focusMode": "finite",
+          "lastFiniteFocusDepthMm": 2000,
+          "mirrorShiftLessonState": {
+            "rigLateralMm": 0
+          }
+        },
+        "lensCenterWorld": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "filmPlane": {
+          "point": {
+            "x": 0,
+            "y": 0,
+            "z": -99
+          },
+          "normal": {
+            "x": 0,
+            "y": 0,
+            "z": 1
+          },
+          "distance": -99
+        },
+        "filmPlaneCornersWorld": {
+          "topLeft": {
+            "x": -63.5,
+            "y": 50.8,
+            "z": -99
+          },
+          "topRight": {
+            "x": 63.5,
+            "y": 50.8,
+            "z": -99
+          },
+          "bottomLeft": {
+            "x": -63.5,
+            "y": -50.8,
+            "z": -99
+          },
+          "bottomRight": {
+            "x": 63.5,
+            "y": -50.8,
+            "z": -99
+          }
+        },
+        "focusPlane": {
+          "point": {
+            "x": 0,
+            "y": 0,
+            "z": 990
+          },
+          "normal": {
+            "x": 0,
+            "y": 0,
+            "z": 1
+          },
+          "distance": 990
+        },
+        "imageDistanceMm": 99,
+        "presetKey": "depth",
+        "subjectMode": "room",
+        "renderQuality": "low",
+        "rawDebug": false,
+        "previewMode": "upright",
+        "hdr": true,
+        "displayExposure": 18.1,
+        "reflectionsEnabled": true
+      }
+    },
+    {
+      "kind": "runtime-observation",
+      "timeMs": 5168,
+      "payload": {
+        "request": {
+          "requestId": "room-request-7",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-5",
+          "channelId": "default"
+        },
+        "projectionMatrix": [
+          1.5590551181102363,
+          0,
+          0,
+          0,
+          0,
+          1.9488188976377956,
+          0,
+          0,
+          0,
+          0,
+          -1.0018198362147406,
+          -1,
+          0,
+          0,
+          -0.020018198362147407,
+          0
+        ],
+        "cameraConfigurationOk": true,
+        "uniformPreparationError": null
+      }
+    },
+    {
+      "kind": "runtime-observation",
+      "timeMs": 5169,
+      "payload": {
+        "request": {
+          "requestId": "room-request-7",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-5",
+          "channelId": "default"
+        },
+        "projectionMatrix": [
+          1.5590551181102363,
+          0,
+          0,
+          0,
+          0,
+          1.9488188976377956,
+          0,
+          0,
+          0,
+          0,
+          -1.0018198362147406,
+          -1,
+          0,
+          0,
+          -0.020018198362147407,
+          0
+        ],
+        "cameraConfigurationOk": true,
+        "uniformPreparationError": null
+      }
+    },
+    {
+      "kind": "runtime-observation",
+      "timeMs": 5174.899999976158,
+      "payload": {
+        "request": {
+          "requestId": "room-request-7",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-5",
+          "channelId": "default"
+        },
+        "projectionMatrix": [
+          1.5590551181102363,
+          0,
+          0,
+          0,
+          0,
+          1.9488188976377956,
+          0,
+          0,
+          0,
+          0,
+          -1.0018198362147406,
+          -1,
+          0,
+          0,
+          -0.020018198362147407,
+          0
+        ],
+        "cameraConfigurationOk": true,
+        "uniformPreparationError": null
+      }
+    },
+    {
+      "kind": "frame-completed",
+      "timeMs": 5174.899999976158,
+      "payload": {
+        "frame": {
+          "status": "completed",
+          "generation": {
+            "generationId": "room-generation-5",
+            "channelId": "default"
+          },
+          "request": {
+            "requestId": "room-request-7",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "frameId": "room-generation-5:frame:23",
+          "requiredOperations": "all-completed"
+        }
+      }
+    },
+    {
+      "kind": "focus-input",
+      "timeMs": 5180.600000023842,
+      "payload": {
+        "focusDistanceMm": 1000,
+        "trusted": true
+      }
+    },
+    {
+      "kind": "state-committed",
+      "timeMs": 5182.799999952316,
+      "payload": {
+        "request": {
+          "requestId": "room-request-8",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-5",
+          "channelId": "default"
+        },
+        "camera": {
+          "focalLengthMm": 90,
+          "aperture": 5.6,
+          "focusDistanceMm": 1000,
+          "focusStandard": "front",
+          "frontRiseMm": 0,
+          "frontShiftMm": 0,
+          "frontTiltDeg": 0,
+          "frontSwingDeg": 0,
+          "rearRiseMm": 0,
+          "rearShiftMm": 0,
+          "rearTiltDeg": 0,
+          "rearSwingDeg": 0,
+          "cameraBodyPitchDeg": 0,
+          "cameraBodyPivotWorld": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "viewpointAnchor": "mid",
+          "cameraRigPlacement": {
+            "kind": "identity",
+            "rigOriginWorld": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "basePitchDeg": 0
+          },
+          "activeSceneId": "architecture-rise",
+          "activeTaskId": null,
+          "mode": "free",
+          "groundGlassAssistEnabled": false,
+          "gridEnabled": true,
+          "geometryView": "side",
+          "focusMode": "finite",
+          "lastFiniteFocusDepthMm": 2000,
+          "mirrorShiftLessonState": {
+            "rigLateralMm": 0
+          }
+        },
+        "lensCenterWorld": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "filmPlane": {
+          "point": {
+            "x": 0,
+            "y": 0,
+            "z": -98.9010989010989
+          },
+          "normal": {
+            "x": 0,
+            "y": 0,
+            "z": 1
+          },
+          "distance": -98.9010989010989
+        },
+        "filmPlaneCornersWorld": {
+          "topLeft": {
+            "x": -63.5,
+            "y": 50.8,
+            "z": -98.9010989010989
+          },
+          "topRight": {
+            "x": 63.5,
+            "y": 50.8,
+            "z": -98.9010989010989
+          },
+          "bottomLeft": {
+            "x": -63.5,
+            "y": -50.8,
+            "z": -98.9010989010989
+          },
+          "bottomRight": {
+            "x": 63.5,
+            "y": -50.8,
+            "z": -98.9010989010989
+          }
+        },
+        "focusPlane": {
+          "point": {
+            "x": 0,
+            "y": 0,
+            "z": 1000
+          },
+          "normal": {
+            "x": 0,
+            "y": 0,
+            "z": 1
+          },
+          "distance": 1000
+        },
+        "imageDistanceMm": 98.9010989010989,
+        "presetKey": "depth",
+        "subjectMode": "room",
+        "renderQuality": "low",
+        "rawDebug": false,
+        "previewMode": "upright",
+        "hdr": true,
+        "displayExposure": 18.1,
+        "reflectionsEnabled": true
+      }
+    },
+    {
+      "kind": "runtime-observation",
+      "timeMs": 5184.600000023842,
+      "payload": {
+        "request": {
+          "requestId": "room-request-8",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-5",
+          "channelId": "default"
+        },
+        "projectionMatrix": [
+          1.5574976204897466,
+          0,
+          0,
+          0,
+          0,
+          1.9468720256121834,
+          0,
+          0,
+          0,
+          0,
+          -1.0018198362147406,
+          -1,
+          0,
+          0,
+          -0.020018198362147407,
+          0
+        ],
+        "cameraConfigurationOk": true,
+        "uniformPreparationError": null
+      }
+    },
+    {
+      "kind": "runtime-observation",
+      "timeMs": 5185.5,
+      "payload": {
+        "request": {
+          "requestId": "room-request-8",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-5",
+          "channelId": "default"
+        },
+        "projectionMatrix": [
+          1.5574976204897466,
+          0,
+          0,
+          0,
+          0,
+          1.9468720256121834,
+          0,
+          0,
+          0,
+          0,
+          -1.0018198362147406,
+          -1,
+          0,
+          0,
+          -0.020018198362147407,
+          0
+        ],
+        "cameraConfigurationOk": true,
+        "uniformPreparationError": null
+      }
+    },
+    {
+      "kind": "runtime-observation",
+      "timeMs": 5191.399999976158,
+      "payload": {
+        "request": {
+          "requestId": "room-request-8",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-5",
+          "channelId": "default"
+        },
+        "projectionMatrix": [
+          1.5574976204897466,
+          0,
+          0,
+          0,
+          0,
+          1.9468720256121834,
+          0,
+          0,
+          0,
+          0,
+          -1.0018198362147406,
+          -1,
+          0,
+          0,
+          -0.020018198362147407,
+          0
+        ],
+        "cameraConfigurationOk": true,
+        "uniformPreparationError": null
+      }
+    },
+    {
+      "kind": "frame-completed",
+      "timeMs": 5191.399999976158,
+      "payload": {
+        "frame": {
+          "status": "completed",
+          "generation": {
+            "generationId": "room-generation-5",
+            "channelId": "default"
+          },
+          "request": {
+            "requestId": "room-request-8",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "frameId": "room-generation-5:frame:24",
+          "requiredOperations": "all-completed"
+        }
+      }
+    },
+    {
+      "kind": "focus-input",
+      "timeMs": 5198.799999952316,
+      "payload": {
+        "focusDistanceMm": 1010,
+        "trusted": true
+      }
+    },
+    {
+      "kind": "state-committed",
+      "timeMs": 5201,
+      "payload": {
+        "request": {
+          "requestId": "room-request-9",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-5",
+          "channelId": "default"
+        },
+        "camera": {
+          "focalLengthMm": 90,
+          "aperture": 5.6,
+          "focusDistanceMm": 1010,
+          "focusStandard": "front",
+          "frontRiseMm": 0,
+          "frontShiftMm": 0,
+          "frontTiltDeg": 0,
+          "frontSwingDeg": 0,
+          "rearRiseMm": 0,
+          "rearShiftMm": 0,
+          "rearTiltDeg": 0,
+          "rearSwingDeg": 0,
+          "cameraBodyPitchDeg": 0,
+          "cameraBodyPivotWorld": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "viewpointAnchor": "mid",
+          "cameraRigPlacement": {
+            "kind": "identity",
+            "rigOriginWorld": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "basePitchDeg": 0
+          },
+          "activeSceneId": "architecture-rise",
+          "activeTaskId": null,
+          "mode": "free",
+          "groundGlassAssistEnabled": false,
+          "gridEnabled": true,
+          "geometryView": "side",
+          "focusMode": "finite",
+          "lastFiniteFocusDepthMm": 2000,
+          "mirrorShiftLessonState": {
+            "rigLateralMm": 0
+          }
+        },
+        "lensCenterWorld": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "filmPlane": {
+          "point": {
+            "x": 0,
+            "y": 0,
+            "z": -98.80434782608695
+          },
+          "normal": {
+            "x": 0,
+            "y": 0,
+            "z": 1
+          },
+          "distance": -98.80434782608695
+        },
+        "filmPlaneCornersWorld": {
+          "topLeft": {
+            "x": -63.5,
+            "y": 50.8,
+            "z": -98.80434782608695
+          },
+          "topRight": {
+            "x": 63.5,
+            "y": 50.8,
+            "z": -98.80434782608695
+          },
+          "bottomLeft": {
+            "x": -63.5,
+            "y": -50.8,
+            "z": -98.80434782608695
+          },
+          "bottomRight": {
+            "x": 63.5,
+            "y": -50.8,
+            "z": -98.80434782608695
+          }
+        },
+        "focusPlane": {
+          "point": {
+            "x": 0,
+            "y": 0,
+            "z": 1010
+          },
+          "normal": {
+            "x": 0,
+            "y": 0,
+            "z": 1
+          },
+          "distance": 1010
+        },
+        "imageDistanceMm": 98.80434782608695,
+        "presetKey": "depth",
+        "subjectMode": "room",
+        "renderQuality": "low",
+        "rawDebug": false,
+        "previewMode": "upright",
+        "hdr": true,
+        "displayExposure": 18.1,
+        "reflectionsEnabled": true
+      }
+    },
+    {
+      "kind": "runtime-observation",
+      "timeMs": 5202.100000023842,
+      "payload": {
+        "request": {
+          "requestId": "room-request-9",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-5",
+          "channelId": "default"
+        },
+        "projectionMatrix": [
+          1.5559739815131801,
+          0,
+          0,
+          0,
+          0,
+          1.9449674768914753,
+          0,
+          0,
+          0,
+          0,
+          -1.0018198362147406,
+          -1,
+          0,
+          0,
+          -0.020018198362147407,
+          0
+        ],
+        "cameraConfigurationOk": true,
+        "uniformPreparationError": null
+      }
+    },
+    {
+      "kind": "runtime-observation",
+      "timeMs": 5203.100000023842,
+      "payload": {
+        "request": {
+          "requestId": "room-request-9",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-5",
+          "channelId": "default"
+        },
+        "projectionMatrix": [
+          1.5559739815131801,
+          0,
+          0,
+          0,
+          0,
+          1.9449674768914753,
+          0,
+          0,
+          0,
+          0,
+          -1.0018198362147406,
+          -1,
+          0,
+          0,
+          -0.020018198362147407,
+          0
+        ],
+        "cameraConfigurationOk": true,
+        "uniformPreparationError": null
+      }
+    },
+    {
+      "kind": "runtime-observation",
+      "timeMs": 5208.899999976158,
+      "payload": {
+        "request": {
+          "requestId": "room-request-9",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-5",
+          "channelId": "default"
+        },
+        "projectionMatrix": [
+          1.5559739815131801,
+          0,
+          0,
+          0,
+          0,
+          1.9449674768914753,
+          0,
+          0,
+          0,
+          0,
+          -1.0018198362147406,
+          -1,
+          0,
+          0,
+          -0.020018198362147407,
+          0
+        ],
+        "cameraConfigurationOk": true,
+        "uniformPreparationError": null
+      }
+    },
+    {
+      "kind": "frame-completed",
+      "timeMs": 5208.899999976158,
+      "payload": {
+        "frame": {
+          "status": "completed",
+          "generation": {
+            "generationId": "room-generation-5",
+            "channelId": "default"
+          },
+          "request": {
+            "requestId": "room-request-9",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "frameId": "room-generation-5:frame:25",
+          "requiredOperations": "all-completed"
+        }
+      }
+    },
+    {
+      "kind": "frame-completed",
+      "timeMs": 5219.199999928474,
+      "payload": {
+        "frame": {
+          "status": "completed",
+          "generation": {
+            "generationId": "room-generation-5",
+            "channelId": "default"
+          },
+          "request": {
+            "requestId": "room-request-9",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "frameId": "room-generation-5:frame:26",
+          "requiredOperations": "all-completed"
+        }
+      }
+    },
+    {
+      "kind": "frame-completed",
+      "timeMs": 5235.799999952316,
+      "payload": {
+        "frame": {
+          "status": "completed",
+          "generation": {
+            "generationId": "room-generation-5",
+            "channelId": "default"
+          },
+          "request": {
+            "requestId": "room-request-9",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "frameId": "room-generation-5:frame:27",
+          "requiredOperations": "all-completed"
+        }
+      }
+    },
+    {
+      "kind": "frame-completed",
+      "timeMs": 5252.199999928474,
+      "payload": {
+        "frame": {
+          "status": "completed",
+          "generation": {
+            "generationId": "room-generation-5",
+            "channelId": "default"
+          },
+          "request": {
+            "requestId": "room-request-9",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "frameId": "room-generation-5:frame:28",
+          "requiredOperations": "all-completed"
+        }
+      }
+    }
+  ],
+  "dropped": 0,
+  "serializationErrors": 0,
+  "stoppedAt": "2026-11-24T14:28:12.047Z",
+  "limitation": "Frame completion is reported after the WebGL blit, not proof of compositor presentation. Attach a synchronized screen recording for visible behavior."
+}

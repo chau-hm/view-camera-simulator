@@ -1,0 +1,32 @@
+{
+  "requested": [
+    "neutral",
+    "rise-positive",
+    "shift-positive",
+    "shift-negative",
+    "tilt-positive",
+    "tilt-negative",
+    "swing-positive",
+    "swing-negative",
+    "lateral",
+    "raw",
+    "remount"
+  ],
+  "completed": [
+    "neutral",
+    "rise-positive",
+    "shift-positive",
+    "shift-negative",
+    "tilt-positive",
+    "tilt-negative",
+    "swing-positive",
+    "swing-negative",
+    "lateral",
+    "raw",
+    "remount"
+  ],
+  "fullMatrix": false,
+  "url": "http://127.0.0.1:5199/view-camera-simulator/experiments/room-at-dawn/optics.html?rttDiagnostics=1",
+  "browser": "149.0.7827.55",
+  "problems": []
+}

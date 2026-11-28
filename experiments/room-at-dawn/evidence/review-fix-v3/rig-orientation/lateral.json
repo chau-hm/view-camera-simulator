@@ -1,0 +1,1038 @@
+{
+  "expected": {
+    "camera.focusDistanceMm": 2500,
+    "camera.focalLengthMm": 90,
+    "presetKey": "wide",
+    "hdr": true,
+    "displayExposure": 19,
+    "reflectionsEnabled": true,
+    "camera.aperture": 5.6,
+    "camera.mirrorShiftLessonState.rigLateralMm": 500,
+    "camera.frontRiseMm": 0,
+    "camera.frontShiftMm": 0,
+    "camera.frontTiltDeg": 0,
+    "camera.frontSwingDeg": 0,
+    "previewMode": "upright",
+    "rawDebug": false
+  },
+  "snapshot": {
+    "result": {
+      "status": "ready",
+      "frameId": "room-generation-1:frame:35",
+      "requestId": "room-request-21",
+      "generationId": "room-generation-1"
+    },
+    "state": {
+      "renderError": null,
+      "camera": {
+        "focalLengthMm": 90,
+        "aperture": 5.6,
+        "focusDistanceMm": 2500,
+        "focusStandard": "front",
+        "frontRiseMm": 0,
+        "frontShiftMm": 0,
+        "frontTiltDeg": 0,
+        "frontSwingDeg": 0,
+        "rearRiseMm": 0,
+        "rearShiftMm": 0,
+        "rearTiltDeg": 0,
+        "rearSwingDeg": 0,
+        "cameraBodyPitchDeg": 0,
+        "cameraBodyPivotWorld": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "viewpointAnchor": "mid",
+        "cameraRigPlacement": {
+          "kind": "identity",
+          "rigOriginWorld": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "basePitchDeg": 0
+        },
+        "activeSceneId": "architecture-rise",
+        "activeTaskId": null,
+        "mode": "free",
+        "groundGlassAssistEnabled": false,
+        "gridEnabled": true,
+        "geometryView": "side",
+        "focusMode": "finite",
+        "lastFiniteFocusDepthMm": 2000,
+        "mirrorShiftLessonState": {
+          "rigLateralMm": 500
+        }
+      },
+      "optics": {
+        "cameraRigPlacement": {
+          "kind": "identity",
+          "rigOriginWorld": {
+            "x": 500,
+            "y": 0,
+            "z": 0
+          },
+          "basePitchDeg": 0
+        },
+        "cameraRigTransform": {
+          "rigOriginWorld": {
+            "x": 500,
+            "y": 0,
+            "z": 0
+          },
+          "basePitchDeg": 0,
+          "bodyPitchDeg": 0,
+          "bodyPitchPivotRigLocal": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          }
+        },
+        "cameraBodyTransform": {
+          "pitchDeg": 0,
+          "pivotWorld": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          }
+        },
+        "cameraBodyLocalGeometry": {
+          "lensCenterLocal": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "lensNormalLocal": {
+            "x": 0,
+            "y": 0,
+            "z": 1
+          },
+          "lensPlaneLocal": {
+            "point": {
+              "x": 0,
+              "y": 0,
+              "z": 0
+            },
+            "normal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "distance": 0
+          },
+          "filmCenterLocal": {
+            "x": 0,
+            "y": 0,
+            "z": -93.3609958506224
+          },
+          "filmNormalLocal": {
+            "x": 0,
+            "y": 0,
+            "z": 1
+          },
+          "filmPlaneLocal": {
+            "point": {
+              "x": 0,
+              "y": 0,
+              "z": -93.3609958506224
+            },
+            "normal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "distance": -93.3609958506224
+          },
+          "filmPlaneCornersLocal": {
+            "topLeft": {
+              "x": -63.5,
+              "y": 50.8,
+              "z": -93.3609958506224
+            },
+            "topRight": {
+              "x": 63.5,
+              "y": 50.8,
+              "z": -93.3609958506224
+            },
+            "bottomLeft": {
+              "x": -63.5,
+              "y": -50.8,
+              "z": -93.3609958506224
+            },
+            "bottomRight": {
+              "x": 63.5,
+              "y": -50.8,
+              "z": -93.3609958506224
+            }
+          },
+          "rearStandardFrameLocal": {
+            "centerWorld": {
+              "x": 0,
+              "y": 0,
+              "z": -93.3609958506224
+            },
+            "rightWorld": {
+              "x": 1,
+              "y": 0,
+              "z": 0
+            },
+            "upWorld": {
+              "x": 0,
+              "y": 1,
+              "z": 0
+            },
+            "normalWorld": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "plane": {
+              "point": {
+                "x": 0,
+                "y": 0,
+                "z": -93.3609958506224
+              },
+              "normal": {
+                "x": 0,
+                "y": 0,
+                "z": 1
+              },
+              "distance": -93.3609958506224
+            }
+          }
+        },
+        "cameraBodyPivotWorld": {
+          "x": 500,
+          "y": 0,
+          "z": 0
+        },
+        "lensDefinition": {
+          "id": "simulator-parametric-90mm",
+          "focalLengthMm": 90,
+          "coverage": {
+            "kind": "angular",
+            "fullCoverageAngleDeg": 100.8982256313
+          }
+        },
+        "lensCoverage": {
+          "kind": "angular",
+          "fullCoverageAngleDeg": 100.8982256313,
+          "halfCoverageAngleDeg": 50.44911281565,
+          "imageCircleRadiusMm": 113.05122323725236,
+          "imageCircleDiameterMm": 226.10244647450472,
+          "imageDistanceMm": 93.3609958506224
+        },
+        "groundGlassNaturalIllumination": {
+          "kind": "parallel-cos4",
+          "imageDistanceMm": 93.3609958506224,
+          "opticalAxisOffsetXMm": 0,
+          "opticalAxisOffsetYMm": 0
+        },
+        "groundGlassCoverage": {
+          "kind": "parallel-circle",
+          "imageCircleRadiusMm": 113.05122323725236,
+          "opticalAxisOffsetXMm": 0,
+          "opticalAxisOffsetYMm": 0
+        },
+        "lensCenterWorld": {
+          "x": 500,
+          "y": 0,
+          "z": 0
+        },
+        "lensNormalWorld": {
+          "x": 0,
+          "y": 0,
+          "z": 1
+        },
+        "lensPlane": {
+          "point": {
+            "x": 500,
+            "y": 0,
+            "z": 0
+          },
+          "normal": {
+            "x": 0,
+            "y": 0,
+            "z": 1
+          },
+          "distance": 0
+        },
+        "filmCenterWorld": {
+          "x": 500,
+          "y": 0,
+          "z": -93.3609958506224
+        },
+        "filmNormalWorld": {
+          "x": 0,
+          "y": 0,
+          "z": 1
+        },
+        "filmPlane": {
+          "point": {
+            "x": 500,
+            "y": 0,
+            "z": -93.3609958506224
+          },
+          "normal": {
+            "x": 0,
+            "y": 0,
+            "z": 1
+          },
+          "distance": -93.3609958506224
+        },
+        "filmPlaneCornersWorld": {
+          "topLeft": {
+            "x": 436.5,
+            "y": 50.8,
+            "z": -93.3609958506224
+          },
+          "topRight": {
+            "x": 563.5,
+            "y": 50.8,
+            "z": -93.3609958506224
+          },
+          "bottomLeft": {
+            "x": 436.5,
+            "y": -50.8,
+            "z": -93.3609958506224
+          },
+          "bottomRight": {
+            "x": 563.5,
+            "y": -50.8,
+            "z": -93.3609958506224
+          }
+        },
+        "rearStandardFrame": {
+          "centerWorld": {
+            "x": 500,
+            "y": 0,
+            "z": -93.3609958506224
+          },
+          "rightWorld": {
+            "x": 1,
+            "y": 0,
+            "z": 0
+          },
+          "upWorld": {
+            "x": 0,
+            "y": 1,
+            "z": 0
+          },
+          "normalWorld": {
+            "x": 0,
+            "y": 0,
+            "z": 1
+          },
+          "plane": {
+            "point": {
+              "x": 500,
+              "y": 0,
+              "z": -93.3609958506224
+            },
+            "normal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            },
+            "distance": -93.3609958506224
+          }
+        },
+        "opticalAxis": {
+          "origin": {
+            "x": 500,
+            "y": 0,
+            "z": 0
+          },
+          "direction": {
+            "x": 0,
+            "y": 0,
+            "z": 1
+          }
+        },
+        "lensFilmHingeLine": null,
+        "focusPointWorld": {
+          "x": 500,
+          "y": 0,
+          "z": 2500
+        },
+        "focusPlane": {
+          "point": {
+            "x": 500,
+            "y": 0,
+            "z": 2500
+          },
+          "normal": {
+            "x": 0,
+            "y": 0,
+            "z": 1
+          },
+          "distance": 2500
+        },
+        "depthOfFieldNearPlane": {
+          "point": {
+            "x": 500,
+            "y": 0,
+            "z": 2144.842105263158
+          },
+          "normal": {
+            "x": 0,
+            "y": 0,
+            "z": 1
+          },
+          "distance": 2144.842105263158
+        },
+        "depthOfFieldFarPlane": {
+          "point": {
+            "x": 500,
+            "y": 0,
+            "z": 2996.1181037525
+          },
+          "normal": {
+            "x": 0,
+            "y": 0,
+            "z": 1
+          },
+          "distance": 2996.1181037525
+        },
+        "offAxisProjectionInput": {
+          "lensCenterWorld": {
+            "x": 500,
+            "y": 0,
+            "z": 0
+          },
+          "filmCornersWorld": {
+            "topLeft": {
+              "x": 436.5,
+              "y": 50.8,
+              "z": -93.3609958506224
+            },
+            "topRight": {
+              "x": 563.5,
+              "y": 50.8,
+              "z": -93.3609958506224
+            },
+            "bottomLeft": {
+              "x": 436.5,
+              "y": -50.8,
+              "z": -93.3609958506224
+            },
+            "bottomRight": {
+              "x": 563.5,
+              "y": -50.8,
+              "z": -93.3609958506224
+            }
+          }
+        },
+        "offAxisProjectionMatrix": [
+          1.470251903159408,
+          0,
+          0,
+          0,
+          0,
+          1.8378148789492599,
+          0,
+          0,
+          0,
+          0,
+          -1.0004000800160031,
+          -1,
+          0,
+          0,
+          -20.004000800160032,
+          0
+        ],
+        "groundGlassProjection": {
+          "invertHorizontal": true,
+          "invertVertical": true,
+          "assistModeEnabled": false
+        },
+        "focusTargets": [],
+        "diagnostics": {
+          "isParallelLensFilm": true,
+          "tiltAngleDeg": 0,
+          "swingAngleDeg": 0,
+          "focusPlaneModel": "parallel",
+          "depthOfFieldModel": "parallel",
+          "groundGlassDofModel": "parallel-thin-lens",
+          "nearU": 2144.842105263158,
+          "farU": 2996.1181037525,
+          "farIsInfinite": false,
+          "fallbackApplied": false,
+          "fallbackReason": null,
+          "isInfinityFocus": false,
+          "focusStandard": "front",
+          "requestedFocusStandard": "front",
+          "focusObjectDistanceMm": 2500,
+          "imageDistanceMm": 93.3609958506224
+        }
+      },
+      "features": [
+        {
+          "id": "laptop-center",
+          "sourceM": [
+            3.13,
+            0.7506,
+            0.385
+          ],
+          "provenance": "parts/desk.js laptop center",
+          "worldMm": {
+            "x": 1430,
+            "y": -99.39999999999993,
+            "z": 35.00000000000003
+          },
+          "axialDepthMm": 35.00000000000003,
+          "signedFocusDistanceMm": -2465,
+          "projected": {
+            "visible": false,
+            "uRaw": -19.033346713403542,
+            "vRaw": -2.109697128107945,
+            "filmPointWorld": {
+              "x": -1980.7350326022502,
+              "y": 265.1452282157672,
+              "z": -93.3609958506224
+            }
+          },
+          "cocDiameterMm": null,
+          "visibility": "projection only; occlusion and texture not verified"
+        },
+        {
+          "id": "mug-rim",
+          "sourceM": [
+            3.388,
+            0.829,
+            0.518
+          ],
+          "provenance": "parts/desk.js mug origin plus rim height",
+          "worldMm": {
+            "x": 1688,
+            "y": -21.000000000000018,
+            "z": 168.00000000000003
+          },
+          "axialDepthMm": 168.00000000000003,
+          "signedFocusDistanceMm": -2332,
+          "projected": {
+            "visible": false,
+            "uRaw": -4.698390657599335,
+            "vRaw": 0.3851365700656711,
+            "filmPointWorld": {
+              "x": -160.1956135151155,
+              "y": 11.670124481327809,
+              "z": -93.3609958506224
+            }
+          },
+          "cocDiameterMm": 8.3310398848336,
+          "visibility": "projection only; occlusion and texture not verified"
+        },
+        {
+          "id": "nightstand-top",
+          "sourceM": [
+            1.85,
+            0.5,
+            3.75
+          ],
+          "provenance": "scene/layout.js nightstand top bounds",
+          "worldMm": {
+            "x": 150.00000000000014,
+            "y": -350,
+            "z": 3400
+          },
+          "axialDepthMm": 3400,
+          "signedFocusDistanceMm": 900,
+          "projected": {
+            "visible": true,
+            "uRaw": 0.5756747303096755,
+            "vRaw": 0.4054065871129057,
+            "filmPointWorld": {
+              "x": 509.6106907493288,
+              "y": 9.610690749328777,
+              "z": -93.3609958506224
+            }
+          },
+          "cocDiameterMm": 0.1588706021827813,
+          "visibility": "projection only; occlusion and texture not verified"
+        }
+      ],
+      "info": {
+        "profile": "low",
+        "logicalWidthPx": 480,
+        "logicalHeightPx": 360,
+        "internalWidthPx": 312,
+        "internalHeightPx": 234,
+        "resolutionScale": 0.65,
+        "effectiveDevicePixelRatio": 1,
+        "zoomRenderScale": 1,
+        "wasClamped": false,
+        "configuredCanvasDpr": 1,
+        "rendererPixelRatio": 1,
+        "canvasCssWidthPx": 480,
+        "canvasCssHeightPx": 360,
+        "drawingBufferWidthPx": 480,
+        "drawingBufferHeightPx": 360,
+        "colorTargetWidthPx": 312,
+        "colorTargetHeightPx": 234,
+        "depthTargetWidthPx": 312,
+        "depthTargetHeightPx": 234,
+        "blurTargetWidthPx": 156,
+        "blurTargetHeightPx": 117,
+        "dofTechnique": "physical-coc-near-far-oriented-gather",
+        "footprintRepresentation": "local-affine-ellipse",
+        "gatherScale": 0.5,
+        "sampleCount": 16,
+        "maximumCoCRadiusPx": 32,
+        "groundGlassPhysicalBoundaryRadiusPx": 0.1889763779527559,
+        "cocStorageFormat": "half-float-mm",
+        "cocAvailable": true,
+        "cocTargetWidthPx": 312,
+        "cocTargetHeightPx": 234,
+        "gatherTargetWidthPx": 156,
+        "gatherTargetHeightPx": 117,
+        "farGatherTargetWidthPx": 156,
+        "farGatherTargetHeightPx": 117,
+        "nearGatherTargetWidthPx": 156,
+        "nearGatherTargetHeightPx": 117,
+        "finalTargetWidthPx": 312,
+        "finalTargetHeightPx": 234,
+        "horizontalShaderRenderWidthPx": 312,
+        "horizontalShaderRenderHeightPx": 234,
+        "verticalShaderRenderWidthPx": 312,
+        "verticalShaderRenderHeightPx": 234,
+        "depthTextureAvailable": true,
+        "resourceGeneration": 1,
+        "inspectionWindowActive": false,
+        "inspectionCenterU": 0.5,
+        "inspectionCenterV": 0.5,
+        "sampledFilmWidthMm": 127,
+        "sampledFilmHeightMm": 101.6,
+        "profilingEnabled": false,
+        "profilingBackend": "disabled",
+        "channel": "default",
+        "ownerId": "ground-glass-rtt-owner-_r_0_",
+        "rawColorVariance": 687.1206699305221,
+        "rawNonBackgroundPixelCount": 1024,
+        "rawContentful": true,
+        "finalColorVariance": 206.84910452133045,
+        "finalNonBackgroundPixelCount": 1024,
+        "finalContentful": true,
+        "renderSanitySampleCount": 1024,
+        "renderSanitySubjectGeneration": 1,
+        "renderSanityStateKey": "1|architecture-rise|upright|room-at-dawn:wide|0|0|0.500000|0.500000|1.000000|1.000000|22|312|234|0.000000:0.000000:0.000000|0.000000|0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:1.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:0.000000|0.000000:0.000000:1.000000|0.000000:0.000000:-93.360996|0.000000:0.000000:1.000000|0.000000:0.000000:-93.360996|0.000000:0.000000:1.000000|-63.500000:50.800000:-93.360996|63.500000:50.800000:-93.360996|-63.500000:-50.800000:-93.360996|63.500000:-50.800000:-93.360996|0.000000:0.000000:0.000000|0.000000:0.000000:1.000000|parallel-circle|113.051223|0.000000|0.000000|null|null|0.000000:0.000000:2500.000000|0.000000:0.000000:1.000000|0.000000:0.000000:1525.367647|0.000000:0.000000:1.000000|0.000000:0.000000:6924.232310|0.000000:0.000000:1.000000|1.470252,0.000000,0.000000,0.000000,0.000000,1.837815,0.000000,0.000000,0.000000,0.000000,-1.000400,-1.000000,0.000000,0.000000,-20.004001,0.000000|subject-generation:1|hdr-exposure:19",
+        "renderSanitySubjectIdentity": "room-at-dawn:wide",
+        "renderSanityError": null,
+        "rendererStats": {
+          "calls": 129,
+          "triangles": 1313280,
+          "points": 0,
+          "lines": 0,
+          "geometries": 313,
+          "textures": 121,
+          "sampledAtMs": 65808.39999997616
+        },
+        "cameraNearWorld": 0.01,
+        "cameraFarWorld": 11,
+        "cameraConfigurationOk": true,
+        "cameraConfigurationError": null,
+        "projectionDeterminant": -0.05409018936802201,
+        "projectionMatrix": [
+          1.4702519031594081,
+          0,
+          0,
+          0,
+          0,
+          1.83781487894926,
+          0,
+          0,
+          0,
+          0,
+          -1.0018198362147406,
+          -1,
+          0,
+          0,
+          -0.020018198362147407,
+          0
+        ],
+        "cameraPositionWorld": [
+          0,
+          0,
+          0
+        ],
+        "cameraUpWorld": [
+          0,
+          1,
+          0
+        ],
+        "cameraForwardWorld": [
+          0,
+          0,
+          1
+        ],
+        "groundGlassIlluminanceGain": 0.23232400000000003,
+        "groundGlassNaturalIlluminationEnabled": true,
+        "groundGlassNaturalIlluminationKind": "parallel-cos4",
+        "groundGlassNaturalIlluminationStateJson": "{\"kind\":\"parallel-cos4\",\"imageDistanceMm\":93.3609958506224,\"opticalAxisOffsetXMm\":0,\"opticalAxisOffsetYMm\":0}",
+        "groundGlassNaturalIlluminationImageDistanceMm": 93.3609958506224,
+        "groundGlassNaturalIlluminationOffsetXMm": 0,
+        "groundGlassNaturalIlluminationOffsetYMm": 0,
+        "groundGlassCoverageEnabled": true,
+        "groundGlassCoverageKind": "parallel-circle",
+        "groundGlassCoverageRadiusMm": 113.05122323725236,
+        "groundGlassCoverageOffsetXMm": 0,
+        "groundGlassCoverageOffsetYMm": 0,
+        "dofMode": "parallel-thin-lens",
+        "uniformsFinite": true,
+        "uniformPreparationError": null,
+        "focalLengthMm": 90
+      },
+      "ready": true,
+      "error": "",
+      "request": {
+        "requestId": "room-request-21",
+        "channelId": "default",
+        "sceneId": "architecture-rise"
+      },
+      "generation": {
+        "generationId": "room-generation-1",
+        "channelId": "default"
+      },
+      "previewMode": "upright",
+      "rawDebug": false,
+      "presetKey": "wide",
+      "subjectIdentity": "room-at-dawn:wide",
+      "preset": {
+        "label": "Wide Room",
+        "origin": [
+          1.7,
+          0.85,
+          0.35
+        ],
+        "focalLengthMm": 90,
+        "focusDistanceMm": 2500,
+        "aperture": 5.6,
+        "subjects": "bed near/mid, nightstand and back wall far"
+      },
+      "hdr": true,
+      "displayExposure": 19,
+      "reflectionsEnabled": true,
+      "observation": {
+        "scope": "request",
+        "channelId": "default",
+        "generation": {
+          "generationId": "room-generation-1",
+          "channelId": "default"
+        },
+        "requestIdentity": {
+          "requestId": "room-request-21",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "ownerId": "ground-glass-rtt-owner-_r_0_",
+        "info": {
+          "profile": "low",
+          "logicalWidthPx": 480,
+          "logicalHeightPx": 360,
+          "internalWidthPx": 312,
+          "internalHeightPx": 234,
+          "resolutionScale": 0.65,
+          "effectiveDevicePixelRatio": 1,
+          "zoomRenderScale": 1,
+          "wasClamped": false,
+          "configuredCanvasDpr": 1,
+          "rendererPixelRatio": 1,
+          "canvasCssWidthPx": 480,
+          "canvasCssHeightPx": 360,
+          "drawingBufferWidthPx": 480,
+          "drawingBufferHeightPx": 360,
+          "colorTargetWidthPx": 312,
+          "colorTargetHeightPx": 234,
+          "depthTargetWidthPx": 312,
+          "depthTargetHeightPx": 234,
+          "blurTargetWidthPx": 156,
+          "blurTargetHeightPx": 117,
+          "dofTechnique": "physical-coc-near-far-oriented-gather",
+          "footprintRepresentation": "local-affine-ellipse",
+          "gatherScale": 0.5,
+          "sampleCount": 16,
+          "maximumCoCRadiusPx": 32,
+          "groundGlassPhysicalBoundaryRadiusPx": 0.1889763779527559,
+          "cocStorageFormat": "half-float-mm",
+          "cocAvailable": true,
+          "cocTargetWidthPx": 312,
+          "cocTargetHeightPx": 234,
+          "gatherTargetWidthPx": 156,
+          "gatherTargetHeightPx": 117,
+          "farGatherTargetWidthPx": 156,
+          "farGatherTargetHeightPx": 117,
+          "nearGatherTargetWidthPx": 156,
+          "nearGatherTargetHeightPx": 117,
+          "finalTargetWidthPx": 312,
+          "finalTargetHeightPx": 234,
+          "horizontalShaderRenderWidthPx": 312,
+          "horizontalShaderRenderHeightPx": 234,
+          "verticalShaderRenderWidthPx": 312,
+          "verticalShaderRenderHeightPx": 234,
+          "depthTextureAvailable": true,
+          "resourceGeneration": 1,
+          "inspectionWindowActive": false,
+          "inspectionCenterU": 0.5,
+          "inspectionCenterV": 0.5,
+          "sampledFilmWidthMm": 127,
+          "sampledFilmHeightMm": 101.6,
+          "profilingEnabled": false,
+          "profilingBackend": "disabled",
+          "channel": "default",
+          "ownerId": "ground-glass-rtt-owner-_r_0_",
+          "rawColorVariance": 408.2904316518325,
+          "rawNonBackgroundPixelCount": 1024,
+          "rawContentful": true,
+          "finalColorVariance": 637.4752454162281,
+          "finalNonBackgroundPixelCount": 1024,
+          "finalContentful": true,
+          "renderSanitySampleCount": 1024,
+          "renderSanitySubjectGeneration": 1,
+          "renderSanityStateKey": "1|architecture-rise|upright|room-at-dawn:wide|0|0|0.500000|0.500000|1.000000|1.000000|5.6|312|234|500.000000:0.000000:0.000000|0.000000|0.000000|0.000000:0.000000:0.000000|500.000000:0.000000:0.000000|0.500000:0.000000:0.000000|0.000000:1.000000:0.000000|0.000000:0.000000:1.000000|500.000000:0.000000:0.000000|0.000000:0.000000:1.000000|500.000000:0.000000:-93.360996|0.000000:0.000000:1.000000|500.000000:0.000000:-93.360996|0.000000:0.000000:1.000000|436.500000:50.800000:-93.360996|563.500000:50.800000:-93.360996|436.500000:-50.800000:-93.360996|563.500000:-50.800000:-93.360996|500.000000:0.000000:0.000000|0.000000:0.000000:1.000000|parallel-circle|113.051223|0.000000|0.000000|null|null|500.000000:0.000000:2500.000000|0.000000:0.000000:1.000000|500.000000:0.000000:2144.842105|0.000000:0.000000:1.000000|500.000000:0.000000:2996.118104|0.000000:0.000000:1.000000|1.470252,0.000000,0.000000,0.000000,0.000000,1.837815,0.000000,0.000000,0.000000,0.000000,-1.000400,-1.000000,0.000000,0.000000,-20.004001,0.000000|subject-generation:1|hdr-exposure:19",
+          "renderSanitySubjectIdentity": "room-at-dawn:wide",
+          "renderSanityError": null,
+          "rendererStats": {
+            "calls": 129,
+            "triangles": 1313280,
+            "points": 0,
+            "lines": 0,
+            "geometries": 313,
+            "textures": 121,
+            "sampledAtMs": 65808.39999997616
+          },
+          "cameraNearWorld": 0.01,
+          "cameraFarWorld": 11,
+          "cameraConfigurationOk": true,
+          "cameraConfigurationError": null,
+          "projectionDeterminant": -0.05409018936802201,
+          "projectionMatrix": [
+            1.4702519031594081,
+            0,
+            0,
+            0,
+            0,
+            1.83781487894926,
+            0,
+            0,
+            0,
+            0,
+            -1.0018198362147406,
+            -1,
+            0,
+            0,
+            -0.020018198362147407,
+            0
+          ],
+          "cameraPositionWorld": [
+            0.5,
+            0,
+            0
+          ],
+          "cameraUpWorld": [
+            0,
+            1,
+            0
+          ],
+          "cameraForwardWorld": [
+            0,
+            0,
+            1
+          ],
+          "groundGlassIlluminanceGain": 3.585612755102042,
+          "groundGlassNaturalIlluminationEnabled": true,
+          "groundGlassNaturalIlluminationKind": "parallel-cos4",
+          "groundGlassNaturalIlluminationStateJson": "{\"kind\":\"parallel-cos4\",\"imageDistanceMm\":93.3609958506224,\"opticalAxisOffsetXMm\":0,\"opticalAxisOffsetYMm\":0}",
+          "groundGlassNaturalIlluminationImageDistanceMm": 93.3609958506224,
+          "groundGlassNaturalIlluminationOffsetXMm": 0,
+          "groundGlassNaturalIlluminationOffsetYMm": 0,
+          "groundGlassCoverageEnabled": true,
+          "groundGlassCoverageKind": "parallel-circle",
+          "groundGlassCoverageRadiusMm": 113.05122323725236,
+          "groundGlassCoverageOffsetXMm": 0,
+          "groundGlassCoverageOffsetYMm": 0,
+          "dofMode": "parallel-thin-lens",
+          "uniformsFinite": true,
+          "uniformPreparationError": null,
+          "focalLengthMm": 90
+        }
+      },
+      "frame": {
+        "status": "completed",
+        "generation": {
+          "generationId": "room-generation-1",
+          "channelId": "default"
+        },
+        "request": {
+          "requestId": "room-request-21",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "frameId": "room-generation-1:frame:35",
+        "requiredOperations": "all-completed"
+      }
+    },
+    "gi": {
+      "expected": 302,
+      "baked": 302,
+      "matched": 302,
+      "missing": [],
+      "mismatch": [],
+      "stale": [],
+      "invalid": [],
+      "duplicateKeys": 0
+    },
+    "features": [
+      {
+        "id": "laptop-center",
+        "sourceM": [
+          3.13,
+          0.7506,
+          0.385
+        ],
+        "provenance": "parts/desk.js laptop center",
+        "worldMm": {
+          "x": 1430,
+          "y": -99.39999999999993,
+          "z": 35.00000000000003
+        },
+        "axialDepthMm": 35.00000000000003,
+        "signedFocusDistanceMm": -2465,
+        "projected": {
+          "visible": false,
+          "uRaw": -19.033346713403542,
+          "vRaw": -2.109697128107945,
+          "filmPointWorld": {
+            "x": -1980.7350326022502,
+            "y": 265.1452282157672,
+            "z": -93.3609958506224
+          }
+        },
+        "cocDiameterMm": null,
+        "visibility": "projection only; occlusion and texture not verified"
+      },
+      {
+        "id": "mug-rim",
+        "sourceM": [
+          3.388,
+          0.829,
+          0.518
+        ],
+        "provenance": "parts/desk.js mug origin plus rim height",
+        "worldMm": {
+          "x": 1688,
+          "y": -21.000000000000018,
+          "z": 168.00000000000003
+        },
+        "axialDepthMm": 168.00000000000003,
+        "signedFocusDistanceMm": -2332,
+        "projected": {
+          "visible": false,
+          "uRaw": -4.698390657599335,
+          "vRaw": 0.3851365700656711,
+          "filmPointWorld": {
+            "x": -160.1956135151155,
+            "y": 11.670124481327809,
+            "z": -93.3609958506224
+          }
+        },
+        "cocDiameterMm": 8.3310398848336,
+        "visibility": "projection only; occlusion and texture not verified"
+      },
+      {
+        "id": "nightstand-top",
+        "sourceM": [
+          1.85,
+          0.5,
+          3.75
+        ],
+        "provenance": "scene/layout.js nightstand top bounds",
+        "worldMm": {
+          "x": 150.00000000000014,
+          "y": -350,
+          "z": 3400
+        },
+        "axialDepthMm": 3400,
+        "signedFocusDistanceMm": 900,
+        "projected": {
+          "visible": true,
+          "uRaw": 0.5756747303096755,
+          "vRaw": 0.4054065871129057,
+          "filmPointWorld": {
+            "x": 509.6106907493288,
+            "y": 9.610690749328777,
+            "z": -93.3609958506224
+          }
+        },
+        "cocDiameterMm": 0.1588706021827813,
+        "visibility": "projection only; occlusion and texture not verified"
+      }
+    ],
+    "colorSettings": {
+      "hdr": true,
+      "displayExposure": 19,
+      "reflectionsEnabled": true
+    }
+  },
+  "imageMetrics": {
+    "space": "display-referred screenshot, 8-bit luma; not linear radiance",
+    "wholeImage": {
+      "meanLuma8": 93.60351406972596,
+      "gradientEnergy8": 1.3956541920591405,
+      "nearBlackFraction": 0,
+      "nearWhiteFraction": 0.0003520313942751616,
+      "pixels": 173280
+    },
+    "candidateRegions": [
+      {
+        "id": "laptop-center",
+        "inFrame": false,
+        "validForSharpness": false,
+        "invalidReason": "Occlusion and texture suitability unverified"
+      },
+      {
+        "id": "mug-rim",
+        "inFrame": false,
+        "validForSharpness": false,
+        "invalidReason": "Occlusion and texture suitability unverified"
+      },
+      {
+        "id": "nightstand-top",
+        "inFrame": true,
+        "center": [
+          276,
+          214
+        ],
+        "region": [
+          266,
+          204,
+          286,
+          224
+        ],
+        "occlusionChecked": false,
+        "meanLuma8": 94.77836450000007,
+        "gradientEnergy8": 5.169689000000004,
+        "nearBlackFraction": 0,
+        "nearWhiteFraction": 0,
+        "pixels": 400,
+        "validForSharpness": false,
+        "invalidReason": "Occlusion and texture suitability unverified"
+      }
+    ]
+  },
+  "canvas": {
+    "width": 480,
+    "height": 360,
+    "cssWidth": 480,
+    "cssHeight": 360,
+    "colorTypes": "half-float,half-float,half-float,half-float",
+    "framebufferStatus": "complete",
+    "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "unmaskedRenderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)",
+    "unmaskedVendor": "Google Inc. (Google)"
+  },
+  "url": "http://127.0.0.1:5199/view-camera-simulator/experiments/room-at-dawn/optics.html?rttDiagnostics=1",
+  "browser": "149.0.7827.55",
+  "capturedAt": "2026-11-23T15:03:31.484Z",
+  "problems": []
+}

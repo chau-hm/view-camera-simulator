@@ -1,0 +1,13 @@
+{
+  "baseline": "../photographic/wide-on-ground.png",
+  "measurement": "Mean absolute RGB8 difference from neutral Wide image; display-referred, not proof of movement sign or calibrated focus.",
+  "meanAbsoluteRgb8": {
+    "rise-positive": 25.3609,
+    "shift-positive": 28.6518,
+    "tilt-positive": 1.1665,
+    "swing-positive": 1.2775,
+    "focus-near": 7.7534,
+    "aperture-mid": 44.6580,
+    "stopped": 74.5697
+  }
+}

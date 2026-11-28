@@ -1,0 +1,70 @@
+{
+  "initial": {
+    "frame": "observer-generation-1:frame:1",
+    "groundGeneration": "room-generation-1"
+  },
+  "zeroGi": {
+    "requestId": "observer-request-1",
+    "generationId": "observer-generation-1",
+    "frameId": "observer-generation-1:frame:2",
+    "status": "completed",
+    "error": null,
+    "presetKey": "wide",
+    "hdrDiagnostic": true,
+    "reflectionsEnabled": true,
+    "displayExposure": 19,
+    "toneMapping": 2,
+    "toneMappingExposure": 19,
+    "outputColorSpace": "srgb",
+    "renderer": "WebGLRenderer",
+    "environmentInstalled": true,
+    "materialVariants": 215,
+    "giScale": 0,
+    "cameraPosition": [
+      0,
+      0,
+      0
+    ],
+    "cameraForward": [
+      0,
+      0,
+      1
+    ]
+  },
+  "zeroGiMetrics": {
+    "space": "display-referred 8-bit luma",
+    "width": 480,
+    "height": 361,
+    "meanLuma8": 0.08048531625115307,
+    "nearBlackFraction": 0.9969413665743305,
+    "nearWhiteFraction": 0
+  },
+  "restored": {
+    "requestId": "observer-request-1",
+    "generationId": "observer-generation-1",
+    "frameId": "observer-generation-1:frame:3",
+    "status": "completed",
+    "error": null,
+    "presetKey": "wide",
+    "hdrDiagnostic": true,
+    "reflectionsEnabled": true,
+    "displayExposure": 19,
+    "toneMapping": 2,
+    "toneMappingExposure": 19,
+    "outputColorSpace": "srgb",
+    "renderer": "WebGLRenderer",
+    "environmentInstalled": true,
+    "materialVariants": 215,
+    "giScale": 1,
+    "cameraPosition": [
+      0,
+      0,
+      0
+    ],
+    "cameraForward": [
+      0,
+      0,
+      1
+    ]
+  }
+}

@@ -73,6 +73,7 @@ import { resolveGroundGlassRttDimensions } from "./groundGlassRttDimensions";
 import { createGroundGlassRenderSanityStateKey } from "./groundGlassRenderSanityKey";
 import {
   createGroundGlassRttResources,
+  assertGroundGlassHdrColorTargets,
   resizeGroundGlassRttResources,
   type GroundGlassRttResources,
 } from "./groundGlassRttResources";
@@ -133,6 +134,50 @@ import type { CameraMovementPresentationRegion } from "../scenes/cameraMovementS
 
 let latestGroundGlassSubjectGeneration = 0;
 
+/** Synchronous, development-only observation of this frame's actual targets.
+ * Target and texture references are borrowed: sample them only during the
+ * callback and never retain or dispose them. Copy any values needed later. */
+export type GroundGlassDevelopmentProbeFrame = Readonly<{
+  renderer: WebGLRenderer;
+  generation: GroundGlassRendererGenerationIdentity;
+  request: GroundGlassAcceptedRequestIdentity;
+  frameId: string;
+  resourceGeneration: number;
+  targets: Readonly<{
+    scene: THREE.WebGLRenderTarget;
+    far: THREE.WebGLRenderTarget;
+    near: THREE.WebGLRenderTarget;
+    composite: THREE.WebGLRenderTarget;
+  }>;
+  /** Borrowed signed classification target; kept outside `targets` so existing linear-color probes cannot misread it. */
+  cocTarget: THREE.WebGLRenderTarget;
+  /** Actual scene depth attachment; null means this frame used a fallback depth source. */
+  depthTexture: THREE.DepthTexture | null;
+  depthSource: "scene-depth-texture" | "fallback-texture";
+  cocStorageFormat: GroundGlassCocStorageFormat;
+  cocStorageMaxMm: number;
+  footprintStorageMaxMm: number;
+  targetStorage: Readonly<Record<"scene" | "coc" | "far" | "near" | "composite", Readonly<{
+    width: number;
+    height: number;
+    format: number;
+    type: number;
+    colorSpace: string;
+    samples: number;
+  }>>>;
+  camera: Readonly<{
+    near: number;
+    far: number;
+    projectionMatrix: readonly number[];
+    projectionMatrixInverse: readonly number[];
+    matrixWorld: readonly number[];
+    matrixWorldInverse: readonly number[];
+  }>;
+  renderQuality: string;
+  physical: GroundGlassPhysicalRenderState;
+  displayExposure: number;
+}>;
+
 export type GroundGlassRTTProps = {
   opticsState: DerivedOpticsState;
   focalLengthMm: number;
@@ -175,6 +220,14 @@ export type GroundGlassRTTProps = {
   ) => void;
   /** Development fixture subject profile; ignored by production builds. */
   developmentSceneProfileOverride?: GroundGlassSceneProfile;
+  /** Experimental HalfFloat color pipeline, ignored outside development builds. */
+  developmentHdrColor?: boolean;
+  /** Display-only linear exposure for the experimental HDR presentation. */
+  developmentDisplayExposure?: number;
+  /** Renderer-owned fixture resources; disposer runs before the mounted subject is removed. */
+  developmentPrepareScene?: (scene: THREE.Scene, renderer: WebGLRenderer) => () => void;
+  /** Borrowed render targets are observable only during this synchronous callback. */
+  developmentProbeFrame?: (frame: GroundGlassDevelopmentProbeFrame) => void;
 };
 
 type GroundGlassCleanupOwnerCallbacks = Readonly<{
@@ -222,7 +275,12 @@ function OffscreenRenderer({
   onCleanupOwnerAcquired,
   onCleanupOwnerCompleted,
   developmentSceneProfileOverride,
+  developmentHdrColor,
+  developmentDisplayExposure,
+  developmentPrepareScene,
+  developmentProbeFrame,
 }: GroundGlassRTTProps & GroundGlassCleanupOwnerCallbacks) {
+  const hdrColor = import.meta.env.DEV && developmentHdrColor === true;
   // React gives each mounted renderer a stable identity without a module-level
   // mutable registry. It survives ordinary prop changes and is replaced only
   // when this OffscreenRenderer instance is actually remounted.
@@ -564,6 +622,7 @@ function OffscreenRenderer({
         widthPx: dimsRef.current.internalWidthPx,
         heightPx: dimsRef.current.internalHeightPx,
         gatherScale: initialQualitySettings.gatherScale,
+        colorFormat: hdrColor ? "half-float" : "byte",
       });
     } catch (error) {
       if (error instanceof AggregateError) {
@@ -572,10 +631,21 @@ function OffscreenRenderer({
       }
       throw error;
     }
+    const hdrCanvas = hdrColor ? (gl as unknown as WebGLRenderer).domElement : null;
+    if (hdrCanvas && typeof hdrCanvas.setAttribute === "function") {
+      const colorTypes = [
+        rttResources.scene.colorDepthTarget, rttResources.gather.farTarget,
+        rttResources.gather.nearTarget, rttResources.composite.outputTarget,
+      ].map((target) => target.texture.type === THREE.HalfFloatType ? "half-float" : "other");
+      hdrCanvas.setAttribute("data-rtt-color-types", colorTypes.join(","));
+      hdrCanvas.setAttribute("data-rtt-hdr-framebuffers", "complete");
+    }
     registerCleanup("rtt-targets", () => {
       try {
         rttResources.dispose();
       } finally {
+        hdrCanvas?.removeAttribute?.("data-rtt-color-types");
+        hdrCanvas?.removeAttribute?.("data-rtt-hdr-framebuffers");
         if (renderTarget.current === rttResources.scene.colorDepthTarget) {
           renderTarget.current = null;
         }
@@ -809,8 +879,13 @@ function OffscreenRenderer({
     const compositeQuad = new THREE.Mesh(quadGeo, compositeMaterial);
     const copyMaterial = new THREE.ShaderMaterial({
       vertexShader,
-      fragmentShader: `precision highp float; varying vec2 vUv; uniform sampler2D tColor; void main(){ gl_FragColor = texture2D(tColor, vUv); }`,
-      uniforms: { tColor: { value: finalRT.texture } },
+      fragmentShader: hdrColor
+        ? `precision highp float; varying vec2 vUv; uniform sampler2D tColor; uniform float displayExposure;
+          void main(){ vec4 c = texture2D(tColor, vUv); vec3 x = max(c.rgb * displayExposure, vec3(0.0));
+          x = x / (vec3(1.0) + x); vec3 lo = 12.92 * x; vec3 hi = 1.055 * pow(x, vec3(1.0 / 2.4)) - 0.055;
+          gl_FragColor = vec4(mix(hi, lo, step(x, vec3(0.0031308))), c.a); }`
+        : `precision highp float; varying vec2 vUv; uniform sampler2D tColor; void main(){ gl_FragColor = texture2D(tColor, vUv); }`,
+      uniforms: { tColor: { value: finalRT.texture }, displayExposure: { value: 1 } },
       depthTest: false,
       depthWrite: false,
     });
@@ -1050,6 +1125,7 @@ function OffscreenRenderer({
     resolvedSceneId,
     sceneCapacityProfilingEnabled,
     setRuntimeInfo,
+    hdrColor,
   ]);
 
   useEffect(() => {
@@ -1099,8 +1175,12 @@ function OffscreenRenderer({
     }
     mountedSceneVariationIdentityRef.current = variationIdentityKey;
     reportCleanupOwnerAcquired("scene-subject");
+    let disposeDevelopmentScene: (() => void) | undefined;
     try {
     sceneProfile.configureRttShadowParticipation(mounted.group);
+    if (import.meta.env.DEV && developmentPrepareScene) {
+      disposeDevelopmentScene = developmentPrepareScene(scene, gl as unknown as WebGLRenderer);
+    }
     mountedSceneSubjectRef.current = mounted;
     const anatomyResourceChannel = import.meta.env.DEV &&
       sceneDefinition.id === "view-camera-anatomy"
@@ -1190,7 +1270,7 @@ function OffscreenRenderer({
       let cleanupOutcome: GroundGlassCleanupOutcome = "confirmed";
       let cleanupReason: string | undefined;
       try {
-        mounted.dispose();
+        try { disposeDevelopmentScene?.(); } finally { mounted.dispose(); }
       } catch (error) {
         cleanupOutcome = "failed";
         cleanupReason = error instanceof Error ? error.message : String(error);
@@ -1211,7 +1291,7 @@ function OffscreenRenderer({
       let cleanupOutcome: GroundGlassCleanupOutcome = "confirmed";
       let cleanupReason: string | undefined;
       try {
-        mounted.dispose();
+        try { disposeDevelopmentScene?.(); } finally { mounted.dispose(); }
       } catch (cleanupError) {
         cleanupOutcome = "failed";
         cleanupReason = cleanupError instanceof Error ? cleanupError.message : String(cleanupError);
@@ -1237,6 +1317,8 @@ function OffscreenRenderer({
     reportCleanupOwnerAcquired,
     reportCleanupOwnerCompleted,
     variationIdentityKey,
+    hdrColor,
+    developmentPrepareScene,
   ]);
 
   // Scene profiles own any scene-specific mutation of their mounted subject.
@@ -1321,7 +1403,7 @@ function OffscreenRenderer({
     cocMaterial.uniforms.footprintStorageMaxMm.value = Math.max(1e-6, cocStorageMaxMm * 0.5);
     gatherMaterial.uniforms.footprintStorageMaxMm.value = Math.max(1e-6, cocStorageMaxMm * 0.5);
 
-    resizeGroundGlassRttResources(
+    const resized = resizeGroundGlassRttResources(
       post.targets,
       {
         coc: cocMaterial,
@@ -1332,6 +1414,21 @@ function OffscreenRenderer({
       dims.internalHeightPx,
       qualitySettings.gatherScale,
     );
+    if (hdrColor && resized) {
+      const hdrCanvas = (gl as unknown as WebGLRenderer).domElement;
+      try {
+        assertGroundGlassHdrColorTargets(gl as unknown as WebGLRenderer, [
+          ["scene", post.targets.scene.colorDepthTarget],
+          ["far gather", post.targets.gather.farTarget],
+          ["near gather", post.targets.gather.nearTarget],
+          ["composite", post.targets.composite.outputTarget],
+        ]);
+        hdrCanvas?.setAttribute?.("data-rtt-hdr-framebuffers", "complete");
+      } catch (error) {
+        hdrCanvas?.setAttribute?.("data-rtt-hdr-framebuffers", "incomplete");
+        throw error;
+      }
+    }
     dimsRef.current = dims;
     groundGlassProfilerRef.current?.resetSession("resource-resize");
 
@@ -1406,6 +1503,7 @@ function OffscreenRenderer({
     renderQuality,
     setRuntimeInfo,
     widthPx,
+    hdrColor,
   ]);
 
   useFrame((_state, frameDelta) => {
@@ -1633,6 +1731,11 @@ function OffscreenRenderer({
     } catch (err) { void err; }
 
     const post = postResourcesRef.current;
+    if (post && hdrColor) {
+      const exposure = developmentDisplayExposure;
+      post.copyMaterial.uniforms.displayExposure.value =
+        typeof exposure === "number" && Number.isFinite(exposure) && exposure > 0 ? exposure : 1;
+    }
     const currentQualitySettings = getRenderQualitySettings(
       sizeInputsRef.current.renderQuality || "standard",
     );
@@ -1736,8 +1839,13 @@ function OffscreenRenderer({
           compositeOutputTarget: finalDiagnosticRT,
         },
       } = post.targets;
-      // prefer the renderTarget.depthTexture when available, otherwise use a 1.0 depth fallback
-      const depthTex = (renderTarget.current as unknown as { depthTexture?: THREE.Texture }).depthTexture ?? fallbackDepthRef.current ?? null;
+      // The optional probe receives the actual attachment separately from the
+      // fallback so a depth read cannot be mistaken for scene geometry depth.
+      const actualDepthTexture = (renderTarget.current as unknown as {
+        depthTexture?: THREE.DepthTexture;
+      }).depthTexture ?? null;
+      // Prefer the renderTarget.depthTexture when available, otherwise use a 1.0 depth fallback.
+      const depthTex = actualDepthTexture ?? fallbackDepthRef.current ?? null;
       // A missing depth texture is surfaced through diagnostics. Keep the DOF
       // path active with the explicit far-depth texture instead of silently
       // changing the user's preview to Raw RTT.
@@ -2004,6 +2112,58 @@ function OffscreenRenderer({
         gl.render(postSceneComposite, orthoCam);
       });
 
+      if (import.meta.env.DEV && hdrColor && !rawDebug && frameGeneration && frameRequest && developmentProbeFrame) {
+        try {
+          const describeTargetStorage = (target: THREE.WebGLRenderTarget) => ({
+            width: target.width,
+            height: target.height,
+            format: target.texture.format,
+            type: target.texture.type,
+            colorSpace: target.texture.colorSpace,
+            samples: target.samples,
+          });
+          developmentProbeFrame({
+            renderer,
+            generation: frameGeneration,
+            request: frameRequest,
+            frameId: `${frameGeneration.generationId}:frame:${frameSequenceRef.current + 1}`,
+            resourceGeneration: resourceGenerationRef.current,
+            targets: {
+              scene: sourceRenderTarget,
+              far: gatherRT,
+              near: nearGatherRT,
+              composite: finalRT,
+            },
+            cocTarget: cocRT,
+            depthTexture: actualDepthTexture,
+            depthSource: isFallbackDepth ? "fallback-texture" : "scene-depth-texture",
+            cocStorageFormat: post.cocStorageFormat,
+            cocStorageMaxMm,
+            footprintStorageMaxMm,
+            targetStorage: {
+              scene: describeTargetStorage(sourceRenderTarget),
+              coc: describeTargetStorage(cocRT),
+              far: describeTargetStorage(gatherRT),
+              near: describeTargetStorage(nearGatherRT),
+              composite: describeTargetStorage(finalRT),
+            },
+            camera: {
+              near: cam.near,
+              far: cam.far,
+              projectionMatrix: Array.from(cam.projectionMatrix.elements),
+              projectionMatrixInverse: Array.from(cam.projectionMatrixInverse.elements),
+              matrixWorld: Array.from(cam.matrixWorld.elements),
+              matrixWorldInverse: Array.from(cam.matrixWorldInverse.elements),
+            },
+            renderQuality: String(renderQuality ?? "standard"),
+            physical: physicalRenderState,
+            displayExposure: Number(copyMaterial.uniforms.displayExposure.value),
+          });
+        } catch (error) {
+          console.error("Ground Glass development probe failed:", error);
+        }
+      }
+
       const renderSanityStateKey = createGroundGlassRenderSanityStateKey({
         resourceGeneration: resourceGenerationRef.current,
         sceneId: resolvedSceneId,
@@ -2017,7 +2177,7 @@ function OffscreenRenderer({
         configuredCameraPose: configuredPose,
         inspectionWindow,
       });
-      const sanityStateKey = `${renderSanityStateKey}|subject-generation:${sceneSubjectGenerationRef.current}`;
+      const sanityStateKey = `${renderSanityStateKey}|subject-generation:${sceneSubjectGenerationRef.current}${hdrColor ? `|hdr-exposure:${copyMaterial.uniforms.displayExposure.value}` : ""}`;
 
       const renderSanityEnabled =
         import.meta.env.DEV &&
@@ -2239,6 +2399,10 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({
   onFrameResult,
   onAdapterDisposed,
   developmentSceneProfileOverride,
+  developmentHdrColor,
+  developmentDisplayExposure,
+  developmentPrepareScene,
+  developmentProbeFrame,
 }) => {
   const onAdapterStartedRef = useRef(onAdapterStarted);
   const onAdapterDisposedRef = useRef(onAdapterDisposed);
@@ -2319,6 +2483,10 @@ export const GroundGlassRTT: React.FC<GroundGlassRTTProps> = ({
           onCleanupOwnerAcquired={reportCleanupOwnerAcquired}
           onCleanupOwnerCompleted={reportCleanupOwnerCompleted}
           developmentSceneProfileOverride={developmentSceneProfileOverride}
+          developmentHdrColor={developmentHdrColor}
+          developmentDisplayExposure={developmentDisplayExposure}
+          developmentPrepareScene={developmentPrepareScene}
+          developmentProbeFrame={developmentProbeFrame}
         />
       </Canvas>
     </div>
