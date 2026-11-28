@@ -99,12 +99,12 @@ const nonHistoricalCaptureOwners = new Map(
   [...nonHistoricalCaptureAudits].flatMap(([owner, files]) => files.map(([file]) => [file, owner])),
 );
 
-function isAuditedNonHistoricalCaptureTest(path) {
+function isAuditedNonHistoricalCaptureTest(path, readContent) {
   const auditedFiles = nonHistoricalCaptureAudits.get(path);
   if (!auditedFiles) return false;
   try {
     return auditedFiles.every(([file, expected]) =>
-      createHash("sha256").update(readFileSync(resolve(process.cwd(), file))).digest("hex") === expected);
+      createHash("sha256").update(readContent(file)).digest("hex") === expected);
   } catch {
     return false;
   }
@@ -284,7 +284,7 @@ export function classifyChangedPaths(changedPaths, options = {}) {
       }
     }
 
-    if (!matchedKnownFamily && isEvidenceLikeUnknownPath(path)) {
+    if (!matchedKnownFamily && isEvidenceLikeUnknownPath(path, options.readContent)) {
       unverified = true;
       broad = true;
       allFamilies().forEach((id) => {
@@ -354,7 +354,7 @@ export function classifyChangedPaths(changedPaths, options = {}) {
 }
 
 /** Classifies a path set only after event discovery proved the set complete. */
-export function classifyCompleteChangedPaths(changedPaths) {
+export function classifyCompleteChangedPaths(changedPaths, options = {}) {
   if (!Array.isArray(changedPaths)) return failedClosedRoute("complete-changed-file-set-invalid");
   if (changedPaths.length === 0) {
     return {
@@ -368,12 +368,12 @@ export function classifyCompleteChangedPaths(changedPaths) {
       unsupported: [],
     };
   }
-  return classifyChangedPaths(changedPaths);
+  return classifyChangedPaths(changedPaths, options);
 }
 
-function isEvidenceLikeUnknownPath(path) {
+function isEvidenceLikeUnknownPath(path, readContent = (file) => readFileSync(resolve(process.cwd(), file))) {
   const auditedOwner = nonHistoricalCaptureOwners.get(path);
-  if (auditedOwner) return !isAuditedNonHistoricalCaptureTest(auditedOwner);
+  if (auditedOwner) return !isAuditedNonHistoricalCaptureTest(auditedOwner, readContent);
   const lower = path.toLowerCase();
   if (/^docs\/architecture\//.test(lower)) {
     if (legacyEvidenceRoots.some((root) => lower.startsWith(root.toLowerCase()))) return true;

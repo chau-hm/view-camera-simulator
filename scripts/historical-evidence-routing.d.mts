@@ -33,7 +33,7 @@ export function validateEvidenceOwnershipDeclarations(manifest?: typeof HISTORIC
   errors: string[];
 };
 
-export function classifyCompleteChangedPaths(changedPaths: string[]): {
+export function classifyCompleteChangedPaths(changedPaths: string[], options?: { readContent?: (path: string) => Uint8Array }): {
   decision: HistoricalQualificationDecision;
   families: string[];
   changedPaths: string[];
@@ -54,6 +54,7 @@ export function classifyChangedPaths(changedPaths: string[], options?: {
   forceFull?: boolean;
   includeUnsupported?: boolean;
   reason?: string;
+  readContent?: (path: string) => Uint8Array;
 }): {
   decision: HistoricalQualificationDecision;
   families: string[];

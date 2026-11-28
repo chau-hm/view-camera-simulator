@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { HISTORICAL_EVIDENCE_MANIFEST, parseNameStatusZ } from "./historical-evidence-routing.mjs";
 import { HISTORICAL_QUALIFICATION_BASELINE, parseGitTreeZ, verifyBaselineManifest } from "./historical-qualification-baseline.mjs";
-import { discoverProductionRelease } from "./historical-production-release.mjs";
+import { discoverCumulativeSource, discoverProductionRelease } from "./historical-production-release.mjs";
 
 const root = resolve(new URL("..", import.meta.url).pathname);
 const fixturePath = resolve(root, "scripts/fixtures/historical-qualification-production-incident.json");
@@ -236,6 +236,7 @@ async function main() {
 
   const incidentCheckout = await createIncidentCheckout();
   let recovered;
+  let directPlan;
   try {
     recovered = await discoverProductionRelease({
       repository: { full_name: HISTORICAL_EVIDENCE_MANIFEST.repository },
@@ -244,6 +245,11 @@ async function main() {
       after: incident.productionMergeSha,
       deleted: false,
     }, { runGit, repositoryRoot: incidentCheckout.checkout });
+    directPlan = await discoverCumulativeSource({ sourceSha: incident.promotedMainSourceSha, sourceTreeSha: sourceTree }, { runGit, repositoryRoot: incidentCheckout.checkout });
+    for (const key of ["decision", "families", "changedPaths", "qualificationCoverage"]) {
+      if (JSON.stringify(directPlan[key]) !== JSON.stringify(recovered[key])) throw new Error(`incident-direct-source-plan-mismatch:${key}`);
+    }
+    if (JSON.stringify(directPlan.releaseProof.policyIdentity) !== JSON.stringify(recovered.releaseProof.policyIdentity)) throw new Error("incident-direct-source-baseline-mismatch");
   } finally {
     rmSync(incidentCheckout.temporaryDirectory, { recursive: true, force: true });
   }
@@ -269,6 +275,7 @@ async function main() {
       missingRequiredArtifactsInRunArtifact: incident.missingRequiredArtifacts,
     },
     policyIntroductionBaselineAudit,
+    directSourcePlanningMatchesProduction: true,
     correctedProductionRoute: {
       decision: recovered.decision,
       eventBeforeSha: recovered.releaseProof.eventBeforeSha,
