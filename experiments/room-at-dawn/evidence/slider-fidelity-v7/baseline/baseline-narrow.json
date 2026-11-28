@@ -1,0 +1,615 @@
+{
+  "source": "a597c18500ccf3eeea991604452f970f94deb42f",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "document": {
+    "innerWidth": 390,
+    "scrollWidth": 496,
+    "innerHeight": 844,
+    "scrollHeight": 4001
+  },
+  "states": {
+    "Focus (mm) 990": {
+      "value": "990",
+      "min": "100",
+      "max": "8000",
+      "step": "10",
+      "rect": {
+        "x": 132.90625,
+        "y": 350.1875,
+        "width": 129,
+        "height": 16
+      },
+      "text": "Focus (mm): 990"
+    },
+    "Focus (mm) 1000": {
+      "value": "1000",
+      "min": "100",
+      "max": "8000",
+      "step": "10",
+      "rect": {
+        "x": 139.0625,
+        "y": 350.1875,
+        "width": 129,
+        "height": 16
+      },
+      "text": "Focus (mm): 1000"
+    },
+    "Focus (mm) 1010": {
+      "value": "1010",
+      "min": "100",
+      "max": "8000",
+      "step": "10",
+      "rect": {
+        "x": 136.734375,
+        "y": 350.1875,
+        "width": 129,
+        "height": 16
+      },
+      "text": "Focus (mm): 1010"
+    },
+    "Rise (mm) 9": {
+      "value": "9",
+      "min": "0",
+      "max": "40",
+      "step": "1",
+      "rect": {
+        "x": 103.9375,
+        "y": 266.1875,
+        "width": 129,
+        "height": 16
+      },
+      "text": "Rise (mm): 9"
+    },
+    "Rise (mm) 10": {
+      "value": "10",
+      "min": "0",
+      "max": "40",
+      "step": "1",
+      "rect": {
+        "x": 110.1875,
+        "y": 266.1875,
+        "width": 129,
+        "height": 16
+      },
+      "text": "Rise (mm): 10"
+    },
+    "Shift (mm) -5": {
+      "value": "-5",
+      "min": "-60",
+      "max": "60",
+      "step": "1",
+      "rect": {
+        "x": 112.828125,
+        "y": 287.1875,
+        "width": 129,
+        "height": 16
+      },
+      "text": "Shift (mm): -5"
+    },
+    "Shift (mm) 0": {
+      "value": "0",
+      "min": "-60",
+      "max": "60",
+      "step": "1",
+      "rect": {
+        "x": 106.53125,
+        "y": 287.1875,
+        "width": 129,
+        "height": 16
+      },
+      "text": "Shift (mm): 0"
+    },
+    "Shift (mm) 5": {
+      "value": "5",
+      "min": "-60",
+      "max": "60",
+      "step": "1",
+      "rect": {
+        "x": 106.375,
+        "y": 287.1875,
+        "width": 129,
+        "height": 16
+      },
+      "text": "Shift (mm): 5"
+    },
+    "Tilt (degrees) -0.5": {
+      "value": "-0.5",
+      "min": "-10",
+      "max": "10",
+      "step": "0.1",
+      "rect": {
+        "x": 143.03125,
+        "y": 308.1875,
+        "width": 129,
+        "height": 16
+      },
+      "text": "Tilt (degrees): -0.5"
+    },
+    "Tilt (degrees) 0": {
+      "value": "0",
+      "min": "-10",
+      "max": "10",
+      "step": "0.1",
+      "rect": {
+        "x": 125.0625,
+        "y": 308.1875,
+        "width": 129,
+        "height": 16
+      },
+      "text": "Tilt (degrees): 0"
+    },
+    "Tilt (degrees) 0.5": {
+      "value": "0.5",
+      "min": "-10",
+      "max": "10",
+      "step": "0.1",
+      "rect": {
+        "x": 136.578125,
+        "y": 308.1875,
+        "width": 129,
+        "height": 16
+      },
+      "text": "Tilt (degrees): 0.5"
+    },
+    "Swing (degrees) -0.5": {
+      "value": "-0.5",
+      "min": "-10",
+      "max": "10",
+      "step": "0.1",
+      "rect": {
+        "x": 161.984375,
+        "y": 329.1875,
+        "width": 129,
+        "height": 16
+      },
+      "text": "Swing (degrees): -0.5"
+    },
+    "Swing (degrees) 0": {
+      "value": "0",
+      "min": "-10",
+      "max": "10",
+      "step": "0.1",
+      "rect": {
+        "x": 144.015625,
+        "y": 329.1875,
+        "width": 129,
+        "height": 16
+      },
+      "text": "Swing (degrees): 0"
+    },
+    "Swing (degrees) 0.5": {
+      "value": "0.5",
+      "min": "-10",
+      "max": "10",
+      "step": "0.1",
+      "rect": {
+        "x": 155.53125,
+        "y": 329.1875,
+        "width": 129,
+        "height": 16
+      },
+      "text": "Swing (degrees): 0.5"
+    },
+    "Camera lateral position (mm) -50": {
+      "value": "-50",
+      "min": "-1000",
+      "max": "1000",
+      "step": "50",
+      "rect": {
+        "x": 45.421875,
+        "y": 245.1875,
+        "width": 129,
+        "height": 16
+      },
+      "text": "Camera lateral position (mm): -50"
+    },
+    "Camera lateral position (mm) 0": {
+      "value": "0",
+      "min": "-1000",
+      "max": "1000",
+      "step": "50",
+      "rect": {
+        "x": 18,
+        "y": 245.1875,
+        "width": 129,
+        "height": 16
+      },
+      "text": "Camera lateral position (mm): 0"
+    },
+    "Camera lateral position (mm) 50": {
+      "value": "50",
+      "min": "-1000",
+      "max": "1000",
+      "step": "50",
+      "rect": {
+        "x": 38.96875,
+        "y": 245.1875,
+        "width": 129,
+        "height": 16
+      },
+      "text": "Camera lateral position (mm): 50"
+    },
+    "Focus (mm) 700": {
+      "value": "700",
+      "min": "100",
+      "max": "8000",
+      "step": "10",
+      "rect": {
+        "x": 131.65625,
+        "y": 350.1875,
+        "width": 129,
+        "height": 16
+      },
+      "text": "Focus (mm): 700"
+    }
+  },
+  "pointer": {
+    "from": 700,
+    "to": 1700,
+    "finish": 1190,
+    "events": [
+      {
+        "value": 720,
+        "trusted": true,
+        "x": 131.65625,
+        "width": 129
+      },
+      {
+        "value": 740,
+        "trusted": true,
+        "x": 131.5,
+        "width": 129
+      },
+      {
+        "value": 780,
+        "trusted": true,
+        "x": 131.234375,
+        "width": 129
+      },
+      {
+        "value": 760,
+        "trusted": true,
+        "x": 131.78125,
+        "width": 129
+      },
+      {
+        "value": 780,
+        "trusted": true,
+        "x": 131.75,
+        "width": 129
+      },
+      {
+        "value": 790,
+        "trusted": true,
+        "x": 131.78125,
+        "width": 129
+      },
+      {
+        "value": 800,
+        "trusted": true,
+        "x": 131.828125,
+        "width": 129
+      },
+      {
+        "value": 750,
+        "trusted": true,
+        "x": 132.84375,
+        "width": 129
+      },
+      {
+        "value": 860,
+        "trusted": true,
+        "x": 131.5625,
+        "width": 129
+      },
+      {
+        "value": 780,
+        "trusted": true,
+        "x": 132.9375,
+        "width": 129
+      },
+      {
+        "value": 870,
+        "trusted": true,
+        "x": 131.78125,
+        "width": 129
+      },
+      {
+        "value": 890,
+        "trusted": true,
+        "x": 131.78125,
+        "width": 129
+      },
+      {
+        "value": 830,
+        "trusted": true,
+        "x": 132.9375,
+        "width": 129
+      },
+      {
+        "value": 850,
+        "trusted": true,
+        "x": 132.796875,
+        "width": 129
+      },
+      {
+        "value": 880,
+        "trusted": true,
+        "x": 132.671875,
+        "width": 129
+      },
+      {
+        "value": 890,
+        "trusted": true,
+        "x": 132.953125,
+        "width": 129
+      },
+      {
+        "value": 910,
+        "trusted": true,
+        "x": 132.9375,
+        "width": 129
+      },
+      {
+        "value": 1100,
+        "trusted": true,
+        "x": 130.484375,
+        "width": 129
+      },
+      {
+        "value": 680,
+        "trusted": true,
+        "x": 136.734375,
+        "width": 129
+      },
+      {
+        "value": 960,
+        "trusted": true,
+        "x": 132.9375,
+        "width": 129
+      },
+      {
+        "value": 980,
+        "trusted": true,
+        "x": 132.90625,
+        "width": 129
+      },
+      {
+        "value": 990,
+        "trusted": true,
+        "x": 132.9375,
+        "width": 129
+      },
+      {
+        "value": 1010,
+        "trusted": true,
+        "x": 132.90625,
+        "width": 129
+      },
+      {
+        "value": 760,
+        "trusted": true,
+        "x": 136.734375,
+        "width": 129
+      },
+      {
+        "value": 1130,
+        "trusted": true,
+        "x": 131.75,
+        "width": 129
+      },
+      {
+        "value": 800,
+        "trusted": true,
+        "x": 136.6875,
+        "width": 129
+      },
+      {
+        "value": 1080,
+        "trusted": true,
+        "x": 132.84375,
+        "width": 129
+      },
+      {
+        "value": 660,
+        "trusted": true,
+        "x": 139.1875,
+        "width": 129
+      },
+      {
+        "value": 1110,
+        "trusted": true,
+        "x": 132.90625,
+        "width": 129
+      },
+      {
+        "value": 1020,
+        "trusted": true,
+        "x": 134.40625,
+        "width": 129
+      },
+      {
+        "value": 740,
+        "trusted": true,
+        "x": 138.6875,
+        "width": 129
+      },
+      {
+        "value": 1280,
+        "trusted": true,
+        "x": 131.234375,
+        "width": 129
+      },
+      {
+        "value": 770,
+        "trusted": true,
+        "x": 138.8125,
+        "width": 129
+      },
+      {
+        "value": 1320,
+        "trusted": true,
+        "x": 131.09375,
+        "width": 129
+      },
+      {
+        "value": 810,
+        "trusted": true,
+        "x": 138.640625,
+        "width": 129
+      },
+      {
+        "value": 1400,
+        "trusted": true,
+        "x": 130.515625,
+        "width": 129
+      },
+      {
+        "value": 800,
+        "trusted": true,
+        "x": 139.25,
+        "width": 129
+      },
+      {
+        "value": 1270,
+        "trusted": true,
+        "x": 132.84375,
+        "width": 129
+      },
+      {
+        "value": 950,
+        "trusted": true,
+        "x": 137.640625,
+        "width": 129
+      },
+      {
+        "value": 1310,
+        "trusted": true,
+        "x": 132.640625,
+        "width": 129
+      },
+      {
+        "value": 1050,
+        "trusted": true,
+        "x": 136.6875,
+        "width": 129
+      },
+      {
+        "value": 910,
+        "trusted": true,
+        "x": 138.890625,
+        "width": 129
+      },
+      {
+        "value": 1510,
+        "trusted": true,
+        "x": 130.484375,
+        "width": 129
+      },
+      {
+        "value": 1110,
+        "trusted": true,
+        "x": 136.5625,
+        "width": 129
+      },
+      {
+        "value": 1270,
+        "trusted": true,
+        "x": 134.40625,
+        "width": 129
+      },
+      {
+        "value": 1060,
+        "trusted": true,
+        "x": 137.640625,
+        "width": 129
+      },
+      {
+        "value": 970,
+        "trusted": true,
+        "x": 139.15625,
+        "width": 129
+      },
+      {
+        "value": 1530,
+        "trusted": true,
+        "x": 131.484375,
+        "width": 129
+      },
+      {
+        "value": 1030,
+        "trusted": true,
+        "x": 138.859375,
+        "width": 129
+      },
+      {
+        "value": 1040,
+        "trusted": true,
+        "x": 139.015625,
+        "width": 129
+      },
+      {
+        "value": 1050,
+        "trusted": true,
+        "x": 139.25,
+        "width": 129
+      },
+      {
+        "value": 1090,
+        "trusted": true,
+        "x": 138.890625,
+        "width": 129
+      },
+      {
+        "value": 1110,
+        "trusted": true,
+        "x": 139.15625,
+        "width": 129
+      },
+      {
+        "value": 1460,
+        "trusted": true,
+        "x": 134.40625,
+        "width": 129
+      },
+      {
+        "value": 1130,
+        "trusted": true,
+        "x": 139.34375,
+        "width": 129
+      },
+      {
+        "value": 1330,
+        "trusted": true,
+        "x": 136.6875,
+        "width": 129
+      },
+      {
+        "value": 1190,
+        "trusted": true,
+        "x": 138.96875,
+        "width": 129
+      }
+    ],
+    "monotonic": false,
+    "rectXDelta": 8.859375
+  },
+  "frame": {
+    "status": "completed",
+    "generation": {
+      "generationId": "room-generation-4",
+      "channelId": "default"
+    },
+    "request": {
+      "requestId": "room-request-80",
+      "channelId": "default",
+      "sceneId": "architecture-rise"
+    },
+    "frameId": "room-generation-4:frame:82",
+    "requiredOperations": "all-completed"
+  },
+  "gpu": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)"
+}

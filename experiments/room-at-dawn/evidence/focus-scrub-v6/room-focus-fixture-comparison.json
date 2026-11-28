@@ -1,0 +1,263 @@
+{
+  "fixture": "known near-edge, 1.1 m; target is not original room geometry",
+  "rows": [
+    {
+      "focusMm": 1000,
+      "stageFrameId": "room-generation-4:frame:4",
+      "rawFrameId": "room-generation-4:frame:2",
+      "worldM": [
+        -0.35,
+        0.2,
+        1.1
+      ],
+      "uv": [
+        0.7477837123506414,
+        0.676988365964744
+      ],
+      "sceneTexel": {
+        "x": 717,
+        "y": 487
+      },
+      "depth": 0.9927214975787102,
+      "signedCocMm": 0.1455078125,
+      "canonicalSignedCocMm": 0.14449835878407355,
+      "majorRadiusMm": 0.07275390625,
+      "sceneLinearR": 0.67529296875,
+      "farLinearR": 0.63330078125,
+      "nearLinearR": 0,
+      "nearAlpha": 0,
+      "compositeLinearR": 1.5732421875,
+      "processedEdgeWidthCssPx": 1.2025343080672037,
+      "rawEdgeWidthCssPx": 0.8666666666666671,
+      "processedValid": true,
+      "rawValid": true
+    },
+    {
+      "focusMm": 1080,
+      "stageFrameId": "room-generation-4:frame:8",
+      "rawFrameId": "room-generation-4:frame:8",
+      "worldM": [
+        -0.35,
+        0.2,
+        1.1
+      ],
+      "uv": [
+        0.7459816489880914,
+        0.6757011778486368
+      ],
+      "sceneTexel": {
+        "x": 716,
+        "y": 486
+      },
+      "depth": 0.9927214975787102,
+      "signedCocMm": 0.02783203125,
+      "canonicalSignedCocMm": 0.02656434474616213,
+      "majorRadiusMm": 0.01416015625,
+      "sceneLinearR": 0.33154296875,
+      "farLinearR": 0.33154296875,
+      "nearLinearR": 0,
+      "nearAlpha": 0,
+      "compositeLinearR": 0.833984375,
+      "processedEdgeWidthCssPx": 1.501919264973747,
+      "rawEdgeWidthCssPx": 1.3356918238993707,
+      "processedValid": true,
+      "rawValid": true
+    },
+    {
+      "focusMm": 1090,
+      "stageFrameId": "room-generation-4:frame:11",
+      "rawFrameId": "room-generation-4:frame:13",
+      "worldM": [
+        -0.35,
+        0.2,
+        1.1
+      ],
+      "uv": [
+        0.7457766642806012,
+        0.6755547602004295
+      ],
+      "sceneTexel": {
+        "x": 715,
+        "y": 486
+      },
+      "depth": 0.9927214975787102,
+      "signedCocMm": 0.0146484375,
+      "canonicalSignedCocMm": 0.013149350649347255,
+      "majorRadiusMm": 0.00732421875,
+      "sceneLinearR": 0.7109375,
+      "farLinearR": 0.7109375,
+      "nearLinearR": 0,
+      "nearAlpha": 0,
+      "compositeLinearR": 1.794921875,
+      "processedEdgeWidthCssPx": 0.9349019607843143,
+      "rawEdgeWidthCssPx": 0.8965517241379288,
+      "processedValid": true,
+      "rawValid": true
+    },
+    {
+      "focusMm": 1100,
+      "stageFrameId": "room-generation-4:frame:15",
+      "rawFrameId": "room-generation-4:frame:18",
+      "worldM": [
+        -0.35,
+        0.2,
+        1.1
+      ],
+      "uv": [
+        0.7455757386762298,
+        0.6754112419115927
+      ],
+      "sceneTexel": {
+        "x": 715,
+        "y": 486
+      },
+      "depth": 0.9927214975787102,
+      "signedCocMm": 0.00146484375,
+      "canonicalSignedCocMm": 0,
+      "majorRadiusMm": 0.00048828125,
+      "sceneLinearR": 0.619140625,
+      "farLinearR": 0.619140625,
+      "nearLinearR": 0,
+      "nearAlpha": 0,
+      "compositeLinearR": 1.5654296875,
+      "processedEdgeWidthCssPx": 0.9096343402225742,
+      "rawEdgeWidthCssPx": 0.8813559322033893,
+      "processedValid": true,
+      "rawValid": true
+    },
+    {
+      "focusMm": 1110,
+      "stageFrameId": "room-generation-4:frame:19",
+      "rawFrameId": "room-generation-4:frame:23",
+      "worldM": [
+        -0.35,
+        0.2,
+        1.1
+      ],
+      "uv": [
+        0.7453787527895912,
+        0.6752705377068509
+      ],
+      "sceneTexel": {
+        "x": 715,
+        "y": 486
+      },
+      "depth": 0.9927214975787102,
+      "signedCocMm": -0.01171875,
+      "canonicalSignedCocMm": -0.012891520244462187,
+      "majorRadiusMm": 0.005859375,
+      "sceneLinearR": 0.5302734375,
+      "farLinearR": 0.5302734375,
+      "nearLinearR": 0.5302734375,
+      "nearAlpha": 1,
+      "compositeLinearR": 1.341796875,
+      "processedEdgeWidthCssPx": 1.2268523489932868,
+      "rawEdgeWidthCssPx": 1.2318181818181806,
+      "processedValid": true,
+      "rawValid": true
+    },
+    {
+      "focusMm": 1120,
+      "stageFrameId": "room-generation-4:frame:22",
+      "rawFrameId": "room-generation-4:frame:28",
+      "worldM": [
+        -0.35,
+        0.2,
+        1.1
+      ],
+      "uv": [
+        0.745185591871625,
+        0.6751325656225894
+      ],
+      "sceneTexel": {
+        "x": 715,
+        "y": 486
+      },
+      "depth": 0.9927214975787102,
+      "signedCocMm": -0.0244140625,
+      "canonicalSignedCocMm": -0.025532719707478474,
+      "majorRadiusMm": 0.01220703125,
+      "sceneLinearR": 0.44140625,
+      "farLinearR": 0.44140625,
+      "nearLinearR": 0.44140625,
+      "nearAlpha": 1,
+      "compositeLinearR": 1.1181640625,
+      "processedEdgeWidthCssPx": 1.4456140350877167,
+      "rawEdgeWidthCssPx": 1.40826330532213,
+      "processedValid": true,
+      "rawValid": true
+    },
+    {
+      "focusMm": 1200,
+      "stageFrameId": "room-generation-4:frame:25",
+      "rawFrameId": "room-generation-4:frame:33",
+      "worldM": [
+        -0.35,
+        0.2,
+        1.1
+      ],
+      "uv": [
+        0.7437655980963067,
+        0.6741182843545048
+      ],
+      "sceneTexel": {
+        "x": 714,
+        "y": 485
+      },
+      "depth": 0.9927214975787102,
+      "signedCocMm": -0.1171875,
+      "canonicalSignedCocMm": -0.11846261846262035,
+      "majorRadiusMm": 0.05859375,
+      "sceneLinearR": 0.26806640625,
+      "farLinearR": 0.26806640625,
+      "nearLinearR": 0.26806640625,
+      "nearAlpha": 1,
+      "compositeLinearR": 0.6865234375,
+      "processedEdgeWidthCssPx": 1.2749262475588967,
+      "rawEdgeWidthCssPx": 0.9910714285714253,
+      "processedValid": true,
+      "rawValid": true
+    },
+    {
+      "focusMm": 1400,
+      "stageFrameId": "room-generation-4:frame:28",
+      "rawFrameId": "room-generation-4:frame:38",
+      "worldM": [
+        -0.35,
+        0.2,
+        1.1
+      ],
+      "uv": [
+        0.7409743889577994,
+        0.6721245635412854
+      ],
+      "sceneTexel": {
+        "x": 711,
+        "y": 483
+      },
+      "depth": 0.9927214975787102,
+      "signedCocMm": -0.2998046875,
+      "canonicalSignedCocMm": -0.30113016754238264,
+      "majorRadiusMm": 0.14990234375,
+      "sceneLinearR": 0.42041015625,
+      "farLinearR": 0.42041015625,
+      "nearLinearR": 0.42041015625,
+      "nearAlpha": 1,
+      "compositeLinearR": 1.1025390625,
+      "processedEdgeWidthCssPx": 1.4907948502296726,
+      "rawEdgeWidthCssPx": 1.4366666666666656,
+      "processedValid": true,
+      "rawValid": true
+    }
+  ],
+  "interpretation": [
+    "Reprojected nearest scene texel changes between 1080 and 1090 mm, where the sampled scene color and both Raw and Processed edge widths also change. This is an upstream pixel-sampling observation for the fixture, not proof of the user-reported room behavior.",
+    "CoC is observed smooth through the sampled crossing; near alpha switches at the sign crossing, while near and far center colors agree in this specific state. This does not prove all occlusion/coverage transitions are continuous.",
+    "Edge widths are display-space 10\u201390% estimates with different Raw/Processed presentation; they are not a calibrated physical CoC transfer."
+  ],
+  "limitations": [
+    "Per-point samples are nearest texels after reprojection and can change due pixel phase; no claim that different states should have identical texel values.",
+    "Raw and Processed are different browser runs with identical recorded canonical camera states and same hardware; they cannot be simultaneous frames.",
+    "The fixture is not the original photorealistic room."
+  ]
+}

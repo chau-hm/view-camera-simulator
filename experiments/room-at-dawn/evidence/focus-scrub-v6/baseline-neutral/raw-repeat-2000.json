@@ -1,0 +1,36 @@
+{
+  "focus": 2000,
+  "source": {
+    "commit": "5a35420a410ad81ff29ad2199924ba70d3e2ef68",
+    "dirtySource": true
+  },
+  "before": {
+    "status": "ready",
+    "frameId": "room-generation-4:frame:97",
+    "requestId": "room-request-12",
+    "generationId": "room-generation-4"
+  },
+  "later": {
+    "status": "ready",
+    "frameId": "room-generation-4:frame:98",
+    "requestId": "room-request-12",
+    "generationId": "room-generation-4"
+  },
+  "after": {
+    "status": "ready",
+    "frameId": "room-generation-4:frame:107",
+    "requestId": "room-request-12",
+    "generationId": "room-generation-4"
+  },
+  "comparison": {
+    "meanAbsoluteRgb8": 0,
+    "p99MeanChannelDifference": 0,
+    "fractionAbove3": 0,
+    "repeatabilityPass": true,
+    "maximumMeanChannelDifference": 0,
+    "changedPixelFraction": 0,
+    "width": 480,
+    "height": 361,
+    "meaning": "same-state repeat only, display-referred; not CoC or focus-breathing correctness"
+  }
+}

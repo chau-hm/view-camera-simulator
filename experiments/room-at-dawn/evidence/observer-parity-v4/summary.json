@@ -1,0 +1,15 @@
+{
+  "reviewedHead": "e7980c9ecfe3baad1dee11df89fd8a31ba4ad26c",
+  "source": "room-at-dawn aab8be218aa051bbb2e22b82916962619c951747",
+  "browser": "Chromium 149 headless, ANGLE SwiftShader WebGL2",
+  "captureMode": "matched current Observer and Ground Glass request/generation identities; screenshots are display-referred RGB8",
+  "photographicRun": "photographic/ (completed cases before remount stale-frame race was detected; source subsequently changed only to clear stale Observer identity during cleanup)",
+  "lifecycleRun": "lifecycle/ (new cleanup identity and separate renderer remount)",
+  "before": "before/ (old Observer had no independent frame identity, and its camera was 0.15m behind the final one)",
+  "giMatched": "302/302",
+  "observerDisplayExposure19To9WideMeanLuma8": [72.8517, 51.1152],
+  "groundDisplayExposure19To9WideMeanLuma8": [103.3186, 75.8865],
+  "laptopReflectionMeasurement": "measurements/laptop-reflection.json",
+  "laptopReflectionRoiPixels": [140, 244, 300, 64],
+  "limitations": ["display-referred pixels do not establish linear HDR preservation", "no hardware GPU or native WebGPU result", "custom glass environment unsupported", "not a GPU memory measurement", "calibrated optical measurements remain open", "views use different camera projection and photographic semantics"]
+}

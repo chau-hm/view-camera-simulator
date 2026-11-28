@@ -1,0 +1,21 @@
+{
+  "gpu": {
+    "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)"
+  },
+  "sourceCommit": "33421d9788b8fdd60443097491ba5bbfa1c4851d",
+  "dirtySource": false,
+  "url": "http://127.0.0.1:5214/view-camera-simulator/experiments/room-at-dawn/optics.html?rttDiagnostics=1",
+  "browser": "149.0.7827.55",
+  "counts": {
+    "initial-state": 1,
+    "focus-input": 4,
+    "state-committed": 4,
+    "runtime-observation": 12,
+    "frame-completed": 6
+  },
+  "dropped": 0,
+  "serializationErrors": 0,
+  "errors": [],
+  "limitation": "Frame completion is reported after the WebGL blit, not proof of compositor presentation. Attach a synchronized screen recording for visible behavior."
+}

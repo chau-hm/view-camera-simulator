@@ -1,0 +1,13 @@
+{
+  "roi": {
+    "x": 140,
+    "y": 244,
+    "width": 300,
+    "height": 64
+  },
+  "meanAbsoluteRgb8": 21.840086805555554,
+  "changedPixelFraction": 0.92859375,
+  "meanLuma8On": 25.044411874998506,
+  "meanLuma8Off": 2.2602573645833397,
+  "measurement": "display-referred screenshots, not linear radiance"
+}
