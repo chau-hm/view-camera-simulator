@@ -23,12 +23,22 @@ const git = async (args, cwd = root, allowFailure = false) => {
 // be tracked at HEAD and unmodified before this CLI imports them. A future
 // reviewed Release B policy update must explicitly update these identities.
 const RELEASE_B_BLOBS = Object.freeze({
-  "scripts/release-artifact-preflight.mjs": "c9b3414d84c9b1a2e233cf27e71c6092b1fa05cd",
+  "scripts/release-artifact-preflight.mjs": "2d1e8c14258b5cf0d330dbdc96f9af7661ba2421",
   "scripts/extract-pages-artifact.py": "716bdcc4e0f5ee7d74dbe68faf702672b9919914",
-  "scripts/pages-artifact.mjs": "585ac9b44a75bc2f2652247965c4cfc5c03a065a",
+  "scripts/pages-artifact.mjs": "2e5268c81b9ee0cc6ed9fe2b677b82aa1770667d",
 });
 
+// Compare orchestration to canonical main without embedding this file's own
+// hash. Static Release B pins remain separate and require explicit review.
+const ORCHESTRATION_PATHS = ["scripts/release-candidate.mjs", "scripts/release-artifact-qualify.mjs", "scripts/historical-source-execution.mjs", "scripts/historical-source-pins.mjs", "scripts/historical-production-release.mjs", "scripts/historical-evidence-routing.mjs", "scripts/historical-evidence-manifest.json", "scripts/historical-qualification-baseline.mjs", "scripts/historical-qualification-baseline.json", "scripts/release-candidate-eligibility.mjs"];
+
 export async function verifyReleaseBContract({ runGit = git, repositoryRoot = root } = {}) {
+  const origin = await runGit(["remote", "get-url", "origin"], repositoryRoot, true);
+  if (origin.status !== 0 || !["https://github.com/chau-hm/view-camera-simulator.git", "git@github.com:chau-hm/view-camera-simulator.git"].includes(origin.stdout.trim())) throw new Error("release-orchestration-remote-mismatch");
+  const remote = await runGit(["ls-remote", "--heads", "origin", "refs/heads/main"], repositoryRoot, true);
+  const local = await runGit(["rev-parse", "--verify", "refs/remotes/origin/main^{commit}"], repositoryRoot, true);
+  const refs = remote.stdout.trim().split(/\s+/);
+  if (remote.status !== 0 || local.status !== 0 || !sha.test(refs[0] ?? "") || refs[1] !== "refs/heads/main" || local.stdout.trim() !== refs[0]) throw new Error("release-orchestration-main-stale");
   for (const [path, expected] of Object.entries(RELEASE_B_BLOBS)) {
     const onMain = await runGit(["rev-parse", "--verify", `refs/remotes/origin/main:${path}`], repositoryRoot, true);
     if (onMain.status !== 0 || onMain.stdout.trim() !== expected) throw new Error(`release-b-reviewed-contract-not-on-main:${path}`);
@@ -38,6 +48,13 @@ export async function verifyReleaseBContract({ runGit = git, repositoryRoot = ro
     if (unchanged.status !== 0) throw new Error(`release-b-reviewed-contract-modified:${path}`);
     const actual = await runGit(["hash-object", "--", path], repositoryRoot, true);
     if (actual.status !== 0 || actual.stdout.trim() !== expected) throw new Error(`release-b-reviewed-contract-modified:${path}`);
+  }
+  for (const path of ORCHESTRATION_PATHS) {
+    const onMain = await runGit(["rev-parse", "--verify", `refs/remotes/origin/main:${path}`], repositoryRoot, true);
+    const tracked = await runGit(["rev-parse", "--verify", `HEAD:${path}`], repositoryRoot, true);
+    const unchanged = await runGit(["diff", "--quiet", "HEAD", "--", path], repositoryRoot, true);
+    const actual = await runGit(["hash-object", "--", path], repositoryRoot, true);
+    if (onMain.status !== 0 || tracked.status !== 0 || unchanged.status !== 0 || actual.status !== 0 || !sha.test(onMain.stdout.trim()) || onMain.stdout.trim() !== tracked.stdout.trim() || tracked.stdout.trim() !== actual.stdout.trim()) throw new Error(`release-orchestration-not-canonical:${path}`);
   }
 }
 

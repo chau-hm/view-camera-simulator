@@ -165,10 +165,10 @@ describe("historical evidence change routing", () => {
         mkdirSync(dirname(target), { recursive: true });
         writeFileSync(target, contents);
       }
-      writeFileSync(resolve(temp, "routing.mjs"), routing);
+      writeFileSync(resolve(temp, "scripts/routing.mjs"), routing);
       const route = (paths: string[]) => JSON.parse(execFileSync(process.execPath, [
         "--input-type=module", "-e",
-        `import { classifyChangedPaths } from './routing.mjs'; console.log(JSON.stringify(classifyChangedPaths(${JSON.stringify(paths)})));`,
+        `import { classifyChangedPaths } from './scripts/routing.mjs'; console.log(JSON.stringify(classifyChangedPaths(${JSON.stringify(paths)})));`,
       ], { cwd: temp, encoding: "utf8" }));
 
       for (const path of audited) expect(route([path])).toMatchObject({ decision: "NOT_APPLICABLE", families: [], broad: false });
@@ -220,7 +220,7 @@ describe("historical evidence change routing", () => {
     try {
       mkdirSync(resolve(temp, "scripts"), { recursive: true });
       writeFileSync(resolve(temp, "scripts/historical-evidence-manifest.json"), readFileSync(resolve(process.cwd(), "scripts/historical-evidence-manifest.json")));
-      writeFileSync(resolve(temp, "routing.mjs"), readFileSync(resolve(process.cwd(), "scripts/historical-evidence-routing.mjs")));
+      writeFileSync(resolve(temp, "scripts/routing.mjs"), readFileSync(resolve(process.cwd(), "scripts/historical-evidence-routing.mjs")));
       for (const file of files) {
         const target = resolve(temp, file);
         mkdirSync(dirname(target), { recursive: true });
@@ -231,7 +231,7 @@ describe("historical evidence change routing", () => {
         const original = readFileSync(target);
         writeFileSync(target, "changed");
         for (const trigger of files) {
-          const result = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", `import { classifyChangedPaths } from './routing.mjs'; console.log(JSON.stringify(classifyChangedPaths(${JSON.stringify([trigger])})));`], { cwd: temp, encoding: "utf8" }));
+          const result = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", `import { classifyChangedPaths } from './scripts/routing.mjs'; console.log(JSON.stringify(classifyChangedPaths(${JSON.stringify([trigger])})));`], { cwd: temp, encoding: "utf8" }));
           expect(result.decision).toBe("UNVERIFIED");
         }
         writeFileSync(target, original);

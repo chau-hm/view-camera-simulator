@@ -5,7 +5,7 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repository = 'chau-hm/view-camera-simulator';
-const packageName = JSON.parse(readFileSync('package.json', 'utf8')).name;
+const packageName = JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '../package.json'), 'utf8')).name;
 if (packageName !== repository.split('/')[1]) throw new Error('Repository and package name disagree');
 const base = `/${packageName}/`;
 const sha256 = (data) => createHash('sha256').update(data).digest('hex');
@@ -41,8 +41,8 @@ export function contentDigest(files) {
 export function verify(root, manifest, expected = {}) {
   if (!manifest || manifest.schemaVersion !== 1 || manifest.repository !== repository ||
       !/^[a-f0-9]{40}$/.test(manifest.sourceCommit) || !/^[a-f0-9]{40}$/.test(manifest.sourceTree) ||
-      manifest.basePath !== base || manifest.mode !== 'production' || manifest.buildConfiguration !== 'vite-pages-v1' ||
-      manifest.buildCommand !== 'npm run build -- --base=<basePath>' || !/^v\d+\.\d+\.\d+$/.test(manifest.nodeVersion) ||
+      manifest.basePath !== base || manifest.mode !== 'production' || !((manifest.buildConfiguration === 'vite-pages-v1' && manifest.buildCommand === 'npm run build -- --base=<basePath>') ||
+        (manifest.buildConfiguration === 'vite-pages-after-typecheck-v1' && manifest.buildCommand === 'npm run build:production-preview:after-typecheck -- --base=<basePath>')) || !/^v\d+\.\d+\.\d+$/.test(manifest.nodeVersion) ||
       !/^[a-f0-9]{64}$/.test(manifest.packageLockSha256) ||
       !Array.isArray(manifest.files) || !/^[a-f0-9]{64}$/.test(manifest.contentDigest)) throw new Error('Invalid artifact manifest');
   for (const [key, value] of Object.entries(expected)) {
@@ -89,7 +89,7 @@ export function verifyPinned(candidate, pinned, expected, retained = false) {
   return actual;
 }
 
-function prepare(out) {
+function prepare(out, afterTypecheck = false) {
   if (git('status', '--porcelain', '--untracked-files=all')) throw new Error('Artifact source must be a clean committed tree');
   if (process.env.GITHUB_REPOSITORY && process.env.GITHUB_REPOSITORY !== repository) throw new Error('Unexpected repository');
   if (Object.keys(process.env).some((key) => key.startsWith('VITE_')) || (process.env.NODE_ENV && process.env.NODE_ENV !== 'production')) throw new Error('Conflicting build environment');
@@ -104,7 +104,7 @@ function prepare(out) {
   if (existsSync(target)) throw new Error('Output already exists');
   mkdirSync(target, { recursive: true });
   // Standalone execution always includes the required typecheck.
-  execFileSync('npm', ['run', 'build', '--', `--base=${base}`], { stdio: 'inherit', env: { ...process.env, VITE_BASE_PATH: base } });
+  execFileSync('npm', ['run', afterTypecheck ? 'build:production-preview:after-typecheck' : 'build', '--', `--base=${base}`], { stdio: 'inherit', env: { ...process.env, VITE_BASE_PATH: base } });
   copyFileSync('dist/index.html', 'dist/404.html');
   mkdirSync(payload);
   // Copy only files that passed the inventory entry-type checks.
@@ -115,9 +115,9 @@ function prepare(out) {
   const files = inventory(payload);
   const manifest = {
     schemaVersion: 1, repository, sourceCommit, sourceTree,
-    buildConfiguration: 'vite-pages-v1', basePath: base, mode: 'production',
+    buildConfiguration: afterTypecheck ? 'vite-pages-after-typecheck-v1' : 'vite-pages-v1', basePath: base, mode: 'production',
     nodeVersion: process.version, packageLockSha256: sha256(readFileSync('package-lock.json')),
-    buildCommand: 'npm run build -- --base=<basePath>',
+    buildCommand: afterTypecheck ? 'npm run build:production-preview:after-typecheck -- --base=<basePath>' : 'npm run build -- --base=<basePath>',
     workflow: process.env.GITHUB_WORKFLOW ?? null,
     runId: process.env.GITHUB_RUN_ID ?? null,
     runAttempt: process.env.GITHUB_RUN_ATTEMPT ?? null,
@@ -131,7 +131,7 @@ function prepare(out) {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   try {
     const [command, path, arg1, arg2, arg3, arg4] = process.argv.slice(2);
-    if (command === 'prepare' && path && !arg1) prepare(path);
+    if ((command === 'prepare' || command === 'prepare-after-typecheck') && path && !arg1) prepare(path, command === 'prepare-after-typecheck');
     else if (command === 'verify' && path && (!arg2 || arg1)) {
       const manifest = JSON.parse(readFileSync(join(path, 'manifest.json'), 'utf8'));
       console.log(JSON.stringify(verify(join(path, 'payload'), manifest, { ...(arg1 ? { sourceCommit: arg1 } : {}), ...(arg2 ? { sourceTree: arg2 } : {}) })));

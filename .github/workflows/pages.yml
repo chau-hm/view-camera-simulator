@@ -263,6 +263,46 @@ jobs:
       - name: Validate M7V E2E qualification lane and skip governance policy
         run: npm run evidence:check:m7v
 
+      - name: Build and identify candidate
+        if: github.repository == 'chau-hm/view-camera-simulator' && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.deleted == false && github.event.after == github.sha
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA" && node scripts/pages-artifact.mjs prepare-after-typecheck "$RUNNER_TEMP/pages-artifact"
+      - name: Pin original identity outside the candidate
+        if: github.repository == 'chau-hm/view-camera-simulator' && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.deleted == false && github.event.after == github.sha
+        run: node scripts/pages-artifact.mjs pin "$RUNNER_TEMP/pages-artifact" "$RUNNER_TEMP/pages-identity.json" "$GITHUB_SHA" "$(git rev-parse HEAD^{tree})"
+      - name: Test prebuilt candidate
+        if: github.repository == 'chau-hm/view-camera-simulator' && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.deleted == false && github.event.after == github.sha
+        env:
+          VCS_PAGES_ARTIFACT: ${{ runner.temp }}/pages-artifact/payload
+        run: >-
+          npm run test:e2e -- --config=playwright.pages-artifact.config.ts
+          --project=chromium-pages-artifact --workers=1
+      - name: Verify unchanged payload
+        if: github.repository == 'chau-hm/view-camera-simulator' && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.deleted == false && github.event.after == github.sha
+        run: |
+          node scripts/pages-artifact.mjs verify-pinned "$RUNNER_TEMP/pages-artifact" "$RUNNER_TEMP/pages-identity.json" "$GITHUB_SHA" "$(git rev-parse HEAD^{tree})" > "$RUNNER_TEMP/verified.json"
+          node -e 'const fs = require("node:fs"); const result = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + "/verified.json")); fs.writeFileSync(process.env.RUNNER_TEMP + "/pages-artifact/validation.json", JSON.stringify({ status: "ARTIFACT_VALIDATED", qualification: "RELEASE_QUALIFICATION_PENDING", deployment: "NOT_DEPLOYED", ...result }, null, 2) + "\n");'
+      - name: Retain candidate and identity
+        if: github.repository == 'chau-hm/view-camera-simulator' && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.deleted == false && github.event.after == github.sha
+        id: upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: pages-candidate-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/pages-artifact
+          retention-days: 30
+          if-no-files-found: error
+          include-hidden-files: true
+      - name: Retrieve retained candidate into a fresh directory
+        if: github.repository == 'chau-hm/view-camera-simulator' && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.deleted == false && github.event.after == github.sha
+        uses: actions/download-artifact@v4
+        with:
+          artifact-ids: ${{ steps.upload.outputs.artifact-id }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/pages-retained
+      - name: Verify retained candidate
+        if: github.repository == 'chau-hm/view-camera-simulator' && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.deleted == false && github.event.after == github.sha
+        run: |
+          node scripts/pages-artifact.mjs verify-pinned "$RUNNER_TEMP/pages-retained" "$RUNNER_TEMP/pages-identity.json" "$GITHUB_SHA" "$(git rev-parse HEAD^{tree})" --retained
+          echo "ARTIFACT_RETENTION_VERIFIED; RELEASE_QUALIFICATION_PENDING; NOT_DEPLOYED" >> "$GITHUB_STEP_SUMMARY"
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/production'

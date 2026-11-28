@@ -108,3 +108,8 @@ Each entry below is the literal `package.json` implementation. See the [consolid
 | `promote:production` | `node ./scripts/promote-production.mjs` |
 | `preview` | `vite preview` |
 | `evidence` | `node ./scripts/evidence.mjs` |
+
+Release candidate inspection and qualification use `node scripts/release-candidate.mjs
+list`, `qualify --latest`, or `qualify --source <full-sha>` (with the same
+script path). They do not build or deploy. The direct six-identifier
+`scripts/release-artifact-qualify.mjs` interface remains available.

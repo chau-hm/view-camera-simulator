@@ -13,7 +13,7 @@ const runExpected = { id: "123", attempt: "2", source, path: run.path, event: "p
 const pin = { identityVersion: 1, sourceCommit: source, sourceTree: tree, manifestSha256: "c".repeat(64) };
 const producerLog = `prepare\tPin original identity outside the candidate\t2026-01-01 ${JSON.stringify(pin)}\nprepare\tRetain candidate and identity\t2026-01-01 Artifact ID 789\nprepare\tRetrieve retained candidate into a fresh directory\t2026-01-01 (ID: 789, Size: 1)\nprepare\tVerify retained candidate\t2026-01-01 ${JSON.stringify(pin)}\n`;
 const bytes = Buffer.from("archive");
-const artifact = { id: 789, name: "pages-candidate-456-1", expired: false, size_in_bytes: bytes.length, digest: `sha256:${createHash("sha256").update(bytes).digest("hex")}`, expires_at: "2099-01-01T00:00:00Z", workflow_run: { id: 456, head_sha: source, head_branch: "main", repository_id: 1283640696, head_repository_id: 1283640696 } };
+const artifact = { id: 789, name: "pages-candidate-456-1", expired: false, size_in_bytes: bytes.length, digest: `sha256:${createHash("sha256").update(bytes).digest("hex")}`, created_at: "2026-01-01T00:00:00Z", expires_at: "2099-01-01T00:00:00Z", workflow_run: { id: 456, head_sha: source, head_branch: "main", repository_id: 1283640696, head_repository_id: 1283640696 } };
 const artifactExpected = { artifactId: "789", producerId: "456", attempt: "1", source };
 
 describe("trusted release artifact preflight", () => {

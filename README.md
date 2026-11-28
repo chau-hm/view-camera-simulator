@@ -289,9 +289,9 @@ Retention is finite and does not provide rollback storage. After this workflow i
 merged to the default branch, dispatch **Pages artifact pilot (non-publishing)**
 from Actions on `main` (or run `gh workflow run pages-artifact-pilot.yml --ref main`),
 then inspect its source/tree, pin, Preview, upload and fresh-download verification,
-result, and lack of deployment. The pilot is not a release authorization. Main-CI integration is deferred until the separate CI
-routing work stabilizes. Until then this pilot adds a separate build; it does
-not reduce the existing production CI or establish a deployable release.
+result, and lack of deployment. The pilot is a diagnostic, not a release
+authorization. Main CI prepares its own candidate; neither path reduces the
+existing production CI or establishes a deployable release.
 
 The exact-source historical qualification command and its non-publishing
 boundary are described in the [historical qualification guide](docs/testing/HISTORICAL_EVIDENCE_QUALIFICATION.md#exact-source-release-qualification).
@@ -363,3 +363,49 @@ versions merely because they are current. The currently reviewed Git blob pins
 are `37490702733b5130bd9ec125e0d41102751ed004` (Pages CI),
 `3a449d8f6f896c2cc38252209362daa0778dc6d6` (historical qualification), and
 `94b7feb1e0370ac020b24103f581dbc03a2f6643` (artifact pilot).
+
+### Main CI release candidate selection
+
+A successful canonical main push produces a Pages candidate after ordinary CI,
+using the same checked source and typecheck. Root Production Preview remains a
+separate bundle. The Pages bundle uses the after-typecheck profile, is tested
+as a prebuilt subpath payload, pinned, uploaded for 30 days and verified after
+a fresh download. Main CI does not deploy. The standalone pilot remains a checked
+diagnostic producer; older reviewed two-run candidates are still supported.
+
+```bash
+git fetch origin
+node scripts/release-candidate.mjs list
+node scripts/release-candidate.mjs qualify --latest
+node scripts/release-candidate.mjs qualify --source <full-source-sha>
+node scripts/release-artifact-qualify.mjs <source-sha> <ci-run> <ci-attempt> <producer-run> <producer-attempt> <artifact-id>
+```
+
+Selection and trusted preflight share one metadata eligibility contract. A
+demonstrably ineligible revision can be skipped; missing, incomplete or
+ambiguous required evidence is `UNVERIFIED` and stops selection. The selected
+source, run attempts, artifact and transport identity are pinned before
+preflight; any subsequent mismatch stops without fallback.
+Explicit selection acquires detailed evidence only for the requested source.
+Latest selection evaluates first-parent sources in order, stopping on relevant
+unverified evidence or on the first eligible source; unrelated older details
+are not fetched. Initial run and artifact inventories must have consistent counts
+and unique valid IDs. These checks detect pagination inconsistencies but do not
+make a concurrently changing GitHub inventory an atomic snapshot.
+
+Selection follows first-parent main history, reports an older selection and
+uses reviewed workflow and source build-profile blobs. Profile changes require
+independent policy review; unknown profiles fail closed. It prefers a same-run producer for a given
+source, then newer run and attempt IDs. The selected artifact is pinned before
+trusted verification; verification failure stops rather than silently choosing
+another. Unknown, expired, incomplete or mismatched evidence fails closed.
+The trusted orchestration requires the reviewed tooling on fetched main, so
+the proposed new policy cannot authorize a candidate before this PR merges.
+Neither qualification nor artifact retention authorizes publication; short-lived
+Actions retention is not a rollback strategy.
+
+After merge, dispatch no pilot for acceptance: inspect the actual main push CI,
+its run and attempt, typecheck, candidate build, original pin, browser validation,
+upload ID and fresh-download verification; run the selector and historical
+qualification against that retained artifact, and verify production is unchanged.
+Actual retained-artifact deployment and rollback remain future work.

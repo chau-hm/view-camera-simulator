@@ -149,10 +149,9 @@ validator passes.
 
 The exact-source executor uses a disposable detached checkout of the selected
 source, verifies HEAD and tree before and after execution, and refuses runner,
-manifest, baseline, lockfile or other qualification-contract drift. The only
-manifest compatibility exception is the explicitly listed addition of these new
-qualification source and test paths; validator families, pins, ownership policy
-and all other manifest fields must match. It installs
+manifest, baseline, lockfile or other qualification-contract drift. Narrow
+reviewed exceptions cover registered qualification paths and the pinned
+pre-consolidation command contract; arbitrary validator or pin changes fail. It installs
 that source's locked dependencies and invokes its existing historical runner.
 The shared-infrastructure path passed to the runner selects all automatic
 families; it is a scope selector, not a claim that this path changed. The actual
@@ -171,10 +170,29 @@ to the reviewed blobs. Missing,
 untracked, modified or unreviewed versions fail closed. Its versioned output records
 candidate provenance, baseline, cumulative coverage, actual validator and fetch
 outcomes, timings and `NOT_DEPLOYED`; it grants no deployment authorization.
-The current reviewed workflow-version policy remains fail-closed. A separately
-reviewed multi-version policy, durable retention and deployment authorization
-remain future integration work before Release D.
+The workflow policy explicitly recognizes the historical and integrated
+producer contracts; other versions fail closed. Durable retention and
+deployment authorization remain future work before Release D.
 
 Cumulative classification uses current reviewed ownership policy and raw Git blob bytes from the selected source for content-sensitive capture audits; missing or unreadable blobs fail closed. Source execution and the composed qualification both require the complete manifest-derived source-pin inventory, including exact commits, retained refs, verification paths and counts. M7W dynamic paths come from the selected source’s reconciliation document. Legacy archival dispositions remain unverified and qualification grants no deployment authority.
 
 The exact accepted pre-consolidation source and the integrated command-consolidation contract have explicitly pinned manifest and package blobs. The historical checkout executes its own commands; the consolidation maps those commands to the same validator targets. This is a bounded compatibility decision, not a general workflow-version policy.
+
+The release candidate selector resolves the newest retained candidate in main's
+first-parent order, or an explicit source, before invoking the same trusted
+preflight and exact-source historical execution. Selection and historical
+qualification are non-publishing. CI now has a reviewed same-run Pages producer
+profile in addition to the historical two-run pilot; old and new source
+workflows are identified by explicit Git blob policy, and incomplete attempts
+are rejected. The new release tooling policy is usable only once its exact
+reviewed blobs appear on canonical main.
+
+Discovery and preflight share the same metadata eligibility verifier. Failed or
+expired evidence is ineligible; missing, incomplete or ambiguous required
+evidence is unverified and cannot silently select an older source. Full producer
+logs, transport and payload verification follow selection. Canonical tooling
+checks include the baseline verifier and immutable baseline JSON, the shared
+eligibility helper, and an authoritative-main freshness check. These checks
+detect unexpected local or committed drift; they are not a sandbox against
+arbitrary malicious executable code. The selector and explicit qualification
+commands require the same repository-root working directory.
