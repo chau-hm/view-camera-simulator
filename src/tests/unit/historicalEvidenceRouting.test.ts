@@ -302,6 +302,8 @@ describe("historical evidence change routing", () => {
       "scripts/ground-glass-a1/assess.mjs",
       "scripts/ground-glass-a1/rtt-tap.txt",
       "scripts/ground-glass-a1/source-injection.mjs",
+      "scripts/ground-glass-a1/pixel-provenance.mjs",
+      "src/tests/unit/groundGlassA1PixelProvenance.test.ts",
       "src/tests/unit/groundGlassA1SourceInjection.test.ts",
     ];
     const result = classifyChangedPaths(paths);

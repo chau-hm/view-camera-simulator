@@ -71,6 +71,14 @@
       "owner": "ordinary-ci:unit-tests"
     },
     {
+      "path": "scripts/ground-glass-a1/pixel-provenance.mjs",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "src/tests/unit/groundGlassA1PixelProvenance.test.ts",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
       "path": "src/tests/unit/groundGlassA1SourceInjection.test.ts",
       "owner": "ordinary-ci:unit-tests"
     },
