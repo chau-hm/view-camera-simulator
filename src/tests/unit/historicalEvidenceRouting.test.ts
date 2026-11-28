@@ -305,6 +305,29 @@ describe("historical evidence change routing", () => {
       "scripts/ground-glass-a1/pixel-provenance.mjs",
       "src/tests/unit/groundGlassA1PixelProvenance.test.ts",
       "src/tests/unit/groundGlassA1SourceInjection.test.ts",
+      "scripts/ground-glass-a1/capture-optical-evidence.mjs",
+      "src/tests/unit/a1IntegratedEvidence.test.ts",
+      "docs/architecture/environment-readiness/a1-evidence/current/blobs/8bb842dbc448ba02a482eca7e3fe1fc7857cdf50804e849188e7f37f6aba85aa.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/blobs/99115eac2aa0f0c271c625bd5f67c0a5022041bb514d0802f7e8dec909192984.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/blobs/dfe9b25307cd6fc1667afdd93439cf9e9900c4ee9e375e46ea61ca71d417e9b5.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/blobs/e9f9838df4f534be0db270f4d9a363232c35cdb8e467792e4189b4db0c788afc.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/blobs/ffcf55ba863149c9fcc6efee9da06da90f5aa5ecfd42656ee99bb8b315a60b8a.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/frames.json",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/coc-candidate.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/coc-excessiveBlur.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/coc-legacy.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/coc-restored.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/coc-wrongCoc.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/coc-zeroBlur.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/output-candidate.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/output-excessiveBlur.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/output-legacy.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/output-restored.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/output-wrongCoc.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/output-zeroBlur.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/source.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical.json",
+      "docs/architecture/environment-readiness/a1-evidence/current/record.json",
     ];
     const result = classifyChangedPaths(paths);
     expect(result.decision).toBe("NOT_APPLICABLE");
@@ -314,6 +337,7 @@ describe("historical evidence change routing", () => {
     )).toBe(true);
     expect(classifyChangedPaths([
       "docs/architecture/environment-readiness/a1-evidence/unknown-capture.json",
+      "docs/architecture/environment-readiness/a1-evidence/current/unknown-capture.json",
     ]).decision).toBe("UNVERIFIED");
     for (const family of ["M7S", "M7T", "M7U"]) {
       expect(classifyChangedPaths([`docs/architecture/ground-glass-${family.toLowerCase()}-new/report.json`]).decision)

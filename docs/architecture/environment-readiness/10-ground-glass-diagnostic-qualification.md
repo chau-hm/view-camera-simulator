@@ -55,3 +55,25 @@ The controlled background-variation fixture now applies the shared depth-edge op
 After integrating main's Room-at-Dawn change, the test-only instrumentation was reviewed against the new renderer source: its additional HDR behavior is opt-in, and the ordinary capture path retains byte render targets. The injection anchors remained unique. Three separate clean-source Chromium sessions at `bf923e4144b1baac9a53d529fc372655f3e66280` re-established the current/stale, processed/bypass and orientation observations. The earlier source records remain historical, not evidence of the new renderer source.
 
 Public application D6 remains incomplete. An exploratory near-focused front-base region has stable first-hit identities in seeds 284719 and 1, but a gain-normalized response bound and sufficient retained visibility and independent footprint evidence have not been qualified. The source target uses linear filtering, so a nearest-texel preservation claim would be invalid. The current integrated D1–D6 evidence record and validator also remain unimplemented; the earlier partial record is unchanged. Do not treat the fixture result or the exploratory application observations as full A1 qualification.
+
+## Current integrated record — F1 checkpoint
+
+The separate [version 2 record](a1-evidence/current/record.json) retains three actual completed application observations and the full current-target bytes needed to rederive their compact samples. It also retains actual candidate, restored and fault GPU buffers from the depth-edge fixture. Its validator checks source pins, transactions and sample provenance, recomputes optical measurements from the retained pixels, applies the existing frame, optical and orientation comparators, and checks real stale-frame, stale-pixel and bypass controls. The version 1 record above remains an unchanged historical partial observation.
+
+| Contract | Current retained result | Evidence boundary |
+| --- | --- | --- |
+| D1 | QUALIFIED | Three application sessions; current transactions accepted, actual prior transactions and prior sampled pixels rejected. |
+| D2 | QUALIFIED | Typed preparation and current opaque, nonuniform buffers; synthetic missing, stale, nonfinite, malformed, uniform and transparent controls. |
+| D3 | QUALIFIED | Observed processed and Raw RTT bypass pass sequences; bypass rejected as processed. |
+| D4 | QUALIFIED | Actual fixture source, output and CoC buffers; candidate and restored output accepted and four GPU faults rejected by the shared evaluator. |
+| D5 | QUALIFIED | Three matched completed Raw/Upright pairs; 180-degree mapping accepted and wrong mappings rejected. |
+| D6 | PARTIAL | Controlled fixture compatibility exists; protected application optical response remains unqualified. |
+
+The derived overall decision is **PARTIAL**. This is integrity and qualification of the recorded observations; the offline validator does not run a browser or prove current GPU behavior. The application captures were made at `bf923e4144b1baac9a53d529fc372655f3e66280`; the new optical readbacks were captured against relevant clean fixture source at `d4f638e5e6c955f7bd234513985c5c10abb8911b` using the separately identified test-only producer. Source pins are checked against the capture-relevant renderer, fixture, evaluators, producers and configuration; the evidence commit is intentionally distinct from capture identity. The optical fixture was recaptured once for the retained raw buffers; the three independently completed application sessions supply the repeated frame observations.
+
+From the repository root with Node 24:
+
+```sh
+node --experimental-strip-types --input-type=module -e 'import {validateA1IntegratedEvidence} from "./scripts/validate-a1-retained-evidence.mjs"; console.log(await validateA1IntegratedEvidence("docs/architecture/environment-readiness/a1-evidence/current"))'
+npm run test -- --run src/tests/unit/a1IntegratedEvidence.test.ts src/tests/unit/a1RetainedEvidence.test.ts src/tests/unit/historicalEvidenceRouting.test.ts
+```
