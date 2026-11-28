@@ -120,6 +120,10 @@ describe('shared eligibility and actual selector orchestration', () => {
       expect(() => selectCandidate({ main: f.main, history: [f.main, f.source], source: f.source, runs: [ci, producer], artifacts: [f.artifact], blobsBySource: { [f.source]: metadata.blobs }, assess: assessCandidateMetadata })).toThrow('candidate-evidence-unverified');
     } finally { f.cleanup(); }
   });
+  it('rejects an unrelated artifact attempt without interpreting missing job evidence', () => {
+    const { f, metadata } = metadataFixture();
+    try { metadata.producerAttempt = '2'; metadata.ciJobs = []; expect(assessCandidateMetadata(metadata).state).toBe('INELIGIBLE'); } finally { f.cleanup(); }
+  });
   it('accepts same-run integrated metadata and rejects an altered source build profile', () => {
     const { f, metadata } = metadataFixture();
     try {

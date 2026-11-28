@@ -71,6 +71,8 @@ export function assessCandidateMetadata({ source, ciId, ciAttempt, producerId, p
     }
     for (const [path, expected] of Object.entries(WORKFLOWS)) if (path !== '.github/workflows/pages.yml' && blobs[path] !== expected) fail(`unreviewed workflow: ${path}`);
     const policy = integratedCI && ciId === producerId && ciAttempt === producerAttempt ? 'main-ci-integrated-v1' : 'historical-two-run-v1';
+    if (!artifact.workflow_run || artifact.workflow_run.id == null || !artifact.workflow_run.head_sha || !artifact.workflow_run.head_branch || artifact.workflow_run.repository_id == null || artifact.workflow_run.head_repository_id == null || artifact.id == null || !artifact.name || artifact.expired == null || !artifact.digest || artifact.size_in_bytes == null || !artifact.created_at || !artifact.expires_at) throw new Error('UNVERIFIED:incomplete artifact metadata');
+    verifyArtifactMetadata(artifact, { artifactId, producerId, attempt: producerAttempt, source, now });
     if (ciRun.id == null || ciRun.run_attempt == null || !ciRun.path || ciRun.workflow_id == null || !ciRun.event || !ciRun.head_sha || !ciRun.head_branch || ciRun.status !== 'completed' || !ciRun.conclusion || !ciRun.repository?.full_name || !ciRun.head_repository?.full_name) throw new Error('UNVERIFIED:incomplete CI metadata');
     verifyRun(ciRun, { id: ciId, attempt: ciAttempt, source, path: '.github/workflows/pages.yml', event: 'push', workflowId: 304398257 });
     requireJob(ciJobs, 'feature-push-routing', ['Allow full CI for non-feature-push events']);
@@ -83,8 +85,6 @@ export function assessCandidateMetadata({ source, ciId, ciAttempt, producerId, p
       verifyRun(producerRun, { id: producerId, attempt: producerAttempt, source, path: '.github/workflows/pages-artifact-pilot.yml', event: 'workflow_dispatch', workflowId: 432187587 });
       producerJob = requireJob(producerJobs, 'prepare', PRODUCER_STEPS);
     }
-    if (!artifact.workflow_run || artifact.workflow_run.id == null || !artifact.workflow_run.head_sha || !artifact.workflow_run.head_branch || artifact.workflow_run.repository_id == null || artifact.workflow_run.head_repository_id == null || artifact.id == null || !artifact.name || artifact.expired == null || !artifact.digest || artifact.size_in_bytes == null || !artifact.created_at || !artifact.expires_at) throw new Error('UNVERIFIED:incomplete artifact metadata');
-    verifyArtifactMetadata(artifact, { artifactId, producerId, attempt: producerAttempt, source, now });
     return { state: 'ELIGIBLE_FOR_PREFLIGHT', policy, producerJob };
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
