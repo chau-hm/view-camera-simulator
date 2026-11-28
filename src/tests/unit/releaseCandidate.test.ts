@@ -11,6 +11,11 @@ const run = (id: number, source: string, integrated = true, attempt = 1) => ({ i
 const artifact = (id: number, producer: number, attempt = 1) => ({ id, name: `pages-candidate-${producer}-${attempt}`, expired: false, expires_at: '2099-01-01T00:00:00Z', workflow_run: { id: producer } });
 const fixture = () => ({ main: tip, history: [tip, old], runs: [run(10, old), run(11, tip)], artifacts: [artifact(100, 10), artifact(101, 11)] });
 describe('release candidate discovery', () => {
+  it('checks canonical tooling before loading preflight', () => {
+    const source = readFileSync('scripts/release-candidate.mjs', 'utf8');
+    expect(source).not.toMatch(/^import .*from ['"]\.\/release-artifact-preflight/m);
+    expect(source.indexOf('await verifyReleaseBContract()')).toBeLessThan(source.indexOf("await import('./release-artifact-preflight.mjs')"));
+  });
   it('combines every API page and fails closed on missing pages', () => {
     const pages = [{ total_count: 2, artifacts: [{ id: 1 }] }, { total_count: 2, artifacts: [{ id: 2 }] }];
     expect(flattenPages(pages, 'artifacts')).toEqual([{ id: 1 }, { id: 2 }]);

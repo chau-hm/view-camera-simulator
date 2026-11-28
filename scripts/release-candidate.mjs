@@ -1,7 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { runPreflight, verifyRun, requireJob, WORKFLOWS, INTEGRATED_PAGES_BLOB, INTEGRATED_SOURCE_BLOBS, CI_STEPS, PRODUCER_STEPS } from './release-artifact-preflight.mjs';
 import { qualifyCandidate, verifyReleaseBContract } from './release-artifact-qualify.mjs';
 
 const REPO = 'chau-hm/view-camera-simulator';
@@ -62,6 +61,10 @@ export async function main(args) {
   const listedRuns = pages('actions/runs?branch=main&per_page=100', 'workflow_runs').filter((r) => r.repository?.full_name === REPO && r.head_repository?.full_name === REPO);
   const artifacts = pages('actions/artifacts?per_page=100', 'artifacts');
   if (action === 'list') return { status: 'CANDIDATE_DISCOVERY', main: mainSha, artifacts: artifacts.filter((a) => /^pages-candidate-\d+-\d+$/.test(a.name)).map((a) => ({ id: a.id, name: a.name, expired: a.expired, expiresAt: a.expires_at, source: a.workflow_run?.head_sha })) , deployment: 'NOT_DEPLOYED' };
+  // Do not load release preflight or artifact helpers until their committed
+  // canonical identities have been verified by the Release C gate.
+  await verifyReleaseBContract();
+  const { runPreflight, verifyRun, requireJob, WORKFLOWS, INTEGRATED_PAGES_BLOB, INTEGRATED_SOURCE_BLOBS, CI_STEPS, PRODUCER_STEPS } = await import('./release-artifact-preflight.mjs');
   const candidateSources = new Set(artifacts.filter((a) => a.expired === false && Date.parse(a.expires_at) > Date.now() && /^pages-candidate-\d+-\d+$/.test(a.name)).map((a) => a.workflow_run?.head_sha));
   const runs = [];
   for (const run of listedRuns.filter((r) => candidateSources.has(r.head_sha) && ['.github/workflows/pages.yml', '.github/workflows/pages-artifact-pilot.yml'].includes(r.path))) {
@@ -94,7 +97,6 @@ export async function main(args) {
     }
   }
   const selection = selectCandidate({ main: mainSha, history, runs, artifacts, source: option === '--source' ? value : undefined });
-  await verifyReleaseBContract();
   const c = selection.candidate;
   const result = await qualifyCandidate([c.source, c.ciId, c.ciAttempt, c.producerId, c.producerAttempt, c.artifactId], { preflight: runPreflight });
   if (result.candidate.main !== mainSha) throw new Error('main-moved-during-selection');
