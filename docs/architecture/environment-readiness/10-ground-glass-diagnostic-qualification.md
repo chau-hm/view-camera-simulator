@@ -56,7 +56,7 @@ After integrating main's Room-at-Dawn change, the test-only instrumentation was 
 
 Public application D6 remains incomplete. An exploratory near-focused front-base region has stable first-hit identities in seeds 284719 and 1, but a gain-normalized response bound and sufficient retained visibility and independent footprint evidence have not been qualified. The source target uses linear filtering, so a nearest-texel preservation claim would be invalid. The current integrated D1–D6 evidence record and validator also remain unimplemented; the earlier partial record is unchanged. Do not treat the fixture result or the exploratory application observations as full A1 qualification.
 
-## Current integrated record — F1 checkpoint
+## Integrated record — historical F1 checkpoint
 
 The separate [version 2 record](a1-evidence/current/record.json) retains three actual completed application observations and the full current-target bytes needed to rederive their compact samples. It also retains actual candidate, restored and fault GPU buffers from the depth-edge fixture. Its validator checks source pins, transactions and sample provenance, recomputes optical measurements from the retained pixels, applies the existing frame, optical and orientation comparators, and checks real stale-frame, stale-pixel and bypass controls. The version 1 record above remains an unchanged historical partial observation.
 
@@ -69,7 +69,7 @@ The separate [version 2 record](a1-evidence/current/record.json) retains three a
 | D5 | QUALIFIED | Three matched completed Raw/Upright pairs; 180-degree mapping accepted and wrong mappings rejected. |
 | D6 | PARTIAL | Controlled fixture compatibility exists; protected application optical response remains unqualified. |
 
-The derived overall decision is **PARTIAL**. This is integrity and qualification of the recorded observations; the offline validator does not run a browser or prove current GPU behavior. The application captures were made at `bf923e4144b1baac9a53d529fc372655f3e66280`; the new optical readbacks were captured against relevant clean fixture source at `d4f638e5e6c955f7bd234513985c5c10abb8911b` using the separately identified test-only producer. Source pins are checked against the capture-relevant renderer, fixture, evaluators, producers and configuration; the evidence commit is intentionally distinct from capture identity. The optical fixture was recaptured once for the retained raw buffers; the three independently completed application sessions supply the repeated frame observations.
+At the F1 checkpoint the derived overall decision was **PARTIAL**. This is integrity and qualification of the recorded observations; the offline validator does not run a browser or prove current GPU behavior. The application captures were made at `bf923e4144b1baac9a53d529fc372655f3e66280`; the new optical readbacks were captured against relevant clean fixture source at `d4f638e5e6c955f7bd234513985c5c10abb8911b` using the separately identified test-only producer. Source pins are checked against the capture-relevant renderer, fixture, evaluators, producers and configuration; the evidence commit is intentionally distinct from capture identity. The optical fixture was recaptured once for the retained raw buffers; the three independently completed application sessions supply the repeated frame observations.
 
 From the repository root with Node 24:
 
@@ -77,3 +77,20 @@ From the repository root with Node 24:
 node --experimental-strip-types --input-type=module -e 'import {validateA1IntegratedEvidence} from "./scripts/validate-a1-retained-evidence.mjs"; console.log(await validateA1IntegratedEvidence("docs/architecture/environment-readiness/a1-evidence/current"))'
 npm run test -- --run src/tests/unit/a1IntegratedEvidence.test.ts src/tests/unit/a1RetainedEvidence.test.ts src/tests/unit/historicalEvidenceRouting.test.ts
 ```
+
+## Current integrated D1–D6 record
+
+The [current version 2 record](a1-evidence/current/record.json) now derives **QUALIFIED** for the recorded A1 diagnostic contracts. Its retained predecessor [F1 checkpoint](a1-evidence/current/record-f1.json) remains PARTIAL. The original version 1 record remains historically partial and unchanged. The offline validator rederives the evidence; it does not execute the current browser or GPU, establish native WebGPU qualification, or certify general photographic accuracy.
+
+| Contract | Recorded result | Evidence and validator |
+| --- | --- | --- |
+| D1 | QUALIFIED | Three actual application transactions, source/final readbacks and sample rederivation; actual earlier transaction and earlier-pixel substitution rejected. |
+| D2 | QUALIFIED | Typed preparation and opaque nonuniform source/final buffers; synthetic missing, stale, nonfinite, malformed, transparent and blank controls rejected. |
+| D3 | QUALIFIED | Actual processed and genuine bypass pass sequences accepted under their own contracts; bypass rejected as processed. |
+| D4 | QUALIFIED | Retained actual source, CoC and output GPU buffers: the shared evaluator accepts candidate/restored and rejects wrong CoC, excessive footprint, zero blur and legacy depth rejection. |
+| D5 | QUALIFIED | Three matched completed Raw/Upright pairs: 180-degree mapping accepted; horizontal-only, vertical-only and unchanged mappings rejected. |
+| D6 | QUALIFIED | Controlled background GPU variation passes the shared gate and its real faults fail. Three actual matched public seed pairs pass the separate [parallel-plane protected-edge contract](a1-d6-reference.md); a captured-data detail-loss mutation fails. |
+
+The D1–D5 application captures use the original stress state and source `bf923e4144b1baac9a53d529fc372655f3e66280`. D6 uses the separate neutral state at f/11 and 9500 mm focus, captured at `65298474952505c5e0d5f1e4950cb004a425f2f0`. The protected feature is a deliberate façade/window-trim edge; every ROI pixel and its 48-pixel gather halo has retained first-hit/depth evidence, and the GPU depth and CoC are checked against independent thin-lens and depth-quantization bounds. The capture records actual material identities and uses each seed's own source pixels. Source and processed local contrast ratios after gain normalization were approximately 1.00217 and 1.00234 for seeds 284719 and 1, respectively; the comparator-level 11×11 detail-loss mutation failed for both. That mutation is not an application GPU fault. Actual GPU fault detection is supplied separately by the controlled fixture.
+
+The source pins distinguish capture-time source, a separately identified test-only fixture producer, and the later evidence commit. The validator checks the capture-relevant renderer, fixture, producer, evaluator, application reference and configuration bytes; repeatability requires distinct completed frame and renderer-generation identities rather than distinct pixel hashes. Future consumers A2, A3 and A6 must rerun appropriate runtime/browser qualification for their own source and configuration and must not generalize this one neutral reference to tilted scenes. Legacy variance assertions remain in place.
