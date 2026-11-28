@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { runPreflight, verifyRun, requireJob, WORKFLOWS, INTEGRATED_PAGES_BLOB, CI_STEPS, PRODUCER_STEPS } from './release-artifact-preflight.mjs';
+import { runPreflight, verifyRun, requireJob, WORKFLOWS, INTEGRATED_PAGES_BLOB, INTEGRATED_SOURCE_BLOBS, CI_STEPS, PRODUCER_STEPS } from './release-artifact-preflight.mjs';
 import { qualifyCandidate, verifyReleaseBContract } from './release-artifact-qualify.mjs';
 
 const REPO = 'chau-hm/view-camera-simulator';
@@ -78,6 +78,7 @@ export async function main(args) {
           const blob = git('rev-parse', `${entry.head_sha}:.github/workflows/pages.yml`);
           const integrated = blob === INTEGRATED_PAGES_BLOB;
           if (!integrated && blob !== WORKFLOWS['.github/workflows/pages.yml']) throw new Error('unknown-policy');
+          if (integrated && Object.entries(INTEGRATED_SOURCE_BLOBS).some(([path, expected]) => git('rev-parse', `${entry.head_sha}:${path}`) !== expected)) throw new Error('unknown-build-profile');
           if (isCi) {
             requireJob(jobs.jobs, 'feature-push-routing', ['Allow full CI for non-feature-push events']);
             requireJob(jobs.jobs, 'feature-push-validation-gate', ['Allow full CI unless exact PR validation covers this push']);

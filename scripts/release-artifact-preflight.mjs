@@ -16,6 +16,18 @@ export const WORKFLOWS = {
   '.github/workflows/pages-artifact-pilot.yml': '94b7feb1e0370ac020b24103f581dbc03a2f6643',
 };
 export const INTEGRATED_PAGES_BLOB = '1f2f97b115ec4baf1b18ab8f3777eabe6efaa81e';
+// The integrated workflow calls source-side build and Preview code. Pin the
+// reviewed profile independently of producer-declared manifest metadata.
+export const INTEGRATED_SOURCE_BLOBS = Object.freeze({
+  'scripts/pages-artifact.mjs': 'f4a6588664b2a95deef4f4b2215987d063ff3d1c',
+  'scripts/pages-artifact-server.mjs': '6f65062056965afa7618696f1116b7fbe65b3956',
+  'playwright.pages-artifact.config.ts': '53ded0849a0959728febc143baac6fb0651047cc',
+  'package.json': '67632e46d4929703cfea38ebb7635f2f3bed58e0',
+  'vite.config.ts': '2d5bd5682141657159e6b99c31f210729e2b62c2',
+  'src/tests/e2e/architecture-rise-webgpu-production.spec.ts': '19ba2813a4e259a427dd606ae7a40e402ee17d42',
+  'src/tests/scene-variation-e2e/pages-artifact.spec.ts': 'f14aa0bcab77431e020ae2f72b6a667ee2487d3e',
+  'src/tests/scene-variation-e2e/architecture-rise-seeded-materials-subpath-production.spec.ts': '667d13eb3714272f98ff9e547491e8b90f7b8e3a',
+});
 export const CI_STEPS = ['Checkout', 'Require successful historical qualification and fail-open routing', 'Lint', 'Type-check', 'Unit and integration tests', 'Run ordinary Chromium application smoke', 'Verify production preview WebGL isolation', 'Validate M7R broad E2E recovery evidence integrity', 'Validate M7V E2E qualification lane and skip governance policy'];
 export const PRODUCER_STEPS = ['Test artifact and workflow contracts', 'Build and identify candidate', 'Pin original identity outside the candidate', 'Test prebuilt candidate', 'Verify unchanged payload', 'Retain candidate and identity', 'Retrieve retained candidate into a fresh directory', 'Verify retained candidate'];
 const sha256 = (value) => createHash('sha256').update(value).digest('hex');
@@ -91,6 +103,7 @@ export function runPreflight(args, { runCommand = execFileSync, tempRoot = tmpdi
   const pagesBlob = git('rev-parse', `${source}:.github/workflows/pages.yml`);
   if (pagesBlob !== WORKFLOWS['.github/workflows/pages.yml'] && pagesBlob !== INTEGRATED_PAGES_BLOB) fail('Unreviewed workflow definition: .github/workflows/pages.yml');
   const integratedCI = pagesBlob === INTEGRATED_PAGES_BLOB;
+  if (integratedCI) for (const [path, blob] of Object.entries(INTEGRATED_SOURCE_BLOBS)) if (git('rev-parse', `${source}:${path}`) !== blob) fail(`Unreviewed integrated build profile: ${path}`);
   const policy = integratedCI && ciId === producerId && ciAttempt === producerAttempt ? 'main-ci-integrated-v1' : 'historical-two-run-v1';
   for (const [path, blob] of Object.entries(WORKFLOWS)) if (path !== '.github/workflows/pages.yml' && git('rev-parse', `${source}:${path}`) !== blob) fail(`Unreviewed workflow definition: ${path}`);
   verifyRun(api(`actions/runs/${ciId}/attempts/${ciAttempt}`), { id: ciId, attempt: ciAttempt, source, path: '.github/workflows/pages.yml', event: 'push', workflowId: 304398257 });

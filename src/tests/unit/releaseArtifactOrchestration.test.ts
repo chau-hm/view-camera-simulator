@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { writeFileSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 // @ts-expect-error JavaScript helper without declarations
-import { runPreflight, verifyRun } from "../../../scripts/release-artifact-preflight.mjs";
+import { INTEGRATED_SOURCE_BLOBS, runPreflight, verifyRun } from "../../../scripts/release-artifact-preflight.mjs";
 // @ts-expect-error JavaScript fixture without declarations
 import { fixture } from "./helpers/releasePreflightFixture.mjs";
 // @ts-expect-error JavaScript helper without declarations
@@ -83,6 +83,7 @@ describe("complete release preflight orchestration", () => {
 function integratedFixture() {
   const f = fixture();
   f.blobs[".github/workflows/pages.yml"] = "1f2f97b115ec4baf1b18ab8f3777eabe6efaa81e";
+  Object.assign(f.blobs, INTEGRATED_SOURCE_BLOBS);
   f.manifest.buildConfiguration = "vite-pages-after-typecheck-v1";
   f.manifest.buildCommand = "npm run build:production-preview:after-typecheck -- --base=<basePath>";
   f.manifest.workflow = "CI and Deploy to GitHub Pages"; f.manifest.runId = "123"; f.manifest.runAttempt = "2";
@@ -100,13 +101,14 @@ describe("integrated main CI producer", () => {
   it("verifies the exact same-run producer and retained artifact", () => {
     const f = integratedFixture(); try { expect(execute(f)).toMatchObject({ status: "RELEASE_PREFLIGHT_VERIFIED", policy: "main-ci-integrated-v1", source: f.source }); assertNoSideEffects(f); } finally { f.cleanup(); }
   });
-  it.each(["wrong run", "wrong attempt", "missing typecheck", "failed retention", "wrong artifact", "wrong profile"])('rejects %s', (mode) => {
+  it.each(["wrong run", "wrong attempt", "missing typecheck", "failed retention", "wrong artifact", "wrong profile", "changed source build"])('rejects %s', (mode) => {
     const f = integratedFixture();
     try {
       if (mode === "wrong run") f.args[3] = "456";
       if (mode === "wrong attempt") f.args[4] = "1";
       if (mode === "missing typecheck") f.ciJobs[2].steps.find((s: {name: string}) => s.name === "Type-check").conclusion = "skipped";
       if (mode === "failed retention") f.ciJobs[2].steps.at(-1).conclusion = "failure";
+      if (mode === "changed source build") f.blobs["vite.config.ts"] = f.main;
       if (mode === "wrong artifact") f.artifact.workflow_run.id = 456;
       if (mode === "wrong profile") { f.manifest.buildConfiguration = "vite-pages-v1"; f.saveManifest(); f.pack(); }
       expect(() => execute(f)).toThrow();

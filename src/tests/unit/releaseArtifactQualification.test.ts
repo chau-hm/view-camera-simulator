@@ -27,7 +27,7 @@ function fixture() {
 describe("release artifact historical qualification", () => {
   it("requires the reviewed Release B implementation to be tracked and unchanged", async () => {
     const reviewed: Record<string, string> = {
-      "scripts/release-artifact-preflight.mjs": "4396e81fd9663d07011ec1c0736ece56eb4e576b",
+      "scripts/release-artifact-preflight.mjs": "5d0869da6e39fdd9038f2a77c921c4ed42222dd6",
       "scripts/extract-pages-artifact.py": "716bdcc4e0f5ee7d74dbe68faf702672b9919914",
       "scripts/pages-artifact.mjs": "f4a6588664b2a95deef4f4b2215987d063ff3d1c",
     };

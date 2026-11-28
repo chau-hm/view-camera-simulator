@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 // @ts-expect-error JavaScript helper
-import { INTEGRATED_PAGES_BLOB } from '../../../scripts/release-artifact-preflight.mjs';
+import { INTEGRATED_PAGES_BLOB, INTEGRATED_SOURCE_BLOBS } from '../../../scripts/release-artifact-preflight.mjs';
 // @ts-expect-error JavaScript helper
 import { flattenPages, selectCandidate } from '../../../scripts/release-candidate.mjs';
 
@@ -48,6 +48,12 @@ describe('release candidate discovery', () => {
   });
   it('requires the expected authoritative history', () => {
     expect(() => selectCandidate({ ...fixture(), history: [old] })).toThrow();
+  });
+  it('pins the source build and Preview contract to the reviewed files', () => {
+    for (const [path, expected] of Object.entries(INTEGRATED_SOURCE_BLOBS)) {
+      const bytes = readFileSync(path);
+      expect(createHash('sha1').update(`blob ${bytes.length}\0`).update(bytes).digest('hex')).toBe(expected);
+    }
   });
   it('gates all producer steps on canonical actual main pushes', () => {
     const yaml = readFileSync('.github/workflows/pages.yml', 'utf8');

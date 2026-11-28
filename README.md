@@ -382,7 +382,8 @@ node scripts/release-artifact-qualify.mjs <source-sha> <ci-run> <ci-attempt> <pr
 ```
 
 Selection follows first-parent main history, reports an older selection and
-uses reviewed workflow contracts. It prefers a same-run producer for a given
+uses reviewed workflow and source build-profile blobs. Profile changes require
+independent policy review; unknown profiles fail closed. It prefers a same-run producer for a given
 source, then newer run and attempt IDs. The selected artifact is pinned before
 trusted verification; verification failure stops rather than silently choosing
 another. Unknown, expired, incomplete or mismatched evidence fails closed.
