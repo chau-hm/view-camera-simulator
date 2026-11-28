@@ -111,7 +111,7 @@ A prospective feature source that is not yet merged to `main` can be checked wit
 With Node.js 24 and project dependencies installed:
 
 ```bash
-npm run evidence:qualification:historical -- --files=docs/architecture/GROUND_GLASS_M7K_BROAD_E2E_QUALIFICATION_REPORT.json
+npm run evidence -- qualify --files=docs/architecture/GROUND_GLASS_M7K_BROAD_E2E_QUALIFICATION_REPORT.json
 ```
 
 This runs the mapped validator closure and checks required sources. `--all` runs all supported families. Because M7S–M7U currently have no complete verifiers, a full run reports `UNVERIFIED` for those known gaps even if every supported validator passes.
@@ -138,3 +138,45 @@ The pre-migration baseline is the successful `ci` job in GitHub Actions run [#45
 The corrected feature-push run [#45239461270](https://github.com/chau-hm/view-camera-simulator/actions/runs/45239461270) on `5fef8c11b6c10b338dcf6c99f17db33f12e9b252` returned `QUALIFIED`; all 16 routed archive validators passed with their pinned source paths checked. The archive job elapsed 3m43s. The full application validation job elapsed 17m00s and passed lint, typecheck, 353 Vitest files / 4,341 tests, ordinary Chromium smoke, production-preview WebGL isolation, M7R evidence integrity, and M7V policy validation. The whole workflow elapsed 21m01s. M7R's report correctly retains the historical `not-qualified` outcome while its integrity check passes. Since this commit changes shared qualification infrastructure, the broad archive run is expected; its elapsed time is not a matched estimate for an ordinary application PR. Runtime for an ordinary `NOT_APPLICABLE` PR and billed runner minutes remain `NOT_MEASURED`.
 
 The targeted local M7F/M7G comparison measured the standalone M7F replay at 460 ms and M7G at 54,918 ms. Both commands exited successfully. The standalone and child report SHA-256 were identical (`50e0928061c2ccc31aa3d18cd8b46ee917266bc51393773ab934bafcc3fa9033`); both named capture source SHA `b10118bd0f656296451520ba10f4d32347a9a552`, replay source SHA `981fea7e0e969a7494ad58b319d906650ad7c891`, and 17 passed scenarios with no failed, blocked, or not-run scenarios. M7G retained `partially-qualified` as its historical qualification state while evidence integrity passed. This local run's final archive decision was `UNVERIFIED` because the sandbox denied writing Git's `FETCH_HEAD`; the validators and route comparison themselves passed. The clean shallow-checkout GitHub run #45239461270 proves the corrected archive and source-provenance path.
+
+### Exact-source release qualification
+
+The cumulative baseline-to-source planner is shared with the production-event
+adapter. The production adapter still verifies the production merge topology,
+source and destination trees, and main ancestry before using that planner. A
+source plan verifies the exact source/tree and main ancestry but is **planning
+only**: it is not artifact verification and does not establish execution.
+Unchanged legacy archival dispositions remain explicitly unverified, not
+validator passes.
+
+The exact-source executor uses a disposable detached checkout of the selected
+source, verifies HEAD and tree before and after execution, and refuses runner,
+manifest, baseline, lockfile or other qualification-contract drift. The only
+manifest compatibility exception is the explicitly listed addition of these new
+qualification source and test paths; validator families, pins, ownership policy
+and all other manifest fields must match. It installs
+that source's locked dependencies and invokes its existing historical runner.
+The shared-infrastructure path passed to the runner selects all automatic
+families; it is a scope selector, not a claim that this path changed. The actual
+cumulative changed paths are computed independently from the immutable baseline.
+The executor verifies all required validator and pinned-source results, then
+removes its checkout. It does not rerun ordinary CI or build the Pages artifact.
+
+The operator command, using the merged reviewed Release B preflight,
+is `node scripts/release-artifact-qualify.mjs <source-sha> <ci-run-id>
+<ci-attempt> <producer-run-id> <producer-attempt> <artifact-id>`. It directly
+invokes that local preflight, plans the same source/tree, executes validators
+on that source, and rechecks main; a caller-provided result file is not trusted.
+Before importing Release B, it requires the reviewed preflight and its artifact
+helpers to be present on fetched `origin/main`, tracked at HEAD and byte-identical
+to the reviewed blobs. Missing,
+untracked, modified or unreviewed versions fail closed. Its versioned output records
+candidate provenance, baseline, cumulative coverage, actual validator and fetch
+outcomes, timings and `NOT_DEPLOYED`; it grants no deployment authorization.
+The current reviewed workflow-version policy remains fail-closed. A separately
+reviewed multi-version policy, durable retention and deployment authorization
+remain future integration work before Release D.
+
+Cumulative classification uses current reviewed ownership policy and raw Git blob bytes from the selected source for content-sensitive capture audits; missing or unreadable blobs fail closed. Source execution and the composed qualification both require the complete manifest-derived source-pin inventory, including exact commits, retained refs, verification paths and counts. M7W dynamic paths come from the selected source’s reconciliation document. Legacy archival dispositions remain unverified and qualification grants no deployment authority.
+
+The exact accepted pre-consolidation source and the integrated command-consolidation contract have explicitly pinned manifest and package blobs. The historical checkout executes its own commands; the consolidation maps those commands to the same validator targets. This is a bounded compatibility decision, not a general workflow-version policy.

@@ -68,6 +68,14 @@ const ordinaryCiOwners = [...new Set([
 // retained historical evidence. Their byte identities are part of the audit:
 // a change, deletion, or unreadable file must return to fail-closed routing.
 const nonHistoricalCaptureAudits = new Map([
+  // Current hardware capture produces new evidence and does not read the
+  // frozen archive. Pin the producer, its local runtime helper and the
+  // hardware configuration so any change requires a fresh audit.
+  ["src/tests/render-quality/e2e/macro-tourbillon-reviewfix-capture.spec.ts", [
+    ["src/tests/render-quality/e2e/macro-tourbillon-reviewfix-capture.spec.ts", "e4e77602cd34c0d134d96ffcdba88b0cd6b5c8ed6c83748d43cbe728d98415c4"],
+    ["src/tests/e2e/helpers/stepRangeInput.ts", "0fef65d0f2595a91e6477db8fde32916ffe2ee3497857bb601ef6248b3be0d61"],
+    ["playwright.macro-tourbillon-hardware.config.ts", "51f9ae270f708ae996ea0695baa02ad302fa21ebad5113886545774e0a64be04"],
+  ]],
   ["src/tests/unit/roomAtDawnCaptureSync.test.ts", [
     ["src/tests/unit/roomAtDawnCaptureSync.test.ts", "ee7563ca79ca477988bcde5a7d515526b45506ba209bebe890150ae156a1b037"],
     ["experiments/room-at-dawn/capture-sync.cjs", "d8ec1b767a648759cc0242c2b78ddb1a255befcd3ccf737cac8c464ccad10874"],
@@ -91,12 +99,12 @@ const nonHistoricalCaptureOwners = new Map(
   [...nonHistoricalCaptureAudits].flatMap(([owner, files]) => files.map(([file]) => [file, owner])),
 );
 
-function isAuditedNonHistoricalCaptureTest(path) {
+function isAuditedNonHistoricalCaptureTest(path, readContent) {
   const auditedFiles = nonHistoricalCaptureAudits.get(path);
   if (!auditedFiles) return false;
   try {
     return auditedFiles.every(([file, expected]) =>
-      createHash("sha256").update(readFileSync(resolve(process.cwd(), file))).digest("hex") === expected);
+      createHash("sha256").update(readContent(file)).digest("hex") === expected);
   } catch {
     return false;
   }
@@ -276,7 +284,7 @@ export function classifyChangedPaths(changedPaths, options = {}) {
       }
     }
 
-    if (!matchedKnownFamily && isEvidenceLikeUnknownPath(path)) {
+    if (!matchedKnownFamily && isEvidenceLikeUnknownPath(path, options.readContent)) {
       unverified = true;
       broad = true;
       allFamilies().forEach((id) => {
@@ -346,7 +354,7 @@ export function classifyChangedPaths(changedPaths, options = {}) {
 }
 
 /** Classifies a path set only after event discovery proved the set complete. */
-export function classifyCompleteChangedPaths(changedPaths) {
+export function classifyCompleteChangedPaths(changedPaths, options = {}) {
   if (!Array.isArray(changedPaths)) return failedClosedRoute("complete-changed-file-set-invalid");
   if (changedPaths.length === 0) {
     return {
@@ -360,12 +368,12 @@ export function classifyCompleteChangedPaths(changedPaths) {
       unsupported: [],
     };
   }
-  return classifyChangedPaths(changedPaths);
+  return classifyChangedPaths(changedPaths, options);
 }
 
-function isEvidenceLikeUnknownPath(path) {
+function isEvidenceLikeUnknownPath(path, readContent = (file) => readFileSync(resolve(process.cwd(), file))) {
   const auditedOwner = nonHistoricalCaptureOwners.get(path);
-  if (auditedOwner) return !isAuditedNonHistoricalCaptureTest(auditedOwner);
+  if (auditedOwner) return !isAuditedNonHistoricalCaptureTest(auditedOwner, readContent);
   const lower = path.toLowerCase();
   if (/^docs\/architecture\//.test(lower)) {
     if (legacyEvidenceRoots.some((root) => lower.startsWith(root.toLowerCase()))) return true;

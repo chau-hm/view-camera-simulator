@@ -60,7 +60,10 @@ import { OBLIQUE_TABLETOP_PRESENTATION } from "../scenes/presentation/obliqueTab
 import { FOCUS_FUNDAMENTALS_PRESENTATION } from "../scenes/presentation/focusFundamentals";
 import { VIEW_CAMERA_ANATOMY_PRESENTATION } from "../scenes/presentation/viewCameraAnatomy";
 import { MIRROR_SHIFT_PRESENTATION } from "../scenes/presentation/mirrorShift";
-import { MACRO_BELLOWS_EXTENSION_PRESENTATION } from "../scenes/presentation/macroBellowsExtension";
+import {
+  MACRO_BELLOWS_EXTENSION_PRESENTATION,
+  MACRO_BELLOWS_WATCH_LIGHTING_PROFILE,
+} from "../scenes/presentation/macroBellowsExtension";
 import { MACRO_DEPTH_OF_FIELD_PRESENTATION } from "../scenes/presentation/macroDepthOfField";
 import { MACRO_OBLIQUE_PLANE_PRESENTATION } from "../scenes/presentation/macroObliquePlane";
 import { MACRO_COMPOUND_MOVEMENTS_PRESENTATION } from "../scenes/presentation/macroCompoundMovements";
@@ -253,10 +256,13 @@ export const sceneSubjectRegistry = {
       ),
     disposeRttGroup: (group) =>
       disposeRegisteredSceneAsset(MACRO_BELLOWS_EXTENSION_ASSET_KEY, group),
-    rttBounds: MACRO_BELLOWS_EXTENSION_PRESENTATION.geometry.macroSpecimenBoundsMm,
+    rttBounds: MACRO_BELLOWS_EXTENSION_PRESENTATION.geometry.macroBellowsExtensionWatchBoundsMm,
     presentationLighting: {
-      targetMm: MACRO_BELLOWS_EXTENSION_PRESENTATION.geometry.MACRO_SPECIMEN.faceCenterMm,
-      keyOffsetWorld: { x: -2.5, y: 3.5, z: -2.5 },
+      targetMm: MACRO_BELLOWS_EXTENSION_PRESENTATION.geometry.MACRO_BELLOWS_WATCH.dialDatumMm,
+      // The source viewer's key is 22/21/36 mm from its origin. The watch's
+      // root faces the opposite world-Z direction in this scene.
+      keyOffsetWorld: { x: 0.22, y: 0.21, z: -0.36 },
+      profile: MACRO_BELLOWS_WATCH_LIGHTING_PROFILE,
     },
   },
   "macro-depth-of-field": {

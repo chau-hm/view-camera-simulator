@@ -40,9 +40,27 @@ export type WorldProceduralSkyGroundEnvironment = Readonly<{
   intensity: number;
 }>;
 
+export type WorldProceduralSoftboxEnvironment = Readonly<{
+  id: string;
+  kind: "procedural-softbox";
+  intensity: number;
+  baseLinearColor: readonly [number, number, number];
+  cards: readonly Readonly<{
+    direction: readonly [number, number, number];
+    horizontalHalfAngleRad: number;
+    verticalHalfAngleRad: number;
+    intensity: number;
+    tintLinearRgb: readonly [number, number, number];
+  }>[];
+}>;
+
+export type WorldProceduralEnvironment =
+  | WorldProceduralSkyGroundEnvironment
+  | WorldProceduralSoftboxEnvironment;
+
 export type ResolvedWorldIllumination = Readonly<{
   sources: readonly WorldIlluminationSource[];
-  environment?: WorldProceduralSkyGroundEnvironment;
+  environment?: WorldProceduralEnvironment;
 }>;
 
 export const EMPTY_WORLD_ILLUMINATION: ResolvedWorldIllumination = Object.freeze({

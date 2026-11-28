@@ -19,7 +19,7 @@ afterEach(async () => {
 });
 
 describe("Macro Bellows Extension", () => {
-  it("uses the shared specimen contract and fixed finite-focus scene policy", () => {
+  it("uses the shared watch contract and fixed finite-focus scene policy", () => {
     expect(scene.focusTargets).toBe(macroBellowsExtensionFocusTargets);
     expect(scene.bounds).toBe(macroBellowsExtensionSceneBoundsMm);
     expect(scene.finiteFocusStrategy).toEqual({
@@ -133,23 +133,23 @@ describe("Macro Bellows Extension", () => {
     expect(taskView).toHaveTextContent("Goal");
     expect(taskView).toHaveTextContent("current film plane");
     expect(taskView).toHaveTextContent("separate from subject magnification");
-    expect(taskView).toHaveTextContent("selected focus plane is still well behind the specimen");
+    expect(taskView).toHaveTextContent("selected focus plane is still well behind the watch");
     expect(taskView).toHaveTextContent(/open the aperture while focusing/i);
     expect(taskView).not.toHaveTextContent("the specimen is currently");
 
     const focus = screen.getByRole("slider", { name: "Focus distance" });
     fireEvent.change(focus, { target: { value: "450" } });
     await waitFor(() => expect(taskView).toHaveTextContent(/approaching life size/i));
-    expect(taskView).toHaveTextContent(/compare the specimen with the 1 cm Ground Glass grid/i);
+    expect(taskView).toHaveTextContent(/compare the watch with the 1 cm Ground Glass grid/i);
 
     fireEvent.change(focus, { target: { value: "320" } });
     await waitFor(() => expect(taskView).toHaveTextContent(/very close to life size/i));
     expect(taskView).toHaveTextContent(/is approaching the 320\.0 mm of available bellows travel/i);
 
     fireEvent.change(focus, { target: { value: "300" } });
-    await waitFor(() => expect(taskView).toHaveTextContent(/specimen is now sharply reproduced at 1:1/i));
-    expect(taskView).toHaveTextContent(/specimen is now sharply reproduced at 1:1/i);
-    expect(taskView).toHaveTextContent(/90 mm diameter spans about nine 10 mm squares/i);
+    await waitFor(() => expect(taskView).toHaveTextContent(/chapter-ring plane is now sharply reproduced at 1:1/i));
+    expect(taskView).toHaveTextContent(/chapter-ring plane is now sharply reproduced at 1:1/i);
+    expect(taskView).toHaveTextContent(/42 mm watch case spans about four 10 mm squares/i);
     expect(taskView).toHaveTextContent(/\+2\.00 stops exposure compensation/i);
     expect(taskView).toHaveTextContent(/focus with the lens opened wide/i);
     expect(taskView).toHaveTextContent("rear standard moves farther from the lens");

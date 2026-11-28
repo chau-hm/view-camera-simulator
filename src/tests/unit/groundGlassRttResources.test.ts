@@ -73,6 +73,7 @@ describe("Ground Glass RTT semantic resource ownership", () => {
     expect(resources.scene.colorDepthTarget.depthTexture).toBeInstanceOf(
       THREE.DepthTexture,
     );
+    expect(resources.scene.colorDepthTarget.depthTexture?.type).toBe(THREE.UnsignedIntType);
     expect(resources.gather.farTarget.width).toBe(50);
     expect(resources.gather.farTarget.height).toBe(40);
     expect(resources.gather.nearTarget.width).toBe(50);

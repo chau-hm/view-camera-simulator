@@ -7,6 +7,7 @@ import {
   DEFAULT_PRESENTATION_LIGHTING_PLACEMENT,
   TEACHING_PRESENTATION_LIGHTING_PROFILE,
   type PresentationLightingPlacement,
+  type PresentationLightingProfile,
   type ResolvedPresentationLighting,
 } from "./presentationLightingContract";
 export {
@@ -24,6 +25,8 @@ export type PresentationLightingSurface = "observer" | "ground-glass";
 export type ScenePresentationLightingIntent = Readonly<{
   targetMm: Vec3;
   keyOffsetWorld: Readonly<{ x: number; y: number; z: number }>;
+  /** Optional bounded scene-local recipe, using the same Observer and RTT rig. */
+  profile?: PresentationLightingProfile;
 }>;
 
 export type PresentationLightingContext = Readonly<{
@@ -54,7 +57,7 @@ export const resolveScenePresentationLighting = (
     registration?.presentationLighting;
 
   return {
-    profile: TEACHING_PRESENTATION_LIGHTING_PROFILE,
+    profile: intent?.profile ?? TEACHING_PRESENTATION_LIGHTING_PROFILE,
     placement: resolvePresentationLightingPlacement(intent),
   };
 };
