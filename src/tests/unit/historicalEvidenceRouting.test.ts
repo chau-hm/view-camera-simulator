@@ -291,6 +291,92 @@ describe("historical evidence change routing", () => {
     });
   });
 
+  it("routes exact A1 retained evidence inputs to their unit integrity owner and fails closed for neighbors", () => {
+    const paths = [
+      "docs/architecture/environment-readiness/10-ground-glass-diagnostic-qualification.md",
+      "docs/architecture/environment-readiness/a1-evidence/record.json",
+      "docs/architecture/environment-readiness/a1-evidence/depth-edge.json",
+      "scripts/validate-a1-retained-evidence.mjs",
+      "src/tests/unit/a1RetainedEvidence.test.ts",
+      "scripts/ground-glass-a1/capture.mjs",
+      "scripts/ground-glass-a1/assess.mjs",
+      "scripts/ground-glass-a1/rtt-tap.txt",
+      "scripts/ground-glass-a1/source-injection.mjs",
+      "scripts/ground-glass-a1/pixel-provenance.mjs",
+      "src/tests/unit/groundGlassA1PixelProvenance.test.ts",
+      "src/tests/unit/groundGlassA1SourceInjection.test.ts",
+      "scripts/ground-glass-a1/capture-d6.mjs",
+      "scripts/ground-glass-a1/assess-d6.mjs",
+      "scripts/ground-glass-a1/capture-optical-varied.mjs",
+      "docs/architecture/environment-readiness/a1-d6-reference.md",
+      "src/tests/unit/a1IntegratedFullEvidence.test.ts",
+      "src/tests/unit/groundGlassA1D6.test.ts",
+      "docs/architecture/environment-readiness/a1-evidence/current/d6/blobs/0335c59d2b21baa107853cc0214fca67499b41031260308242c514f363fa81d6.bin.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/d6/blobs/15228ce787c6a2e855b279ca0c1b125e035f22d8f46cef0bbc5f51cc0ec81758.bin.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/d6/blobs/25b6d7280cbcdcbf7f2b02096190ed4f77d4198801a370004587380bc38e1808.bin.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/d6/blobs/2dededda409007a81555e971648732abd58514f113168d370ed70fc739c4ea30.bin.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/d6/blobs/7317b7e2245335e90a612c3ebe69b00efdeb031e5feb17501bbdf1dd3ea4d189.bin.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/d6/blobs/93ba8d3c27c4f9e0892853f13ad78a070ed8275932cbf1b575ec3d787fa72a7f.bin.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/d6/blobs/93d8a01e9c1e7aebcce8a4d18cb9f8d5b27650fce718c9d0bf0ccfe3ec455106.bin.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/d6/blobs/cb4980f8fa76327f184448c2a9ddc7a36e7daf0d62e9b38fb89aee424dfa5b2b.bin.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/d6/blobs/d05f78ec5cfb3e8bfc007d785c4e08c5a2da1e878ad79c1ca015a6cbe8b5bf67.bin.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/d6/blobs/fad372fbcc8f2285ae0fbd1dc13f7e98343112d708261bb6489766808fb95190.bin.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/d6/captures.json.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/coc-candidate.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/coc-excessiveBlur.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/coc-legacy.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/coc-restored.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/coc-wrongCoc.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/coc-zeroBlur.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/output-candidate.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/output-excessiveBlur.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/output-legacy.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/output-restored.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/output-wrongCoc.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/output-zeroBlur.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/source.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical-varied.json",
+      "docs/architecture/environment-readiness/a1-evidence/current/record-f1.json",
+      "scripts/ground-glass-a1/capture-optical-evidence.mjs",
+      "src/tests/unit/a1IntegratedEvidence.test.ts",
+      "docs/architecture/environment-readiness/a1-evidence/current/blobs/8bb842dbc448ba02a482eca7e3fe1fc7857cdf50804e849188e7f37f6aba85aa.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/blobs/99115eac2aa0f0c271c625bd5f67c0a5022041bb514d0802f7e8dec909192984.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/blobs/dfe9b25307cd6fc1667afdd93439cf9e9900c4ee9e375e46ea61ca71d417e9b5.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/blobs/e9f9838df4f534be0db270f4d9a363232c35cdb8e467792e4189b4db0c788afc.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/blobs/ffcf55ba863149c9fcc6efee9da06da90f5aa5ecfd42656ee99bb8b315a60b8a.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/frames.json",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/coc-candidate.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/coc-excessiveBlur.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/coc-legacy.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/coc-restored.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/coc-wrongCoc.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/coc-zeroBlur.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/output-candidate.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/output-excessiveBlur.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/output-legacy.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/output-restored.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/output-wrongCoc.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/output-zeroBlur.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical/source.rgba.gz",
+      "docs/architecture/environment-readiness/a1-evidence/current/optical.json",
+      "docs/architecture/environment-readiness/a1-evidence/current/record.json",
+    ];
+    const result = classifyChangedPaths(paths);
+    expect(result.decision).toBe("NOT_APPLICABLE");
+    expect(result.currentOwners).toContain("ordinary-ci:unit-tests");
+    expect(result.pathOwnership.every((item) =>
+      item.classification === "ordinary-ci" && item.ordinaryCiOwners.includes("ordinary-ci:unit-tests")
+    )).toBe(true);
+    expect(classifyChangedPaths([
+      "docs/architecture/environment-readiness/a1-evidence/unknown-capture.json",
+      "docs/architecture/environment-readiness/a1-evidence/current/unknown-capture.json",
+    ]).decision).toBe("UNVERIFIED");
+    for (const family of ["M7S", "M7T", "M7U"]) {
+      expect(classifyChangedPaths([`docs/architecture/ground-glass-${family.toLowerCase()}-new/report.json`]).decision)
+        .toBe("UNVERIFIED");
+    }
+  });
+
   it("routes multiple report families and closes shared report dependencies", () => {
     expect(classifyChangedPaths([
       "docs/architecture/GROUND_GLASS_M7H_BROAD_E2E_TRIAGE_REPORT.json",

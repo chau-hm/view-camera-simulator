@@ -1,4 +1,9 @@
 import { expect, test } from "@playwright/test";
+import {
+  deriveGroundGlassA1OpticalExpectation,
+  evaluateGroundGlassA1OpticalResponse,
+  GROUND_GLASS_A1_OPTICAL_REFERENCE,
+} from "../groundGlassA1OpticalAcceptance";
 
 test("Ground Glass depth-edge fixture measures production gather visibility on rendered pixels", async ({ page }) => {
   const pageErrors: string[] = [];
@@ -18,6 +23,9 @@ test("Ground Glass depth-edge fixture measures production gather visibility on r
       sourceDepthFormat: result.sourceDepthFormat,
       scene: result.scene,
       cases: result.cases,
+      faults: result.faults,
+      opticalMeasurements: result.opticalMeasurements,
+      opticalSourceLuminanceRow: result.opticalSourceLuminanceRow,
     };
   });
 
@@ -28,7 +36,84 @@ test("Ground Glass depth-edge fixture measures production gather visibility on r
     backDistanceMm: 410,
     edgePixelX: 256,
   });
-  console.info("Ground Glass DOF depth-edge fixture:", JSON.stringify(proof));
+  const referenceExpectation = deriveGroundGlassA1OpticalExpectation(
+    proof.opticalSourceLuminanceRow,
+    proof.opticalMeasurements.candidate.sourceDefocusedContrast,
+  );
+  for (const measurement of Object.values(proof.opticalMeasurements)) {
+    expect(measurement.sourceDefocusedContrast).toBe(proof.opticalMeasurements.candidate.sourceDefocusedContrast);
+    expect(measurement.sourceFocusedContrast).toBe(proof.opticalMeasurements.candidate.sourceFocusedContrast);
+  }
+  const opticalDecisions = Object.fromEntries(
+    Object.entries(proof.opticalMeasurements).map(([variant, measurement]) => [
+      variant,
+      evaluateGroundGlassA1OpticalResponse(measurement, proof.opticalSourceLuminanceRow),
+    ]),
+  );
+  console.info("Ground Glass DOF depth-edge fixture:", JSON.stringify({
+    backend: proof.backend,
+    renderer: proof.renderer,
+    sourceDepthFormat: proof.sourceDepthFormat,
+    scene: proof.scene,
+    cases: proof.cases,
+    faults: proof.faults,
+    opticalMeasurements: proof.opticalMeasurements,
+    opticalReference: {
+      fixture: GROUND_GLASS_A1_OPTICAL_REFERENCE,
+      expectation: referenceExpectation,
+      decisions: opticalDecisions,
+    },
+  }));
+
+  // Thin-lens reference in millimetres, calculated independently of the renderer.
+  // v = fD / (D - f), and the signed blur diameter is (f / N)(v_f / v - 1).
+  const thinLensCoc = (distanceMm: number, focusMm: number, fNumber: number) => {
+    const focalLengthMm = 150;
+    const imageDistance = (subjectMm: number) =>
+      focalLengthMm * subjectMm / (subjectMm - focalLengthMm);
+    return focalLengthMm / fNumber * (imageDistance(focusMm) / imageDistance(distanceMm) - 1);
+  };
+  const cocQuantizationBoundMm = (distanceMm: number, focusMm: number, fNumber: number) => {
+    // DEPTH_COMPONENT16 quantizes perspective depth. Bound the resulting
+    // distance error with the exact inverse projection at half a depth code.
+    const nearMm = 10;
+    const farMm = 4000;
+    const depthCodes = 65535;
+    const depthCode = farMm / (farMm - nearMm) -
+      farMm * nearMm / ((farMm - nearMm) * distanceMm);
+    const distanceAtDepth = (depth: number) =>
+      farMm * nearMm / (farMm - depth * (farMm - nearMm));
+    const halfDepthCode = 0.5 / depthCodes;
+    const distanceErrorMm = Math.max(
+      Math.abs(distanceAtDepth(depthCode - halfDepthCode) - distanceMm),
+      Math.abs(distanceAtDepth(depthCode + halfDepthCode) - distanceMm),
+    );
+    const reference = thinLensCoc(distanceMm, focusMm, fNumber);
+    const depthCocErrorMm = Math.max(
+      Math.abs(thinLensCoc(distanceMm - distanceErrorMm, focusMm, fNumber) - reference),
+      Math.abs(thinLensCoc(distanceMm + distanceErrorMm, focusMm, fNumber) - reference),
+    );
+
+    // The CoC target stores signed diameter in RGBA8 over a 12 mm range.
+    // Negative values use 128 intervals; positive values use 127.
+    const cocHalfCodeMm = (reference < 0 ? 12 / 128 : 12 / 127) / 2;
+    return depthCocErrorMm + cocHalfCodeMm;
+  };
+  const referenceCases = [
+    { id: "focus-foreground-400-f2_8", focus: 400, aperture: 2.8, distance: 410, surface: "background" },
+    { id: "focus-near-far-390-f2_8", focus: 390, aperture: 2.8, distance: 400, surface: "foreground" },
+    { id: "focus-background-410-f1_4", focus: 410, aperture: 1.4, distance: 400, surface: "foreground" },
+  ] as const;
+  for (const reference of referenceCases) {
+    const result = proof.cases[reference.id];
+    const measured = reference.surface === "foreground"
+      ? result.foregroundCoCDiameterMm
+      : result.backgroundCoCDiameterMm;
+    const expected = thinLensCoc(reference.distance, reference.focus, reference.aperture);
+    const errorBoundMm = cocQuantizationBoundMm(reference.distance, reference.focus, reference.aperture);
+    expect(Math.abs(measured - expected), `${reference.id} signed CoC error within quantization bound ${errorBoundMm} mm`)
+      .toBeLessThan(errorBoundMm);
+  }
 
   const focusedForeground = proof.cases["focus-foreground-400-f2_8"];
   expect(focusedForeground.foregroundCoCDiameterMm).toBe(0);
@@ -46,6 +131,39 @@ test("Ground Glass depth-edge fixture measures production gather visibility on r
     .toBeLessThan(focusedForeground.sourceBackgroundContrast);
   expect(focusedForeground.candidateBackgroundContrast)
     .toBeCloseTo(focusedForeground.legacyBackgroundContrast, 1);
+
+  const faultMeasurements = proof.faults;
+  const expectedBackgroundCoc = thinLensCoc(410, 400, 2.8);
+  const candidateBackgroundContrastRatio = focusedForeground.candidateBackgroundContrast /
+    focusedForeground.sourceBackgroundContrast;
+  expect(faultMeasurements.wrongCocBackgroundDiameterMm).toBeLessThan(0);
+  expect(Math.abs(faultMeasurements.wrongCocBackgroundDiameterMm - expectedBackgroundCoc))
+    .toBeGreaterThan(cocQuantizationBoundMm(410, 400, 2.8));
+  expect(
+    faultMeasurements.wrongCocBackgroundContrast,
+    "the wrong-sign GPU pass fails the rendered local-contrast control",
+  ).toBeGreaterThan(focusedForeground.candidateBackgroundContrast * 1.03);
+  expect(candidateBackgroundContrastRatio, "the expected defocus retains most of the fixture stripe contrast")
+    .toBeGreaterThan(0.75);
+  expect(candidateBackgroundContrastRatio).toBeLessThan(0.99);
+  expect(
+    faultMeasurements.excessiveBlurBackgroundContrast,
+    "the 3× GPU blur fault loses at least 10% more local contrast than the physical gather",
+  ).toBeLessThan(focusedForeground.candidateBackgroundContrast * 0.9);
+  expect(faultMeasurements.zeroBlurBackgroundContrast / faultMeasurements.sourceBackgroundContrast)
+    .toBeGreaterThan(0.99);
+
+  expect(opticalDecisions.candidate?.accepted, JSON.stringify(opticalDecisions.candidate)).toBe(true);
+  expect(opticalDecisions.restored?.accepted, JSON.stringify(opticalDecisions.restored)).toBe(true);
+  expect(opticalDecisions.wrongCoc?.accepted).toBe(false);
+  expect(opticalDecisions.wrongCoc?.failureReasons).toContain("signed-coc-mismatch");
+  expect(opticalDecisions.excessiveBlur?.accepted).toBe(false);
+  expect(opticalDecisions.excessiveBlur?.failureReasons).toContain("optical-footprint-mismatch");
+  expect(opticalDecisions.excessiveBlur?.failureReasons).toContain("excessive-blur");
+  expect(opticalDecisions.zeroBlur?.accepted).toBe(false);
+  expect(opticalDecisions.zeroBlur?.failureReasons).toContain("insufficient-defocus");
+  expect(opticalDecisions.legacy?.accepted).toBe(false);
+  expect(opticalDecisions.legacy?.failureReasons).toContain("depth-rejection-contamination");
 
   const nearFar = proof.cases["focus-near-far-390-f2_8"];
   expect(nearFar.candidateEdgeRedIncrease).toBeLessThan(nearFar.legacyEdgeRedIncrease);

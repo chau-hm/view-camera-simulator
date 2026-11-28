@@ -26,9 +26,21 @@ const MAX_COC_RADIUS_PX = 16;
 const COC_STORAGE_MAX_MM = 12;
 const FOOTPRINT_STORAGE_MAX_MM = 6;
 
-type VariantName = "candidate" | "legacy";
+type VariantName = "candidate" | "legacy" | "wrongCoc" | "excessiveBlur" | "zeroBlur" | "restored";
 type FixtureCase = "focus-near-far-390-f2_8" | "focus-foreground-400-f2_8" |
   "focus-background-410-f1_4" | "stopped-down-400-f32";
+type OpticalVariantName = "candidate" | "wrongCoc" | "excessiveBlur" | "zeroBlur" | "legacy" | "restored";
+
+type OpticalMeasurement = Readonly<{
+  signedCoCDiameterMm: number;
+  majorRadiusMm: number;
+  majorRadiusPx: number;
+  sourceDefocusedContrast: number;
+  processedDefocusedContrast: number;
+  sourceFocusedContrast: number;
+  processedFocusedContrast: number;
+  edgeRedIncrease: number;
+}>;
 
 type FixtureMeasurement = {
   focusDistanceMm: number;
@@ -49,11 +61,23 @@ type FixtureMeasurement = {
   foregroundCoCDiameterMm: number;
   backgroundMajorRadiusPx: number;
   foregroundMajorRadiusPx: number;
+  faults?: FaultMeasurements;
   candidatePixels: Uint8Array;
   legacyPixels: Uint8Array;
   sourcePixels: Uint8Array;
 };
-type FixtureRenderedMeasurement = FixtureMeasurement & { cocPixels: Uint8Array };
+type FixtureRenderedMeasurement = FixtureMeasurement & {
+  cocPixels: Uint8Array;
+  opticalMeasurements?: Record<OpticalVariantName, OpticalMeasurement>;
+};
+
+type FaultMeasurements = Readonly<{
+  wrongCocBackgroundDiameterMm: number;
+  wrongCocBackgroundContrast: number;
+  excessiveBlurBackgroundContrast: number;
+  zeroBlurBackgroundContrast: number;
+  sourceBackgroundContrast: number;
+}>;
 
 declare global {
   interface Window {
@@ -69,6 +93,9 @@ declare global {
       }>;
       cases: Record<FixtureCase, Omit<FixtureRenderedMeasurement,
         "candidatePixels" | "legacyPixels" | "sourcePixels" | "cocPixels">>;
+      faults: FaultMeasurements;
+      opticalMeasurements: Record<OpticalVariantName, OpticalMeasurement>;
+      opticalSourceLuminanceRow: readonly number[];
       showCase: (id: FixtureCase) => void;
     };
   }
@@ -116,6 +143,42 @@ const legacyGatherShader = withDepthTolerance(
   legacyToleranceBody,
 );
 
+const replaceShaderAnchor = (
+  shader: string,
+  anchor: string,
+  replacement: string,
+  label: string,
+): string => {
+  const firstIndex = shader.indexOf(anchor);
+  if (firstIndex < 0 || firstIndex !== shader.lastIndexOf(anchor)) {
+    throw new Error(`Expected one ${label} fault-injection anchor in production shader source`);
+  }
+  return `${shader.slice(0, firstIndex)}${replacement}${shader.slice(firstIndex + anchor.length)}`;
+};
+
+const wrongCocFaultShader = replaceShaderAnchor(
+  groundGlassPhysicalCocFragmentShader,
+  "    encodeSignedPhysicalCoCDiameterMm(footprint.signedCocMm),",
+  "    encodeSignedPhysicalCoCDiameterMm(-footprint.signedCocMm),",
+  "wrong signed CoC",
+);
+const excessiveBlurFaultShader = replaceShaderAnchor(
+  groundGlassPhysicalCocFragmentShader,
+  "    footprint.majorRadiusMm,\n    footprint.minorRadiusMm",
+  "    footprint.majorRadiusMm * 3.0,\n    footprint.minorRadiusMm * 3.0",
+  "excessive blur",
+);
+const processedGatherAnchor = `  if(useRaw > 0.5){
+    gl_FragColor = sharpColor;
+    return;
+  }`;
+const zeroBlurFaultShader = replaceShaderAnchor(
+  groundGlassApertureGatherFragmentShader,
+  processedGatherAnchor,
+  `${processedGatherAnchor}\n  gl_FragColor = sharpColor;\n  return;`,
+  "zero blur",
+);
+
 const makeSourceTarget = (): THREE.WebGLRenderTarget => {
   const target = new THREE.WebGLRenderTarget(WIDTH, HEIGHT, {
     format: THREE.RGBAFormat,
@@ -155,14 +218,26 @@ const cocTarget = makeTarget();
 const farTargets: Record<VariantName, THREE.WebGLRenderTarget> = {
   candidate: makeTarget(),
   legacy: makeTarget(),
+  wrongCoc: makeTarget(),
+  excessiveBlur: makeTarget(),
+  zeroBlur: makeTarget(),
+  restored: makeTarget(),
 };
 const nearTargets: Record<VariantName, THREE.WebGLRenderTarget> = {
   candidate: makeTarget(),
   legacy: makeTarget(),
+  wrongCoc: makeTarget(),
+  excessiveBlur: makeTarget(),
+  zeroBlur: makeTarget(),
+  restored: makeTarget(),
 };
 const finalTargets: Record<VariantName, THREE.WebGLRenderTarget> = {
   candidate: makeTarget(),
   legacy: makeTarget(),
+  wrongCoc: makeTarget(),
+  excessiveBlur: makeTarget(),
+  zeroBlur: makeTarget(),
+  restored: makeTarget(),
 };
 
 const colorMaterial = (fragmentShader: string): THREE.ShaderMaterial => new THREE.ShaderMaterial({
@@ -311,6 +386,20 @@ const cocMaterial = new THREE.ShaderMaterial({
   toneMapped: false,
 });
 
+const createFaultCocMaterial = (fragmentShader: string): THREE.ShaderMaterial => new THREE.ShaderMaterial({
+  vertexShader: groundGlassVertexShader,
+  fragmentShader,
+  uniforms: { ...createDofUniforms(), tDepth: { value: sourceTarget.depthTexture } },
+  depthTest: false,
+  depthWrite: false,
+  toneMapped: false,
+});
+
+const faultCocMaterials: Partial<Record<VariantName, THREE.ShaderMaterial>> = {
+  wrongCoc: createFaultCocMaterial(wrongCocFaultShader),
+  excessiveBlur: createFaultCocMaterial(excessiveBlurFaultShader),
+};
+
 const createGatherMaterial = (fragmentShader: string): THREE.ShaderMaterial => new THREE.ShaderMaterial({
   vertexShader: groundGlassVertexShader,
   fragmentShader,
@@ -330,6 +419,10 @@ const createGatherMaterial = (fragmentShader: string): THREE.ShaderMaterial => n
 const gatherMaterials: Record<VariantName, THREE.ShaderMaterial> = {
   candidate: createGatherMaterial(candidateGatherShader),
   legacy: createGatherMaterial(legacyGatherShader),
+  wrongCoc: createGatherMaterial(candidateGatherShader),
+  excessiveBlur: createGatherMaterial(candidateGatherShader),
+  zeroBlur: createGatherMaterial(zeroBlurFaultShader),
+  restored: createGatherMaterial(candidateGatherShader),
 };
 
 const compositeMaterial = new THREE.ShaderMaterial({
@@ -502,7 +595,9 @@ const decodeRadius = (pixels: Uint8Array, x: number, y: number): number => {
 
 const results = {} as Record<FixtureCase, FixtureRenderedMeasurement>;
 const summarizeResult = (result: FixtureRenderedMeasurement) => Object.fromEntries(
-  Object.entries(result).filter(([key]) => !key.endsWith("Pixels") && key !== "cocPixels"),
+  Object.entries(result).filter(([key]) =>
+    !key.endsWith("Pixels") && key !== "cocPixels" && key !== "opticalMeasurements",
+  ),
 );
 const caseInputs: ReadonlyArray<Readonly<{ id: FixtureCase; focus: number; fNumber: number }>> = [
   { id: "focus-near-far-390-f2_8", focus: 390, fNumber: 2.8 },
@@ -517,15 +612,21 @@ const renderCase = (
 ): FixtureRenderedMeasurement => {
   const state = makeDofState(focusDistanceMm, fNumber);
   const sourcePixels = readBytes(sourceTarget);
-  bindGroundGlassDofStateToCocMaterial(cocMaterial, state);
-  synchronizeGroundGlassDofClipRange([cocMaterial], NEAR_M, FAR_M);
-  cocMaterial.uniforms.tDepth.value = sourceTarget.depthTexture;
-  draw(cocTarget, cocMaterial);
-  const cocPixels = readBytes(cocTarget);
-
   const outputPixels = {} as Record<VariantName, Uint8Array>;
   const nearLayerPixels = {} as Record<VariantName, Uint8Array>;
-  for (const variant of ["candidate", "legacy"] as const) {
+  const cocPixelsByVariant = {} as Partial<Record<VariantName, Uint8Array>>;
+  const runFaultCases = focusDistanceMm === 400 && fNumber === 2.8;
+  const variants: readonly VariantName[] = runFaultCases
+    ? ["candidate", "legacy", "wrongCoc", "excessiveBlur", "zeroBlur", "restored"]
+    : ["candidate", "legacy"];
+  for (const variant of variants) {
+    const variantCocMaterial = faultCocMaterials[variant] ?? cocMaterial;
+    bindGroundGlassDofStateToCocMaterial(variantCocMaterial, state);
+    synchronizeGroundGlassDofClipRange([variantCocMaterial], NEAR_M, FAR_M);
+    variantCocMaterial.uniforms.tDepth.value = sourceTarget.depthTexture;
+    draw(cocTarget, variantCocMaterial);
+    cocPixelsByVariant[variant] = readBytes(cocTarget);
+
     const gatherMaterial = gatherMaterials[variant];
     bindGroundGlassDofStateToGatherMaterial(gatherMaterial, state);
     synchronizeGroundGlassDofClipRange([gatherMaterial], NEAR_M, FAR_M);
@@ -567,6 +668,64 @@ const renderCase = (
   const zeroBlurRoi = { x0: 84, x1: 212, y0: 150, y1: 234 };
   const candidate = outputPixels.candidate;
   const legacy = outputPixels.legacy;
+  const candidateCocPixels = cocPixelsByVariant.candidate;
+  if (!candidateCocPixels) throw new Error("Candidate CoC readback is unavailable");
+  const faults: FaultMeasurements | undefined = runFaultCases ? {
+    wrongCocBackgroundDiameterMm: decodeCoC(cocPixelsByVariant.wrongCoc!, FRONT_EDGE_X - 24, HEIGHT >> 1),
+    wrongCocBackgroundContrast: luminanceContrast(
+      outputPixels.wrongCoc!, backgroundRoi.x0, backgroundRoi.x1, backgroundRoi.y0, backgroundRoi.y1,
+    ),
+    excessiveBlurBackgroundContrast: luminanceContrast(
+      outputPixels.excessiveBlur!, backgroundRoi.x0, backgroundRoi.x1, backgroundRoi.y0, backgroundRoi.y1,
+    ),
+    zeroBlurBackgroundContrast: luminanceContrast(
+      outputPixels.zeroBlur!, backgroundRoi.x0, backgroundRoi.x1, backgroundRoi.y0, backgroundRoi.y1,
+    ),
+    sourceBackgroundContrast: luminanceContrast(
+      sourcePixels, backgroundRoi.x0, backgroundRoi.x1, backgroundRoi.y0, backgroundRoi.y1,
+    ),
+  } : undefined;
+  const opticalMeasurement = (
+    pixels: Uint8Array,
+    cocPixels: Uint8Array,
+    edgePixels: Uint8Array,
+  ): OpticalMeasurement => {
+    const sampleX = FRONT_EDGE_X - 24;
+    const sampleY = HEIGHT >> 1;
+    const majorRadiusMm = decodeRadius(cocPixels, sampleX, sampleY);
+    return {
+      signedCoCDiameterMm: decodeCoC(cocPixels, sampleX, sampleY),
+      majorRadiusMm,
+      majorRadiusPx: majorRadiusMm * WIDTH / FILM_WIDTH_MM,
+      sourceDefocusedContrast: luminanceContrast(
+        sourcePixels, backgroundRoi.x0, backgroundRoi.x1, backgroundRoi.y0, backgroundRoi.y1,
+      ),
+      processedDefocusedContrast: luminanceContrast(
+        pixels, backgroundRoi.x0, backgroundRoi.x1, backgroundRoi.y0, backgroundRoi.y1,
+      ),
+      sourceFocusedContrast: luminanceContrast(
+        sourcePixels, foregroundRoi.x0, foregroundRoi.x1, foregroundRoi.y0, foregroundRoi.y1,
+      ),
+      processedFocusedContrast: luminanceContrast(
+        pixels, foregroundRoi.x0, foregroundRoi.x1, foregroundRoi.y0, foregroundRoi.y1,
+      ),
+      edgeRedIncrease: meanRedIncrease(
+        sourcePixels, edgePixels, edgeRoi.x0, edgeRoi.x1, edgeRoi.y0, edgeRoi.y1,
+      ),
+    };
+  };
+  const opticalMeasurements: Record<OpticalVariantName, OpticalMeasurement> | undefined = runFaultCases
+    ? {
+      candidate: opticalMeasurement(outputPixels.candidate!, cocPixelsByVariant.candidate!, outputPixels.candidate!),
+      wrongCoc: opticalMeasurement(outputPixels.wrongCoc!, cocPixelsByVariant.wrongCoc!, outputPixels.wrongCoc!),
+      excessiveBlur: opticalMeasurement(
+        outputPixels.excessiveBlur!, cocPixelsByVariant.excessiveBlur!, outputPixels.excessiveBlur!,
+      ),
+      zeroBlur: opticalMeasurement(outputPixels.zeroBlur!, cocPixelsByVariant.candidate!, outputPixels.zeroBlur!),
+      legacy: opticalMeasurement(outputPixels.legacy!, cocPixelsByVariant.candidate!, outputPixels.legacy!),
+      restored: opticalMeasurement(outputPixels.restored!, cocPixelsByVariant.restored!, outputPixels.restored!),
+    }
+    : undefined;
   return {
     focusDistanceMm,
     fNumber,
@@ -582,14 +741,16 @@ const renderCase = (
     legacyForegroundNearAlpha: meanAlpha(nearLayerPixels.legacy, nearForegroundRoi.x0, nearForegroundRoi.x1, nearForegroundRoi.y0, nearForegroundRoi.y1) / 255,
     candidateZeroBlurMeanAbsDifference: meanAbsoluteRgbDifference(sourcePixels, candidate, zeroBlurRoi.x0, zeroBlurRoi.x1, zeroBlurRoi.y0, zeroBlurRoi.y1),
     legacyZeroBlurMeanAbsDifference: meanAbsoluteRgbDifference(sourcePixels, legacy, zeroBlurRoi.x0, zeroBlurRoi.x1, zeroBlurRoi.y0, zeroBlurRoi.y1),
-    backgroundCoCDiameterMm: decodeCoC(cocPixels, FRONT_EDGE_X - 24, HEIGHT >> 1),
-    foregroundCoCDiameterMm: decodeCoC(cocPixels, FRONT_EDGE_X + 32, HEIGHT >> 1),
-    backgroundMajorRadiusPx: decodeRadius(cocPixels, FRONT_EDGE_X - 24, HEIGHT >> 1) * WIDTH / FILM_WIDTH_MM,
-    foregroundMajorRadiusPx: decodeRadius(cocPixels, FRONT_EDGE_X + 32, HEIGHT >> 1) * WIDTH / FILM_WIDTH_MM,
+    backgroundCoCDiameterMm: decodeCoC(candidateCocPixels, FRONT_EDGE_X - 24, HEIGHT >> 1),
+    foregroundCoCDiameterMm: decodeCoC(candidateCocPixels, FRONT_EDGE_X + 32, HEIGHT >> 1),
+    backgroundMajorRadiusPx: decodeRadius(candidateCocPixels, FRONT_EDGE_X - 24, HEIGHT >> 1) * WIDTH / FILM_WIDTH_MM,
+    foregroundMajorRadiusPx: decodeRadius(candidateCocPixels, FRONT_EDGE_X + 32, HEIGHT >> 1) * WIDTH / FILM_WIDTH_MM,
     candidatePixels: candidate,
     legacyPixels: legacy,
     sourcePixels,
-    cocPixels,
+    cocPixels: candidateCocPixels,
+    ...(faults ? { faults } : {}),
+    ...(opticalMeasurements ? { opticalMeasurements } : {}),
   };
 };
 
@@ -617,6 +778,13 @@ const showCase = (id: FixtureCase): void => {
   measurementsElement.textContent = JSON.stringify({ caseId: id, ...summarizeResult(result) }, null, 2);
 };
 
+const opticalSourceRowY = HEIGHT >> 1;
+const opticalSourceLuminanceRow = Array.from({ length: WIDTH }, (_, x) => {
+  const offset = (opticalSourceRowY * WIDTH + x) * 4;
+  const pixels = results["focus-foreground-400-f2_8"].sourcePixels;
+  return 0.2126 * pixels[offset]! + 0.7152 * pixels[offset + 1]! + 0.0722 * pixels[offset + 2]!;
+});
+
 window.__groundGlassDofEdgeProof = {
   backend: renderer.capabilities.isWebGL2 ? "webgl2" : "webgl1",
   renderer: renderer.getContext().getParameter(renderer.getContext().RENDERER),
@@ -630,6 +798,9 @@ window.__groundGlassDofEdgeProof = {
   cases: Object.fromEntries(caseInputs.map(({ id }) => {
     return [id, summarizeResult(results[id])];
   })) as Window["__groundGlassDofEdgeProof"] extends { cases: infer T } ? T : never,
+  faults: results["focus-foreground-400-f2_8"].faults!,
+  opticalMeasurements: results["focus-foreground-400-f2_8"].opticalMeasurements!,
+  opticalSourceLuminanceRow,
   showCase,
 };
 
@@ -645,6 +816,7 @@ const dispose = (): void => {
   });
   quadGeometry.dispose();
   cocMaterial.dispose();
+  Object.values(faultCocMaterials).forEach((material) => material?.dispose());
   compositeMaterial.dispose();
   Object.values(gatherMaterials).forEach((material) => material.dispose());
   sourceTarget.dispose();

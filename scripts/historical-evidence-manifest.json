@@ -39,6 +39,226 @@
   "broadFallback": "all-supported-families",
   "ordinaryCiPaths": [
     {
+      "path": "scripts/ground-glass-a1/capture-optical-evidence.mjs",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "src/tests/unit/a1IntegratedEvidence.test.ts",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/blobs/8bb842dbc448ba02a482eca7e3fe1fc7857cdf50804e849188e7f37f6aba85aa.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/blobs/99115eac2aa0f0c271c625bd5f67c0a5022041bb514d0802f7e8dec909192984.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/blobs/dfe9b25307cd6fc1667afdd93439cf9e9900c4ee9e375e46ea61ca71d417e9b5.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/blobs/e9f9838df4f534be0db270f4d9a363232c35cdb8e467792e4189b4db0c788afc.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/blobs/ffcf55ba863149c9fcc6efee9da06da90f5aa5ecfd42656ee99bb8b315a60b8a.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/frames.json",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical/coc-candidate.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical/coc-excessiveBlur.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical/coc-legacy.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical/coc-restored.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical/coc-wrongCoc.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical/coc-zeroBlur.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical/output-candidate.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical/output-excessiveBlur.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical/output-legacy.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical/output-restored.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical/output-wrongCoc.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical/output-zeroBlur.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical/source.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical.json",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/record.json",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "scripts/ground-glass-a1/capture-d6.mjs",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "scripts/ground-glass-a1/assess-d6.mjs",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "scripts/ground-glass-a1/capture-optical-varied.mjs",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-d6-reference.md",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "src/tests/unit/a1IntegratedFullEvidence.test.ts",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "src/tests/unit/groundGlassA1D6.test.ts",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/d6/blobs/0335c59d2b21baa107853cc0214fca67499b41031260308242c514f363fa81d6.bin.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/d6/blobs/15228ce787c6a2e855b279ca0c1b125e035f22d8f46cef0bbc5f51cc0ec81758.bin.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/d6/blobs/25b6d7280cbcdcbf7f2b02096190ed4f77d4198801a370004587380bc38e1808.bin.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/d6/blobs/2dededda409007a81555e971648732abd58514f113168d370ed70fc739c4ea30.bin.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/d6/blobs/7317b7e2245335e90a612c3ebe69b00efdeb031e5feb17501bbdf1dd3ea4d189.bin.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/d6/blobs/93ba8d3c27c4f9e0892853f13ad78a070ed8275932cbf1b575ec3d787fa72a7f.bin.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/d6/blobs/93d8a01e9c1e7aebcce8a4d18cb9f8d5b27650fce718c9d0bf0ccfe3ec455106.bin.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/d6/blobs/cb4980f8fa76327f184448c2a9ddc7a36e7daf0d62e9b38fb89aee424dfa5b2b.bin.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/d6/blobs/d05f78ec5cfb3e8bfc007d785c4e08c5a2da1e878ad79c1ca015a6cbe8b5bf67.bin.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/d6/blobs/fad372fbcc8f2285ae0fbd1dc13f7e98343112d708261bb6489766808fb95190.bin.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/d6/captures.json.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/coc-candidate.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/coc-excessiveBlur.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/coc-legacy.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/coc-restored.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/coc-wrongCoc.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/coc-zeroBlur.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/output-candidate.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/output-excessiveBlur.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/output-legacy.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/output-restored.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/output-wrongCoc.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/output-zeroBlur.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical-varied/source.rgba.gz",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/optical-varied.json",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/current/record-f1.json",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
       "path": "src/tests/unit/cagePhaseEvidence.test.ts",
       "owner": "ordinary-ci:unit-tests"
     },
@@ -48,6 +268,90 @@
     },
     {
       "path": "src/tests/unit/sceneCapacityBenchmarkQualification.test.ts",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/10-ground-glass-diagnostic-qualification.md",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "scripts/ground-glass-a1/capture.mjs",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "scripts/ground-glass-a1/assess.mjs",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "scripts/ground-glass-a1/rtt-tap.txt",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "scripts/ground-glass-a1/source-injection.mjs",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "scripts/ground-glass-a1/pixel-provenance.mjs",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "src/tests/unit/groundGlassA1PixelProvenance.test.ts",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "src/tests/unit/groundGlassA1SourceInjection.test.ts",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "scripts/validate-a1-retained-evidence.mjs",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "scripts/validate-a1-retained-evidence.d.mts",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "src/tests/unit/a1RetainedEvidence.test.ts",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/control-bypass-final32.rgba",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/control-bypass.json",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/control-next-request-final32.rgba",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/control-next-request.json",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/control-previous-request-final32.rgba",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/control-previous-request.json",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/depth-edge.json",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/record.json",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/stress-1-final32.rgba",
+      "owner": "ordinary-ci:unit-tests"
+    },
+    {
+      "path": "docs/architecture/environment-readiness/a1-evidence/stress-1.json",
       "owner": "ordinary-ci:unit-tests"
     }
   ],

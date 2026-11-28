@@ -1,0 +1,99 @@
+{
+  "schemaVersion": 1,
+  "decision": "PARTIAL",
+  "provenance": {
+    "sourceCommit": "1e15f607383a22643712e43394c7bde1cad3a6ec",
+    "capture": "test-only WebGL completion-boundary Vite instrumentation",
+    "limitations": "Historical capture; offline integrity is not a current GPU qualification."
+  },
+  "contracts": [
+    {
+      "id": "D1",
+      "status": "PARTIAL",
+      "positive": [
+        "current-frame"
+      ],
+      "negative": [
+        "stale-frame"
+      ],
+      "missing": [
+        "independently-accepted-generation"
+      ]
+    },
+    {
+      "id": "D2",
+      "status": "PARTIAL",
+      "positive": [
+        "finite-preparation",
+        "nonuniform-buffer"
+      ],
+      "negative": [
+        "uniform-buffer"
+      ],
+      "missing": [
+        "typed-preparation",
+        "opaque-content"
+      ]
+    },
+    {
+      "id": "D3",
+      "status": "PARTIAL",
+      "positive": [
+        "processed",
+        "raw-bypass"
+      ],
+      "negative": [
+        "bypass-as-processed"
+      ],
+      "missing": [
+        "tracked-producer"
+      ]
+    },
+    {
+      "id": "D4",
+      "status": "PARTIAL",
+      "positive": [
+        "thin-lens-coc",
+        "legacy-depth-rejection"
+      ],
+      "negative": [
+        "legacy-depth-rejection"
+      ],
+      "missing": [
+        "wrong-coc-gpu",
+        "excess-blur-gpu",
+        "zero-blur-gpu"
+      ]
+    },
+    {
+      "id": "D5",
+      "status": "PARTIAL",
+      "positive": [],
+      "negative": [],
+      "missing": [
+        "matched-completed-orientation"
+      ]
+    },
+    {
+      "id": "D6",
+      "status": "PARTIAL",
+      "positive": [],
+      "negative": [],
+      "missing": [
+        "protected-response",
+        "gpu-negative-control"
+      ]
+    }
+  ],
+  "files": {
+    "stress-1.json": "08ac2808023c43f66b5283c756355568666ae0c390a7596d4cb96d4ae9ee3e50",
+    "stress-1-final32.rgba": "fa99f753e142a41840013e10e0530b2f9318b76cc969d6c26197b8e2233d8f43",
+    "control-bypass.json": "8b7bbd4e750c7914c5fba5b31933e23fb696fa66d44a4119aefc3de42ff1f01d",
+    "control-bypass-final32.rgba": "df7fa23e6f681e6c00bdedb3b833125463ccd28071ac69fabc4cae3318cd3f61",
+    "control-previous-request.json": "55a9635aa1247d3b4dbf775a4712687826270c6563a8ce4ab8c3ae4bdacffe89",
+    "control-previous-request-final32.rgba": "be340d27bf7cadbbdc651203fa86772a48248c901bbdc08a235d38a0b671c464",
+    "control-next-request.json": "15062dd3a647c1c2c3583715bef2fbaf3ec0b23ed64bf83fdb61bb020918c333",
+    "control-next-request-final32.rgba": "fa99f753e142a41840013e10e0530b2f9318b76cc969d6c26197b8e2233d8f43",
+    "depth-edge.json": "e83ccd1e538a1bad3004d3a725eec2baa6229f631e90192b6608c0e0a7f84c2e"
+  }
+}

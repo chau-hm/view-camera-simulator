@@ -1,0 +1,914 @@
+{
+  "tag": "control-previous-request",
+  "viewport": [
+    1440,
+    1000,
+    1
+  ],
+  "adapter": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+  "pose": {
+    "positionWorld": [
+      0,
+      0.02,
+      0
+    ],
+    "upWorld": [
+      0,
+      1,
+      0
+    ],
+    "forwardWorld": [
+      0,
+      0,
+      1
+    ]
+  },
+  "cfgOk": true,
+  "projection": [
+    2.3929243427677527,
+    0,
+    0,
+    0,
+    0,
+    2.9911554284596904,
+    0,
+    0,
+    0,
+    0.3937007874015749,
+    -1.0014792899408285,
+    -1,
+    0,
+    0,
+    -0.020014792899408284,
+    0
+  ],
+  "projectionInverse": [
+    0.4178987116840308,
+    0,
+    0,
+    0,
+    0,
+    0.3343189693472247,
+    0,
+    0,
+    0,
+    0,
+    0,
+    -49.96304508499631,
+    0,
+    0.13162164147528535,
+    -1,
+    50.036954915003705
+  ],
+  "nearM": 0.01,
+  "farM": 13.530000000000001,
+  "cameraWorld": [
+    -1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    -1,
+    0,
+    0,
+    0.02,
+    0,
+    1
+  ],
+  "previewMode": "upright",
+  "displayTransform": {
+    "flipDisplayX": false,
+    "flipDisplayY": false
+  },
+  "rawDebug": false,
+  "aperture": 11,
+  "focalLengthMm": 150,
+  "renderQuality": "standard",
+  "request": {
+    "requestId": "gg-mwz1zdp9-ezcn32u59b-default-request-10",
+    "channelId": "default",
+    "sceneId": "architecture-foreground"
+  },
+  "preparation": {
+    "model": "derived-planes",
+    "camera": {
+      "inverseProjectionMatrixElements": [
+        0.4178987116840308,
+        0,
+        0,
+        0,
+        0,
+        0.3343189693472247,
+        0,
+        0,
+        0,
+        0,
+        0,
+        -49.96304508499631,
+        0,
+        0.13162164147528535,
+        -1,
+        50.036954915003705
+      ],
+      "worldMatrixElements": [
+        -1,
+        0,
+        0,
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0,
+        -1,
+        0,
+        0,
+        0.02,
+        0,
+        1
+      ]
+    },
+    "lens": {
+      "centerWorldM": {
+        "x": 0,
+        "y": 0.02,
+        "z": 0
+      },
+      "planeNormal": {
+        "x": 0,
+        "y": -0.11493715049286657,
+        "z": 0.9933727656003962
+      },
+      "planeBasisX": {
+        "x": 1,
+        "y": 0,
+        "z": 0
+      },
+      "planeBasisY": {
+        "x": 0,
+        "y": 0.9933727656003962,
+        "z": 0.11493715049286657
+      }
+    },
+    "film": {
+      "planePointWorldM": {
+        "x": 0,
+        "y": 0,
+        "z": -0.1519506957657523
+      },
+      "planeNormal": {
+        "x": 0,
+        "y": 0,
+        "z": 1
+      },
+      "planeBasisX": {
+        "x": 1,
+        "y": 0,
+        "z": 0
+      },
+      "planeBasisY": {
+        "x": 0,
+        "y": 1,
+        "z": 0
+      },
+      "widthMm": 127,
+      "heightMm": 101.6,
+      "sampledWidthMm": 127,
+      "sampledHeightMm": 101.6
+    },
+    "focus": {
+      "plane": {
+        "pointWorldM": {
+          "x": 0,
+          "y": -0.8696135448147873,
+          "z": 7.688705205747066
+        },
+        "normal": {
+          "x": 0,
+          "y": 0.9985433801766178,
+          "z": -0.05395477648415225
+        }
+      },
+      "nearPlane": {
+        "pointWorldM": {
+          "x": 0,
+          "y": -0.6301286836018298,
+          "z": 5.6188980295433435
+        },
+        "normal": {
+          "x": 0,
+          "y": 0.993274203539909,
+          "z": -0.11578582202566683
+        }
+      },
+      "farPlane": {
+        "pointWorldM": {
+          "x": 0,
+          "y": -1.3884304968725303,
+          "z": 12.172709100884127
+        },
+        "normal": {
+          "x": 0,
+          "y": 0.9999639020795341,
+          "z": 0.008496736895546208
+        }
+      }
+    },
+    "optics": {
+      "imageDistanceMm": 148.64493987787247,
+      "focalLengthMm": 150,
+      "apertureFNumber": 11,
+      "acceptableCoCDiameterMm": 0.1
+    },
+    "render": {
+      "widthPx": 655,
+      "heightPx": 524,
+      "maximumBlurRadiusPx": 48,
+      "displayWidthPx": 514
+    },
+    "physicalCoC": {
+      "boundaryDiameterPx": 0.515748031496063,
+      "boundaryRadiusPx": 0.2578740157480315,
+      "visibleBoundaryRadiusPx": 0.20236220472440947
+    }
+  },
+  "preparationFinite": true,
+  "subjectGeneration": 1,
+  "diagnostics": {
+    "profile": "standard",
+    "logicalWidthPx": 514,
+    "logicalHeightPx": 411,
+    "internalWidthPx": 655,
+    "internalHeightPx": 524,
+    "resolutionScale": 0.85,
+    "effectiveDevicePixelRatio": 1.5,
+    "zoomRenderScale": 1,
+    "wasClamped": false,
+    "configuredCanvasDpr": 1.5,
+    "rendererPixelRatio": 1.5,
+    "canvasCssWidthPx": 514,
+    "canvasCssHeightPx": 411,
+    "drawingBufferWidthPx": 771,
+    "drawingBufferHeightPx": 616,
+    "colorTargetWidthPx": 655,
+    "colorTargetHeightPx": 524,
+    "depthTargetWidthPx": 655,
+    "depthTargetHeightPx": 524,
+    "blurTargetWidthPx": 655,
+    "blurTargetHeightPx": 524,
+    "dofTechnique": "physical-coc-near-far-oriented-gather",
+    "footprintRepresentation": "local-affine-ellipse",
+    "gatherScale": 1,
+    "sampleCount": 32,
+    "maximumCoCRadiusPx": 48,
+    "groundGlassPhysicalBoundaryRadiusPx": 0.20236220472440947,
+    "cocStorageFormat": "half-float-mm",
+    "cocAvailable": true,
+    "cocTargetWidthPx": 655,
+    "cocTargetHeightPx": 524,
+    "gatherTargetWidthPx": 655,
+    "gatherTargetHeightPx": 524,
+    "farGatherTargetWidthPx": 655,
+    "farGatherTargetHeightPx": 524,
+    "nearGatherTargetWidthPx": 655,
+    "nearGatherTargetHeightPx": 524,
+    "finalTargetWidthPx": 655,
+    "finalTargetHeightPx": 524,
+    "horizontalShaderRenderWidthPx": 655,
+    "horizontalShaderRenderHeightPx": 524,
+    "verticalShaderRenderWidthPx": 655,
+    "verticalShaderRenderHeightPx": 524,
+    "depthTextureAvailable": true,
+    "resourceGeneration": 1,
+    "inspectionWindowActive": false,
+    "inspectionCenterU": 0.5,
+    "inspectionCenterV": 0.5,
+    "sampledFilmWidthMm": 127,
+    "sampledFilmHeightMm": 101.6,
+    "profilingEnabled": true,
+    "profilingBackend": "gpu-query",
+    "channel": "default",
+    "ownerId": "ground-glass-rtt-owner-_r_0_",
+    "rawColorVariance": 7561.867154295549,
+    "rawNonBackgroundPixelCount": 1024,
+    "rawContentful": true,
+    "finalColorVariance": 3853.7787048391547,
+    "finalNonBackgroundPixelCount": 1024,
+    "finalContentful": true,
+    "renderSanitySampleCount": 1024,
+    "renderSanitySubjectGeneration": 1,
+    "renderSanityStateKey": "1|architecture-foreground|upright|no-subject-identity|0|0|0.500000|0.500000|1.000000|1.000000|11|655|524|0.000000:0.000000:0.000000|0.000000|0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:0.020000:0.000000|0.000000:1.000000:0.000000|0.000000:0.000000:1.000000|0.000000:20.000000:0.000000|0.000000:-0.114937:0.993373|0.000000:0.000000:-151.950696|0.000000:0.000000:1.000000|0.000000:0.000000:-151.950696|0.000000:0.000000:1.000000|-63.500000:50.800000:-151.950696|63.500000:50.800000:-151.950696|-63.500000:-50.800000:-151.950696|63.500000:-50.800000:-151.950696|0.000000:20.000000:0.000000|0.000000:-0.114937:0.993373|nonparallel-conic|null|null|null|0.654508:0.000000:0.641298:0.000000:-60.349992:-6721.558935|0.000000:0.114937:148.644940|0.000000:-869.613545:7688.705206|0.000000:0.998543:-0.053955|0.000000:-630.128684:5618.898030|0.000000:0.993274:-0.115786|0.000000:-1388.430497:12172.709101|0.000000:0.999964:0.008497|2.392924,0.000000,0.000000,0.000000,0.000000,2.991155,0.000000,0.000000,0.000000,-0.393701,-1.000400,-1.000000,0.000000,0.000000,-20.004001,0.000000|subject-generation:1",
+    "renderSanityError": null,
+    "rendererStats": {
+      "calls": 257,
+      "triangles": 171532,
+      "points": 0,
+      "lines": 0,
+      "geometries": 168,
+      "textures": 25,
+      "sampledAtMs": 2366.2999999523163
+    },
+    "cameraNearWorld": 0.01,
+    "cameraFarWorld": 13.530000000000001,
+    "cameraConfigurationOk": true,
+    "cameraConfigurationError": null,
+    "projectionDeterminant": -0.1432580545398443,
+    "projectionMatrix": [
+      2.3929243427677527,
+      0,
+      0,
+      0,
+      0,
+      2.9911554284596904,
+      0,
+      0,
+      0,
+      0.3937007874015749,
+      -1.0014792899408285,
+      -1,
+      0,
+      0,
+      -0.020014792899408284,
+      0
+    ],
+    "cameraPositionWorld": [
+      0,
+      0.02,
+      0
+    ],
+    "cameraUpWorld": [
+      0,
+      1,
+      0
+    ],
+    "cameraForwardWorld": [
+      0,
+      0,
+      1
+    ],
+    "groundGlassIlluminanceGain": 1,
+    "groundGlassNaturalIlluminationEnabled": true,
+    "groundGlassNaturalIlluminationKind": "nonparallel-geometric",
+    "groundGlassNaturalIlluminationStateJson": "{\"kind\":\"nonparallel-geometric\",\"referenceImageDistanceMm\":152.96442687747034,\"referenceFilmIncidenceCosine\":0.9933727656003962,\"lensToFilmCenterLocalMm\":[0,-20,-151.9506957657523],\"imageSideAxisLocal\":[0,0.11493715049286657,-0.9933727656003962],\"filmNormalTowardLensSign\":1}",
+    "groundGlassNaturalIlluminationImageDistanceMm": 152.96442687747034,
+    "groundGlassNaturalIlluminationReferenceFilmIncidenceCosine": 0.9933727656003962,
+    "groundGlassCoverageEnabled": true,
+    "groundGlassCoverageKind": "nonparallel-conic",
+    "groundGlassCoverageConicQuadratic": "0.654508497187,0.00000000000,0.641297948624,0.00000000000,-60.3499915370,-6721.55893459",
+    "groundGlassCoverageConicAxial": "0.00000000000,0.114937150493,148.644939878",
+    "dofMode": "derived-planes",
+    "uniformsFinite": true,
+    "uniformPreparationError": null,
+    "focalLengthMm": 150,
+    "profilingSnapshot": {
+      "sceneId": "architecture-foreground",
+      "renderQuality": "standard",
+      "internalResolution": [
+        655,
+        524
+      ],
+      "gatherResolution": [
+        655,
+        524
+      ],
+      "gatherScale": 1,
+      "sampleCount": 32,
+      "maximumCoCRadiusPx": 48,
+      "cocStorageFormat": "half-float-mm",
+      "footprintRepresentation": "local-affine-ellipse",
+      "dofTechnique": "physical-coc-near-far-oriented-gather",
+      "previewMode": "upright",
+      "rawDebug": false,
+      "devicePixelRatio": 1.5,
+      "enabled": true,
+      "profilingBackend": "gpu-query",
+      "timingUnit": "gpu-ms",
+      "frame": {
+        "latestMs": 41.10000002384186,
+        "averageMs": 41.10000002384186,
+        "p50Ms": 41.10000002384186,
+        "p95Ms": 41.10000002384186,
+        "count": 1
+      },
+      "approxFps": 24.330900229194796,
+      "groundGlassGpu": {
+        "latestMs": null,
+        "averageMs": null,
+        "p50Ms": null,
+        "p95Ms": null,
+        "count": 0
+      },
+      "physicalDofGpu": {
+        "latestMs": null,
+        "averageMs": null,
+        "p50Ms": null,
+        "p95Ms": null,
+        "count": 0
+      },
+      "groundGlassCpuSubmit": null,
+      "physicalDofCpuSubmit": null,
+      "profilingDiagnostics": {
+        "gpuQueryState": "active",
+        "framesAttempted": 52,
+        "framesAccepted": 52,
+        "framesRejectedCapacity": 0,
+        "framesInvalidated": 3,
+        "framesCompletedGpu": 48,
+        "queriesBegun": 209,
+        "queriesBeginFailed": 0,
+        "queriesEnded": 209,
+        "queriesEndFailed": 0,
+        "queriesPolled": 243,
+        "queriesCompleted": 192,
+        "queriesUnavailable": 51,
+        "disjointEvents": 0,
+        "queriesDiscardedDisjoint": 0,
+        "queriesDroppedOwnership": 0,
+        "pendingQueries": 5,
+        "queryPoolSize": 24,
+        "availableQuerySlots": 19,
+        "pendingFrames": 1,
+        "sessionResets": 6,
+        "lastResetReason": "measurement-key-change",
+        "lastRejectedReason": null,
+        "lastGpuQueryError": null
+      },
+      "passes": {
+        "sceneRenderMs": {
+          "latestMs": null,
+          "averageMs": null,
+          "p50Ms": null,
+          "p95Ms": null,
+          "count": 0
+        },
+        "cocFootprintMs": {
+          "latestMs": null,
+          "averageMs": null,
+          "p50Ms": null,
+          "p95Ms": null,
+          "count": 0
+        },
+        "farGatherMs": {
+          "latestMs": null,
+          "averageMs": null,
+          "p50Ms": null,
+          "p95Ms": null,
+          "count": 0
+        },
+        "nearGatherMs": {
+          "latestMs": null,
+          "averageMs": null,
+          "p50Ms": null,
+          "p95Ms": null,
+          "count": 0
+        },
+        "compositeMs": {
+          "latestMs": null,
+          "averageMs": null,
+          "p50Ms": null,
+          "p95Ms": null,
+          "count": 0
+        }
+      }
+    }
+  },
+  "passes": [
+    "sceneRender",
+    "cocFootprint",
+    "farGather",
+    "nearGather",
+    "composite",
+    "display"
+  ],
+  "sourceCpuMs": 0.40000009536743164,
+  "cpuReadbackAndSurveyMs": 4.200000047683716,
+  "width": 655,
+  "height": 524,
+  "cocPixelType": "Uint16Array",
+  "cocStorageMaxMm": 18.61374045801527,
+  "footprintStorageMaxMm": 9.306870229007634,
+  "cocWidth": 655,
+  "cocHeight": 524,
+  "patches": [
+    {
+      "id": "foreground-near",
+      "worldMm": {
+        "x": 0,
+        "y": -1388,
+        "z": 4700
+      },
+      "uv": [
+        0.5,
+        -0.1448872919211326
+      ],
+      "signedCocAtPixelMm": null,
+      "physical": {
+        "id": "foreground-near",
+        "distanceToFocusPlaneMm": 356.3764418453119,
+        "sharpness": 0,
+        "status": "soft",
+        "pointSharpness": 0,
+        "pointStatus": "soft",
+        "patchSharpness": 0,
+        "patchStatus": "soft",
+        "physicalPointSharpness": 0,
+        "physicalPointStatus": "soft",
+        "physicalPatchSharpness": 0,
+        "physicalPatchStatus": "soft",
+        "pointEquivalentCoCDiameterMm": 0.122227798549309,
+        "patchEquivalentCoCDiameterMm": 0.122227798549309,
+        "pointNormalizedDefocus": 1.2733432521322434,
+        "patchNormalizedDefocus": 1.273343252132246,
+        "insideDepthOfField": false,
+        "targetRayDistanceMm": 4910.982370157727,
+        "nearBoundaryDistanceMm": 3277.011133246996,
+        "focusBoundaryDistanceMm": 3856.3756214017,
+        "farBoundaryDistanceMm": 4684.594365240065,
+        "normalizedDefocus": 1.273343252132246
+      }
+    },
+    {
+      "id": "foreground-middle",
+      "worldMm": {
+        "x": 0,
+        "y": -1388,
+        "z": 6900
+      },
+      "uv": [
+        0.5,
+        -0.0020349475610225154
+      ],
+      "signedCocAtPixelMm": null,
+      "physical": {
+        "id": "foreground-middle",
+        "distanceToFocusPlaneMm": 475.0769501104469,
+        "sharpness": 0,
+        "status": "soft",
+        "pointSharpness": 0,
+        "pointStatus": "soft",
+        "patchSharpness": 0,
+        "patchStatus": "soft",
+        "physicalPointSharpness": 0,
+        "physicalPointStatus": "soft",
+        "physicalPatchSharpness": 0,
+        "physicalPatchStatus": "soft",
+        "pointEquivalentCoCDiameterMm": 0.11039307146412194,
+        "patchEquivalentCoCDiameterMm": 0.11039307146412196,
+        "pointNormalizedDefocus": 1.140360578189114,
+        "patchNormalizedDefocus": 1.1403605781891135,
+        "insideDepthOfField": false,
+        "targetRayDistanceMm": 7045.40615152881,
+        "nearBoundaryDistanceMm": 4156.302130569059,
+        "focusBoundaryDistanceMm": 5163.142990286104,
+        "farBoundaryDistanceMm": 6813.728951642055,
+        "normalizedDefocus": 1.1403605781891135
+      }
+    },
+    {
+      "id": "building-base",
+      "worldMm": {
+        "x": 0,
+        "y": -880,
+        "z": 9488
+      },
+      "uv": [
+        0.5,
+        0.16128409799326177
+      ],
+      "signedCocAtPixelMm": 0.0169525146484375,
+      "physical": {
+        "id": "building-base",
+        "distanceToFocusPlaneMm": 107.45187452171103,
+        "sharpness": 0.8861102962690316,
+        "status": "sharp",
+        "pointSharpness": 0.8861102962690318,
+        "pointStatus": "sharp",
+        "patchSharpness": 0.8861102962690316,
+        "patchStatus": "sharp",
+        "physicalPointSharpness": 0.81954487854134,
+        "physicalPointStatus": "sharp",
+        "physicalPatchSharpness": 0.81954487854134,
+        "physicalPatchStatus": "sharp",
+        "pointEquivalentCoCDiameterMm": 0.018045512145866006,
+        "patchEquivalentCoCDiameterMm": 0.018045512145866006,
+        "pointNormalizedDefocus": 0.1138897037309682,
+        "patchNormalizedDefocus": 0.11388970373096842,
+        "insideDepthOfField": true,
+        "targetRayDistanceMm": 9592.945741533204,
+        "nearBoundaryDistanceMm": 6241.216397575862,
+        "focusBoundaryDistanceMm": 8862.213243660348,
+        "farBoundaryDistanceMm": 15278.355124220512,
+        "normalizedDefocus": 0.11388970373096842
+      }
+    },
+    {
+      "id": "building-middle",
+      "worldMm": {
+        "x": 0,
+        "y": 1050,
+        "z": 9488
+      },
+      "uv": [
+        0.5,
+        0.4655067991382451
+      ],
+      "signedCocAtPixelMm": -0.30224609375,
+      "physical": {
+        "id": "building-middle",
+        "distanceToFocusPlaneMm": 1819.7368492191613,
+        "sharpness": 0,
+        "status": "soft",
+        "pointSharpness": 0,
+        "pointStatus": "soft",
+        "patchSharpness": 0,
+        "patchStatus": "soft",
+        "physicalPointSharpness": 0,
+        "physicalPointStatus": "soft",
+        "physicalPatchSharpness": 0,
+        "physicalPatchStatus": "soft",
+        "pointEquivalentCoCDiameterMm": 0.30202907940605245,
+        "patchEquivalentCoCDiameterMm": 0.30202907940605245,
+        "pointNormalizedDefocus": 1,
+        "patchNormalizedDefocus": 1,
+        "insideDepthOfField": false,
+        "targetRayDistanceMm": 9606.014157807596,
+        "nearBoundaryDistanceMm": 164928.9712099367,
+        "focusBoundaryDistanceMm": null,
+        "farBoundaryDistanceMm": null,
+        "normalizedDefocus": 1
+      }
+    }
+  ],
+  "grid": [],
+  "completion": {
+    "status": "completed",
+    "generation": {
+      "generationId": "gg-mwz1zdp9-ezcn32u59b-default-generation-1",
+      "channelId": "default"
+    },
+    "request": {
+      "requestId": "gg-mwz1zdp9-ezcn32u59b-default-request-10",
+      "channelId": "default",
+      "sceneId": "architecture-foreground"
+    },
+    "frameId": "gg-mwz1zdp9-ezcn32u59b-default-generation-1:frame:60",
+    "requiredOperations": "all-completed"
+  },
+  "frameId": "gg-mwz1zdp9-ezcn32u59b-default-generation-1:frame:60",
+  "ui": {
+    "data-testid": "ground-glass-rtt",
+    "data-three-revision": "187",
+    "data-rtt-channel": "default",
+    "data-rtt-scene-id": "architecture-foreground",
+    "data-policy-selected-backend": "webgl",
+    "data-pilot-retry-status": "none",
+    "data-application-fallback": "not-observed",
+    "data-rtt-preview-mode": "upright",
+    "data-rtt-raw-debug": "false",
+    "data-rtt-dof-processing-enabled": "true",
+    "data-rtt-dof-model": "derived-planes",
+    "data-renderer-generation": "gg-mwz1zdp9-ezcn32u59b-default-generation-1",
+    "data-frame-request-id": "gg-mwz1zdp9-ezcn32u59b-default-request-10",
+    "data-frame-channel-id": "default",
+    "data-frame-scene-id": "architecture-foreground",
+    "data-render-host-lifecycle": "ready",
+    "data-frame-result-status": "completed",
+    "data-render-cleanup-status": "not-required",
+    "data-rtt-depth-available": "true",
+    "data-rtt-resource-generation": "1",
+    "data-rtt-owner-id": "ground-glass-rtt-owner-_r_0_",
+    "data-rtt-physical-boundary-blur-radius-px": "0.20236220472440947",
+    "data-rtt-logical-width": "514",
+    "data-rtt-logical-height": "411",
+    "data-rtt-resolution-scale": "0.85",
+    "data-rtt-effective-device-pixel-ratio": "1.5",
+    "data-rtt-internal-width": "655",
+    "data-rtt-internal-height": "524",
+    "data-rtt-canvas-css-width": "514",
+    "data-rtt-canvas-css-height": "411",
+    "data-rtt-color-target-width": "655",
+    "data-rtt-color-target-height": "524",
+    "data-rtt-depth-target-width": "655",
+    "data-rtt-depth-target-height": "524",
+    "data-rtt-blur-target-width": "655",
+    "data-rtt-blur-target-height": "524",
+    "data-rtt-gather-scale": "1",
+    "data-rtt-final-target-width": "655",
+    "data-rtt-final-target-height": "524",
+    "data-rtt-horizontal-shader-width": "655",
+    "data-rtt-horizontal-shader-height": "524",
+    "data-rtt-vertical-shader-width": "655",
+    "data-rtt-vertical-shader-height": "524",
+    "data-rtt-was-clamped": "false",
+    "data-rtt-inspection-window-active": "false",
+    "data-rtt-inspection-center-u": "0.5",
+    "data-rtt-inspection-center-v": "0.5",
+    "data-rtt-sampled-film-width-mm": "127",
+    "data-rtt-sampled-film-height-mm": "101.6",
+    "data-rtt-profiling-enabled": "true",
+    "data-rtt-profiling-backend": "gpu-query",
+    "data-mounted-renderer-family": "webgl-renderer",
+    "data-actual-execution-api": "webgl2",
+    "data-rtt-camera-ok": "true",
+    "data-rtt-camera-near-world": "0.01",
+    "data-rtt-camera-far-world": "13.530000000000001",
+    "data-rtt-projection-determinant": "-0.1432580545398443",
+    "data-rtt-projection-matrix": "2.3929243427677527,0,0,0,0,2.9911554284596904,0,0,0,0.3937007874015749,-1.0014792899408285,-1,0,0,-0.020014792899408284,0",
+    "data-rtt-uniforms-finite": "true",
+    "data-rtt-dof-mode": "derived-planes",
+    "data-rtt-raw-contentful": "true",
+    "data-rtt-final-contentful": "true",
+    "data-rtt-raw-variance": "7561.867154295549",
+    "data-rtt-final-variance": "3853.7787048391547",
+    "data-rtt-raw-non-background": "1024",
+    "data-rtt-final-non-background": "1024",
+    "data-rtt-focal-length-mm": "150",
+    "data-rtt-ground-glass-illuminance-gain": "1",
+    "data-rtt-natural-illumination-enabled": "true",
+    "data-rtt-natural-illumination-kind": "nonparallel-geometric",
+    "data-rtt-natural-illumination-state": "{\"kind\":\"nonparallel-geometric\",\"referenceImageDistanceMm\":152.96442687747034,\"referenceFilmIncidenceCosine\":0.9933727656003962,\"lensToFilmCenterLocalMm\":[0,-20,-151.9506957657523],\"imageSideAxisLocal\":[0,0.11493715049286657,-0.9933727656003962],\"filmNormalTowardLensSign\":1}",
+    "data-rtt-natural-illumination-image-distance-mm": "152.96442687747034",
+    "data-rtt-coverage-enabled": "true",
+    "data-rtt-coverage-kind": "nonparallel-conic",
+    "data-rtt-camera-position": "0,0.02,0",
+    "data-rtt-camera-up": "0,1,0",
+    "data-rtt-camera-forward": "0,0,1",
+    "data-rtt-sanity-state": "1|architecture-foreground|upright|no-subject-identity|0|0|0.500000|0.500000|1.000000|1.000000|11|655|524|0.000000:0.000000:0.000000|0.000000|0.000000|0.000000:0.000000:0.000000|0.000000:0.000000:0.000000|0.000000:0.020000:0.000000|0.000000:1.000000:0.000000|0.000000:0.000000:1.000000|0.000000:20.000000:0.000000|0.000000:-0.114937:0.993373|0.000000:0.000000:-151.950696|0.000000:0.000000:1.000000|0.000000:0.000000:-151.950696|0.000000:0.000000:1.000000|-63.500000:50.800000:-151.950696|63.500000:50.800000:-151.950696|-63.500000:-50.800000:-151.950696|63.500000:-50.800000:-151.950696|0.000000:20.000000:0.000000|0.000000:-0.114937:0.993373|nonparallel-conic|null|null|null|0.654508:0.000000:0.641298:0.000000:-60.349992:-6721.558935|0.000000:0.114937:148.644940|0.000000:-869.613545:7688.705206|0.000000:0.998543:-0.053955|0.000000:-630.128684:5618.898030|0.000000:0.993274:-0.115786|0.000000:-1388.430497:12172.709101|0.000000:0.999964:0.008497|2.392924,0.000000,0.000000,0.000000,0.000000,2.991155,0.000000,0.000000,0.000000,-0.393701,-1.000400,-1.000000,0.000000,0.000000,-20.004001,0.000000|subject-generation:1",
+    "data-last-completed-request-id": "gg-mwz1zdp9-ezcn32u59b-default-request-10",
+    "data-rtt-profiling-raw-debug": "false",
+    "data-rtt-profiling-frame-count": "1",
+    "data-rtt-profiling-approx-fps": "24.330900229194796",
+    "data-rtt-profiling-ground-glass-count": "0",
+    "data-rtt-profiling-gpu-state": "active",
+    "data-rtt-profiling-gpu-frames-completed": "48",
+    "data-rtt-profiling-gpu-queries-completed": "192",
+    "data-rtt-profiling-gpu-pending-queries": "5",
+    "data-rtt-natural-illumination-reference-film-incidence-cosine": "0.9933727656003962",
+    "data-rtt-coverage-conic-quadratic": "0.654508497187,0.00000000000,0.641297948624,0.00000000000,-60.3499915370,-6721.55893459",
+    "data-rtt-coverage-conic-axial": "0.00000000000,0.114937150493,148.644939878",
+    "data-rtt-profiling-physical-dof-count": "0"
+  },
+  "cameraState": {
+    "focalLengthMm": 150,
+    "aperture": 11,
+    "focusDistanceMm": 7740,
+    "focusStandard": "front",
+    "frontRiseMm": 20,
+    "frontShiftMm": 0,
+    "frontTiltDeg": 6.6,
+    "frontSwingDeg": 0,
+    "rearRiseMm": 0,
+    "rearShiftMm": 0,
+    "rearTiltDeg": 0,
+    "rearSwingDeg": 0,
+    "cameraBodyPitchDeg": 0,
+    "cameraBodyPivotWorld": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "viewpointAnchor": "mid",
+    "cameraRigPlacement": {
+      "kind": "identity",
+      "rigOriginWorld": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "basePitchDeg": 0
+    },
+    "activeSceneId": "architecture-foreground",
+    "activeTaskId": null,
+    "mode": "free",
+    "groundGlassAssistEnabled": true,
+    "gridEnabled": true,
+    "geometryView": "side",
+    "focusMode": "finite",
+    "lastFiniteFocusDepthMm": 7740
+  },
+  "url": "http://127.0.0.1:4377/simulator/free/architecture-foreground?rttDiagnostics=1&dofProfiling=1&seed=284719&sv=1",
+  "seed": "284719",
+  "browser": "149.0.7827.55",
+  "launchArgs": [
+    "--use-angle=metal",
+    "--enable-unsafe-swiftshader"
+  ],
+  "source": "1e15f607383a22643712e43394c7bde1cad3a6ec",
+  "profile": {
+    "sceneId": "architecture-foreground",
+    "renderQuality": "standard",
+    "internalResolution": [
+      655,
+      524
+    ],
+    "gatherResolution": [
+      655,
+      524
+    ],
+    "gatherScale": 1,
+    "sampleCount": 32,
+    "maximumCoCRadiusPx": 48,
+    "cocStorageFormat": "half-float-mm",
+    "footprintRepresentation": "local-affine-ellipse",
+    "dofTechnique": "physical-coc-near-far-oriented-gather",
+    "previewMode": "upright",
+    "rawDebug": false,
+    "devicePixelRatio": 1.5,
+    "enabled": true,
+    "profilingBackend": "gpu-query",
+    "timingUnit": "gpu-ms",
+    "frame": {
+      "latestMs": 15,
+      "averageMs": 21.321428571428573,
+      "p50Ms": 15.299999952316284,
+      "p95Ms": 81,
+      "count": 14
+    },
+    "approxFps": 46.90117252931323,
+    "groundGlassGpu": {
+      "latestMs": 4.658914,
+      "averageMs": 8.839462307692306,
+      "p50Ms": 8.25754,
+      "p95Ms": 15.067955000000001,
+      "count": 13
+    },
+    "physicalDofGpu": {
+      "latestMs": 3.988123,
+      "averageMs": 7.5238344615384625,
+      "p50Ms": 5.796082,
+      "p95Ms": 12.639539000000001,
+      "count": 13
+    },
+    "groundGlassCpuSubmit": null,
+    "physicalDofCpuSubmit": null,
+    "profilingDiagnostics": {
+      "gpuQueryState": "active",
+      "framesAttempted": 65,
+      "framesAccepted": 65,
+      "framesRejectedCapacity": 0,
+      "framesInvalidated": 3,
+      "framesCompletedGpu": 61,
+      "queriesBegun": 274,
+      "queriesBeginFailed": 0,
+      "queriesEnded": 274,
+      "queriesEndFailed": 0,
+      "queriesPolled": 338,
+      "queriesCompleted": 257,
+      "queriesUnavailable": 81,
+      "disjointEvents": 0,
+      "queriesDiscardedDisjoint": 0,
+      "queriesDroppedOwnership": 0,
+      "pendingQueries": 5,
+      "queryPoolSize": 24,
+      "availableQuerySlots": 19,
+      "pendingFrames": 1,
+      "sessionResets": 6,
+      "lastResetReason": "measurement-key-change",
+      "lastRejectedReason": null,
+      "lastGpuQueryError": null
+    },
+    "passes": {
+      "sceneRenderMs": {
+        "latestMs": 0.670791,
+        "averageMs": 1.3156278461538462,
+        "p50Ms": 1.187375,
+        "p95Ms": 2.461458,
+        "count": 13
+      },
+      "cocFootprintMs": {
+        "latestMs": 0.165875,
+        "averageMs": 0.506400076923077,
+        "p50Ms": 0.596916,
+        "p95Ms": 0.977999,
+        "count": 13
+      },
+      "farGatherMs": {
+        "latestMs": 0.428583,
+        "averageMs": 0.9304675384615384,
+        "p50Ms": 0.97775,
+        "p95Ms": 1.611541,
+        "count": 13
+      },
+      "nearGatherMs": {
+        "latestMs": 1.686916,
+        "averageMs": 3.0163423846153847,
+        "p50Ms": 2.275374,
+        "p95Ms": 4.849666,
+        "count": 13
+      },
+      "compositeMs": {
+        "latestMs": 1.706749,
+        "averageMs": 3.070624461538462,
+        "p50Ms": 2.300666,
+        "p95Ms": 5.229625,
+        "count": 13
+      }
+    }
+  }
+}

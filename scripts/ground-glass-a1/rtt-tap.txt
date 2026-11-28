@@ -1,0 +1,126 @@
+      if (auditRequest && frameRequest && frameGeneration && !globalThis.__a0Result) {
+        const startedReadbacks = performance.now();
+        const widths = [sourceRenderTarget.width, sourceRenderTarget.height];
+        const pixels = (target, channels = 4) => {
+          const count = target.width * target.height * channels;
+          const data = target.texture.type === THREE.HalfFloatType
+            ? new Uint16Array(count)
+            : target.texture.type === THREE.FloatType ? new Float32Array(count) : new Uint8Array(count);
+          gl.readRenderTargetPixels(target, 0, 0, target.width, target.height, data);
+          return data;
+        };
+        const encode = data => {
+          const bytes = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+          let binary = "";
+          for (let i = 0; i < bytes.length; i += 32768) binary += String.fromCharCode(...bytes.subarray(i, i + 32768));
+          return btoa(binary);
+        };
+        const raw = pixels(sourceRenderTarget);
+        const final = pixels(finalRT);
+        const coc = rawDebug ? null : pixels(cocRT);
+
+        const project = point => {
+          const value = new THREE.Vector3(point.x / 1000, point.y / 1000, point.z / 1000).project(cam);
+          return [(value.x + 1) / 2, (value.y + 1) / 2];
+        };
+        const toHalf = number => THREE.DataUtils.fromHalfFloat(number);
+        const patches = sceneDefinition.focusTargets.map(target => {
+          const uv = project(target.worldPosition);
+          const x = Math.floor(uv[0] * cocRT.width);
+          const y = Math.floor(uv[1] * cocRT.height);
+          const centre = 4 * (y * cocRT.width + x);
+          const mm = coc && x >= 0 && x < cocRT.width && y >= 0 && y < cocRT.height
+            ? coc instanceof Uint16Array ? toHalf(coc[centre]) : coc instanceof Float32Array ? coc[centre]
+              : Math.max(-1, Math.min(1, (coc[centre] - 128) / (coc[centre] < 128 ? 128 : 127))) * cocStorageMaxMm
+            : null;
+          return {id:target.id, worldMm:target.worldPosition, uv, signedCocAtPixelMm:mm,
+            physical:opticsState.focusTargets.find(item => item.id === target.id)};
+        });
+        const grid = [];
+        if (auditRequest.grid) {
+          const registered = mountedSceneSubjectRef.current.group;
+          const ray = new THREE.Raycaster();
+          const visible = hit => {
+            for (let node = hit.object; node; node = node.parent) if (!node.visible) return false;
+            const material = Array.isArray(hit.object.material)
+              ? hit.object.material[hit.face?.materialIndex ?? 0] : hit.object.material;
+            return material?.visible !== false;
+          };
+          const kind = hit => {
+            if (hit.object.name === "architecture-foreground-ground") return "ground";
+            if (hit.object.name.startsWith("architecture-foreground-forecourt-")) return "forecourt";
+            if (hit.object.name.startsWith("courtyard-ground-")) return "added-ground";
+            for(let node = hit.object; node !== null && node !== registered; node = node.parent) {
+              if(node.name.startsWith("courtyard-building-")) return "architecture";
+              if(node.name.startsWith("courtyard-vegetation-")) return "vegetation";
+              if(node.name.startsWith("courtyard-furniture-")) return "furniture";
+            }
+            return "hero";
+          };
+          for (let row = 0; row < 64; row++) {
+            for (let col = 0; col < 80; col++) {
+              ray.setFromCamera(new THREE.Vector2(2 * (col + 0.5) / 80 - 1, 1 - 2 * (row + 0.5) / 64), cam);
+              const intersections = ray.intersectObject(registered, true).filter(visible);
+              const spaceDepth = hit => -hit.point.clone().applyMatrix4(cam.matrixWorldInverse).z;
+              const first = intersections[0];
+              const accepted = intersections.find(hit => spaceDepth(hit) >= cam.near && spaceDepth(hit) <= cam.far);
+              grid.push(accepted ? [kind(accepted), spaceDepth(accepted), accepted.object.name]
+                : first ? ["clipped", spaceDepth(first), first.object.name] : ["open"]);
+            }
+          }
+        }
+
+        let depth = null;
+        if (auditRequest.grid && depthTex !== null) {
+          const target = new THREE.WebGLRenderTarget(80, 64, {depthBuffer:false});
+          const material = new THREE.ShaderMaterial({
+            uniforms: {tDepth: {value:depthTex}},
+            vertexShader: `varying vec2 vUv; void main(){vUv=uv;gl_Position=vec4(position,1.);}`,
+            fragmentShader: `precision highp float; varying vec2 vUv; uniform sampler2D tDepth;
+            void main(){float d=floor(texture2D(tDepth,vUv).r*65535.+.5);
+            gl_FragColor=vec4(floor(d/256.)/255.,mod(d,256.)/255.,0.,1.);}`,
+            depthTest:false, depthWrite:false,
+          });
+          const scene = new THREE.Scene();
+          const quad = new THREE.Mesh(displayScene.children[0].geometry, material);
+          quad.frustumCulled = false;
+          scene.add(quad);
+          try {
+            gl.setRenderTarget(target);
+            gl.render(scene, orthoCam);
+            depth = encode(pixels(target));
+          } finally {
+            gl.setRenderTarget(finalRT);
+            material.dispose();
+            target.dispose();
+          }
+        }
+
+        const numericValues = [];
+        const collectNumbers = value => {
+          if (typeof value === "number") numericValues.push(value);
+          else if (Array.isArray(value)) value.forEach(collectNumbers);
+          else if (value && typeof value === "object") Object.values(value).forEach(collectNumbers);
+        };
+        collectNumbers(preparedDofState);
+        const preparationFinite = Boolean(preparedDofState) && numericValues.length > 0 && numericValues.every(Number.isFinite);
+        const runtime = readRuntimeInfo();
+        const context = gl.getContext();
+        const debug = context.getExtension("WEBGL_debug_renderer_info");
+        globalThis.__a0Pending = {
+          tag:auditRequest.tag,
+          viewport:[innerWidth, innerHeight, devicePixelRatio],
+          adapter:context.getParameter(debug?.UNMASKED_RENDERER_WEBGL ?? context.RENDERER),
+          pose:configuredPose, cfgOk:cfg.ok, projection:[...cam.projectionMatrix.elements],
+          projectionInverse:[...cam.projectionMatrixInverse.elements],
+          nearM:cam.near, farM:cam.far, cameraWorld:[...cam.matrixWorld.elements],
+          previewMode, displayTransform, rawDebug, aperture, focalLengthMm, renderQuality,
+          request:frameRequest, preparation:preparedDofState, preparationFinite, expectedSubjectGeneration:auditExpectedSubjectGeneration, subjectGeneration:sceneSubjectGenerationRef.current,
+          diagnostics:runtime, passes:auditPasses, sourceCpuMs:auditSourceCpuMs,
+          cpuReadbackAndSurveyMs:performance.now()-startedReadbacks,
+          width:widths[0], height:widths[1], finalWidth:finalRT.width, finalHeight:finalRT.height, raw:encode(raw), final:encode(final),
+          coc:coc && encode(coc), depth,
+          cocPixelType:coc?.constructor.name, cocStorageMaxMm,
+          footprintStorageMaxMm, cocWidth:cocRT.width, cocHeight:cocRT.height, patches, grid,
+        };
+      }

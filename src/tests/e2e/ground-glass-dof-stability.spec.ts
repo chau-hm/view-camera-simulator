@@ -1,7 +1,7 @@
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test } from "@playwright/test";
 import { readFocusDistributionScores } from "./helpers/focusDistribution";
-import { setRangeDirect } from "./helpers/rangeInput";
+import { setRangeDirect, setRangeDirectOnGrid } from "./helpers/rangeInput";
 import { setStepRangeInput } from "./helpers/stepRangeInput";
 
 const isAllowedEnvironmentConsoleMessage = (message: string) =>
@@ -91,7 +91,15 @@ test("Architecture + Foreground DOF regression stays finite across Raw RTT toggl
 
 test("Architecture + Foreground DOF remains finite through a transition sequence", async ({ page }) => {
   test.setTimeout(120_000);
-  await page.goto("/simulator/free/architecture-foreground?rttDiagnostics=1");
+  const timed = async (label: string, action: () => Promise<unknown>) => {
+    const start = Date.now();
+    try {
+      await action();
+    } finally {
+      console.info(`Ground Glass transition ${label}: ${Date.now() - start} ms`);
+    }
+  };
+  await timed("route", () => page.goto("/simulator/free/architecture-foreground?rttDiagnostics=1"));
   const rtt = page.getByTestId("ground-glass-rtt");
   const checkpoints = [
     { tilt: 2, focus: 6830, aperture: "11" },
@@ -102,17 +110,36 @@ test("Architecture + Foreground DOF remains finite through a transition sequence
     { tilt: 2, focus: 6830, aperture: "11" },
   ];
 
-  await setStepRangeInput(page, "Rise", 20);
+  await timed("rise", () => setRangeDirectOnGrid(page, "Rise", 20));
+  await expect(page.getByLabel("Rise")).toHaveValue("20");
+  await expect(rtt).toHaveAttribute("data-frame-result-status", "completed", { timeout: 60_000 });
+  let previousCheckpoint: (typeof checkpoints)[number] | undefined;
   for (const checkpoint of checkpoints) {
-    await setStepRangeInput(page, "Tilt", checkpoint.tilt);
-    await setRangeDirect(page, "Focus distance", checkpoint.focus);
-    await expect(page.getByLabel("Focus distance")).toHaveValue(String(checkpoint.focus));
-    await page
-      .getByRole("radiogroup", { name: "Aperture" })
-      .getByRole("radio", { name: `f/${checkpoint.aperture}` })
-      .check();
-    await expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 });
-    await expectFiniteFocusDiagnostics(page);
+    const previousRequest = await rtt.getAttribute("data-frame-request-id");
+    expect(previousRequest).toBeTruthy();
+    console.info("Ground Glass transition checkpoint", JSON.stringify(checkpoint));
+    if (!previousCheckpoint || checkpoint.tilt !== previousCheckpoint.tilt) {
+      await timed("tilt", () => setRangeDirectOnGrid(page, "Tilt", checkpoint.tilt));
+    } else {
+      await expect(page.getByLabel("Tilt")).toHaveValue(String(checkpoint.tilt));
+    }
+    if (!previousCheckpoint || checkpoint.focus !== previousCheckpoint.focus) {
+      await timed("focus", () => setRangeDirectOnGrid(page, "Focus distance", checkpoint.focus));
+    } else {
+      await expect(page.getByLabel("Focus distance")).toHaveValue(String(checkpoint.focus));
+    }
+    const aperture = page.getByRole("radiogroup", { name: "Aperture" })
+      .getByRole("radio", { name: `f/${checkpoint.aperture}` });
+    await timed("aperture", () => aperture.check());
+    await expect(aperture).toBeChecked();
+    await timed("current-frame", () => expect.poll(async () => rtt.evaluate((element, previous) => {
+      const { frameRequestId, lastCompletedRequestId, frameResultStatus } = (element as HTMLElement).dataset;
+      return Boolean(frameRequestId && frameRequestId !== previous &&
+        frameRequestId === lastCompletedRequestId && frameResultStatus === "completed");
+    }, previousRequest), { timeout: 60_000 }).toBe(true));
+    await timed("contentful", () => expect(rtt).toHaveAttribute("data-rtt-final-contentful", "true", { timeout: 60_000 }));
+    await timed("focus-diagnostics", () => expectFiniteFocusDiagnostics(page));
     expect(Number.isFinite(await numericAttribute(rtt, "data-rtt-final-variance"))).toBe(true);
+    previousCheckpoint = checkpoint;
   }
 });
