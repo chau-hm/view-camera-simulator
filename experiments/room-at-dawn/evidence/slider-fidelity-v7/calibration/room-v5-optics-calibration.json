@@ -1,0 +1,4975 @@
+{
+  "schemaVersion": 1,
+  "sourceCommit": "d6439bd5aeaa3f8bcc232e98a070ccc3807edb6c",
+  "sourceDirty": false,
+  "browser": "149.0.7827.55",
+  "backend": "Chromium ANGLE SwiftShader WebGL",
+  "measurementProtocol": {
+    "edgeMetric": "per-row display RGB8 luma 10–90% edge spread, median over rows",
+    "uncertainty": "95% percentile bootstrap interval over rows (2000 deterministic resamples), plus an eight-offset bilinear subpixel resampling phase envelope",
+    "pixelDifferenceFloorPx": 0.25,
+    "toleranceMeaning": "Quarter-display-pixel resolution floor only; not a physically derived optical tolerance.",
+    "predictedOrdering": "Canonical major-radius ordering is a screening bound; no direct equivalence to measured edge width is assumed."
+  },
+  "cases": [
+    {
+      "case": "focus-near",
+      "sourceFrame": {
+        "status": "ready",
+        "frameId": "room-generation-3:frame:11",
+        "requestId": "room-request-6",
+        "generationId": "room-generation-3"
+      },
+      "camera": {
+        "id": "focus-near",
+        "focus": 1100,
+        "aperture": 5.6,
+        "tilt": 0,
+        "swing": 0
+      },
+      "backend": "Chromium ANGLE SwiftShader WebGL",
+      "displayGrid": "480x360",
+      "sharpnessRank": {
+        "expectedByCanonicalMajorRadius": "near-edge",
+        "measuredByEdgeWidth": "near-edge",
+        "candidateMatch": true,
+        "limitation": "This rank is descriptive; edge spread contains pixel phase, native raster, silhouette, and display mapping effects. It is not a calibrated CoC-to-PSF transfer."
+      },
+      "pairwise": [
+        {
+          "predictedSharper": "near-edge",
+          "predictedMoreDefocused": "middle-edge",
+          "predictedRadiusDifferencePx": 1.2178551938433448,
+          "measuredWidthDifferencePx": 1.067044025157232,
+          "measuredOrder": "predicted_order",
+          "status": "B_EDGE_WIDER_RESOLVED",
+          "deltaIntervalPx": [
+            -1.1774222004410682,
+            -1.0185706117781592
+          ],
+          "phaseMarginPx": 0.9181925352232767
+        },
+        {
+          "predictedSharper": "near-edge",
+          "predictedMoreDefocused": "far-edge",
+          "predictedRadiusDifferencePx": 1.9621000345253858,
+          "measuredWidthDifferencePx": 1.866740994854191,
+          "measuredOrder": "predicted_order",
+          "status": "B_EDGE_WIDER_RESOLVED",
+          "deltaIntervalPx": [
+            -1.879153802172663,
+            -1.839479702687246
+          ],
+          "phaseMarginPx": 0.7693400821208289
+        },
+        {
+          "predictedSharper": "middle-edge",
+          "predictedMoreDefocused": "far-edge",
+          "predictedRadiusDifferencePx": 0.744244840682041,
+          "measuredWidthDifferencePx": 0.7996969696969591,
+          "measuredOrder": "predicted_order",
+          "status": "B_EDGE_WIDER_RESOLVED",
+          "deltaIntervalPx": [
+            -0.8545454545454465,
+            -0.6680952380952352
+          ],
+          "phaseMarginPx": 0.6078142135642199
+        }
+      ],
+      "measurements": [
+        {
+          "id": "near-edge",
+          "valid": true,
+          "worldMm": {
+            "x": -350,
+            "y": 200,
+            "z": 1100
+          },
+          "signedFocusPlaneDistanceMm": 0,
+          "canonicalSignedCoCDiameterMm": 0,
+          "canonicalMajorRadiusDisplayPx": 0,
+          "canonicalMinorRadiusMm": 0,
+          "canonicalFootprintOrientationRad": 0,
+          "projectedUv": [
+            0.74557573867623,
+            0.6754112419115926
+          ],
+          "registeredRoi": {
+            "x": 344,
+            "y": 111,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 0.8996226415094348,
+            "bootstrap95Px": [
+              0.8966037735849053,
+              0.9026415094339626
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 59.599999999999994,
+            "edgePhaseRange": [
+              0.4622641509433958,
+              0.475471698113207
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 1,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                12,
+                0,
+                0
+              ],
+              "envelopePx": null,
+              "adequate": false
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 1.7293410452893205
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 1.6937422969187663
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 1.6127266818547303
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.335440729483281
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 0.8996226415094348
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.4543083003952582
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 1.6402499999999964
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 1.6957048748353092
+                }
+              ],
+              "envelopePx": 0.8297184037798857,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.466037735849056,
+                "phase": 0.4660377358490564,
+                "width10to90Px": 0.8966037735849053,
+                "contrastLuma8": 59.39999999999995
+              },
+              {
+                "y": 1,
+                "edgeX": 13.466037735849056,
+                "phase": 0.4660377358490564,
+                "width10to90Px": 0.8966037735849053,
+                "contrastLuma8": 59.39999999999995
+              },
+              {
+                "y": 2,
+                "edgeX": 13.462264150943396,
+                "phase": 0.4622641509433958,
+                "width10to90Px": 0.8966037735849053,
+                "contrastLuma8": 59.39999999999998
+              },
+              {
+                "y": 3,
+                "edgeX": 13.462264150943396,
+                "phase": 0.4622641509433958,
+                "width10to90Px": 0.8966037735849053,
+                "contrastLuma8": 59.39999999999998
+              },
+              {
+                "y": 4,
+                "edgeX": 13.467307692307692,
+                "phase": 0.467307692307692,
+                "width10to90Px": 0.9138461538461549,
+                "contrastLuma8": 59.400000000000006
+              },
+              {
+                "y": 5,
+                "edgeX": 13.475471698113207,
+                "phase": 0.475471698113207,
+                "width10to90Px": 0.8996226415094348,
+                "contrastLuma8": 59.599999999999994
+              },
+              {
+                "y": 6,
+                "edgeX": 13.473584905660378,
+                "phase": 0.4735849056603776,
+                "width10to90Px": 0.9026415094339626,
+                "contrastLuma8": 59.80000000000001
+              },
+              {
+                "y": 7,
+                "edgeX": 13.473584905660378,
+                "phase": 0.4735849056603776,
+                "width10to90Px": 0.9026415094339626,
+                "contrastLuma8": 59.80000000000001
+              },
+              {
+                "y": 8,
+                "edgeX": 13.469811320754717,
+                "phase": 0.469811320754717,
+                "width10to90Px": 0.9026415094339626,
+                "contrastLuma8": 59.80000000000001
+              },
+              {
+                "y": 9,
+                "edgeX": 13.469811320754717,
+                "phase": 0.469811320754717,
+                "width10to90Px": 0.9026415094339626,
+                "contrastLuma8": 59.80000000000001
+              },
+              {
+                "y": 10,
+                "edgeX": 13.467924528301886,
+                "phase": 0.4679245283018858,
+                "width10to90Px": 0.8996226415094348,
+                "contrastLuma8": 59.599999999999994
+              },
+              {
+                "y": 11,
+                "edgeX": 13.467924528301886,
+                "phase": 0.4679245283018858,
+                "width10to90Px": 0.8996226415094348,
+                "contrastLuma8": 59.599999999999994
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 1883
+            }
+          }
+        },
+        {
+          "id": "middle-edge",
+          "valid": true,
+          "worldMm": {
+            "x": 0,
+            "y": -320,
+            "z": 2000
+          },
+          "signedFocusPlaneDistanceMm": 900,
+          "canonicalSignedCoCDiameterMm": 0.64444837340877,
+          "canonicalMajorRadiusDisplayPx": 1.2178551938433448,
+          "canonicalMinorRadiusMm": 0.322224186704385,
+          "canonicalFootprintOrientationRad": 0,
+          "projectedUv": [
+            0.5,
+            0.34563810711779835
+          ],
+          "registeredRoi": {
+            "x": 226,
+            "y": 230,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.9666666666666668,
+            "bootstrap95Px": [
+              1.9212121212121218,
+              2.0740259740259734
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 53.00000000000003,
+            "edgePhaseRange": [
+              0.8541666666666679,
+              0.891304347826086
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 1,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                0,
+                0,
+                12
+              ],
+              "envelopePx": null,
+              "adequate": false
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 2.4733333333333345
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 2.4287581699346443
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 2.31729323308271
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.9720779220779256
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.9666666666666668
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 2.288815789473688
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 2.4149732620320865
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 2.4594871794871818
+                }
+              ],
+              "envelopePx": 0.5066666666666677,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.869565217391305,
+                "phase": 0.8695652173913047,
+                "width10to90Px": 2.0740259740259734,
+                "contrastLuma8": 54.00000000000003
+              },
+              {
+                "y": 1,
+                "edgeX": 13.869565217391305,
+                "phase": 0.8695652173913047,
+                "width10to90Px": 2.0740259740259734,
+                "contrastLuma8": 54.00000000000003
+              },
+              {
+                "y": 2,
+                "edgeX": 13.869565217391305,
+                "phase": 0.8695652173913047,
+                "width10to90Px": 2.0740259740259734,
+                "contrastLuma8": 54.00000000000003
+              },
+              {
+                "y": 3,
+                "edgeX": 13.869565217391305,
+                "phase": 0.8695652173913047,
+                "width10to90Px": 2.0740259740259734,
+                "contrastLuma8": 54.00000000000003
+              },
+              {
+                "y": 4,
+                "edgeX": 13.891304347826086,
+                "phase": 0.891304347826086,
+                "width10to90Px": 1.9666666666666668,
+                "contrastLuma8": 53.00000000000003
+              },
+              {
+                "y": 5,
+                "edgeX": 13.891304347826086,
+                "phase": 0.891304347826086,
+                "width10to90Px": 1.9666666666666668,
+                "contrastLuma8": 53.00000000000003
+              },
+              {
+                "y": 6,
+                "edgeX": 13.854166666666668,
+                "phase": 0.8541666666666679,
+                "width10to90Px": 1.9595238095238088,
+                "contrastLuma8": 53.00000000000003
+              },
+              {
+                "y": 7,
+                "edgeX": 13.854166666666668,
+                "phase": 0.8541666666666679,
+                "width10to90Px": 1.9212121212121218,
+                "contrastLuma8": 53.00000000000003
+              },
+              {
+                "y": 8,
+                "edgeX": 13.854166666666668,
+                "phase": 0.8541666666666679,
+                "width10to90Px": 1.9212121212121218,
+                "contrastLuma8": 53.00000000000003
+              },
+              {
+                "y": 9,
+                "edgeX": 13.854166666666668,
+                "phase": 0.8541666666666679,
+                "width10to90Px": 1.9212121212121218,
+                "contrastLuma8": 53.00000000000003
+              },
+              {
+                "y": 10,
+                "edgeX": 13.854166666666668,
+                "phase": 0.8541666666666679,
+                "width10to90Px": 1.9212121212121218,
+                "contrastLuma8": 53.00000000000003
+              },
+              {
+                "y": 11,
+                "edgeX": 13.865217391304348,
+                "phase": 0.8652173913043484,
+                "width10to90Px": 2.068701298701299,
+                "contrastLuma8": 53.80000000000001
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 2084
+            }
+          }
+        },
+        {
+          "id": "far-edge",
+          "valid": true,
+          "worldMm": {
+            "x": 1100,
+            "y": 720,
+            "z": 4000
+          },
+          "signedFocusPlaneDistanceMm": 2900,
+          "canonicalSignedCoCDiameterMm": 1.03827793493635,
+          "canonicalMajorRadiusDisplayPx": 1.9621000345253858,
+          "canonicalMinorRadiusMm": 0.519138967468175,
+          "canonicalFootprintOrientationRad": 0,
+          "projectedUv": [
+            0.28775239728697277,
+            0.6736571294924768
+          ],
+          "registeredRoi": {
+            "x": 124,
+            "y": 112,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 2.766363636363626,
+            "bootstrap95Px": [
+              2.7421212121212086,
+              2.7757575757575683
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 53.8,
+            "edgePhaseRange": [
+              0.2380952380952408,
+              0.2727272727272734
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 2,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                5,
+                7,
+                0,
+                0
+              ],
+              "envelopePx": 0.02606060606060545,
+              "adequate": true
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 2.9386666666666637
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 2.865212121212118
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 2.778452380952378
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 2.7815384615384584
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 2.766363636363626
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 2.964246753246747
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 2.904999999999994
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 2.975325396825398
+                }
+              ],
+              "envelopePx": 0.20896176046177217,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 14.242857142857144,
+                "phase": 0.24285714285714377,
+                "width10to90Px": 2.74757575757576,
+                "contrastLuma8": 53.80000000000004
+              },
+              {
+                "y": 1,
+                "edgeX": 14.23809523809524,
+                "phase": 0.2380952380952408,
+                "width10to90Px": 2.7757575757575683,
+                "contrastLuma8": 53.99999999999997
+              },
+              {
+                "y": 2,
+                "edgeX": 14.23809523809524,
+                "phase": 0.2380952380952408,
+                "width10to90Px": 2.7757575757575683,
+                "contrastLuma8": 53.99999999999997
+              },
+              {
+                "y": 3,
+                "edgeX": 14.23809523809524,
+                "phase": 0.2380952380952408,
+                "width10to90Px": 2.7757575757575683,
+                "contrastLuma8": 53.99999999999997
+              },
+              {
+                "y": 4,
+                "edgeX": 14.23809523809524,
+                "phase": 0.2380952380952408,
+                "width10to90Px": 2.7757575757575683,
+                "contrastLuma8": 53.99999999999997
+              },
+              {
+                "y": 5,
+                "edgeX": 14.272727272727273,
+                "phase": 0.2727272727272734,
+                "width10to90Px": 2.7757575757575683,
+                "contrastLuma8": 53.99999999999997
+              },
+              {
+                "y": 6,
+                "edgeX": 14.26818181818182,
+                "phase": 0.2681818181818194,
+                "width10to90Px": 2.762727272727263,
+                "contrastLuma8": 53.799999999999955
+              },
+              {
+                "y": 7,
+                "edgeX": 14.263636363636364,
+                "phase": 0.26363636363636367,
+                "width10to90Px": 2.749696969696963,
+                "contrastLuma8": 53.599999999999966
+              },
+              {
+                "y": 8,
+                "edgeX": 14.25909090909091,
+                "phase": 0.2590909090909097,
+                "width10to90Px": 2.7366666666666575,
+                "contrastLuma8": 53.39999999999995
+              },
+              {
+                "y": 9,
+                "edgeX": 14.266666666666666,
+                "phase": 0.2666666666666657,
+                "width10to90Px": 2.769999999999989,
+                "contrastLuma8": 53.19999999999993
+              },
+              {
+                "y": 10,
+                "edgeX": 14.266666666666666,
+                "phase": 0.2666666666666657,
+                "width10to90Px": 2.7299999999999898,
+                "contrastLuma8": 53.19999999999993
+              },
+              {
+                "y": 11,
+                "edgeX": 14.261904761904763,
+                "phase": 0.26190476190476275,
+                "width10to90Px": 2.7178571428571345,
+                "contrastLuma8": 52.99999999999994
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 1774
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case": "focus-middle",
+      "sourceFrame": {
+        "status": "ready",
+        "frameId": "room-generation-3:frame:20",
+        "requestId": "room-request-8",
+        "generationId": "room-generation-3"
+      },
+      "camera": {
+        "id": "focus-middle",
+        "focus": 2000,
+        "aperture": 5.6,
+        "tilt": 0,
+        "swing": 0
+      },
+      "backend": "Chromium ANGLE SwiftShader WebGL",
+      "displayGrid": "480x360",
+      "sharpnessRank": {
+        "expectedByCanonicalMajorRadius": "middle-edge",
+        "measuredByEdgeWidth": "middle-edge",
+        "candidateMatch": true,
+        "limitation": "This rank is descriptive; edge spread contains pixel phase, native raster, silhouette, and display mapping effects. It is not a calibrated CoC-to-PSF transfer."
+      },
+      "pairwise": [
+        {
+          "predictedSharper": "middle-edge",
+          "predictedMoreDefocused": "near-edge",
+          "predictedRadiusDifferencePx": 1.1709031373458163,
+          "measuredWidthDifferencePx": 0.6275098814229221,
+          "measuredOrder": "predicted_order",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            -0.6420775691699605,
+            -0.6166798418972297
+          ],
+          "phaseMarginPx": 0.9088045830980596
+        },
+        {
+          "predictedSharper": "far-edge",
+          "predictedMoreDefocused": "near-edge",
+          "predictedRadiusDifferencePx": 0.4553512200789336,
+          "measuredWidthDifferencePx": 0.09382567089660832,
+          "measuredOrder": "predicted_order",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            -0.11537385439058845,
+            -0.07827523663407288
+          ],
+          "phaseMarginPx": 0.8491053349777609
+        },
+        {
+          "predictedSharper": "middle-edge",
+          "predictedMoreDefocused": "far-edge",
+          "predictedRadiusDifferencePx": 0.7155519172668827,
+          "measuredWidthDifferencePx": 0.5336842105263138,
+          "measuredOrder": "predicted_order",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            -0.5384046052631586,
+            -0.5267037147793703
+          ],
+          "phaseMarginPx": 0.8479197994987464
+        }
+      ],
+      "measurements": [
+        {
+          "id": "near-edge",
+          "valid": true,
+          "worldMm": {
+            "x": -350,
+            "y": 200,
+            "z": 1100
+          },
+          "signedFocusPlaneDistanceMm": -900,
+          "canonicalSignedCoCDiameterMm": -0.6196029101788278,
+          "canonicalMajorRadiusDisplayPx": 1.1709031373458163,
+          "canonicalMinorRadiusMm": 0.3098014550894139,
+          "canonicalFootprintOrientationRad": 0,
+          "projectedUv": [
+            0.7361080400409254,
+            0.6686486000292325
+          ],
+          "registeredRoi": {
+            "x": 339,
+            "y": 114,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.6675098814229248,
+            "bootstrap95Px": [
+              1.6566798418972324,
+              1.6820775691699614
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 58.19999999999999,
+            "edgePhaseRange": [
+              0.8484848484848477,
+              0.875
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 1,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                0,
+                0,
+                12
+              ],
+              "envelopePx": null,
+              "adequate": false
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 2.327499999999999
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 2.2780952380952373
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 2.095599999999994
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.7799137931034483
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.6675098814229248
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.7601249999999986
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 2.141911764705883
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 2.2907142857142855
+                }
+              ],
+              "envelopePx": 0.659990118577074,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.860606060606061,
+                "phase": 0.8606060606060613,
+                "width10to90Px": 1.6747299077733846,
+                "contrastLuma8": 58.80000000000001
+              },
+              {
+                "y": 1,
+                "edgeX": 13.857575757575757,
+                "phase": 0.8575757575757574,
+                "width10to90Px": 1.6675098814229248,
+                "contrastLuma8": 58.599999999999994
+              },
+              {
+                "y": 2,
+                "edgeX": 13.857575757575757,
+                "phase": 0.8575757575757574,
+                "width10to90Px": 1.6675098814229248,
+                "contrastLuma8": 58.599999999999994
+              },
+              {
+                "y": 3,
+                "edgeX": 13.854545454545455,
+                "phase": 0.8545454545454554,
+                "width10to90Px": 1.6602898550724632,
+                "contrastLuma8": 58.400000000000006
+              },
+              {
+                "y": 4,
+                "edgeX": 13.854545454545455,
+                "phase": 0.8545454545454554,
+                "width10to90Px": 1.6602898550724632,
+                "contrastLuma8": 58.400000000000006
+              },
+              {
+                "y": 5,
+                "edgeX": 13.851515151515152,
+                "phase": 0.8515151515151516,
+                "width10to90Px": 1.6530698287220016,
+                "contrastLuma8": 58.19999999999999
+              },
+              {
+                "y": 6,
+                "edgeX": 13.851515151515152,
+                "phase": 0.8515151515151516,
+                "width10to90Px": 1.6530698287220016,
+                "contrastLuma8": 58.19999999999999
+              },
+              {
+                "y": 7,
+                "edgeX": 13.848484848484848,
+                "phase": 0.8484848484848477,
+                "width10to90Px": 1.6458498023715418,
+                "contrastLuma8": 58
+              },
+              {
+                "y": 8,
+                "edgeX": 13.848484848484848,
+                "phase": 0.8484848484848477,
+                "width10to90Px": 1.6818181818181834,
+                "contrastLuma8": 58
+              },
+              {
+                "y": 9,
+                "edgeX": 13.875,
+                "phase": 0.875,
+                "width10to90Px": 1.6847826086956523,
+                "contrastLuma8": 58
+              },
+              {
+                "y": 10,
+                "edgeX": 13.875,
+                "phase": 0.875,
+                "width10to90Px": 1.6847826086956523,
+                "contrastLuma8": 58
+              },
+              {
+                "y": 11,
+                "edgeX": 13.86875,
+                "phase": 0.8687500000000004,
+                "width10to90Px": 1.6823369565217394,
+                "contrastLuma8": 58
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 2084
+            }
+          }
+        },
+        {
+          "id": "middle-edge",
+          "valid": true,
+          "worldMm": {
+            "x": 0,
+            "y": -320,
+            "z": 2000
+          },
+          "signedFocusPlaneDistanceMm": 0,
+          "canonicalSignedCoCDiameterMm": 0,
+          "canonicalMajorRadiusDisplayPx": 0,
+          "canonicalMinorRadiusMm": 0,
+          "canonicalFootprintOrientationRad": 0,
+          "projectedUv": [
+            0.5,
+            0.35158923197427544
+          ],
+          "registeredRoi": {
+            "x": 226,
+            "y": 228,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.0400000000000027,
+            "bootstrap95Px": [
+              1.040000000000001,
+              1.0400000000000027
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 52,
+            "edgePhaseRange": [
+              0.5555555555555554,
+              0.5652173913043477
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 1,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                0,
+                12,
+                0
+              ],
+              "envelopePx": null,
+              "adequate": false
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 1.689297658862877
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 1.6976190476190478
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 1.6631372549019598
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.5104895104895117
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.0400000000000027
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.2521428571428554
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 1.5609523809523802
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 1.6711111111111112
+                }
+              ],
+              "envelopePx": 0.6576190476190451,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 1,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 2,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 3,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 4,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 5,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 6,
+                "edgeX": 13.559999999999999,
+                "phase": 0.5599999999999987,
+                "width10to90Px": 1.0688888888888872,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 7,
+                "edgeX": 13.565217391304348,
+                "phase": 0.5652173913043477,
+                "width10to90Px": 1.0469565217391317,
+                "contrastLuma8": 51.99999999999994
+              },
+              {
+                "y": 8,
+                "edgeX": 13.565217391304348,
+                "phase": 0.5652173913043477,
+                "width10to90Px": 1.0202898550724644,
+                "contrastLuma8": 51.99999999999994
+              },
+              {
+                "y": 9,
+                "edgeX": 13.555555555555557,
+                "phase": 0.5555555555555571,
+                "width10to90Px": 1.040000000000001,
+                "contrastLuma8": 51.99999999999994
+              },
+              {
+                "y": 10,
+                "edgeX": 13.555555555555557,
+                "phase": 0.5555555555555571,
+                "width10to90Px": 1.040000000000001,
+                "contrastLuma8": 51.99999999999994
+              },
+              {
+                "y": 11,
+                "edgeX": 13.555555555555557,
+                "phase": 0.5555555555555571,
+                "width10to90Px": 1.040000000000001,
+                "contrastLuma8": 51.99999999999994
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 2285
+            }
+          }
+        },
+        {
+          "id": "far-edge",
+          "valid": true,
+          "worldMm": {
+            "x": 1100,
+            "y": 720,
+            "z": 4000
+          },
+          "signedFocusPlaneDistanceMm": 2000,
+          "canonicalSignedCoCDiameterMm": 0.3786462228870588,
+          "canonicalMajorRadiusDisplayPx": 0.7155519172668827,
+          "canonicalMinorRadiusMm": 0.1893231114435294,
+          "canonicalFootprintOrientationRad": 0,
+          "projectedUv": [
+            0.2959351939646288,
+            0.66696211402894
+          ],
+          "registeredRoi": {
+            "x": 128,
+            "y": 114,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.5736842105263165,
+            "bootstrap95Px": [
+              1.566703714779373,
+              1.5784046052631595
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 52.2,
+            "edgePhaseRange": [
+              0.7281250000000004,
+              0.75
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 2,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                0,
+                9,
+                3
+              ],
+              "envelopePx": 0.0039802631578957914,
+              "adequate": true
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 2.091111111111111
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 1.9142857142857146
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 1.7810181818181823
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.686071428571429
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.5736842105263165
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.7618487394958011
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 2.0425714285714287
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 2.111904761904764
+                }
+              ],
+              "envelopePx": 0.5382205513784477,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.733333333333333,
+                "phase": 0.7333333333333325,
+                "width10to90Px": 1.5418181818181829,
+                "contrastLuma8": 52.400000000000006
+              },
+              {
+                "y": 1,
+                "edgeX": 13.733333333333333,
+                "phase": 0.7333333333333325,
+                "width10to90Px": 1.5418181818181829,
+                "contrastLuma8": 52.400000000000006
+              },
+              {
+                "y": 2,
+                "edgeX": 13.73030303030303,
+                "phase": 0.7303030303030305,
+                "width10to90Px": 1.5679797979797971,
+                "contrastLuma8": 52.19999999999999
+              },
+              {
+                "y": 3,
+                "edgeX": 13.75,
+                "phase": 0.75,
+                "width10to90Px": 1.5736842105263165,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 4,
+                "edgeX": 13.75,
+                "phase": 0.75,
+                "width10to90Px": 1.5736842105263165,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 5,
+                "edgeX": 13.75,
+                "phase": 0.75,
+                "width10to90Px": 1.5736842105263165,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 6,
+                "edgeX": 13.746875,
+                "phase": 0.7468749999999993,
+                "width10to90Px": 1.5782565789473697,
+                "contrastLuma8": 52.19999999999999
+              },
+              {
+                "y": 7,
+                "edgeX": 13.74375,
+                "phase": 0.7437500000000004,
+                "width10to90Px": 1.5828289473684212,
+                "contrastLuma8": 52.400000000000006
+              },
+              {
+                "y": 8,
+                "edgeX": 13.74375,
+                "phase": 0.7437500000000004,
+                "width10to90Px": 1.5828289473684212,
+                "contrastLuma8": 52.400000000000006
+              },
+              {
+                "y": 9,
+                "edgeX": 13.7375,
+                "phase": 0.7375000000000007,
+                "width10to90Px": 1.5785526315789493,
+                "contrastLuma8": 52.400000000000006
+              },
+              {
+                "y": 10,
+                "edgeX": 13.734375,
+                "phase": 0.734375,
+                "width10to90Px": 1.5697039473684207,
+                "contrastLuma8": 52.19999999999999
+              },
+              {
+                "y": 11,
+                "edgeX": 13.728125,
+                "phase": 0.7281250000000004,
+                "width10to90Px": 1.5654276315789488,
+                "contrastLuma8": 52.20000000000002
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 1975
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case": "focus-far",
+      "sourceFrame": {
+        "status": "ready",
+        "frameId": "room-generation-3:frame:31",
+        "requestId": "room-request-10",
+        "generationId": "room-generation-3"
+      },
+      "camera": {
+        "id": "focus-far",
+        "focus": 4000,
+        "aperture": 5.6,
+        "tilt": 0,
+        "swing": 0
+      },
+      "backend": "Chromium ANGLE SwiftShader WebGL",
+      "displayGrid": "480x360",
+      "sharpnessRank": {
+        "expectedByCanonicalMajorRadius": "far-edge",
+        "measuredByEdgeWidth": "middle-edge",
+        "candidateMatch": false,
+        "limitation": "This rank is descriptive; edge spread contains pixel phase, native raster, silhouette, and display mapping effects. It is not a calibrated CoC-to-PSF transfer."
+      },
+      "pairwise": [
+        {
+          "predictedSharper": "middle-edge",
+          "predictedMoreDefocused": "near-edge",
+          "predictedRadiusDifferencePx": 1.1439514027266031,
+          "measuredWidthDifferencePx": 0.4723188405797103,
+          "measuredOrder": "predicted_order",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            -0.47717391304348045,
+            -0.45698067632850226
+          ],
+          "phaseMarginPx": 0.9371143892339551
+        },
+        {
+          "predictedSharper": "far-edge",
+          "predictedMoreDefocused": "near-edge",
+          "predictedRadiusDifferencePx": 1.8430328155039688,
+          "measuredWidthDifferencePx": -0.12941276115189115,
+          "measuredOrder": "reversed_or_tied",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            0.11146527385657645,
+            0.14873360938578273
+          ],
+          "phaseMarginPx": 0.8001503740824405
+        },
+        {
+          "predictedSharper": "far-edge",
+          "predictedMoreDefocused": "middle-edge",
+          "predictedRadiusDifferencePx": 0.6990814127773657,
+          "measuredWidthDifferencePx": -0.6017316017316015,
+          "measuredOrder": "reversed_or_tied",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            0.5863203463203455,
+            0.6080331262939964
+          ],
+          "phaseMarginPx": 0.9049407467532458
+        }
+      ],
+      "measurements": [
+        {
+          "id": "near-edge",
+          "valid": true,
+          "worldMm": {
+            "x": -350,
+            "y": 200,
+            "z": 1100
+          },
+          "signedFocusPlaneDistanceMm": -2900,
+          "canonicalSignedCoCDiameterMm": -0.9752715315375169,
+          "canonicalMajorRadiusDisplayPx": 1.8430328155039688,
+          "canonicalMinorRadiusMm": 0.48763576576875844,
+          "canonicalFootprintOrientationRad": 0,
+          "projectedUv": [
+            0.7306733281218248,
+            0.6647666629441606
+          ],
+          "registeredRoi": {
+            "x": 337,
+            "y": 115,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.3789855072463784,
+            "bootstrap95Px": [
+              1.3636473429951703,
+              1.381521739130437
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 57.5,
+            "edgePhaseRange": [
+              0.40434782608695663,
+              0.4195652173913036
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 1,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                12,
+                0,
+                0
+              ],
+              "envelopePx": null,
+              "adequate": false
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 1.791987577639751
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 1.951176470588238
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 1.9613095238095282
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.7158333333333342
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.3789855072463784
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.62282142857143
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 1.7237777777777765
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 1.7791304347826102
+                }
+              ],
+              "envelopePx": 0.5823240165631498,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.410869565217391,
+                "phase": 0.41086956521739104,
+                "width10to90Px": 1.3823671497584566,
+                "contrastLuma8": 57.80000000000001
+              },
+              {
+                "y": 1,
+                "edgeX": 13.408695652173913,
+                "phase": 0.4086956521739129,
+                "width10to90Px": 1.3806763285024175,
+                "contrastLuma8": 57.599999999999994
+              },
+              {
+                "y": 2,
+                "edgeX": 13.408695652173913,
+                "phase": 0.4086956521739129,
+                "width10to90Px": 1.3806763285024175,
+                "contrastLuma8": 57.599999999999994
+              },
+              {
+                "y": 3,
+                "edgeX": 13.406521739130435,
+                "phase": 0.40652173913043477,
+                "width10to90Px": 1.3789855072463784,
+                "contrastLuma8": 57.400000000000006
+              },
+              {
+                "y": 4,
+                "edgeX": 13.406521739130435,
+                "phase": 0.40652173913043477,
+                "width10to90Px": 1.3789855072463784,
+                "contrastLuma8": 57.400000000000006
+              },
+              {
+                "y": 5,
+                "edgeX": 13.404347826086957,
+                "phase": 0.40434782608695663,
+                "width10to90Px": 1.3772946859903392,
+                "contrastLuma8": 57.19999999999999
+              },
+              {
+                "y": 6,
+                "edgeX": 13.411111111111111,
+                "phase": 0.4111111111111114,
+                "width10to90Px": 1.4168888888888898,
+                "contrastLuma8": 57.39999999999998
+              },
+              {
+                "y": 7,
+                "edgeX": 13.406666666666666,
+                "phase": 0.4066666666666663,
+                "width10to90Px": 1.382888888888889,
+                "contrastLuma8": 57.400000000000006
+              },
+              {
+                "y": 8,
+                "edgeX": 13.419565217391304,
+                "phase": 0.4195652173913036,
+                "width10to90Px": 1.325362318840579,
+                "contrastLuma8": 57.400000000000006
+              },
+              {
+                "y": 9,
+                "edgeX": 13.417391304347825,
+                "phase": 0.41739130434782545,
+                "width10to90Px": 1.344927536231884,
+                "contrastLuma8": 57.599999999999994
+              },
+              {
+                "y": 10,
+                "edgeX": 13.415217391304347,
+                "phase": 0.4152173913043473,
+                "width10to90Px": 1.364492753623189,
+                "contrastLuma8": 57.80000000000001
+              },
+              {
+                "y": 11,
+                "edgeX": 13.41304347826087,
+                "phase": 0.4130434782608692,
+                "width10to90Px": 1.3628019323671516,
+                "contrastLuma8": 57.60000000000002
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 1774
+            }
+          }
+        },
+        {
+          "id": "middle-edge",
+          "valid": true,
+          "worldMm": {
+            "x": 0,
+            "y": -320,
+            "z": 2000
+          },
+          "signedFocusPlaneDistanceMm": -2000,
+          "canonicalSignedCoCDiameterMm": -0.36993058092802267,
+          "canonicalMajorRadiusDisplayPx": 0.6990814127773657,
+          "canonicalMinorRadiusMm": 0.18496529046401133,
+          "canonicalFootprintOrientationRad": 0,
+          "projectedUv": [
+            0.5,
+            0.3550053366091387
+          ],
+          "registeredRoi": {
+            "x": 226,
+            "y": 227,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 0.9066666666666681,
+            "bootstrap95Px": [
+              0.9043478260869566,
+              0.9066666666666681
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 51.00000000000003,
+            "edgePhaseRange": [
+              0.5434782608695645,
+              0.554347826086957
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 1,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                0,
+                12,
+                0
+              ],
+              "envelopePx": null,
+              "adequate": false
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 1.694260869565218
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 1.6985714285714284
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 1.6060784313725502
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.4848717948717987
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 0.9066666666666681
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.2439285714285706
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 1.5435714285714308
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 1.6466666666666683
+                }
+              ],
+              "envelopePx": 0.7919047619047603,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.544444444444444,
+                "phase": 0.5444444444444443,
+                "width10to90Px": 0.9066666666666681,
+                "contrastLuma8": 51.00000000000003
+              },
+              {
+                "y": 1,
+                "edgeX": 13.544444444444444,
+                "phase": 0.5444444444444443,
+                "width10to90Px": 0.9066666666666681,
+                "contrastLuma8": 51.00000000000003
+              },
+              {
+                "y": 2,
+                "edgeX": 13.544444444444444,
+                "phase": 0.5444444444444443,
+                "width10to90Px": 0.9066666666666681,
+                "contrastLuma8": 51.00000000000003
+              },
+              {
+                "y": 3,
+                "edgeX": 13.544444444444444,
+                "phase": 0.5444444444444443,
+                "width10to90Px": 0.9066666666666681,
+                "contrastLuma8": 51.00000000000003
+              },
+              {
+                "y": 4,
+                "edgeX": 13.544444444444444,
+                "phase": 0.5444444444444443,
+                "width10to90Px": 0.9066666666666681,
+                "contrastLuma8": 51.00000000000003
+              },
+              {
+                "y": 5,
+                "edgeX": 13.544444444444444,
+                "phase": 0.5444444444444443,
+                "width10to90Px": 0.9066666666666681,
+                "contrastLuma8": 51.00000000000003
+              },
+              {
+                "y": 6,
+                "edgeX": 13.544444444444444,
+                "phase": 0.5444444444444443,
+                "width10to90Px": 0.9066666666666681,
+                "contrastLuma8": 51.00000000000003
+              },
+              {
+                "y": 7,
+                "edgeX": 13.546666666666667,
+                "phase": 0.5466666666666669,
+                "width10to90Px": 0.9244444444444486,
+                "contrastLuma8": 51.20000000000002
+              },
+              {
+                "y": 8,
+                "edgeX": 13.543478260869565,
+                "phase": 0.5434782608695645,
+                "width10to90Px": 0.9043478260869566,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 9,
+                "edgeX": 13.543478260869565,
+                "phase": 0.5434782608695645,
+                "width10to90Px": 0.9043478260869566,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 10,
+                "edgeX": 13.547826086956523,
+                "phase": 0.5478260869565226,
+                "width10to90Px": 0.8973913043478259,
+                "contrastLuma8": 51.599999999999994
+              },
+              {
+                "y": 11,
+                "edgeX": 13.554347826086957,
+                "phase": 0.554347826086957,
+                "width10to90Px": 0.8869565217391298,
+                "contrastLuma8": 51
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 1975
+            }
+          }
+        },
+        {
+          "id": "far-edge",
+          "valid": true,
+          "worldMm": {
+            "x": 1100,
+            "y": 720,
+            "z": 4000
+          },
+          "signedFocusPlaneDistanceMm": 0,
+          "canonicalSignedCoCDiameterMm": 0,
+          "canonicalMajorRadiusDisplayPx": 0,
+          "canonicalMinorRadiusMm": 0,
+          "canonicalFootprintOrientationRad": 0,
+          "projectedUv": [
+            0.30063233783756566,
+            0.6631189963147189
+          ],
+          "registeredRoi": {
+            "x": 130,
+            "y": 116,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.5083982683982695,
+            "bootstrap95Px": [
+              1.4929870129870135,
+              1.512380952380953
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 51.50000000000003,
+            "edgePhaseRange": [
+              0.7969696969696969,
+              0.8242424242424242
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 1,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                0,
+                0,
+                12
+              ],
+              "envelopePx": null,
+              "adequate": false
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 2.0263750000000007
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 1.9129166666666695
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 1.692283333333335
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.6317084639498445
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.5083982683982695
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.577604166666668
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 1.820357142857147
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 1.9935897435897436
+                }
+              ],
+              "envelopePx": 0.5179767316017312,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.8,
+                "phase": 0.8000000000000007,
+                "width10to90Px": 1.4815584415584429,
+                "contrastLuma8": 51.20000000000002
+              },
+              {
+                "y": 1,
+                "edgeX": 13.796969696969697,
+                "phase": 0.7969696969696969,
+                "width10to90Px": 1.5190606060606076,
+                "contrastLuma8": 51.400000000000034
+              },
+              {
+                "y": 2,
+                "edgeX": 13.818750000000001,
+                "phase": 0.8187500000000014,
+                "width10to90Px": 1.5329166666666687,
+                "contrastLuma8": 51.60000000000002
+              },
+              {
+                "y": 3,
+                "edgeX": 13.824242424242424,
+                "phase": 0.8242424242424242,
+                "width10to90Px": 1.5078787878787896,
+                "contrastLuma8": 51.60000000000002
+              },
+              {
+                "y": 4,
+                "edgeX": 13.821212121212122,
+                "phase": 0.8212121212121222,
+                "width10to90Px": 1.512380952380953,
+                "contrastLuma8": 51.80000000000004
+              },
+              {
+                "y": 5,
+                "edgeX": 13.821212121212122,
+                "phase": 0.8212121212121222,
+                "width10to90Px": 1.512380952380953,
+                "contrastLuma8": 51.80000000000004
+              },
+              {
+                "y": 6,
+                "edgeX": 13.815151515151515,
+                "phase": 0.8151515151515145,
+                "width10to90Px": 1.5089177489177494,
+                "contrastLuma8": 51.80000000000001
+              },
+              {
+                "y": 7,
+                "edgeX": 13.812121212121212,
+                "phase": 0.8121212121212125,
+                "width10to90Px": 1.5009523809523806,
+                "contrastLuma8": 51.60000000000002
+              },
+              {
+                "y": 8,
+                "edgeX": 13.809090909090909,
+                "phase": 0.8090909090909086,
+                "width10to90Px": 1.4929870129870135,
+                "contrastLuma8": 51.400000000000006
+              },
+              {
+                "y": 9,
+                "edgeX": 13.809090909090909,
+                "phase": 0.8090909090909086,
+                "width10to90Px": 1.4929870129870135,
+                "contrastLuma8": 51.400000000000006
+              },
+              {
+                "y": 10,
+                "edgeX": 13.806060606060607,
+                "phase": 0.8060606060606066,
+                "width10to90Px": 1.4850216450216447,
+                "contrastLuma8": 51.19999999999999
+              },
+              {
+                "y": 11,
+                "edgeX": 13.803030303030303,
+                "phase": 0.8030303030303028,
+                "width10to90Px": 1.510151515151513,
+                "contrastLuma8": 51
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 1665
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case": "tilt-positive",
+      "sourceFrame": {
+        "status": "ready",
+        "frameId": "room-generation-6:frame:10",
+        "requestId": "room-request-19",
+        "generationId": "room-generation-6"
+      },
+      "camera": {
+        "id": "tilt-positive",
+        "focus": 2000,
+        "aperture": 5.6,
+        "tilt": 5,
+        "swing": 0
+      },
+      "backend": "Chromium ANGLE SwiftShader WebGL",
+      "displayGrid": "480x360",
+      "sharpnessRank": {
+        "expectedByCanonicalMajorRadius": "far-edge",
+        "measuredByEdgeWidth": "far-edge",
+        "candidateMatch": true,
+        "limitation": "This rank is descriptive; edge spread contains pixel phase, native raster, silhouette, and display mapping effects. It is not a calibrated CoC-to-PSF transfer."
+      },
+      "pairwise": [
+        {
+          "predictedSharper": "middle-edge",
+          "predictedMoreDefocused": "near-edge",
+          "predictedRadiusDifferencePx": 1.483190732962337,
+          "measuredWidthDifferencePx": 0.21633520560293817,
+          "measuredOrder": "predicted_order",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            -0.22729288017474492,
+            -0.20189515290201587
+          ],
+          "phaseMarginPx": 0.8532828272509323
+        },
+        {
+          "predictedSharper": "far-edge",
+          "predictedMoreDefocused": "near-edge",
+          "predictedRadiusDifferencePx": 1.7127527371172302,
+          "measuredWidthDifferencePx": 0.4098831081288088,
+          "measuredOrder": "predicted_order",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            -0.4523048418972335,
+            -0.3597665226583304
+          ],
+          "phaseMarginPx": 0.7903357587928483
+        },
+        {
+          "predictedSharper": "far-edge",
+          "predictedMoreDefocused": "middle-edge",
+          "predictedRadiusDifferencePx": 0.22956200415489308,
+          "measuredWidthDifferencePx": 0.19354790252587062,
+          "measuredOrder": "predicted_order",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            -0.2250119617224886,
+            -0.15787136975631455
+          ],
+          "phaseMarginPx": 0.7303634806419366
+        }
+      ],
+      "measurements": [
+        {
+          "id": "near-edge",
+          "valid": true,
+          "worldMm": {
+            "x": -350,
+            "y": 200,
+            "z": 1100
+          },
+          "signedFocusPlaneDistanceMm": 697.9097893299089,
+          "canonicalSignedCoCDiameterMm": -0.9409335218343052,
+          "canonicalMajorRadiusDisplayPx": 1.8089236013513312,
+          "canonicalMinorRadiusMm": 0.4624610725432705,
+          "canonicalFootprintOrientationRad": 0.4701435340479551,
+          "projectedUv": [
+            0.7361080400409254,
+            0.6686486000292325
+          ],
+          "registeredRoi": {
+            "x": 339,
+            "y": 114,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.6711198945981547,
+            "bootstrap95Px": [
+              1.6566798418972324,
+              1.6820775691699614
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 58.19999999999999,
+            "edgePhaseRange": [
+              0.8484848484848477,
+              0.875
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 1,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                0,
+                0,
+                12
+              ],
+              "envelopePx": null,
+              "adequate": false
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 2.3343749999999988
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 2.287619047619046
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 2.104942857142854
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.7833189655172417
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.6711198945981547
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.764312499999999
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 2.141911764705883
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 2.295119047619047
+                }
+              ],
+              "envelopePx": 0.6632551054018441,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.866666666666667,
+                "phase": 0.8666666666666671,
+                "width10to90Px": 1.6773649538866913,
+                "contrastLuma8": 58.80000000000001
+              },
+              {
+                "y": 1,
+                "edgeX": 13.860606060606061,
+                "phase": 0.8606060606060613,
+                "width10to90Px": 1.6747299077733846,
+                "contrastLuma8": 58.80000000000001
+              },
+              {
+                "y": 2,
+                "edgeX": 13.857575757575757,
+                "phase": 0.8575757575757574,
+                "width10to90Px": 1.6675098814229248,
+                "contrastLuma8": 58.599999999999994
+              },
+              {
+                "y": 3,
+                "edgeX": 13.857575757575757,
+                "phase": 0.8575757575757574,
+                "width10to90Px": 1.6675098814229248,
+                "contrastLuma8": 58.599999999999994
+              },
+              {
+                "y": 4,
+                "edgeX": 13.854545454545455,
+                "phase": 0.8545454545454554,
+                "width10to90Px": 1.6602898550724632,
+                "contrastLuma8": 58.400000000000006
+              },
+              {
+                "y": 5,
+                "edgeX": 13.851515151515152,
+                "phase": 0.8515151515151516,
+                "width10to90Px": 1.6530698287220016,
+                "contrastLuma8": 58.19999999999999
+              },
+              {
+                "y": 6,
+                "edgeX": 13.851515151515152,
+                "phase": 0.8515151515151516,
+                "width10to90Px": 1.6530698287220016,
+                "contrastLuma8": 58.19999999999999
+              },
+              {
+                "y": 7,
+                "edgeX": 13.848484848484848,
+                "phase": 0.8484848484848477,
+                "width10to90Px": 1.6458498023715418,
+                "contrastLuma8": 58
+              },
+              {
+                "y": 8,
+                "edgeX": 13.848484848484848,
+                "phase": 0.8484848484848477,
+                "width10to90Px": 1.6818181818181834,
+                "contrastLuma8": 58
+              },
+              {
+                "y": 9,
+                "edgeX": 13.875,
+                "phase": 0.875,
+                "width10to90Px": 1.6847826086956523,
+                "contrastLuma8": 58
+              },
+              {
+                "y": 10,
+                "edgeX": 13.875,
+                "phase": 0.875,
+                "width10to90Px": 1.6847826086956523,
+                "contrastLuma8": 58
+              },
+              {
+                "y": 11,
+                "edgeX": 13.86875,
+                "phase": 0.8687500000000004,
+                "width10to90Px": 1.6823369565217394,
+                "contrastLuma8": 58
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 2245
+            }
+          }
+        },
+        {
+          "id": "middle-edge",
+          "valid": true,
+          "worldMm": {
+            "x": 0,
+            "y": -320,
+            "z": 2000
+          },
+          "signedFocusPlaneDistanceMm": -136.7308828148361,
+          "canonicalSignedCoCDiameterMm": 0.17149969848701754,
+          "canonicalMajorRadiusDisplayPx": 0.3257328683889941,
+          "canonicalMinorRadiusMm": 0.08531839227967175,
+          "canonicalFootprintOrientationRad": 1.5707963267948966,
+          "projectedUv": [
+            0.5,
+            0.35158923197427544
+          ],
+          "registeredRoi": {
+            "x": 226,
+            "y": 228,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.4547846889952165,
+            "bootstrap95Px": [
+              1.4547846889952165,
+              1.4547846889952165
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 51,
+            "edgePhaseRange": [
+              0.615384615384615,
+              0.6263157894736846
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 1,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                0,
+                12,
+                0
+              ],
+              "envelopePx": null,
+              "adequate": false
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 1.945000000000002
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 1.783619047619048
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 1.7419540229885069
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.632727272727271
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.4547846889952165
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.7614285714285725
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 1.8988636363636342
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 1.998095238095237
+                }
+              ],
+              "envelopePx": 0.5433105491000205,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.615384615384615,
+                "phase": 0.615384615384615,
+                "width10to90Px": 1.4452214452214456,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 1,
+                "edgeX": 13.623076923076923,
+                "phase": 0.6230769230769226,
+                "width10to90Px": 1.4368298368298387,
+                "contrastLuma8": 51.400000000000006
+              },
+              {
+                "y": 2,
+                "edgeX": 13.618421052631579,
+                "phase": 0.6184210526315788,
+                "width10to90Px": 1.4547846889952165,
+                "contrastLuma8": 51
+              },
+              {
+                "y": 3,
+                "edgeX": 13.618421052631579,
+                "phase": 0.6184210526315788,
+                "width10to90Px": 1.4547846889952165,
+                "contrastLuma8": 51
+              },
+              {
+                "y": 4,
+                "edgeX": 13.618421052631579,
+                "phase": 0.6184210526315788,
+                "width10to90Px": 1.4547846889952165,
+                "contrastLuma8": 51
+              },
+              {
+                "y": 5,
+                "edgeX": 13.618421052631579,
+                "phase": 0.6184210526315788,
+                "width10to90Px": 1.4547846889952165,
+                "contrastLuma8": 51
+              },
+              {
+                "y": 6,
+                "edgeX": 13.618421052631579,
+                "phase": 0.6184210526315788,
+                "width10to90Px": 1.4547846889952165,
+                "contrastLuma8": 51
+              },
+              {
+                "y": 7,
+                "edgeX": 13.618421052631579,
+                "phase": 0.6184210526315788,
+                "width10to90Px": 1.4547846889952165,
+                "contrastLuma8": 51
+              },
+              {
+                "y": 8,
+                "edgeX": 13.618421052631579,
+                "phase": 0.6184210526315788,
+                "width10to90Px": 1.4547846889952165,
+                "contrastLuma8": 51
+              },
+              {
+                "y": 9,
+                "edgeX": 13.618421052631579,
+                "phase": 0.6184210526315788,
+                "width10to90Px": 1.4547846889952165,
+                "contrastLuma8": 51
+              },
+              {
+                "y": 10,
+                "edgeX": 13.618421052631579,
+                "phase": 0.6184210526315788,
+                "width10to90Px": 1.4547846889952165,
+                "contrastLuma8": 51
+              },
+              {
+                "y": 11,
+                "edgeX": 13.626315789473685,
+                "phase": 0.6263157894736846,
+                "width10to90Px": 1.5022966507177031,
+                "contrastLuma8": 51.599999999999994
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 2446
+            }
+          }
+        },
+        {
+          "id": "far-edge",
+          "valid": true,
+          "worldMm": {
+            "x": 1100,
+            "y": 720,
+            "z": 4000
+          },
+          "signedFocusPlaneDistanceMm": 23.52829011568781,
+          "canonicalSignedCoCDiameterMm": 0.05010272427998594,
+          "canonicalMajorRadiusDisplayPx": 0.09617086423410104,
+          "canonicalMinorRadiusMm": 0.024663612468653066,
+          "canonicalFootprintOrientationRad": 2.703648020527441,
+          "projectedUv": [
+            0.2959351939646288,
+            0.66696211402894
+          ],
+          "registeredRoi": {
+            "x": 128,
+            "y": 114,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.261236786469346,
+            "bootstrap95Px": [
+              1.229772727272728,
+              1.296913319238902
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 52.30000000000001,
+            "edgePhaseRange": [
+              0.5934782608695652,
+              0.6285714285714281
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 1,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                0,
+                12,
+                0
+              ],
+              "envelopePx": null,
+              "adequate": false
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 1.6786531986531985
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 1.6776167471819647
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 1.6343434343434335
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.4901754385964896
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.261236786469346
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.3103504273504276
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 1.6613636363636353
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 1.669319852941177
+                }
+              ],
+              "envelopePx": 0.4174164121838526,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.593478260869565,
+                "phase": 0.5934782608695652,
+                "width10to90Px": 1.123913043478261,
+                "contrastLuma8": 52.599999999999994
+              },
+              {
+                "y": 1,
+                "edgeX": 13.604444444444445,
+                "phase": 0.6044444444444448,
+                "width10to90Px": 1.1773333333333316,
+                "contrastLuma8": 52.400000000000006
+              },
+              {
+                "y": 2,
+                "edgeX": 13.61590909090909,
+                "phase": 0.6159090909090903,
+                "width10to90Px": 1.2204545454545457,
+                "contrastLuma8": 52.19999999999999
+              },
+              {
+                "y": 3,
+                "edgeX": 13.613636363636363,
+                "phase": 0.6136363636363633,
+                "width10to90Px": 1.2390909090909101,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 4,
+                "edgeX": 13.613636363636363,
+                "phase": 0.6136363636363633,
+                "width10to90Px": 1.2390909090909101,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 5,
+                "edgeX": 13.613636363636363,
+                "phase": 0.6136363636363633,
+                "width10to90Px": 1.2390909090909101,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 6,
+                "edgeX": 13.625581395348837,
+                "phase": 0.6255813953488367,
+                "width10to90Px": 1.2945454545454549,
+                "contrastLuma8": 52.19999999999999
+              },
+              {
+                "y": 7,
+                "edgeX": 13.623255813953488,
+                "phase": 0.6232558139534881,
+                "width10to90Px": 1.296913319238902,
+                "contrastLuma8": 52.400000000000006
+              },
+              {
+                "y": 8,
+                "edgeX": 13.623255813953488,
+                "phase": 0.6232558139534881,
+                "width10to90Px": 1.296913319238902,
+                "contrastLuma8": 52.400000000000006
+              },
+              {
+                "y": 9,
+                "edgeX": 13.61860465116279,
+                "phase": 0.6186046511627907,
+                "width10to90Px": 1.2833826638477817,
+                "contrastLuma8": 52.400000000000006
+              },
+              {
+                "y": 10,
+                "edgeX": 13.628571428571428,
+                "phase": 0.6285714285714281,
+                "width10to90Px": 1.3171428571428567,
+                "contrastLuma8": 52.400000000000006
+              },
+              {
+                "y": 11,
+                "edgeX": 13.626190476190477,
+                "phase": 0.6261904761904766,
+                "width10to90Px": 1.3026190476190482,
+                "contrastLuma8": 52.20000000000002
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 2136
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case": "tilt-negative",
+      "sourceFrame": {
+        "status": "ready",
+        "frameId": "room-generation-6:frame:19",
+        "requestId": "room-request-21",
+        "generationId": "room-generation-6"
+      },
+      "camera": {
+        "id": "tilt-negative",
+        "focus": 2000,
+        "aperture": 5.6,
+        "tilt": -5,
+        "swing": 0
+      },
+      "backend": "Chromium ANGLE SwiftShader WebGL",
+      "displayGrid": "480x360",
+      "sharpnessRank": {
+        "expectedByCanonicalMajorRadius": "middle-edge",
+        "measuredByEdgeWidth": "middle-edge",
+        "candidateMatch": true,
+        "limitation": "This rank is descriptive; edge spread contains pixel phase, native raster, silhouette, and display mapping effects. It is not a calibrated CoC-to-PSF transfer."
+      },
+      "pairwise": [
+        {
+          "predictedSharper": "middle-edge",
+          "predictedMoreDefocused": "near-edge",
+          "predictedRadiusDifferencePx": 0.24019781088591696,
+          "measuredWidthDifferencePx": 0.6303804347826052,
+          "measuredOrder": "predicted_order",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            -0.6380303030303027,
+            -0.6181245882740427
+          ],
+          "phaseMarginPx": 0.9077859730848852
+        },
+        {
+          "predictedSharper": "near-edge",
+          "predictedMoreDefocused": "far-edge",
+          "predictedRadiusDifferencePx": 0.30995491084979543,
+          "measuredWidthDifferencePx": 0.04113260869565316,
+          "measuredOrder": "predicted_order",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            -0.06427541172595497,
+            -0.02645665349143478
+          ],
+          "phaseMarginPx": 0.8623184123847176
+        },
+        {
+          "predictedSharper": "middle-edge",
+          "predictedMoreDefocused": "far-edge",
+          "predictedRadiusDifferencePx": 0.5501527217357124,
+          "measuredWidthDifferencePx": 0.6715130434782584,
+          "measuredOrder": "predicted_order",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            -0.6823999999999995,
+            -0.6644869565217357
+          ],
+          "phaseMarginPx": 0.8621514869188776
+        }
+      ],
+      "measurements": [
+        {
+          "id": "near-edge",
+          "valid": true,
+          "worldMm": {
+            "x": -350,
+            "y": 200,
+            "z": 1100
+          },
+          "signedFocusPlaneDistanceMm": 330.8015707212122,
+          "canonicalSignedCoCDiameterMm": -0.41946783575721186,
+          "canonicalMajorRadiusDisplayPx": 0.8046957881328403,
+          "canonicalMinorRadiusMm": 0.20660609415014963,
+          "canonicalFootprintOrientationRad": 2.158263219769705,
+          "projectedUv": [
+            0.7361080400409254,
+            0.6686486000292325
+          ],
+          "registeredRoi": {
+            "x": 339,
+            "y": 114,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.670380434782608,
+            "bootstrap95Px": [
+              1.6581245882740454,
+              1.6780303030303036
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 57.90000000000002,
+            "edgePhaseRange": [
+              0.8454545454545457,
+              0.8687499999999986
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 1,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                0,
+                0,
+                12
+              ],
+              "envelopePx": null,
+              "adequate": false
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 2.328333333333333
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 2.274880952380954
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 2.1083333333333325
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.7816666666666663
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.670380434782608
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.7661513157894735
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 2.160294117647057
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 2.3061904761904763
+                }
+              ],
+              "envelopePx": 0.6579528985507253,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.851515151515152,
+                "phase": 0.8515151515151516,
+                "width10to90Px": 1.6530698287220034,
+                "contrastLuma8": 58.20000000000002
+              },
+              {
+                "y": 1,
+                "edgeX": 13.84848484848485,
+                "phase": 0.8484848484848495,
+                "width10to90Px": 1.6458498023715418,
+                "contrastLuma8": 58.00000000000003
+              },
+              {
+                "y": 2,
+                "edgeX": 13.84848484848485,
+                "phase": 0.8484848484848495,
+                "width10to90Px": 1.6458498023715418,
+                "contrastLuma8": 58.00000000000003
+              },
+              {
+                "y": 3,
+                "edgeX": 13.84848484848485,
+                "phase": 0.8484848484848495,
+                "width10to90Px": 1.6818181818181817,
+                "contrastLuma8": 58.00000000000003
+              },
+              {
+                "y": 4,
+                "edgeX": 13.84848484848485,
+                "phase": 0.8484848484848495,
+                "width10to90Px": 1.6818181818181817,
+                "contrastLuma8": 58.00000000000003
+              },
+              {
+                "y": 5,
+                "edgeX": 13.84848484848485,
+                "phase": 0.8484848484848495,
+                "width10to90Px": 1.6818181818181817,
+                "contrastLuma8": 58.00000000000003
+              },
+              {
+                "y": 6,
+                "edgeX": 13.845454545454546,
+                "phase": 0.8454545454545457,
+                "width10to90Px": 1.6742424242424256,
+                "contrastLuma8": 57.80000000000001
+              },
+              {
+                "y": 7,
+                "edgeX": 13.845454545454546,
+                "phase": 0.8454545454545457,
+                "width10to90Px": 1.6742424242424256,
+                "contrastLuma8": 57.80000000000001
+              },
+              {
+                "y": 8,
+                "edgeX": 13.868749999999999,
+                "phase": 0.8687499999999986,
+                "width10to90Px": 1.670380434782608,
+                "contrastLuma8": 57.599999999999994
+              },
+              {
+                "y": 9,
+                "edgeX": 13.868749999999999,
+                "phase": 0.8687499999999986,
+                "width10to90Px": 1.670380434782608,
+                "contrastLuma8": 57.599999999999994
+              },
+              {
+                "y": 10,
+                "edgeX": 13.865625,
+                "phase": 0.8656249999999996,
+                "width10to90Px": 1.6631793478260875,
+                "contrastLuma8": 57.400000000000006
+              },
+              {
+                "y": 11,
+                "edgeX": 13.865625,
+                "phase": 0.8656249999999996,
+                "width10to90Px": 1.6631793478260875,
+                "contrastLuma8": 57.400000000000006
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 2213
+            }
+          }
+        },
+        {
+          "id": "middle-edge",
+          "valid": true,
+          "worldMm": {
+            "x": 0,
+            "y": -320,
+            "z": 2000
+          },
+          "signedFocusPlaneDistanceMm": 450.64226695907854,
+          "canonicalSignedCoCDiameterMm": -0.2960505275073521,
+          "canonicalMajorRadiusDisplayPx": 0.5644979772469233,
+          "canonicalMinorRadiusMm": 0.1467056410822093,
+          "canonicalFootprintOrientationRad": 0,
+          "projectedUv": [
+            0.5,
+            0.35158923197427544
+          ],
+          "registeredRoi": {
+            "x": 226,
+            "y": 228,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.0400000000000027,
+            "bootstrap95Px": [
+              1.040000000000001,
+              1.0400000000000027
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 52,
+            "edgePhaseRange": [
+              0.5555555555555554,
+              0.5652173913043477
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 1,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                0,
+                12,
+                0
+              ],
+              "envelopePx": null,
+              "adequate": false
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 1.689297658862877
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 1.6976190476190478
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 1.6631372549019598
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.5104895104895117
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.0400000000000027
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.2521428571428554
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 1.5609523809523829
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 1.671111111111113
+                }
+              ],
+              "envelopePx": 0.6576190476190451,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 1,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 2,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 3,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 4,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 5,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 6,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 7,
+                "edgeX": 13.565217391304348,
+                "phase": 0.5652173913043477,
+                "width10to90Px": 1.0469565217391317,
+                "contrastLuma8": 51.99999999999994
+              },
+              {
+                "y": 8,
+                "edgeX": 13.565217391304348,
+                "phase": 0.5652173913043477,
+                "width10to90Px": 1.0202898550724644,
+                "contrastLuma8": 51.99999999999994
+              },
+              {
+                "y": 9,
+                "edgeX": 13.555555555555557,
+                "phase": 0.5555555555555571,
+                "width10to90Px": 1.040000000000001,
+                "contrastLuma8": 51.99999999999994
+              },
+              {
+                "y": 10,
+                "edgeX": 13.555555555555557,
+                "phase": 0.5555555555555571,
+                "width10to90Px": 1.040000000000001,
+                "contrastLuma8": 51.99999999999994
+              },
+              {
+                "y": 11,
+                "edgeX": 13.555555555555557,
+                "phase": 0.5555555555555571,
+                "width10to90Px": 1.040000000000001,
+                "contrastLuma8": 51.99999999999994
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 2414
+            }
+          }
+        },
+        {
+          "id": "far-edge",
+          "valid": true,
+          "worldMm": {
+            "x": 1100,
+            "y": 720,
+            "z": 4000
+          },
+          "signedFocusPlaneDistanceMm": -1298.06129687562,
+          "canonicalSignedCoCDiameterMm": 0.5820450264150975,
+          "canonicalMajorRadiusDisplayPx": 1.1146506989826357,
+          "canonicalMinorRadiusMm": 0.2871784832701201,
+          "canonicalFootprintOrientationRad": 1.0095741883754235,
+          "projectedUv": [
+            0.2959351939646288,
+            0.66696211402894
+          ],
+          "registeredRoi": {
+            "x": 128,
+            "y": 114,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.711513043478261,
+            "bootstrap95Px": [
+              1.7044869565217384,
+              1.7224000000000004
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 51.60000000000001,
+            "edgePhaseRange": [
+              0.8538461538461544,
+              0.8800000000000008
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 1,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                0,
+                0,
+                12
+              ],
+              "envelopePx": null,
+              "adequate": false
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 2.278196969696971
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 2.1725555555555545
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 1.9827142857142874
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.7949670619235842
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.711513043478261
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.9910000000000032
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 2.1682549019607844
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 2.2678113553113572
+                }
+              ],
+              "envelopePx": 0.56668392621871,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.88,
+                "phase": 0.8800000000000008,
+                "width10to90Px": 1.7259130434782612,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 1,
+                "edgeX": 13.88,
+                "phase": 0.8800000000000008,
+                "width10to90Px": 1.7259130434782612,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 2,
+                "edgeX": 13.88,
+                "phase": 0.8800000000000008,
+                "width10to90Px": 1.7259130434782612,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 3,
+                "edgeX": 13.876,
+                "phase": 0.8759999999999994,
+                "width10to90Px": 1.7188869565217395,
+                "contrastLuma8": 51.80000000000001
+              },
+              {
+                "y": 4,
+                "edgeX": 13.876,
+                "phase": 0.8759999999999994,
+                "width10to90Px": 1.7188869565217395,
+                "contrastLuma8": 51.80000000000001
+              },
+              {
+                "y": 5,
+                "edgeX": 13.872,
+                "phase": 0.8719999999999999,
+                "width10to90Px": 1.7118608695652178,
+                "contrastLuma8": 51.599999999999994
+              },
+              {
+                "y": 6,
+                "edgeX": 13.868,
+                "phase": 0.8680000000000003,
+                "width10to90Px": 1.704834782608696,
+                "contrastLuma8": 51.400000000000006
+              },
+              {
+                "y": 7,
+                "edgeX": 13.864,
+                "phase": 0.8640000000000008,
+                "width10to90Px": 1.7111652173913043,
+                "contrastLuma8": 51.599999999999994
+              },
+              {
+                "y": 8,
+                "edgeX": 13.86,
+                "phase": 0.8599999999999994,
+                "width10to90Px": 1.7041391304347808,
+                "contrastLuma8": 51.39999999999998
+              },
+              {
+                "y": 9,
+                "edgeX": 13.857692307692307,
+                "phase": 0.8576923076923073,
+                "width10to90Px": 1.6994405594405606,
+                "contrastLuma8": 51.400000000000034
+              },
+              {
+                "y": 10,
+                "edgeX": 13.857692307692307,
+                "phase": 0.8576923076923073,
+                "width10to90Px": 1.6994405594405606,
+                "contrastLuma8": 51.400000000000034
+              },
+              {
+                "y": 11,
+                "edgeX": 13.853846153846154,
+                "phase": 0.8538461538461544,
+                "width10to90Px": 1.7054545454545469,
+                "contrastLuma8": 51.60000000000002
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 2104
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case": "swing-positive",
+      "sourceFrame": {
+        "status": "ready",
+        "frameId": "room-generation-6:frame:28",
+        "requestId": "room-request-24",
+        "generationId": "room-generation-6"
+      },
+      "camera": {
+        "id": "swing-positive",
+        "focus": 2000,
+        "aperture": 5.6,
+        "tilt": 0,
+        "swing": 5
+      },
+      "backend": "Chromium ANGLE SwiftShader WebGL",
+      "displayGrid": "480x360",
+      "sharpnessRank": {
+        "expectedByCanonicalMajorRadius": "middle-edge",
+        "measuredByEdgeWidth": "middle-edge",
+        "candidateMatch": true,
+        "limitation": "This rank is descriptive; edge spread contains pixel phase, native raster, silhouette, and display mapping effects. It is not a calibrated CoC-to-PSF transfer."
+      },
+      "pairwise": [
+        {
+          "predictedSharper": "middle-edge",
+          "predictedMoreDefocused": "near-edge",
+          "predictedRadiusDifferencePx": 2.0563307927528602,
+          "measuredWidthDifferencePx": 0.6320948616600761,
+          "measuredOrder": "predicted_order",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            -0.639657444005266,
+            -0.605767457180499
+          ],
+          "phaseMarginPx": 0.9133870929794825
+        },
+        {
+          "predictedSharper": "far-edge",
+          "predictedMoreDefocused": "near-edge",
+          "predictedRadiusDifferencePx": 0.7901788866923187,
+          "measuredWidthDifferencePx": -0.2513718050065883,
+          "measuredOrder": "reversed_or_tied",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            0.1884973178994933,
+            0.28829964238659933
+          ],
+          "phaseMarginPx": 0.8454815984739881
+        },
+        {
+          "predictedSharper": "middle-edge",
+          "predictedMoreDefocused": "far-edge",
+          "predictedRadiusDifferencePx": 1.2661519060605413,
+          "measuredWidthDifferencePx": 0.8834666666666644,
+          "measuredOrder": "predicted_order",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            -0.9158095238095214,
+            -0.8064123376623362
+          ],
+          "phaseMarginPx": 0.8397135531135507
+        }
+      ],
+      "measurements": [
+        {
+          "id": "near-edge",
+          "valid": true,
+          "worldMm": {
+            "x": -350,
+            "y": 200,
+            "z": 1100
+          },
+          "signedFocusPlaneDistanceMm": 835.5753713081701,
+          "canonicalSignedCoCDiameterMm": -1.1320407901471088,
+          "canonicalMajorRadiusDisplayPx": 2.177995507983952,
+          "canonicalMinorRadiusMm": 0.5559614731245344,
+          "canonicalFootprintOrientationRad": 1.3420071409460468,
+          "projectedUv": [
+            0.7361080400409254,
+            0.6686486000292325
+          ],
+          "registeredRoi": {
+            "x": 339,
+            "y": 114,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.6720948616600788,
+            "bootstrap95Px": [
+              1.6675098814229248,
+              1.6796574440052687
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 58.80000000000001,
+            "edgePhaseRange": [
+              0.8424242424242419,
+              0.8696969696969692
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 1,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                0,
+                0,
+                12
+              ],
+              "envelopePx": null,
+              "adequate": false
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 2.3412499999999987
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 2.292063492063491
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 2.097628571428568
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.7852873563218399
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.6720948616600788
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.7647500000000003
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 2.1459558823529425
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 2.3007142857142853
+                }
+              ],
+              "envelopePx": 0.6691551383399199,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.848484848484848,
+                "phase": 0.8484848484848477,
+                "width10to90Px": 1.669459815546773,
+                "contrastLuma8": 58.80000000000001
+              },
+              {
+                "y": 1,
+                "edgeX": 13.848484848484848,
+                "phase": 0.8484848484848477,
+                "width10to90Px": 1.669459815546773,
+                "contrastLuma8": 58.80000000000001
+              },
+              {
+                "y": 2,
+                "edgeX": 13.842424242424242,
+                "phase": 0.8424242424242419,
+                "width10to90Px": 1.6668247694334646,
+                "contrastLuma8": 58.79999999999998
+              },
+              {
+                "y": 3,
+                "edgeX": 13.86969696969697,
+                "phase": 0.8696969696969692,
+                "width10to90Px": 1.6496212121212128,
+                "contrastLuma8": 59
+              },
+              {
+                "y": 4,
+                "edgeX": 13.866666666666667,
+                "phase": 0.8666666666666671,
+                "width10to90Px": 1.6773649538866913,
+                "contrastLuma8": 58.80000000000001
+              },
+              {
+                "y": 5,
+                "edgeX": 13.863636363636363,
+                "phase": 0.8636363636363633,
+                "width10to90Px": 1.6819499341238462,
+                "contrastLuma8": 59
+              },
+              {
+                "y": 6,
+                "edgeX": 13.863636363636363,
+                "phase": 0.8636363636363633,
+                "width10to90Px": 1.6819499341238462,
+                "contrastLuma8": 59
+              },
+              {
+                "y": 7,
+                "edgeX": 13.863636363636363,
+                "phase": 0.8636363636363633,
+                "width10to90Px": 1.6819499341238462,
+                "contrastLuma8": 59
+              },
+              {
+                "y": 8,
+                "edgeX": 13.860606060606061,
+                "phase": 0.8606060606060613,
+                "width10to90Px": 1.6747299077733846,
+                "contrastLuma8": 58.80000000000001
+              },
+              {
+                "y": 9,
+                "edgeX": 13.860606060606061,
+                "phase": 0.8606060606060613,
+                "width10to90Px": 1.6747299077733846,
+                "contrastLuma8": 58.80000000000001
+              },
+              {
+                "y": 10,
+                "edgeX": 13.857575757575757,
+                "phase": 0.8575757575757574,
+                "width10to90Px": 1.6675098814229248,
+                "contrastLuma8": 58.599999999999994
+              },
+              {
+                "y": 11,
+                "edgeX": 13.857575757575757,
+                "phase": 0.8575757575757574,
+                "width10to90Px": 1.6675098814229248,
+                "contrastLuma8": 58.599999999999994
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 2352
+            }
+          }
+        },
+        {
+          "id": "middle-edge",
+          "valid": true,
+          "worldMm": {
+            "x": 0,
+            "y": -320,
+            "z": 2000
+          },
+          "signedFocusPlaneDistanceMm": 156.95569207212122,
+          "canonicalSignedCoCDiameterMm": -0.06391640541240755,
+          "canonicalMajorRadiusDisplayPx": 0.12166471523109189,
+          "canonicalMinorRadiusMm": 0.03172762520755617,
+          "canonicalFootprintOrientationRad": 2.2195041571946437,
+          "projectedUv": [
+            0.5,
+            0.35158923197427544
+          ],
+          "registeredRoi": {
+            "x": 226,
+            "y": 228,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.0400000000000027,
+            "bootstrap95Px": [
+              1.0400000000000027,
+              1.0617424242424258
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 52,
+            "edgePhaseRange": [
+              0.5555555555555554,
+              0.5681818181818183
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 1,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                0,
+                12,
+                0
+              ],
+              "envelopePx": null,
+              "adequate": false
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 1.689297658862877
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 1.6976190476190478
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 1.6631372549019598
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.5104895104895117
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.0400000000000027
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.2521428571428554
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 1.5609523809523829
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 1.671111111111113
+                }
+              ],
+              "envelopePx": 0.6576190476190451,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.556818181818182,
+                "phase": 0.5568181818181817,
+                "width10to90Px": 1.0568181818181834,
+                "contrastLuma8": 51
+              },
+              {
+                "y": 1,
+                "edgeX": 13.561363636363636,
+                "phase": 0.5613636363636356,
+                "width10to90Px": 1.115909090909092,
+                "contrastLuma8": 51.400000000000006
+              },
+              {
+                "y": 2,
+                "edgeX": 13.568181818181818,
+                "phase": 0.5681818181818183,
+                "width10to90Px": 1.204545454545455,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 3,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0666666666666682,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 4,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 5,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 6,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 7,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 8,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 9,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 10,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 11,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 2553
+            }
+          }
+        },
+        {
+          "id": "far-edge",
+          "valid": true,
+          "worldMm": {
+            "x": 1100,
+            "y": 720,
+            "z": 4000
+          },
+          "signedFocusPlaneDistanceMm": -1646.8141045538819,
+          "canonicalSignedCoCDiameterMm": 0.7251575516809405,
+          "canonicalMajorRadiusDisplayPx": 1.3878166212916332,
+          "canonicalMinorRadiusMm": 0.35802239096080785,
+          "canonicalFootprintOrientationRad": 0.3344981154869447,
+          "projectedUv": [
+            0.2959351939646288,
+            0.66696211402894
+          ],
+          "registeredRoi": {
+            "x": 128,
+            "y": 114,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.923466666666667,
+            "bootstrap95Px": [
+              1.868154761904762,
+              1.955809523809524
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 51.80000000000004,
+            "edgePhaseRange": [
+              0,
+              0.9999999999999982
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 2,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                8,
+                0,
+                0,
+                4
+              ],
+              "envelopePx": 0.08555476190476341,
+              "adequate": true
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 2.4452747252747233
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 2.3820173160173184
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 2.1895273109243725
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.930133333333334
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.923466666666667
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 2.194583333333333
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 2.3372631578947374
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 2.3877606951871666
+                }
+              ],
+              "envelopePx": 0.5218080586080562,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.999999999999998,
+                "phase": 0.9999999999999982,
+                "width10to90Px": 1.8571428571428577,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 1,
+                "edgeX": 13.995238095238093,
+                "phase": 0.9952380952380935,
+                "width10to90Px": 1.850595238095238,
+                "contrastLuma8": 51.80000000000001
+              },
+              {
+                "y": 2,
+                "edgeX": 13.985714285714284,
+                "phase": 0.985714285714284,
+                "width10to90Px": 1.854166666666666,
+                "contrastLuma8": 51.79999999999998
+              },
+              {
+                "y": 3,
+                "edgeX": 13.976190476190474,
+                "phase": 0.9761904761904745,
+                "width10to90Px": 1.8791666666666664,
+                "contrastLuma8": 51.80000000000001
+              },
+              {
+                "y": 4,
+                "edgeX": 14.02,
+                "phase": 0.019999999999999574,
+                "width10to90Px": 1.8854666666666677,
+                "contrastLuma8": 51.80000000000001
+              },
+              {
+                "y": 5,
+                "edgeX": 14.012,
+                "phase": 0.012000000000000455,
+                "width10to90Px": 1.9107999999999983,
+                "contrastLuma8": 51.79999999999998
+              },
+              {
+                "y": 6,
+                "edgeX": 14.004,
+                "phase": 0.0039999999999995595,
+                "width10to90Px": 1.936133333333336,
+                "contrastLuma8": 51.80000000000004
+              },
+              {
+                "y": 7,
+                "edgeX": 14.004,
+                "phase": 0.0039999999999995595,
+                "width10to90Px": 1.936133333333336,
+                "contrastLuma8": 51.80000000000004
+              },
+              {
+                "y": 8,
+                "edgeX": 14,
+                "phase": 0,
+                "width10to90Px": 1.9653333333333336,
+                "contrastLuma8": 52.00000000000003
+              },
+              {
+                "y": 9,
+                "edgeX": 14,
+                "phase": 0,
+                "width10to90Px": 1.9653333333333336,
+                "contrastLuma8": 52.00000000000003
+              },
+              {
+                "y": 10,
+                "edgeX": 14,
+                "phase": 0,
+                "width10to90Px": 1.9462857142857146,
+                "contrastLuma8": 52.00000000000003
+              },
+              {
+                "y": 11,
+                "edgeX": 14,
+                "phase": 0,
+                "width10to90Px": 1.980952380952381,
+                "contrastLuma8": 52.00000000000003
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 2243
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case": "swing-negative",
+      "sourceFrame": {
+        "status": "ready",
+        "frameId": "room-generation-6:frame:37",
+        "requestId": "room-request-26",
+        "generationId": "room-generation-6"
+      },
+      "camera": {
+        "id": "swing-negative",
+        "focus": 2000,
+        "aperture": 5.6,
+        "tilt": 0,
+        "swing": -5
+      },
+      "backend": "Chromium ANGLE SwiftShader WebGL",
+      "displayGrid": "480x360",
+      "sharpnessRank": {
+        "expectedByCanonicalMajorRadius": "middle-edge",
+        "measuredByEdgeWidth": "middle-edge",
+        "candidateMatch": true,
+        "limitation": "This rank is descriptive; edge spread contains pixel phase, native raster, silhouette, and display mapping effects. It is not a calibrated CoC-to-PSF transfer."
+      },
+      "pairwise": [
+        {
+          "predictedSharper": "middle-edge",
+          "predictedMoreDefocused": "near-edge",
+          "predictedRadiusDifferencePx": 0.2991347610881049,
+          "measuredWidthDifferencePx": 0.6182921607378109,
+          "measuredOrder": "predicted_order",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            -0.6251515151515115,
+            -0.6024946475625796
+          ],
+          "phaseMarginPx": 0.9065980468274257
+        },
+        {
+          "predictedSharper": "far-edge",
+          "predictedMoreDefocused": "near-edge",
+          "predictedRadiusDifferencePx": 0.25275066849473693,
+          "measuredWidthDifferencePx": 0.5245965085639002,
+          "measuredOrder": "predicted_order",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            -0.5678689064558622,
+            -0.4775704051383407
+          ],
+          "phaseMarginPx": 0.8452402138391593
+        },
+        {
+          "predictedSharper": "middle-edge",
+          "predictedMoreDefocused": "far-edge",
+          "predictedRadiusDifferencePx": 0.04638409259336797,
+          "measuredWidthDifferencePx": 0.09369565217391074,
+          "measuredOrder": "predicted_order",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            -0.1333333333333293,
+            -0.04887351778655891
+          ],
+          "phaseMarginPx": 0.8462612146307786
+        }
+      ],
+      "measurements": [
+        {
+          "id": "near-edge",
+          "valid": true,
+          "worldMm": {
+            "x": -350,
+            "y": 200,
+            "z": 1100
+          },
+          "signedFocusPlaneDistanceMm": 193.13598874295099,
+          "canonicalSignedCoCDiameterMm": -0.21953787115970821,
+          "canonicalMajorRadiusDisplayPx": 0.4207994763191968,
+          "canonicalMinorRadiusMm": 0.10822341439000738,
+          "canonicalFootprintOrientationRad": 2.845187420435814,
+          "projectedUv": [
+            0.7361080400409254,
+            0.6686486000292325
+          ],
+          "registeredRoi": {
+            "x": 339,
+            "y": 114,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.6582921607378136,
+            "bootstrap95Px": [
+              1.6509037384716727,
+              1.6651515151515142
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 57.19999999999999,
+            "edgePhaseRange": [
+              0.8424242424242419,
+              0.8656249999999996
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 1,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                0,
+                0,
+                12
+              ],
+              "envelopePx": null,
+              "adequate": false
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 2.31386920677362
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 2.253333333333334
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 2.091916666666667
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.7721481223673878
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.6582921607378136
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.7516042020373517
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 2.1400735294117634
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 2.2802380952380954
+                }
+              ],
+              "envelopePx": 0.6555770460358064,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.842424242424242,
+                "phase": 0.8424242424242419,
+                "width10to90Px": 1.666666666666666,
+                "contrastLuma8": 57.599999999999994
+              },
+              {
+                "y": 1,
+                "edgeX": 13.842424242424242,
+                "phase": 0.8424242424242419,
+                "width10to90Px": 1.666666666666666,
+                "contrastLuma8": 57.599999999999994
+              },
+              {
+                "y": 2,
+                "edgeX": 13.865625,
+                "phase": 0.8656249999999996,
+                "width10to90Px": 1.6631793478260875,
+                "contrastLuma8": 57.400000000000006
+              },
+              {
+                "y": 3,
+                "edgeX": 13.862499999999999,
+                "phase": 0.8624999999999989,
+                "width10to90Px": 1.6559782608695652,
+                "contrastLuma8": 57.19999999999999
+              },
+              {
+                "y": 4,
+                "edgeX": 13.862499999999999,
+                "phase": 0.8624999999999989,
+                "width10to90Px": 1.6559782608695652,
+                "contrastLuma8": 57.19999999999999
+              },
+              {
+                "y": 5,
+                "edgeX": 13.859375,
+                "phase": 0.859375,
+                "width10to90Px": 1.648777173913043,
+                "contrastLuma8": 57
+              },
+              {
+                "y": 6,
+                "edgeX": 13.859375,
+                "phase": 0.859375,
+                "width10to90Px": 1.648777173913043,
+                "contrastLuma8": 57
+              },
+              {
+                "y": 7,
+                "edgeX": 13.859375,
+                "phase": 0.859375,
+                "width10to90Px": 1.648777173913043,
+                "contrastLuma8": 57
+              },
+              {
+                "y": 8,
+                "edgeX": 13.859375,
+                "phase": 0.859375,
+                "width10to90Px": 1.6849431818181824,
+                "contrastLuma8": 57
+              },
+              {
+                "y": 9,
+                "edgeX": 13.86060606060606,
+                "phase": 0.8606060606060595,
+                "width10to90Px": 1.6636363636363622,
+                "contrastLuma8": 57.19999999999999
+              },
+              {
+                "y": 10,
+                "edgeX": 13.854545454545454,
+                "phase": 0.8545454545454536,
+                "width10to90Px": 1.660606060606062,
+                "contrastLuma8": 57.20000000000002
+              },
+              {
+                "y": 11,
+                "edgeX": 13.851515151515152,
+                "phase": 0.8515151515151516,
+                "width10to90Px": 1.6530303030303024,
+                "contrastLuma8": 57
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 2320
+            }
+          }
+        },
+        {
+          "id": "middle-edge",
+          "valid": true,
+          "worldMm": {
+            "x": 0,
+            "y": -320,
+            "z": 2000
+          },
+          "signedFocusPlaneDistanceMm": 156.95569207212122,
+          "canonicalSignedCoCDiameterMm": -0.06391640541240755,
+          "canonicalMajorRadiusDisplayPx": 0.12166471523109189,
+          "canonicalMinorRadiusMm": 0.03172762520755617,
+          "canonicalFootprintOrientationRad": 0.9220884963951494,
+          "projectedUv": [
+            0.5,
+            0.35158923197427544
+          ],
+          "registeredRoi": {
+            "x": 226,
+            "y": 228,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.0400000000000027,
+            "bootstrap95Px": [
+              1.0400000000000027,
+              1.048409090909093
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 52,
+            "edgePhaseRange": [
+              0.5444444444444443,
+              0.5568181818181817
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 1,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                0,
+                12,
+                0
+              ],
+              "envelopePx": null,
+              "adequate": false
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 1.689297658862877
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 1.6976190476190478
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 1.6631372549019598
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.5104895104895117
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.0400000000000027
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.2521428571428554
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 1.5609523809523829
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 1.671111111111113
+                }
+              ],
+              "envelopePx": 0.6576190476190451,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.556818181818182,
+                "phase": 0.5568181818181817,
+                "width10to90Px": 1.0568181818181834,
+                "contrastLuma8": 51
+              },
+              {
+                "y": 1,
+                "edgeX": 13.556818181818182,
+                "phase": 0.5568181818181817,
+                "width10to90Px": 1.0568181818181834,
+                "contrastLuma8": 51
+              },
+              {
+                "y": 2,
+                "edgeX": 13.556818181818182,
+                "phase": 0.5568181818181817,
+                "width10to90Px": 1.0568181818181834,
+                "contrastLuma8": 51
+              },
+              {
+                "y": 3,
+                "edgeX": 13.544444444444444,
+                "phase": 0.5444444444444443,
+                "width10to90Px": 0.9066666666666663,
+                "contrastLuma8": 51
+              },
+              {
+                "y": 4,
+                "edgeX": 13.544444444444444,
+                "phase": 0.5444444444444443,
+                "width10to90Px": 0.9066666666666663,
+                "contrastLuma8": 51
+              },
+              {
+                "y": 5,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 6,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 7,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 8,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 9,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 10,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 11,
+                "edgeX": 13.555555555555555,
+                "phase": 0.5555555555555554,
+                "width10to90Px": 1.0400000000000027,
+                "contrastLuma8": 52
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 2521
+            }
+          }
+        },
+        {
+          "id": "far-edge",
+          "valid": true,
+          "worldMm": {
+            "x": 1100,
+            "y": 720,
+            "z": 4000
+          },
+          "signedFocusPlaneDistanceMm": 372.2810977939498,
+          "canonicalSignedCoCDiameterMm": -0.0874990815857487,
+          "canonicalMajorRadiusDisplayPx": 0.16804880782445986,
+          "canonicalMinorRadiusMm": 0.04304761336411074,
+          "canonicalFootprintOrientationRad": 1.823910781453337,
+          "projectedUv": [
+            0.2959351939646288,
+            0.66696211402894
+          ],
+          "registeredRoi": {
+            "x": 128,
+            "y": 114,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.1336956521739134,
+            "bootstrap95Px": [
+              1.097282608695652,
+              1.173333333333332
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 52.099999999999994,
+            "edgePhaseRange": [
+              0.5869565217391308,
+              0.5999999999999996
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 1,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                0,
+                12,
+                0
+              ],
+              "envelopePx": null,
+              "adequate": false
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 1.6685990338164256
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 1.6330434782608707
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 1.5818266253869968
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.4482857142857144
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.1336956521739134
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.172164634146342
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 1.4914285714285729
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 1.6106066176470595
+                }
+              ],
+              "envelopePx": 0.5349033816425122,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.6,
+                "phase": 0.5999999999999996,
+                "width10to90Px": 1.16135265700483,
+                "contrastLuma8": 52.80000000000001
+              },
+              {
+                "y": 1,
+                "edgeX": 13.595652173913043,
+                "phase": 0.5956521739130434,
+                "width10to90Px": 1.143478260869566,
+                "contrastLuma8": 52.80000000000001
+              },
+              {
+                "y": 2,
+                "edgeX": 13.593478260869565,
+                "phase": 0.5934782608695652,
+                "width10to90Px": 1.123913043478261,
+                "contrastLuma8": 52.599999999999994
+              },
+              {
+                "y": 3,
+                "edgeX": 13.591304347826087,
+                "phase": 0.5913043478260871,
+                "width10to90Px": 1.104347826086956,
+                "contrastLuma8": 52.400000000000006
+              },
+              {
+                "y": 4,
+                "edgeX": 13.591304347826087,
+                "phase": 0.5913043478260871,
+                "width10to90Px": 1.104347826086956,
+                "contrastLuma8": 52.400000000000006
+              },
+              {
+                "y": 5,
+                "edgeX": 13.589130434782609,
+                "phase": 0.589130434782609,
+                "width10to90Px": 1.084782608695651,
+                "contrastLuma8": 52.19999999999999
+              },
+              {
+                "y": 6,
+                "edgeX": 13.58695652173913,
+                "phase": 0.5869565217391308,
+                "width10to90Px": 1.0652173913043477,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 7,
+                "edgeX": 13.58695652173913,
+                "phase": 0.5869565217391308,
+                "width10to90Px": 1.090217391304348,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 8,
+                "edgeX": 13.6,
+                "phase": 0.5999999999999996,
+                "width10to90Px": 1.173333333333332,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 9,
+                "edgeX": 13.6,
+                "phase": 0.5999999999999996,
+                "width10to90Px": 1.173333333333332,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 10,
+                "edgeX": 13.6,
+                "phase": 0.5999999999999996,
+                "width10to90Px": 1.173333333333332,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 11,
+                "edgeX": 13.6,
+                "phase": 0.5999999999999996,
+                "width10to90Px": 1.173333333333332,
+                "contrastLuma8": 52
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 2211
+            }
+          }
+        }
+      ]
+    },
+    {
+      "case": "combined",
+      "sourceFrame": {
+        "status": "ready",
+        "frameId": "room-generation-6:frame:47",
+        "requestId": "room-request-29",
+        "generationId": "room-generation-6"
+      },
+      "camera": {
+        "id": "combined",
+        "focus": 2000,
+        "aperture": 5.6,
+        "tilt": 5,
+        "swing": 5
+      },
+      "backend": "Chromium ANGLE SwiftShader WebGL",
+      "displayGrid": "480x360",
+      "sharpnessRank": {
+        "expectedByCanonicalMajorRadius": "middle-edge",
+        "measuredByEdgeWidth": "middle-edge",
+        "candidateMatch": true,
+        "limitation": "This rank is descriptive; edge spread contains pixel phase, native raster, silhouette, and display mapping effects. It is not a calibrated CoC-to-PSF transfer."
+      },
+      "pairwise": [
+        {
+          "predictedSharper": "middle-edge",
+          "predictedMoreDefocused": "near-edge",
+          "predictedRadiusDifferencePx": 2.592881696466058,
+          "measuredWidthDifferencePx": 0.27336067193675717,
+          "measuredOrder": "predicted_order",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            -0.34271409749670223,
+            -0.265849802371541
+          ],
+          "phaseMarginPx": 0.837242283079239
+        },
+        {
+          "predictedSharper": "far-edge",
+          "predictedMoreDefocused": "near-edge",
+          "predictedRadiusDifferencePx": 2.0476793871852217,
+          "measuredWidthDifferencePx": 0.07077733860342494,
+          "measuredOrder": "predicted_order",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            -0.10450137819845828,
+            -0.049183135704874203
+          ],
+          "phaseMarginPx": 0.8589771731891309
+        },
+        {
+          "predictedSharper": "middle-edge",
+          "predictedMoreDefocused": "far-edge",
+          "predictedRadiusDifferencePx": 0.5452023092808364,
+          "measuredWidthDifferencePx": 0.20258333333333223,
+          "measuredOrder": "predicted_order",
+          "status": "INCONCLUSIVE_WITHIN_PIXEL_PHASE_TOLERANCE",
+          "deltaIntervalPx": [
+            -0.28333333333333144,
+            -0.1715460526315793
+          ],
+          "phaseMarginPx": 0.7799134615384622
+        }
+      ],
+      "measurements": [
+        {
+          "id": "near-edge",
+          "valid": true,
+          "worldMm": {
+            "x": -350,
+            "y": 200,
+            "z": 1100
+          },
+          "signedFocusPlaneDistanceMm": 828.6127290929186,
+          "canonicalSignedCoCDiameterMm": -1.4407594026994595,
+          "canonicalMajorRadiusDisplayPx": 2.7969757686644834,
+          "canonicalMinorRadiusMm": 0.7012481786809699,
+          "canonicalFootprintOrientationRad": 0.8953144312262818,
+          "projectedUv": [
+            0.7361080400409254,
+            0.6686486000292325
+          ],
+          "registeredRoi": {
+            "x": 339,
+            "y": 114,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.6707773386034255,
+            "bootstrap95Px": [
+              1.6658498023715413,
+              1.676047430830038
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 58.80000000000001,
+            "edgePhaseRange": [
+              0.8424242424242419,
+              0.8696969696969692
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 1,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                0,
+                0,
+                12
+              ],
+              "envelopePx": null,
+              "adequate": false
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 2.337083333333333
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 2.292063492063491
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 2.0975333333333293
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.7845689655172423
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.6707773386034255
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.7628750000000002
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 2.1459558823529425
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 2.2963095238095237
+                }
+              ],
+              "envelopePx": 0.6663059947299077,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.854545454545455,
+                "phase": 0.8545454545454554,
+                "width10to90Px": 1.672094861660078,
+                "contrastLuma8": 58.79999999999998
+              },
+              {
+                "y": 1,
+                "edgeX": 13.851515151515152,
+                "phase": 0.8515151515151516,
+                "width10to90Px": 1.664874835309618,
+                "contrastLuma8": 58.599999999999994
+              },
+              {
+                "y": 2,
+                "edgeX": 13.848484848484848,
+                "phase": 0.8484848484848477,
+                "width10to90Px": 1.669459815546773,
+                "contrastLuma8": 58.80000000000001
+              },
+              {
+                "y": 3,
+                "edgeX": 13.842424242424242,
+                "phase": 0.8424242424242419,
+                "width10to90Px": 1.6668247694334646,
+                "contrastLuma8": 58.79999999999998
+              },
+              {
+                "y": 4,
+                "edgeX": 13.86969696969697,
+                "phase": 0.8696969696969692,
+                "width10to90Px": 1.6496212121212128,
+                "contrastLuma8": 59
+              },
+              {
+                "y": 5,
+                "edgeX": 13.866666666666667,
+                "phase": 0.8666666666666671,
+                "width10to90Px": 1.6773649538866913,
+                "contrastLuma8": 58.80000000000001
+              },
+              {
+                "y": 6,
+                "edgeX": 13.863636363636363,
+                "phase": 0.8636363636363633,
+                "width10to90Px": 1.6819499341238462,
+                "contrastLuma8": 59
+              },
+              {
+                "y": 7,
+                "edgeX": 13.863636363636363,
+                "phase": 0.8636363636363633,
+                "width10to90Px": 1.6819499341238462,
+                "contrastLuma8": 59
+              },
+              {
+                "y": 8,
+                "edgeX": 13.860606060606061,
+                "phase": 0.8606060606060613,
+                "width10to90Px": 1.6747299077733846,
+                "contrastLuma8": 58.80000000000001
+              },
+              {
+                "y": 9,
+                "edgeX": 13.860606060606061,
+                "phase": 0.8606060606060613,
+                "width10to90Px": 1.6747299077733846,
+                "contrastLuma8": 58.80000000000001
+              },
+              {
+                "y": 10,
+                "edgeX": 13.857575757575757,
+                "phase": 0.8575757575757574,
+                "width10to90Px": 1.6675098814229248,
+                "contrastLuma8": 58.599999999999994
+              },
+              {
+                "y": 11,
+                "edgeX": 13.854545454545455,
+                "phase": 0.8545454545454554,
+                "width10to90Px": 1.6602898550724632,
+                "contrastLuma8": 58.400000000000006
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 1705
+            }
+          }
+        },
+        {
+          "id": "middle-edge",
+          "valid": true,
+          "worldMm": {
+            "x": 0,
+            "y": -320,
+            "z": 2000
+          },
+          "signedFocusPlaneDistanceMm": 15.126950235360603,
+          "canonicalSignedCoCDiameterMm": 0.1071807283889673,
+          "canonicalMajorRadiusDisplayPx": 0.20409407219842535,
+          "canonicalMinorRadiusMm": 0.05318394422488693,
+          "canonicalFootprintOrientationRad": 1.7797645512640492,
+          "projectedUv": [
+            0.5,
+            0.35158923197427544
+          ],
+          "registeredRoi": {
+            "x": 226,
+            "y": 228,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.3974166666666683,
+            "bootstrap95Px": [
+              1.3333333333333357,
+              1.4000000000000004
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 51.60000000000002,
+            "edgePhaseRange": [
+              0.5924999999999994,
+              0.5999999999999996
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 1,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                0,
+                12,
+                0
+              ],
+              "envelopePx": null,
+              "adequate": false
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 1.7920000000000016
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 1.765714285714286
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 1.715218216318787
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.6085714285714285
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.3974166666666683
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.6762896825396831
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 1.9055952380952386
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 1.8708333333333353
+                }
+              ],
+              "envelopePx": 0.5081785714285703,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.597560975609756,
+                "phase": 0.5975609756097562,
+                "width10to90Px": 1.3333333333333357,
+                "contrastLuma8": 51.00000000000003
+              },
+              {
+                "y": 1,
+                "edgeX": 13.597560975609756,
+                "phase": 0.5975609756097562,
+                "width10to90Px": 1.3333333333333357,
+                "contrastLuma8": 51.00000000000003
+              },
+              {
+                "y": 2,
+                "edgeX": 13.597560975609756,
+                "phase": 0.5975609756097562,
+                "width10to90Px": 1.3333333333333357,
+                "contrastLuma8": 51.00000000000003
+              },
+              {
+                "y": 3,
+                "edgeX": 13.597560975609756,
+                "phase": 0.5975609756097562,
+                "width10to90Px": 1.3333333333333357,
+                "contrastLuma8": 51.00000000000003
+              },
+              {
+                "y": 4,
+                "edgeX": 13.597560975609756,
+                "phase": 0.5975609756097562,
+                "width10to90Px": 1.3333333333333357,
+                "contrastLuma8": 51.00000000000003
+              },
+              {
+                "y": 5,
+                "edgeX": 13.5925,
+                "phase": 0.5924999999999994,
+                "width10to90Px": 1.3948333333333363,
+                "contrastLuma8": 51.400000000000034
+              },
+              {
+                "y": 6,
+                "edgeX": 13.5975,
+                "phase": 0.5975000000000001,
+                "width10to90Px": 1.4338333333333342,
+                "contrastLuma8": 51.80000000000001
+              },
+              {
+                "y": 7,
+                "edgeX": 13.6,
+                "phase": 0.5999999999999996,
+                "width10to90Px": 1.4533333333333314,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 8,
+                "edgeX": 13.6,
+                "phase": 0.5999999999999996,
+                "width10to90Px": 1.4000000000000004,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 9,
+                "edgeX": 13.6,
+                "phase": 0.5999999999999996,
+                "width10to90Px": 1.4000000000000004,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 10,
+                "edgeX": 13.6,
+                "phase": 0.5999999999999996,
+                "width10to90Px": 1.4000000000000004,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 11,
+                "edgeX": 13.6,
+                "phase": 0.5999999999999996,
+                "width10to90Px": 1.4000000000000004,
+                "contrastLuma8": 52
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 1906
+            }
+          }
+        },
+        {
+          "id": "far-edge",
+          "valid": true,
+          "worldMm": {
+            "x": 1100,
+            "y": 720,
+            "z": 4000
+          },
+          "signedFocusPlaneDistanceMm": -503.4228542415409,
+          "canonicalSignedCoCDiameterMm": 0.3887317930754115,
+          "canonicalMajorRadiusDisplayPx": 0.7492963814792617,
+          "canonicalMinorRadiusMm": 0.19055660773583571,
+          "canonicalFootprintOrientationRad": 0.0005077290103602123,
+          "projectedUv": [
+            0.2959351939646288,
+            0.66696211402894
+          ],
+          "registeredRoi": {
+            "x": 128,
+            "y": 114,
+            "width": 28,
+            "height": 12
+          },
+          "measurement": {
+            "valid": true,
+            "width10to90Px": 1.6000000000000005,
+            "bootstrap95Px": [
+              1.5715460526315796,
+              1.6166666666666671
+            ],
+            "validRowCount": 12,
+            "clippedFraction": 0,
+            "medianContrastLuma8": 52,
+            "edgePhaseRange": [
+              0.734375,
+              0.793103448275863
+            ],
+            "phaseCoverage": {
+              "binCount": 4,
+              "supportedBinCount": 2,
+              "minimumRowsPerBin": 2,
+              "rowsPerBin": [
+                0,
+                0,
+                4,
+                8
+              ],
+              "envelopePx": 0.049183114035089126,
+              "adequate": true
+            },
+            "phaseSweep": {
+              "method": "re-sample the captured display crop at eight fixed horizontal subpixel offsets using bilinear interpolation",
+              "sampleCount": 8,
+              "requiredSampleCount": 6,
+              "samples": [
+                {
+                  "offsetPx": -0.5,
+                  "width10to90Px": 2.1243529411764737
+                },
+                {
+                  "offsetPx": -0.375,
+                  "width10to90Px": 1.9574285714285695
+                },
+                {
+                  "offsetPx": -0.25,
+                  "width10to90Px": 1.8036347167325442
+                },
+                {
+                  "offsetPx": -0.125,
+                  "width10to90Px": 1.7138624338624338
+                },
+                {
+                  "offsetPx": 0,
+                  "width10to90Px": 1.6000000000000005
+                },
+                {
+                  "offsetPx": 0.125,
+                  "width10to90Px": 1.8594957983193314
+                },
+                {
+                  "offsetPx": 0.25,
+                  "width10to90Px": 2.0795833333333347
+                },
+                {
+                  "offsetPx": 0.375,
+                  "width10to90Px": 2.1516483516483547
+                }
+              ],
+              "envelopePx": 0.5516483516483541,
+              "adequate": true
+            },
+            "rows": [
+              {
+                "y": 0,
+                "edgeX": 13.75,
+                "phase": 0.75,
+                "width10to90Px": 1.5736842105263165,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 1,
+                "edgeX": 13.75,
+                "phase": 0.75,
+                "width10to90Px": 1.5736842105263165,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 2,
+                "edgeX": 13.74375,
+                "phase": 0.7437500000000004,
+                "width10to90Px": 1.5694078947368428,
+                "contrastLuma8": 52
+              },
+              {
+                "y": 3,
+                "edgeX": 13.740625,
+                "phase": 0.7406249999999996,
+                "width10to90Px": 1.5605592105263142,
+                "contrastLuma8": 51.79999999999998
+              },
+              {
+                "y": 4,
+                "edgeX": 13.734375,
+                "phase": 0.734375,
+                "width10to90Px": 1.5562828947368423,
+                "contrastLuma8": 51.80000000000001
+              },
+              {
+                "y": 5,
+                "edgeX": 13.751612903225807,
+                "phase": 0.7516129032258068,
+                "width10to90Px": 1.6020373514431228,
+                "contrastLuma8": 51.79999999999998
+              },
+              {
+                "y": 6,
+                "edgeX": 13.745161290322581,
+                "phase": 0.7451612903225815,
+                "width10to90Px": 1.5979626485568783,
+                "contrastLuma8": 51.80000000000004
+              },
+              {
+                "y": 7,
+                "edgeX": 13.77,
+                "phase": 0.7699999999999996,
+                "width10to90Px": 1.6116666666666681,
+                "contrastLuma8": 51.80000000000004
+              },
+              {
+                "y": 8,
+                "edgeX": 13.766666666666666,
+                "phase": 0.7666666666666657,
+                "width10to90Px": 1.6166666666666671,
+                "contrastLuma8": 52.00000000000003
+              },
+              {
+                "y": 9,
+                "edgeX": 13.766666666666666,
+                "phase": 0.7666666666666657,
+                "width10to90Px": 1.6166666666666671,
+                "contrastLuma8": 52.00000000000003
+              },
+              {
+                "y": 10,
+                "edgeX": 13.793103448275863,
+                "phase": 0.793103448275863,
+                "width10to90Px": 1.628899835796389,
+                "contrastLuma8": 52.00000000000003
+              },
+              {
+                "y": 11,
+                "edgeX": 13.793103448275863,
+                "phase": 0.793103448275863,
+                "width10to90Px": 1.628899835796389,
+                "contrastLuma8": 52.00000000000003
+              }
+            ],
+            "uncertainty": {
+              "interpretation": "row-bootstrap interval is conditional on this raster; phase envelope is descriptive and does not include scene/capture variance",
+              "bootstrapReplicates": 2000,
+              "seed": 1596
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "v5 is an earlier SwiftShader/display capture set; it is not the v6 Apple Metal hardware capture.",
+    "Only processed images were saved for these movement cases, so no matched Raw baseline is available.",
+    "The images are 480x361 CSS captures resized to the recorded 480x360 measurement grid.",
+    "Pairwise edge results are inconclusive when bootstrap and pixel-phase bounds overlap.",
+    "The fixture is diagnostic geometry, not the original room scene."
+  ]
+}

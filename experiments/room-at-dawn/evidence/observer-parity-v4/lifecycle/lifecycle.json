@@ -1,0 +1,12 @@
+{
+  "observerRetirement": {
+    "generationId": "observer-generation-1",
+    "reflectionDisposed": true,
+    "materialVariantsDisposed": true,
+    "errors": []
+  },
+  "oldObserverGeneration": "observer-generation-1",
+  "newObserverGeneration": "observer-generation-2",
+  "groundGeneration": "room-generation-2",
+  "groundFocusAfter": 2200
+}

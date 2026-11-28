@@ -1,0 +1,4195 @@
+{
+  "status": "passed",
+  "source": {
+    "commit": "6bf3a52f52b205a40a1bc01424c339b8f674a209",
+    "dirty": false,
+    "opticsSha256": "6d43fb76f2c9de25d981c5be6e6a556849589d23b3df9ca95bf35eb91a6b0251",
+    "harnessSha256": "65fb25b5ec0e4bdf4b673c4bc784ed9a275ccba0ce7529a092ab312585b8aeea"
+  },
+  "url": "http://127.0.0.1:5215/view-camera-simulator/experiments/room-at-dawn/optics.html?rttDiagnostics=1",
+  "browser": "149.0.7827.55",
+  "requestedGpu": "ANGLE Metal",
+  "viewportOrder": [
+    "desktop",
+    "narrow"
+  ],
+  "scene": {
+    "preset": "wide",
+    "subject": "room",
+    "hdr": true,
+    "reflections": true,
+    "aperture": 5.6,
+    "exposure": 18.1,
+    "renderQuality": "low"
+  },
+  "desktop": {
+    "keyboard": {
+      "Camera lateral position (mm)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "-50",
+            "min": "-1000",
+            "max": "1000",
+            "step": "50",
+            "input": {
+              "x": 354.109375,
+              "y": 611.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 610.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 610.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Camera lateral position (mm):",
+            "labelFor": "room-at-dawn-cameraLateralMm",
+            "inputId": "room-at-dawn-cameraLateralMm",
+            "outputText": "-50",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-1000",
+            "max": "1000",
+            "step": "50",
+            "input": {
+              "x": 354.109375,
+              "y": 611.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 610.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 610.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Camera lateral position (mm):",
+            "labelFor": "room-at-dawn-cameraLateralMm",
+            "inputId": "room-at-dawn-cameraLateralMm",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "50",
+            "min": "-1000",
+            "max": "1000",
+            "step": "50",
+            "input": {
+              "x": 354.109375,
+              "y": 611.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 610.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 610.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Camera lateral position (mm):",
+            "labelFor": "room-at-dawn-cameraLateralMm",
+            "inputId": "room-at-dawn-cameraLateralMm",
+            "outputText": "50",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-1000",
+            "max": "1000",
+            "step": "50",
+            "input": {
+              "x": 354.109375,
+              "y": 611.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 610.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 610.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Camera lateral position (mm):",
+            "labelFor": "room-at-dawn-cameraLateralMm",
+            "inputId": "room-at-dawn-cameraLateralMm",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "-50",
+            "min": "-1000",
+            "max": "1000",
+            "step": "50",
+            "input": {
+              "x": 354.109375,
+              "y": 611.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 610.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 610.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Camera lateral position (mm):",
+            "labelFor": "room-at-dawn-cameraLateralMm",
+            "inputId": "room-at-dawn-cameraLateralMm",
+            "outputText": "-50",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          0,
+          50,
+          0,
+          -50
+        ]
+      },
+      "Rise (mm)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "9",
+            "min": "0",
+            "max": "40",
+            "step": "1",
+            "input": {
+              "x": 354.109375,
+              "y": 632.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 631.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 632.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Rise (mm):",
+            "labelFor": "room-at-dawn-frontRiseMm",
+            "inputId": "room-at-dawn-frontRiseMm",
+            "outputText": "9",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "10",
+            "min": "0",
+            "max": "40",
+            "step": "1",
+            "input": {
+              "x": 354.109375,
+              "y": 632.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 631.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 632.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Rise (mm):",
+            "labelFor": "room-at-dawn-frontRiseMm",
+            "inputId": "room-at-dawn-frontRiseMm",
+            "outputText": "10",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          10
+        ]
+      },
+      "Shift (mm)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "-1",
+            "min": "-60",
+            "max": "60",
+            "step": "1",
+            "input": {
+              "x": 354.109375,
+              "y": 654.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 653.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 653.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Shift (mm):",
+            "labelFor": "room-at-dawn-frontShiftMm",
+            "inputId": "room-at-dawn-frontShiftMm",
+            "outputText": "-1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-60",
+            "max": "60",
+            "step": "1",
+            "input": {
+              "x": 354.109375,
+              "y": 654.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 653.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 653.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Shift (mm):",
+            "labelFor": "room-at-dawn-frontShiftMm",
+            "inputId": "room-at-dawn-frontShiftMm",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "1",
+            "min": "-60",
+            "max": "60",
+            "step": "1",
+            "input": {
+              "x": 354.109375,
+              "y": 654.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 653.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 653.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Shift (mm):",
+            "labelFor": "room-at-dawn-frontShiftMm",
+            "inputId": "room-at-dawn-frontShiftMm",
+            "outputText": "1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-60",
+            "max": "60",
+            "step": "1",
+            "input": {
+              "x": 354.109375,
+              "y": 654.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 653.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 653.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Shift (mm):",
+            "labelFor": "room-at-dawn-frontShiftMm",
+            "inputId": "room-at-dawn-frontShiftMm",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "-1",
+            "min": "-60",
+            "max": "60",
+            "step": "1",
+            "input": {
+              "x": 354.109375,
+              "y": 654.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 653.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 653.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Shift (mm):",
+            "labelFor": "room-at-dawn-frontShiftMm",
+            "inputId": "room-at-dawn-frontShiftMm",
+            "outputText": "-1",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          0,
+          1,
+          0,
+          -1
+        ]
+      },
+      "Tilt (degrees)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "-0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 354.109375,
+              "y": 675.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 674.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 675.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Tilt (degrees):",
+            "labelFor": "room-at-dawn-frontTiltDeg",
+            "inputId": "room-at-dawn-frontTiltDeg",
+            "outputText": "-0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 354.109375,
+              "y": 675.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 674.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 675.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Tilt (degrees):",
+            "labelFor": "room-at-dawn-frontTiltDeg",
+            "inputId": "room-at-dawn-frontTiltDeg",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 354.109375,
+              "y": 675.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 674.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 675.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Tilt (degrees):",
+            "labelFor": "room-at-dawn-frontTiltDeg",
+            "inputId": "room-at-dawn-frontTiltDeg",
+            "outputText": "0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 354.109375,
+              "y": 675.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 674.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 675.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Tilt (degrees):",
+            "labelFor": "room-at-dawn-frontTiltDeg",
+            "inputId": "room-at-dawn-frontTiltDeg",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "-0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 354.109375,
+              "y": 675.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 674.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 675.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Tilt (degrees):",
+            "labelFor": "room-at-dawn-frontTiltDeg",
+            "inputId": "room-at-dawn-frontTiltDeg",
+            "outputText": "-0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          0,
+          0.1,
+          0,
+          -0.1
+        ]
+      },
+      "Swing (degrees)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "-0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 354.109375,
+              "y": 697.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 696.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 696.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Swing (degrees):",
+            "labelFor": "room-at-dawn-frontSwingDeg",
+            "inputId": "room-at-dawn-frontSwingDeg",
+            "outputText": "-0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 354.109375,
+              "y": 697.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 696.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 696.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Swing (degrees):",
+            "labelFor": "room-at-dawn-frontSwingDeg",
+            "inputId": "room-at-dawn-frontSwingDeg",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 354.109375,
+              "y": 697.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 696.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 696.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Swing (degrees):",
+            "labelFor": "room-at-dawn-frontSwingDeg",
+            "inputId": "room-at-dawn-frontSwingDeg",
+            "outputText": "0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 354.109375,
+              "y": 697.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 696.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 696.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Swing (degrees):",
+            "labelFor": "room-at-dawn-frontSwingDeg",
+            "inputId": "room-at-dawn-frontSwingDeg",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "-0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 354.109375,
+              "y": 697.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 696.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 696.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Swing (degrees):",
+            "labelFor": "room-at-dawn-frontSwingDeg",
+            "inputId": "room-at-dawn-frontSwingDeg",
+            "outputText": "-0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          0,
+          0.1,
+          0,
+          -0.1
+        ]
+      },
+      "Focus (mm)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "990",
+            "min": "100",
+            "max": "8000",
+            "step": "10",
+            "input": {
+              "x": 354.109375,
+              "y": 718.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 717.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 718.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Focus (mm):",
+            "labelFor": "room-at-dawn-focusDistanceMm",
+            "inputId": "room-at-dawn-focusDistanceMm",
+            "outputText": "990",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "1000",
+            "min": "100",
+            "max": "8000",
+            "step": "10",
+            "input": {
+              "x": 354.109375,
+              "y": 718.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 717.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 718.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Focus (mm):",
+            "labelFor": "room-at-dawn-focusDistanceMm",
+            "inputId": "room-at-dawn-focusDistanceMm",
+            "outputText": "1000",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "1010",
+            "min": "100",
+            "max": "8000",
+            "step": "10",
+            "input": {
+              "x": 354.109375,
+              "y": 718.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 717.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 718.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Focus (mm):",
+            "labelFor": "room-at-dawn-focusDistanceMm",
+            "inputId": "room-at-dawn-focusDistanceMm",
+            "outputText": "1010",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "1000",
+            "min": "100",
+            "max": "8000",
+            "step": "10",
+            "input": {
+              "x": 354.109375,
+              "y": 718.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 717.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 718.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Focus (mm):",
+            "labelFor": "room-at-dawn-focusDistanceMm",
+            "inputId": "room-at-dawn-focusDistanceMm",
+            "outputText": "1000",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "990",
+            "min": "100",
+            "max": "8000",
+            "step": "10",
+            "input": {
+              "x": 354.109375,
+              "y": 718.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 717.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 718.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Focus (mm):",
+            "labelFor": "room-at-dawn-focusDistanceMm",
+            "inputId": "room-at-dawn-focusDistanceMm",
+            "outputText": "990",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          1000,
+          1010,
+          1000,
+          990
+        ]
+      }
+    },
+    "pointer": {
+      "slow": {
+        "intendedRangeMm": [
+          700,
+          1700
+        ],
+        "actualFocusMm": 1700,
+        "inputEventCount": 60,
+        "trusted": true,
+        "monotonic": true,
+        "trackXDriftCssPx": 0,
+        "inputValues": [
+          700,
+          720,
+          730,
+          750,
+          770,
+          780,
+          800,
+          820,
+          830,
+          850,
+          870,
+          880,
+          900,
+          920,
+          930,
+          950,
+          970,
+          980,
+          1000,
+          1020,
+          1030,
+          1050,
+          1070,
+          1080,
+          1100,
+          1120,
+          1130,
+          1150,
+          1170,
+          1180,
+          1200,
+          1220,
+          1230,
+          1250,
+          1270,
+          1280,
+          1300,
+          1320,
+          1330,
+          1350,
+          1370,
+          1380,
+          1400,
+          1420,
+          1430,
+          1450,
+          1470,
+          1480,
+          1500,
+          1520,
+          1530,
+          1550,
+          1570,
+          1580,
+          1600,
+          1620,
+          1630,
+          1650,
+          1670,
+          1680,
+          1700
+        ],
+        "requestId": "room-request-97",
+        "generationId": "room-generation-5",
+        "frameId": "room-generation-5:frame:172",
+        "completedAtMs": null
+      },
+      "fast": {
+        "intendedRangeMm": [
+          700,
+          1700
+        ],
+        "actualFocusMm": 1700,
+        "inputEventCount": 60,
+        "trusted": true,
+        "monotonic": true,
+        "trackXDriftCssPx": 0,
+        "inputValues": [
+          700,
+          720,
+          730,
+          750,
+          770,
+          780,
+          800,
+          820,
+          830,
+          850,
+          870,
+          880,
+          900,
+          920,
+          930,
+          950,
+          970,
+          980,
+          1000,
+          1020,
+          1030,
+          1050,
+          1070,
+          1080,
+          1100,
+          1120,
+          1130,
+          1150,
+          1170,
+          1180,
+          1200,
+          1220,
+          1230,
+          1250,
+          1270,
+          1280,
+          1300,
+          1320,
+          1330,
+          1350,
+          1370,
+          1380,
+          1400,
+          1420,
+          1430,
+          1450,
+          1470,
+          1480,
+          1500,
+          1520,
+          1530,
+          1550,
+          1570,
+          1580,
+          1600,
+          1620,
+          1630,
+          1650,
+          1670,
+          1680,
+          1700
+        ],
+        "requestId": "room-request-158",
+        "generationId": "room-generation-5",
+        "frameId": "room-generation-5:frame:272",
+        "completedAtMs": null
+      }
+    },
+    "viewport": {
+      "width": 1200,
+      "height": 950
+    },
+    "document": {
+      "innerWidth": 1200,
+      "scrollWidth": 1200,
+      "scrollHeight": 3764
+    },
+    "layout": {
+      "Camera lateral position (mm)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "-50",
+            "min": "-1000",
+            "max": "1000",
+            "step": "50",
+            "input": {
+              "x": 354.109375,
+              "y": 611.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 610.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 610.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Camera lateral position (mm):",
+            "labelFor": "room-at-dawn-cameraLateralMm",
+            "inputId": "room-at-dawn-cameraLateralMm",
+            "outputText": "-50",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-1000",
+            "max": "1000",
+            "step": "50",
+            "input": {
+              "x": 354.109375,
+              "y": 611.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 610.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 610.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Camera lateral position (mm):",
+            "labelFor": "room-at-dawn-cameraLateralMm",
+            "inputId": "room-at-dawn-cameraLateralMm",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "50",
+            "min": "-1000",
+            "max": "1000",
+            "step": "50",
+            "input": {
+              "x": 354.109375,
+              "y": 611.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 610.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 610.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Camera lateral position (mm):",
+            "labelFor": "room-at-dawn-cameraLateralMm",
+            "inputId": "room-at-dawn-cameraLateralMm",
+            "outputText": "50",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-1000",
+            "max": "1000",
+            "step": "50",
+            "input": {
+              "x": 354.109375,
+              "y": 611.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 610.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 610.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Camera lateral position (mm):",
+            "labelFor": "room-at-dawn-cameraLateralMm",
+            "inputId": "room-at-dawn-cameraLateralMm",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "-50",
+            "min": "-1000",
+            "max": "1000",
+            "step": "50",
+            "input": {
+              "x": 354.109375,
+              "y": 611.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 610.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 610.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Camera lateral position (mm):",
+            "labelFor": "room-at-dawn-cameraLateralMm",
+            "inputId": "room-at-dawn-cameraLateralMm",
+            "outputText": "-50",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          0,
+          50,
+          0,
+          -50
+        ]
+      },
+      "Rise (mm)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "9",
+            "min": "0",
+            "max": "40",
+            "step": "1",
+            "input": {
+              "x": 354.109375,
+              "y": 632.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 631.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 632.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Rise (mm):",
+            "labelFor": "room-at-dawn-frontRiseMm",
+            "inputId": "room-at-dawn-frontRiseMm",
+            "outputText": "9",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "10",
+            "min": "0",
+            "max": "40",
+            "step": "1",
+            "input": {
+              "x": 354.109375,
+              "y": 632.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 631.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 632.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Rise (mm):",
+            "labelFor": "room-at-dawn-frontRiseMm",
+            "inputId": "room-at-dawn-frontRiseMm",
+            "outputText": "10",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          10
+        ]
+      },
+      "Shift (mm)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "-1",
+            "min": "-60",
+            "max": "60",
+            "step": "1",
+            "input": {
+              "x": 354.109375,
+              "y": 654.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 653.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 653.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Shift (mm):",
+            "labelFor": "room-at-dawn-frontShiftMm",
+            "inputId": "room-at-dawn-frontShiftMm",
+            "outputText": "-1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-60",
+            "max": "60",
+            "step": "1",
+            "input": {
+              "x": 354.109375,
+              "y": 654.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 653.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 653.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Shift (mm):",
+            "labelFor": "room-at-dawn-frontShiftMm",
+            "inputId": "room-at-dawn-frontShiftMm",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "1",
+            "min": "-60",
+            "max": "60",
+            "step": "1",
+            "input": {
+              "x": 354.109375,
+              "y": 654.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 653.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 653.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Shift (mm):",
+            "labelFor": "room-at-dawn-frontShiftMm",
+            "inputId": "room-at-dawn-frontShiftMm",
+            "outputText": "1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-60",
+            "max": "60",
+            "step": "1",
+            "input": {
+              "x": 354.109375,
+              "y": 654.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 653.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 653.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Shift (mm):",
+            "labelFor": "room-at-dawn-frontShiftMm",
+            "inputId": "room-at-dawn-frontShiftMm",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "-1",
+            "min": "-60",
+            "max": "60",
+            "step": "1",
+            "input": {
+              "x": 354.109375,
+              "y": 654.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 653.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 653.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Shift (mm):",
+            "labelFor": "room-at-dawn-frontShiftMm",
+            "inputId": "room-at-dawn-frontShiftMm",
+            "outputText": "-1",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          0,
+          1,
+          0,
+          -1
+        ]
+      },
+      "Tilt (degrees)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "-0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 354.109375,
+              "y": 675.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 674.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 675.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Tilt (degrees):",
+            "labelFor": "room-at-dawn-frontTiltDeg",
+            "inputId": "room-at-dawn-frontTiltDeg",
+            "outputText": "-0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 354.109375,
+              "y": 675.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 674.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 675.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Tilt (degrees):",
+            "labelFor": "room-at-dawn-frontTiltDeg",
+            "inputId": "room-at-dawn-frontTiltDeg",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 354.109375,
+              "y": 675.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 674.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 675.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Tilt (degrees):",
+            "labelFor": "room-at-dawn-frontTiltDeg",
+            "inputId": "room-at-dawn-frontTiltDeg",
+            "outputText": "0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 354.109375,
+              "y": 675.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 674.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 675.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Tilt (degrees):",
+            "labelFor": "room-at-dawn-frontTiltDeg",
+            "inputId": "room-at-dawn-frontTiltDeg",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "-0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 354.109375,
+              "y": 675.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 674.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 675.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Tilt (degrees):",
+            "labelFor": "room-at-dawn-frontTiltDeg",
+            "inputId": "room-at-dawn-frontTiltDeg",
+            "outputText": "-0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          0,
+          0.1,
+          0,
+          -0.1
+        ]
+      },
+      "Swing (degrees)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "-0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 354.109375,
+              "y": 697.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 696.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 696.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Swing (degrees):",
+            "labelFor": "room-at-dawn-frontSwingDeg",
+            "inputId": "room-at-dawn-frontSwingDeg",
+            "outputText": "-0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 354.109375,
+              "y": 697.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 696.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 696.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Swing (degrees):",
+            "labelFor": "room-at-dawn-frontSwingDeg",
+            "inputId": "room-at-dawn-frontSwingDeg",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 354.109375,
+              "y": 697.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 696.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 696.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Swing (degrees):",
+            "labelFor": "room-at-dawn-frontSwingDeg",
+            "inputId": "room-at-dawn-frontSwingDeg",
+            "outputText": "0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 354.109375,
+              "y": 697.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 696.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 696.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Swing (degrees):",
+            "labelFor": "room-at-dawn-frontSwingDeg",
+            "inputId": "room-at-dawn-frontSwingDeg",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "-0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 354.109375,
+              "y": 697.09375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 696.34375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 696.59375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Swing (degrees):",
+            "labelFor": "room-at-dawn-frontSwingDeg",
+            "inputId": "room-at-dawn-frontSwingDeg",
+            "outputText": "-0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          0,
+          0.1,
+          0,
+          -0.1
+        ]
+      },
+      "Focus (mm)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "990",
+            "min": "100",
+            "max": "8000",
+            "step": "10",
+            "input": {
+              "x": 354.109375,
+              "y": 718.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 717.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 718.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Focus (mm):",
+            "labelFor": "room-at-dawn-focusDistanceMm",
+            "inputId": "room-at-dawn-focusDistanceMm",
+            "outputText": "990",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "1000",
+            "min": "100",
+            "max": "8000",
+            "step": "10",
+            "input": {
+              "x": 354.109375,
+              "y": 718.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 717.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 718.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Focus (mm):",
+            "labelFor": "room-at-dawn-focusDistanceMm",
+            "inputId": "room-at-dawn-focusDistanceMm",
+            "outputText": "1000",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "1010",
+            "min": "100",
+            "max": "8000",
+            "step": "10",
+            "input": {
+              "x": 354.109375,
+              "y": 718.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 717.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 718.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Focus (mm):",
+            "labelFor": "room-at-dawn-focusDistanceMm",
+            "inputId": "room-at-dawn-focusDistanceMm",
+            "outputText": "1010",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "1000",
+            "min": "100",
+            "max": "8000",
+            "step": "10",
+            "input": {
+              "x": 354.109375,
+              "y": 718.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 717.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 718.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Focus (mm):",
+            "labelFor": "room-at-dawn-focusDistanceMm",
+            "inputId": "room-at-dawn-focusDistanceMm",
+            "outputText": "1000",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "990",
+            "min": "100",
+            "max": "8000",
+            "step": "10",
+            "input": {
+              "x": 354.109375,
+              "y": 718.59375,
+              "width": 301.890625,
+              "height": 16,
+              "right": 656
+            },
+            "row": {
+              "x": 16,
+              "y": 717.84375,
+              "width": 640,
+              "height": 17.5,
+              "right": 656
+            },
+            "output": {
+              "x": 275.5625,
+              "y": 718.09375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 346.109375
+            },
+            "label": "Focus (mm):",
+            "labelFor": "room-at-dawn-focusDistanceMm",
+            "inputId": "room-at-dawn-focusDistanceMm",
+            "outputText": "990",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          1000,
+          1010,
+          1000,
+          990
+        ]
+      }
+    },
+    "finalFrame": {
+      "requestId": "room-request-158",
+      "generationId": "room-generation-5",
+      "frameId": "room-generation-5:frame:272",
+      "requestStatus": "completed",
+      "completedOperations": "all-completed"
+    }
+  },
+  "narrow": {
+    "keyboard": {
+      "Camera lateral position (mm)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "-50",
+            "min": "-1000",
+            "max": "1000",
+            "step": "50",
+            "input": {
+              "x": 230.546875,
+              "y": 413.6875,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 404.1875,
+              "width": 358,
+              "height": 35,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 413.1875,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Camera lateral position (mm):",
+            "labelFor": "room-at-dawn-cameraLateralMm",
+            "inputId": "room-at-dawn-cameraLateralMm",
+            "outputText": "-50",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-1000",
+            "max": "1000",
+            "step": "50",
+            "input": {
+              "x": 230.546875,
+              "y": 413.6875,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 404.1875,
+              "width": 358,
+              "height": 35,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 413.1875,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Camera lateral position (mm):",
+            "labelFor": "room-at-dawn-cameraLateralMm",
+            "inputId": "room-at-dawn-cameraLateralMm",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "50",
+            "min": "-1000",
+            "max": "1000",
+            "step": "50",
+            "input": {
+              "x": 230.546875,
+              "y": 413.6875,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 404.1875,
+              "width": 358,
+              "height": 35,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 413.1875,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Camera lateral position (mm):",
+            "labelFor": "room-at-dawn-cameraLateralMm",
+            "inputId": "room-at-dawn-cameraLateralMm",
+            "outputText": "50",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-1000",
+            "max": "1000",
+            "step": "50",
+            "input": {
+              "x": 230.546875,
+              "y": 413.6875,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 404.1875,
+              "width": 358,
+              "height": 35,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 413.1875,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Camera lateral position (mm):",
+            "labelFor": "room-at-dawn-cameraLateralMm",
+            "inputId": "room-at-dawn-cameraLateralMm",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "-50",
+            "min": "-1000",
+            "max": "1000",
+            "step": "50",
+            "input": {
+              "x": 230.546875,
+              "y": 413.6875,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 404.1875,
+              "width": 358,
+              "height": 35,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 413.1875,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Camera lateral position (mm):",
+            "labelFor": "room-at-dawn-cameraLateralMm",
+            "inputId": "room-at-dawn-cameraLateralMm",
+            "outputText": "-50",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          0,
+          50,
+          0,
+          -50
+        ]
+      },
+      "Rise (mm)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "9",
+            "min": "0",
+            "max": "40",
+            "step": "1",
+            "input": {
+              "x": 230.546875,
+              "y": 443.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 443.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 443.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Rise (mm):",
+            "labelFor": "room-at-dawn-frontRiseMm",
+            "inputId": "room-at-dawn-frontRiseMm",
+            "outputText": "9",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "10",
+            "min": "0",
+            "max": "40",
+            "step": "1",
+            "input": {
+              "x": 230.546875,
+              "y": 443.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 443.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 443.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Rise (mm):",
+            "labelFor": "room-at-dawn-frontRiseMm",
+            "inputId": "room-at-dawn-frontRiseMm",
+            "outputText": "10",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          10
+        ]
+      },
+      "Shift (mm)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "-1",
+            "min": "-60",
+            "max": "60",
+            "step": "1",
+            "input": {
+              "x": 230.546875,
+              "y": 465.4375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 464.6875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 464.9375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Shift (mm):",
+            "labelFor": "room-at-dawn-frontShiftMm",
+            "inputId": "room-at-dawn-frontShiftMm",
+            "outputText": "-1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-60",
+            "max": "60",
+            "step": "1",
+            "input": {
+              "x": 230.546875,
+              "y": 465.4375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 464.6875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 464.9375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Shift (mm):",
+            "labelFor": "room-at-dawn-frontShiftMm",
+            "inputId": "room-at-dawn-frontShiftMm",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "1",
+            "min": "-60",
+            "max": "60",
+            "step": "1",
+            "input": {
+              "x": 230.546875,
+              "y": 465.4375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 464.6875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 464.9375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Shift (mm):",
+            "labelFor": "room-at-dawn-frontShiftMm",
+            "inputId": "room-at-dawn-frontShiftMm",
+            "outputText": "1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-60",
+            "max": "60",
+            "step": "1",
+            "input": {
+              "x": 230.546875,
+              "y": 465.4375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 464.6875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 464.9375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Shift (mm):",
+            "labelFor": "room-at-dawn-frontShiftMm",
+            "inputId": "room-at-dawn-frontShiftMm",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "-1",
+            "min": "-60",
+            "max": "60",
+            "step": "1",
+            "input": {
+              "x": 230.546875,
+              "y": 465.4375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 464.6875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 464.9375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Shift (mm):",
+            "labelFor": "room-at-dawn-frontShiftMm",
+            "inputId": "room-at-dawn-frontShiftMm",
+            "outputText": "-1",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          0,
+          1,
+          0,
+          -1
+        ]
+      },
+      "Tilt (degrees)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "-0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 230.546875,
+              "y": 486.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 486.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 486.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Tilt (degrees):",
+            "labelFor": "room-at-dawn-frontTiltDeg",
+            "inputId": "room-at-dawn-frontTiltDeg",
+            "outputText": "-0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 230.546875,
+              "y": 486.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 486.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 486.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Tilt (degrees):",
+            "labelFor": "room-at-dawn-frontTiltDeg",
+            "inputId": "room-at-dawn-frontTiltDeg",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 230.546875,
+              "y": 486.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 486.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 486.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Tilt (degrees):",
+            "labelFor": "room-at-dawn-frontTiltDeg",
+            "inputId": "room-at-dawn-frontTiltDeg",
+            "outputText": "0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 230.546875,
+              "y": 486.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 486.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 486.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Tilt (degrees):",
+            "labelFor": "room-at-dawn-frontTiltDeg",
+            "inputId": "room-at-dawn-frontTiltDeg",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "-0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 230.546875,
+              "y": 486.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 486.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 486.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Tilt (degrees):",
+            "labelFor": "room-at-dawn-frontTiltDeg",
+            "inputId": "room-at-dawn-frontTiltDeg",
+            "outputText": "-0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          0,
+          0.1,
+          0,
+          -0.1
+        ]
+      },
+      "Swing (degrees)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "-0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 230.546875,
+              "y": 508.4375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 507.6875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 507.9375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Swing (degrees):",
+            "labelFor": "room-at-dawn-frontSwingDeg",
+            "inputId": "room-at-dawn-frontSwingDeg",
+            "outputText": "-0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 230.546875,
+              "y": 508.4375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 507.6875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 507.9375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Swing (degrees):",
+            "labelFor": "room-at-dawn-frontSwingDeg",
+            "inputId": "room-at-dawn-frontSwingDeg",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 230.546875,
+              "y": 508.4375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 507.6875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 507.9375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Swing (degrees):",
+            "labelFor": "room-at-dawn-frontSwingDeg",
+            "inputId": "room-at-dawn-frontSwingDeg",
+            "outputText": "0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 230.546875,
+              "y": 508.4375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 507.6875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 507.9375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Swing (degrees):",
+            "labelFor": "room-at-dawn-frontSwingDeg",
+            "inputId": "room-at-dawn-frontSwingDeg",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "-0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 230.546875,
+              "y": 508.4375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 507.6875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 507.9375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Swing (degrees):",
+            "labelFor": "room-at-dawn-frontSwingDeg",
+            "inputId": "room-at-dawn-frontSwingDeg",
+            "outputText": "-0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          0,
+          0.1,
+          0,
+          -0.1
+        ]
+      },
+      "Focus (mm)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "990",
+            "min": "100",
+            "max": "8000",
+            "step": "10",
+            "input": {
+              "x": 230.546875,
+              "y": 529.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 529.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 529.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Focus (mm):",
+            "labelFor": "room-at-dawn-focusDistanceMm",
+            "inputId": "room-at-dawn-focusDistanceMm",
+            "outputText": "990",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "1000",
+            "min": "100",
+            "max": "8000",
+            "step": "10",
+            "input": {
+              "x": 230.546875,
+              "y": 529.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 529.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 529.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Focus (mm):",
+            "labelFor": "room-at-dawn-focusDistanceMm",
+            "inputId": "room-at-dawn-focusDistanceMm",
+            "outputText": "1000",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "1010",
+            "min": "100",
+            "max": "8000",
+            "step": "10",
+            "input": {
+              "x": 230.546875,
+              "y": 529.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 529.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 529.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Focus (mm):",
+            "labelFor": "room-at-dawn-focusDistanceMm",
+            "inputId": "room-at-dawn-focusDistanceMm",
+            "outputText": "1010",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "1000",
+            "min": "100",
+            "max": "8000",
+            "step": "10",
+            "input": {
+              "x": 230.546875,
+              "y": 529.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 529.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 529.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Focus (mm):",
+            "labelFor": "room-at-dawn-focusDistanceMm",
+            "inputId": "room-at-dawn-focusDistanceMm",
+            "outputText": "1000",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "990",
+            "min": "100",
+            "max": "8000",
+            "step": "10",
+            "input": {
+              "x": 230.546875,
+              "y": 529.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 529.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 529.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Focus (mm):",
+            "labelFor": "room-at-dawn-focusDistanceMm",
+            "inputId": "room-at-dawn-focusDistanceMm",
+            "outputText": "990",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          1000,
+          1010,
+          1000,
+          990
+        ]
+      }
+    },
+    "pointer": {
+      "slow": {
+        "intendedRangeMm": [
+          700,
+          1700
+        ],
+        "actualFocusMm": 1700,
+        "inputEventCount": 60,
+        "trusted": true,
+        "monotonic": true,
+        "trackXDriftCssPx": 0,
+        "inputValues": [
+          700,
+          720,
+          730,
+          750,
+          770,
+          780,
+          800,
+          820,
+          830,
+          850,
+          870,
+          880,
+          900,
+          920,
+          930,
+          950,
+          970,
+          980,
+          1000,
+          1020,
+          1030,
+          1050,
+          1070,
+          1080,
+          1100,
+          1120,
+          1130,
+          1150,
+          1170,
+          1180,
+          1200,
+          1220,
+          1230,
+          1250,
+          1270,
+          1280,
+          1300,
+          1320,
+          1330,
+          1350,
+          1370,
+          1380,
+          1400,
+          1420,
+          1430,
+          1450,
+          1470,
+          1480,
+          1500,
+          1520,
+          1530,
+          1550,
+          1570,
+          1580,
+          1600,
+          1620,
+          1630,
+          1650,
+          1670,
+          1680,
+          1700
+        ],
+        "requestId": "room-request-242",
+        "generationId": "room-generation-5",
+        "frameId": "room-generation-5:frame:418",
+        "completedAtMs": null
+      },
+      "fast": {
+        "intendedRangeMm": [
+          700,
+          1700
+        ],
+        "actualFocusMm": 1700,
+        "inputEventCount": 60,
+        "trusted": true,
+        "monotonic": true,
+        "trackXDriftCssPx": 0,
+        "inputValues": [
+          700,
+          720,
+          730,
+          750,
+          770,
+          780,
+          800,
+          820,
+          830,
+          850,
+          870,
+          880,
+          900,
+          920,
+          930,
+          950,
+          970,
+          980,
+          1000,
+          1020,
+          1030,
+          1050,
+          1070,
+          1080,
+          1100,
+          1120,
+          1130,
+          1150,
+          1170,
+          1180,
+          1200,
+          1220,
+          1230,
+          1250,
+          1270,
+          1280,
+          1300,
+          1320,
+          1330,
+          1350,
+          1370,
+          1380,
+          1400,
+          1420,
+          1430,
+          1450,
+          1470,
+          1480,
+          1500,
+          1520,
+          1530,
+          1550,
+          1570,
+          1580,
+          1600,
+          1620,
+          1630,
+          1650,
+          1670,
+          1680,
+          1700
+        ],
+        "requestId": "room-request-303",
+        "generationId": "room-generation-5",
+        "frameId": "room-generation-5:frame:507",
+        "completedAtMs": null
+      }
+    },
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "document": {
+      "innerWidth": 390,
+      "scrollWidth": 496,
+      "scrollHeight": 4618
+    },
+    "layout": {
+      "Camera lateral position (mm)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "-50",
+            "min": "-1000",
+            "max": "1000",
+            "step": "50",
+            "input": {
+              "x": 230.546875,
+              "y": 413.6875,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 404.1875,
+              "width": 358,
+              "height": 35,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 413.1875,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Camera lateral position (mm):",
+            "labelFor": "room-at-dawn-cameraLateralMm",
+            "inputId": "room-at-dawn-cameraLateralMm",
+            "outputText": "-50",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-1000",
+            "max": "1000",
+            "step": "50",
+            "input": {
+              "x": 230.546875,
+              "y": 413.6875,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 404.1875,
+              "width": 358,
+              "height": 35,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 413.1875,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Camera lateral position (mm):",
+            "labelFor": "room-at-dawn-cameraLateralMm",
+            "inputId": "room-at-dawn-cameraLateralMm",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "50",
+            "min": "-1000",
+            "max": "1000",
+            "step": "50",
+            "input": {
+              "x": 230.546875,
+              "y": 413.6875,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 404.1875,
+              "width": 358,
+              "height": 35,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 413.1875,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Camera lateral position (mm):",
+            "labelFor": "room-at-dawn-cameraLateralMm",
+            "inputId": "room-at-dawn-cameraLateralMm",
+            "outputText": "50",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-1000",
+            "max": "1000",
+            "step": "50",
+            "input": {
+              "x": 230.546875,
+              "y": 413.6875,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 404.1875,
+              "width": 358,
+              "height": 35,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 413.1875,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Camera lateral position (mm):",
+            "labelFor": "room-at-dawn-cameraLateralMm",
+            "inputId": "room-at-dawn-cameraLateralMm",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "-50",
+            "min": "-1000",
+            "max": "1000",
+            "step": "50",
+            "input": {
+              "x": 230.546875,
+              "y": 413.6875,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 404.1875,
+              "width": 358,
+              "height": 35,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 413.1875,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Camera lateral position (mm):",
+            "labelFor": "room-at-dawn-cameraLateralMm",
+            "inputId": "room-at-dawn-cameraLateralMm",
+            "outputText": "-50",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          0,
+          50,
+          0,
+          -50
+        ]
+      },
+      "Rise (mm)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "9",
+            "min": "0",
+            "max": "40",
+            "step": "1",
+            "input": {
+              "x": 230.546875,
+              "y": 443.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 443.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 443.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Rise (mm):",
+            "labelFor": "room-at-dawn-frontRiseMm",
+            "inputId": "room-at-dawn-frontRiseMm",
+            "outputText": "9",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "10",
+            "min": "0",
+            "max": "40",
+            "step": "1",
+            "input": {
+              "x": 230.546875,
+              "y": 443.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 443.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 443.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Rise (mm):",
+            "labelFor": "room-at-dawn-frontRiseMm",
+            "inputId": "room-at-dawn-frontRiseMm",
+            "outputText": "10",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          10
+        ]
+      },
+      "Shift (mm)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "-1",
+            "min": "-60",
+            "max": "60",
+            "step": "1",
+            "input": {
+              "x": 230.546875,
+              "y": 465.4375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 464.6875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 464.9375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Shift (mm):",
+            "labelFor": "room-at-dawn-frontShiftMm",
+            "inputId": "room-at-dawn-frontShiftMm",
+            "outputText": "-1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-60",
+            "max": "60",
+            "step": "1",
+            "input": {
+              "x": 230.546875,
+              "y": 465.4375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 464.6875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 464.9375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Shift (mm):",
+            "labelFor": "room-at-dawn-frontShiftMm",
+            "inputId": "room-at-dawn-frontShiftMm",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "1",
+            "min": "-60",
+            "max": "60",
+            "step": "1",
+            "input": {
+              "x": 230.546875,
+              "y": 465.4375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 464.6875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 464.9375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Shift (mm):",
+            "labelFor": "room-at-dawn-frontShiftMm",
+            "inputId": "room-at-dawn-frontShiftMm",
+            "outputText": "1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-60",
+            "max": "60",
+            "step": "1",
+            "input": {
+              "x": 230.546875,
+              "y": 465.4375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 464.6875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 464.9375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Shift (mm):",
+            "labelFor": "room-at-dawn-frontShiftMm",
+            "inputId": "room-at-dawn-frontShiftMm",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "-1",
+            "min": "-60",
+            "max": "60",
+            "step": "1",
+            "input": {
+              "x": 230.546875,
+              "y": 465.4375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 464.6875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 464.9375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Shift (mm):",
+            "labelFor": "room-at-dawn-frontShiftMm",
+            "inputId": "room-at-dawn-frontShiftMm",
+            "outputText": "-1",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          0,
+          1,
+          0,
+          -1
+        ]
+      },
+      "Tilt (degrees)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "-0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 230.546875,
+              "y": 486.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 486.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 486.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Tilt (degrees):",
+            "labelFor": "room-at-dawn-frontTiltDeg",
+            "inputId": "room-at-dawn-frontTiltDeg",
+            "outputText": "-0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 230.546875,
+              "y": 486.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 486.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 486.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Tilt (degrees):",
+            "labelFor": "room-at-dawn-frontTiltDeg",
+            "inputId": "room-at-dawn-frontTiltDeg",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 230.546875,
+              "y": 486.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 486.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 486.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Tilt (degrees):",
+            "labelFor": "room-at-dawn-frontTiltDeg",
+            "inputId": "room-at-dawn-frontTiltDeg",
+            "outputText": "0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 230.546875,
+              "y": 486.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 486.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 486.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Tilt (degrees):",
+            "labelFor": "room-at-dawn-frontTiltDeg",
+            "inputId": "room-at-dawn-frontTiltDeg",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "-0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 230.546875,
+              "y": 486.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 486.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 486.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Tilt (degrees):",
+            "labelFor": "room-at-dawn-frontTiltDeg",
+            "inputId": "room-at-dawn-frontTiltDeg",
+            "outputText": "-0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          0,
+          0.1,
+          0,
+          -0.1
+        ]
+      },
+      "Swing (degrees)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "-0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 230.546875,
+              "y": 508.4375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 507.6875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 507.9375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Swing (degrees):",
+            "labelFor": "room-at-dawn-frontSwingDeg",
+            "inputId": "room-at-dawn-frontSwingDeg",
+            "outputText": "-0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 230.546875,
+              "y": 508.4375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 507.6875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 507.9375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Swing (degrees):",
+            "labelFor": "room-at-dawn-frontSwingDeg",
+            "inputId": "room-at-dawn-frontSwingDeg",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 230.546875,
+              "y": 508.4375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 507.6875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 507.9375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Swing (degrees):",
+            "labelFor": "room-at-dawn-frontSwingDeg",
+            "inputId": "room-at-dawn-frontSwingDeg",
+            "outputText": "0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "0",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 230.546875,
+              "y": 508.4375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 507.6875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 507.9375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Swing (degrees):",
+            "labelFor": "room-at-dawn-frontSwingDeg",
+            "inputId": "room-at-dawn-frontSwingDeg",
+            "outputText": "0",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "-0.1",
+            "min": "-10",
+            "max": "10",
+            "step": "0.1",
+            "input": {
+              "x": 230.546875,
+              "y": 508.4375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 507.6875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 507.9375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Swing (degrees):",
+            "labelFor": "room-at-dawn-frontSwingDeg",
+            "inputId": "room-at-dawn-frontSwingDeg",
+            "outputText": "-0.1",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          0,
+          0.1,
+          0,
+          -0.1
+        ]
+      },
+      "Focus (mm)": {
+        "driftCssPx": 0,
+        "states": [
+          {
+            "value": "990",
+            "min": "100",
+            "max": "8000",
+            "step": "10",
+            "input": {
+              "x": 230.546875,
+              "y": 529.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 529.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 529.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Focus (mm):",
+            "labelFor": "room-at-dawn-focusDistanceMm",
+            "inputId": "room-at-dawn-focusDistanceMm",
+            "outputText": "990",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "1000",
+            "min": "100",
+            "max": "8000",
+            "step": "10",
+            "input": {
+              "x": 230.546875,
+              "y": 529.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 529.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 529.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Focus (mm):",
+            "labelFor": "room-at-dawn-focusDistanceMm",
+            "inputId": "room-at-dawn-focusDistanceMm",
+            "outputText": "1000",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "1010",
+            "min": "100",
+            "max": "8000",
+            "step": "10",
+            "input": {
+              "x": 230.546875,
+              "y": 529.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 529.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 529.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Focus (mm):",
+            "labelFor": "room-at-dawn-focusDistanceMm",
+            "inputId": "room-at-dawn-focusDistanceMm",
+            "outputText": "1010",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "1000",
+            "min": "100",
+            "max": "8000",
+            "step": "10",
+            "input": {
+              "x": 230.546875,
+              "y": 529.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 529.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 529.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Focus (mm):",
+            "labelFor": "room-at-dawn-focusDistanceMm",
+            "inputId": "room-at-dawn-focusDistanceMm",
+            "outputText": "1000",
+            "outputFontVariantNumeric": "tabular-nums"
+          },
+          {
+            "value": "990",
+            "min": "100",
+            "max": "8000",
+            "step": "10",
+            "input": {
+              "x": 230.546875,
+              "y": 529.9375,
+              "width": 143.453125,
+              "height": 16,
+              "right": 374
+            },
+            "row": {
+              "x": 16,
+              "y": 529.1875,
+              "width": 358,
+              "height": 17.5,
+              "right": 374
+            },
+            "output": {
+              "x": 152,
+              "y": 529.4375,
+              "width": 70.546875,
+              "height": 17,
+              "right": 222.546875
+            },
+            "label": "Focus (mm):",
+            "labelFor": "room-at-dawn-focusDistanceMm",
+            "inputId": "room-at-dawn-focusDistanceMm",
+            "outputText": "990",
+            "outputFontVariantNumeric": "tabular-nums"
+          }
+        ],
+        "trustedInputValues": [
+          1000,
+          1010,
+          1000,
+          990
+        ]
+      }
+    },
+    "finalFrame": {
+      "requestId": "room-request-303",
+      "generationId": "room-generation-5",
+      "frameId": "room-generation-5:frame:507",
+      "requestStatus": "completed",
+      "completedOperations": "all-completed"
+    }
+  },
+  "screenshots": [
+    "ground-glass-desktop.png",
+    "page-desktop.png",
+    "focus-trace.json",
+    "ground-glass-narrow.png",
+    "page-narrow.png"
+  ],
+  "browserErrors": [],
+  "groundGlass": {
+    "width": 480,
+    "height": 360,
+    "renderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M4 Pro, Unspecified Version)",
+    "camera": {
+      "focalLengthMm": 90,
+      "aperture": 5.6,
+      "focusDistanceMm": 2500,
+      "focusStandard": "front",
+      "frontRiseMm": 0,
+      "frontShiftMm": 0,
+      "frontTiltDeg": 0,
+      "frontSwingDeg": 0,
+      "rearRiseMm": 0,
+      "rearShiftMm": 0,
+      "rearTiltDeg": 0,
+      "rearSwingDeg": 0,
+      "cameraBodyPitchDeg": 0,
+      "cameraBodyPivotWorld": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "viewpointAnchor": "mid",
+      "cameraRigPlacement": {
+        "kind": "identity",
+        "rigOriginWorld": {
+          "x": 0,
+          "y": 0,
+          "z": 0
+        },
+        "basePitchDeg": 0
+      },
+      "activeSceneId": "architecture-rise",
+      "activeTaskId": null,
+      "mode": "free",
+      "groundGlassAssistEnabled": false,
+      "gridEnabled": true,
+      "geometryView": "side",
+      "focusMode": "finite",
+      "lastFiniteFocusDepthMm": 2000,
+      "mirrorShiftLessonState": {
+        "rigLateralMm": 0
+      }
+    },
+    "presetKey": "wide",
+    "subjectIdentity": "room-at-dawn:wide",
+    "gi": {
+      "expected": 302,
+      "baked": 302,
+      "matched": 302,
+      "missing": [],
+      "mismatch": [],
+      "stale": [],
+      "invalid": [],
+      "duplicateKeys": 0
+    },
+    "request": {
+      "requestId": "room-request-6",
+      "channelId": "default",
+      "sceneId": "architecture-rise"
+    },
+    "generation": {
+      "generationId": "room-generation-5",
+      "channelId": "default"
+    },
+    "frame": {
+      "status": "completed",
+      "generation": {
+        "generationId": "room-generation-5",
+        "channelId": "default"
+      },
+      "request": {
+        "requestId": "room-request-6",
+        "channelId": "default",
+        "sceneId": "architecture-rise"
+      },
+      "frameId": "room-generation-5:frame:5",
+      "requiredOperations": "all-completed"
+    }
+  },
+  "focusTrace": {
+    "trustedValues": [
+      1000,
+      1010
+    ],
+    "path": "focus-trace.json"
+  },
+  "finalSource": {
+    "commit": "6bf3a52f52b205a40a1bc01424c339b8f674a209",
+    "dirty": false,
+    "opticsSha256": "6d43fb76f2c9de25d981c5be6e6a556849589d23b3df9ca95bf35eb91a6b0251",
+    "harnessSha256": "65fb25b5ec0e4bdf4b673c4bc784ed9a275ccba0ce7529a092ab312585b8aeea"
+  }
+}

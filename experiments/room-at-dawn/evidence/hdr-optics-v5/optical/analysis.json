@@ -1,0 +1,1219 @@
+{
+  "cases": {
+    "focus-near": {
+      "camera": {
+        "id": "focus-near",
+        "focus": 1100,
+        "aperture": 5.6,
+        "tilt": 0,
+        "swing": 0
+      },
+      "displayExposure": 1,
+      "frame": {
+        "status": "ready",
+        "frameId": "room-generation-3:frame:11",
+        "requestId": "room-request-6",
+        "generationId": "room-generation-3"
+      },
+      "internalWidthPx": 960,
+      "sampleCount": 32,
+      "maximumCoCRadiusPx": 60,
+      "firstNearProposalInternalPx": 7.5,
+      "features": [
+        {
+          "id": "near-edge",
+          "valid": true,
+          "firstHit": "near-edge",
+          "worldMm": {
+            "x": -350,
+            "y": 200,
+            "z": 1100
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.74557573867623,
+            "vRaw": 0.6754112419115926,
+            "filmPointWorld": {
+              "x": 31.18811881188119,
+              "y": -17.821782178217823,
+              "z": -98.01980198019803
+            }
+          },
+          "focusPlaneDistanceMm": 0,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0,
+            "majorRadiusMm": 0,
+            "minorRadiusMm": 0,
+            "orientationRad": 0
+          },
+          "predictedMajorRadiusDisplayPx": 0,
+          "predictedMajorRadiusInternalPx": 0,
+          "edge10to90DisplayPx": 0.900787401574803,
+          "measurementValid": true,
+          "rejection": null
+        },
+        {
+          "id": "middle-edge",
+          "valid": true,
+          "firstHit": "middle-edge",
+          "worldMm": {
+            "x": 0,
+            "y": -320,
+            "z": 2000
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.5,
+            "vRaw": 0.34563810711779835,
+            "filmPointWorld": {
+              "x": 0,
+              "y": 15.683168316831685,
+              "z": -98.01980198019803
+            }
+          },
+          "focusPlaneDistanceMm": 900,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0.64444837340877,
+            "majorRadiusMm": 0.322224186704385,
+            "minorRadiusMm": 0.322224186704385,
+            "orientationRad": 0
+          },
+          "predictedMajorRadiusDisplayPx": 1.2178551938433448,
+          "predictedMajorRadiusInternalPx": 2.4357103876866897,
+          "edge10to90DisplayPx": 1.9990025183941516,
+          "measurementValid": true,
+          "rejection": null
+        },
+        {
+          "id": "far-edge",
+          "valid": true,
+          "firstHit": "far-edge",
+          "worldMm": {
+            "x": 1100,
+            "y": 720,
+            "z": 4000
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.28775239728697277,
+            "vRaw": 0.6736571294924768,
+            "filmPointWorld": {
+              "x": -26.955445544554458,
+              "y": -17.643564356435643,
+              "z": -98.01980198019803
+            }
+          },
+          "focusPlaneDistanceMm": 2900,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 1.03827793493635,
+            "majorRadiusMm": 0.519138967468175,
+            "minorRadiusMm": 0.519138967468175,
+            "orientationRad": 0
+          },
+          "predictedMajorRadiusDisplayPx": 1.9621000345253858,
+          "predictedMajorRadiusInternalPx": 3.9242000690507717,
+          "edge10to90DisplayPx": 2.756976976976981,
+          "measurementValid": true,
+          "rejection": null
+        }
+      ]
+    },
+    "focus-middle": {
+      "camera": {
+        "id": "focus-middle",
+        "focus": 2000,
+        "aperture": 5.6,
+        "tilt": 0,
+        "swing": 0
+      },
+      "displayExposure": 1,
+      "frame": {
+        "status": "ready",
+        "frameId": "room-generation-3:frame:20",
+        "requestId": "room-request-8",
+        "generationId": "room-generation-3"
+      },
+      "internalWidthPx": 960,
+      "sampleCount": 32,
+      "maximumCoCRadiusPx": 60,
+      "firstNearProposalInternalPx": 7.5,
+      "features": [
+        {
+          "id": "near-edge",
+          "valid": true,
+          "firstHit": "near-edge",
+          "worldMm": {
+            "x": -350,
+            "y": 200,
+            "z": 1100
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.7361080400409254,
+            "vRaw": 0.6686486000292325,
+            "filmPointWorld": {
+              "x": 29.985721085197525,
+              "y": -17.134697762970013,
+              "z": -94.24083769633508
+            }
+          },
+          "focusPlaneDistanceMm": -900,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": -0.6196029101788278,
+            "majorRadiusMm": 0.3098014550894139,
+            "minorRadiusMm": 0.3098014550894139,
+            "orientationRad": 0
+          },
+          "predictedMajorRadiusDisplayPx": 1.1709031373458163,
+          "predictedMajorRadiusInternalPx": 2.3418062746916326,
+          "edge10to90DisplayPx": 1.6679661346287293,
+          "measurementValid": true,
+          "rejection": null
+        },
+        {
+          "id": "middle-edge",
+          "valid": true,
+          "firstHit": "middle-edge",
+          "worldMm": {
+            "x": 0,
+            "y": -320,
+            "z": 2000
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.5,
+            "vRaw": 0.35158923197427544,
+            "filmPointWorld": {
+              "x": 0,
+              "y": 15.078534031413614,
+              "z": -94.24083769633508
+            }
+          },
+          "focusPlaneDistanceMm": 0,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0,
+            "majorRadiusMm": 0,
+            "minorRadiusMm": 0,
+            "orientationRad": 0
+          },
+          "predictedMajorRadiusDisplayPx": 0,
+          "predictedMajorRadiusInternalPx": 0,
+          "edge10to90DisplayPx": 1.040980198534383,
+          "measurementValid": true,
+          "rejection": null
+        },
+        {
+          "id": "far-edge",
+          "valid": true,
+          "firstHit": "far-edge",
+          "worldMm": {
+            "x": 1100,
+            "y": 720,
+            "z": 4000
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.2959351939646288,
+            "vRaw": 0.66696211402894,
+            "filmPointWorld": {
+              "x": -25.916230366492147,
+              "y": -16.963350785340314,
+              "z": -94.24083769633508
+            }
+          },
+          "focusPlaneDistanceMm": 2000,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0.3786462228870588,
+            "majorRadiusMm": 0.1893231114435294,
+            "minorRadiusMm": 0.1893231114435294,
+            "orientationRad": 0
+          },
+          "predictedMajorRadiusDisplayPx": 0.7155519172668827,
+          "predictedMajorRadiusInternalPx": 1.4311038345337654,
+          "edge10to90DisplayPx": 1.569125203474142,
+          "measurementValid": true,
+          "rejection": null
+        }
+      ]
+    },
+    "focus-far": {
+      "camera": {
+        "id": "focus-far",
+        "focus": 4000,
+        "aperture": 5.6,
+        "tilt": 0,
+        "swing": 0
+      },
+      "displayExposure": 1,
+      "frame": {
+        "status": "ready",
+        "frameId": "room-generation-3:frame:31",
+        "requestId": "room-request-10",
+        "generationId": "room-generation-3"
+      },
+      "internalWidthPx": 960,
+      "sampleCount": 32,
+      "maximumCoCRadiusPx": 60,
+      "firstNearProposalInternalPx": 7.5,
+      "features": [
+        {
+          "id": "near-edge",
+          "valid": true,
+          "firstHit": "near-edge",
+          "worldMm": {
+            "x": -350,
+            "y": 200,
+            "z": 1100
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.7306733281218248,
+            "vRaw": 0.6647666629441606,
+            "filmPointWorld": {
+              "x": 29.29551267147175,
+              "y": -16.740292955126716,
+              "z": -92.07161125319693
+            }
+          },
+          "focusPlaneDistanceMm": -2900,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": -0.9752715315375169,
+            "majorRadiusMm": 0.48763576576875844,
+            "minorRadiusMm": 0.48763576576875844,
+            "orientationRad": 0
+          },
+          "predictedMajorRadiusDisplayPx": 1.8430328155039688,
+          "predictedMajorRadiusInternalPx": 3.6860656310079376,
+          "edge10to90DisplayPx": 1.373057881567977,
+          "measurementValid": true,
+          "rejection": null
+        },
+        {
+          "id": "middle-edge",
+          "valid": true,
+          "firstHit": "middle-edge",
+          "worldMm": {
+            "x": 0,
+            "y": -320,
+            "z": 2000
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.5,
+            "vRaw": 0.3550053366091387,
+            "filmPointWorld": {
+              "x": 0,
+              "y": 14.73145780051151,
+              "z": -92.07161125319693
+            }
+          },
+          "focusPlaneDistanceMm": -2000,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": -0.36993058092802267,
+            "majorRadiusMm": 0.18496529046401133,
+            "minorRadiusMm": 0.18496529046401133,
+            "orientationRad": 0
+          },
+          "predictedMajorRadiusDisplayPx": 0.6990814127773657,
+          "predictedMajorRadiusInternalPx": 1.3981628255547314,
+          "edge10to90DisplayPx": 0.9057826887661147,
+          "measurementValid": true,
+          "rejection": null
+        },
+        {
+          "id": "far-edge",
+          "valid": true,
+          "firstHit": "far-edge",
+          "worldMm": {
+            "x": 1100,
+            "y": 720,
+            "z": 4000
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.30063233783756566,
+            "vRaw": 0.6631189963147189,
+            "filmPointWorld": {
+              "x": -25.31969309462916,
+              "y": -16.572890025575447,
+              "z": -92.07161125319693
+            }
+          },
+          "focusPlaneDistanceMm": 0,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0,
+            "majorRadiusMm": 0,
+            "minorRadiusMm": 0,
+            "orientationRad": 0
+          },
+          "predictedMajorRadiusDisplayPx": 0,
+          "predictedMajorRadiusInternalPx": 0,
+          "edge10to90DisplayPx": 1.5047078481012655,
+          "measurementValid": true,
+          "rejection": null
+        }
+      ]
+    },
+    "aperture-f11": {
+      "camera": {
+        "id": "aperture-f11",
+        "focus": 1100,
+        "aperture": 11,
+        "tilt": 0,
+        "swing": 0
+      },
+      "displayExposure": 3.858,
+      "frame": {
+        "status": "ready",
+        "frameId": "room-generation-4:frame:10",
+        "requestId": "room-request-13",
+        "generationId": "room-generation-4"
+      },
+      "internalWidthPx": 960,
+      "sampleCount": 32,
+      "maximumCoCRadiusPx": 60,
+      "firstNearProposalInternalPx": 7.5,
+      "features": [
+        {
+          "id": "near-edge",
+          "valid": true,
+          "firstHit": "near-edge",
+          "worldMm": {
+            "x": -350,
+            "y": 200,
+            "z": 1100
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.74557573867623,
+            "vRaw": 0.6754112419115926,
+            "filmPointWorld": {
+              "x": 31.18811881188119,
+              "y": -17.821782178217823,
+              "z": -98.01980198019803
+            }
+          },
+          "focusPlaneDistanceMm": 0,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0,
+            "majorRadiusMm": 0,
+            "minorRadiusMm": 0,
+            "orientationRad": 0
+          },
+          "predictedMajorRadiusDisplayPx": 0,
+          "predictedMajorRadiusInternalPx": 0,
+          "edge10to90DisplayPx": 0.90103937007874,
+          "measurementValid": true,
+          "rejection": null
+        },
+        {
+          "id": "middle-edge",
+          "valid": true,
+          "firstHit": "middle-edge",
+          "worldMm": {
+            "x": 0,
+            "y": -320,
+            "z": 2000
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.5,
+            "vRaw": 0.34563810711779835,
+            "filmPointWorld": {
+              "x": 0,
+              "y": 15.683168316831685,
+              "z": -98.01980198019803
+            }
+          },
+          "focusPlaneDistanceMm": 900,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0.32808280828082836,
+            "majorRadiusMm": 0.16404140414041418,
+            "minorRadiusMm": 0.16404140414041418,
+            "orientationRad": 0
+          },
+          "predictedMajorRadiusDisplayPx": 0.6199990077747938,
+          "predictedMajorRadiusInternalPx": 1.2399980155495876,
+          "edge10to90DisplayPx": 1.5979674427307486,
+          "measurementValid": true,
+          "rejection": null
+        },
+        {
+          "id": "far-edge",
+          "valid": true,
+          "firstHit": "far-edge",
+          "worldMm": {
+            "x": 1100,
+            "y": 720,
+            "z": 4000
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.28775239728697277,
+            "vRaw": 0.6736571294924768,
+            "filmPointWorld": {
+              "x": -26.955445544554458,
+              "y": -17.643564356435643,
+              "z": -98.01980198019803
+            }
+          },
+          "focusPlaneDistanceMm": 2900,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0.5285778577857781,
+            "majorRadiusMm": 0.2642889288928891,
+            "minorRadiusMm": 0.2642889288928891,
+            "orientationRad": 0
+          },
+          "predictedMajorRadiusDisplayPx": 0.9988872903038327,
+          "predictedMajorRadiusInternalPx": 1.9977745806076654,
+          "edge10to90DisplayPx": 1.7137831672203774,
+          "measurementValid": true,
+          "rejection": null
+        }
+      ]
+    },
+    "aperture-f22": {
+      "camera": {
+        "id": "aperture-f22",
+        "focus": 1100,
+        "aperture": 22,
+        "tilt": 0,
+        "swing": 0
+      },
+      "displayExposure": 15.434,
+      "frame": {
+        "status": "ready",
+        "frameId": "room-generation-5:frame:11",
+        "requestId": "room-request-15",
+        "generationId": "room-generation-5"
+      },
+      "internalWidthPx": 960,
+      "sampleCount": 32,
+      "maximumCoCRadiusPx": 60,
+      "firstNearProposalInternalPx": 7.5,
+      "features": [
+        {
+          "id": "near-edge",
+          "valid": true,
+          "firstHit": "near-edge",
+          "worldMm": {
+            "x": -350,
+            "y": 200,
+            "z": 1100
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.74557573867623,
+            "vRaw": 0.6754112419115926,
+            "filmPointWorld": {
+              "x": 31.18811881188119,
+              "y": -17.821782178217823,
+              "z": -98.01980198019803
+            }
+          },
+          "focusPlaneDistanceMm": 0,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0,
+            "majorRadiusMm": 0,
+            "minorRadiusMm": 0,
+            "orientationRad": 0
+          },
+          "predictedMajorRadiusDisplayPx": 0,
+          "predictedMajorRadiusInternalPx": 0,
+          "edge10to90DisplayPx": 0.90103937007874,
+          "measurementValid": true,
+          "rejection": null
+        },
+        {
+          "id": "middle-edge",
+          "valid": true,
+          "firstHit": "middle-edge",
+          "worldMm": {
+            "x": 0,
+            "y": -320,
+            "z": 2000
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.5,
+            "vRaw": 0.34563810711779835,
+            "filmPointWorld": {
+              "x": 0,
+              "y": 15.683168316831685,
+              "z": -98.01980198019803
+            }
+          },
+          "focusPlaneDistanceMm": 900,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0.16404140414041418,
+            "majorRadiusMm": 0.08202070207020709,
+            "minorRadiusMm": 0.08202070207020709,
+            "orientationRad": 0
+          },
+          "predictedMajorRadiusDisplayPx": 0.3099995038873969,
+          "predictedMajorRadiusInternalPx": 0.6199990077747938,
+          "edge10to90DisplayPx": 1.4532458475973122,
+          "measurementValid": true,
+          "rejection": null
+        },
+        {
+          "id": "far-edge",
+          "valid": true,
+          "firstHit": "far-edge",
+          "worldMm": {
+            "x": 1100,
+            "y": 720,
+            "z": 4000
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.28775239728697277,
+            "vRaw": 0.6736571294924768,
+            "filmPointWorld": {
+              "x": -26.955445544554458,
+              "y": -17.643564356435643,
+              "z": -98.01980198019803
+            }
+          },
+          "focusPlaneDistanceMm": 2900,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0.2642889288928891,
+            "majorRadiusMm": 0.13214446444644454,
+            "minorRadiusMm": 0.13214446444644454,
+            "orientationRad": 0
+          },
+          "predictedMajorRadiusDisplayPx": 0.49944364515191636,
+          "predictedMajorRadiusInternalPx": 0.9988872903038327,
+          "edge10to90DisplayPx": 1.5496658986175138,
+          "measurementValid": true,
+          "rejection": null
+        }
+      ]
+    },
+    "tilt-positive": {
+      "camera": {
+        "id": "tilt-positive",
+        "focus": 2000,
+        "aperture": 5.6,
+        "tilt": 5,
+        "swing": 0
+      },
+      "displayExposure": 1,
+      "frame": {
+        "status": "ready",
+        "frameId": "room-generation-6:frame:10",
+        "requestId": "room-request-19",
+        "generationId": "room-generation-6"
+      },
+      "internalWidthPx": 960,
+      "sampleCount": 32,
+      "maximumCoCRadiusPx": 60,
+      "firstNearProposalInternalPx": 7.5,
+      "features": [
+        {
+          "id": "near-edge",
+          "valid": true,
+          "firstHit": "near-edge",
+          "worldMm": {
+            "x": -350,
+            "y": 200,
+            "z": 1100
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.7361080400409254,
+            "vRaw": 0.6686486000292325,
+            "filmPointWorld": {
+              "x": 29.985721085197525,
+              "y": -17.134697762970013,
+              "z": -94.24083769633508
+            }
+          },
+          "focusPlaneDistanceMm": 697.9097893299089,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": -0.9409335218343052,
+            "majorRadiusMm": 0.4786110361908731,
+            "minorRadiusMm": 0.4624610725432705,
+            "orientationRad": 0.4701435340479551
+          },
+          "predictedMajorRadiusDisplayPx": 1.8089236013513312,
+          "predictedMajorRadiusInternalPx": 3.6178472027026625,
+          "edge10to90DisplayPx": 1.6693918112421908,
+          "measurementValid": true,
+          "rejection": null
+        },
+        {
+          "id": "middle-edge",
+          "valid": true,
+          "firstHit": "middle-edge",
+          "worldMm": {
+            "x": 0,
+            "y": -320,
+            "z": 2000
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.5,
+            "vRaw": 0.35158923197427544,
+            "filmPointWorld": {
+              "x": 0,
+              "y": 15.078534031413614,
+              "z": -94.24083769633508
+            }
+          },
+          "focusPlaneDistanceMm": -136.7308828148361,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0.17149969848701754,
+            "majorRadiusMm": 0.08618348809458803,
+            "minorRadiusMm": 0.08531839227967175,
+            "orientationRad": 1.5707963267948966
+          },
+          "predictedMajorRadiusDisplayPx": 0.3257328683889941,
+          "predictedMajorRadiusInternalPx": 0.6514657367779882,
+          "edge10to90DisplayPx": 1.4516696375519889,
+          "measurementValid": true,
+          "rejection": null
+        },
+        {
+          "id": "far-edge",
+          "valid": true,
+          "firstHit": "far-edge",
+          "worldMm": {
+            "x": 1100,
+            "y": 720,
+            "z": 4000
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.2959351939646288,
+            "vRaw": 0.66696211402894,
+            "filmPointWorld": {
+              "x": -25.916230366492147,
+              "y": -16.963350785340314,
+              "z": -94.24083769633508
+            }
+          },
+          "focusPlaneDistanceMm": 23.52829011568781,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0.05010272427998594,
+            "majorRadiusMm": 0.0254452078286059,
+            "minorRadiusMm": 0.024663612468653066,
+            "orientationRad": 2.703648020527441
+          },
+          "predictedMajorRadiusDisplayPx": 0.09617086423410104,
+          "predictedMajorRadiusInternalPx": 0.19234172846820208,
+          "edge10to90DisplayPx": 1.2515429464446743,
+          "measurementValid": true,
+          "rejection": null
+        }
+      ]
+    },
+    "tilt-negative": {
+      "camera": {
+        "id": "tilt-negative",
+        "focus": 2000,
+        "aperture": 5.6,
+        "tilt": -5,
+        "swing": 0
+      },
+      "displayExposure": 1,
+      "frame": {
+        "status": "ready",
+        "frameId": "room-generation-6:frame:19",
+        "requestId": "room-request-21",
+        "generationId": "room-generation-6"
+      },
+      "internalWidthPx": 960,
+      "sampleCount": 32,
+      "maximumCoCRadiusPx": 60,
+      "firstNearProposalInternalPx": 7.5,
+      "features": [
+        {
+          "id": "near-edge",
+          "valid": true,
+          "firstHit": "near-edge",
+          "worldMm": {
+            "x": -350,
+            "y": 200,
+            "z": 1100
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.7361080400409254,
+            "vRaw": 0.6686486000292325,
+            "filmPointWorld": {
+              "x": 29.985721085197525,
+              "y": -17.134697762970013,
+              "z": -94.24083769633508
+            }
+          },
+          "focusPlaneDistanceMm": 330.8015707212122,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": -0.41946783575721186,
+            "majorRadiusMm": 0.21290909394348065,
+            "minorRadiusMm": 0.20660609415014963,
+            "orientationRad": 2.158263219769705
+          },
+          "predictedMajorRadiusDisplayPx": 0.8046957881328403,
+          "predictedMajorRadiusInternalPx": 1.6093915762656805,
+          "edge10to90DisplayPx": 1.6669803825589256,
+          "measurementValid": true,
+          "rejection": null
+        },
+        {
+          "id": "middle-edge",
+          "valid": true,
+          "firstHit": "middle-edge",
+          "worldMm": {
+            "x": 0,
+            "y": -320,
+            "z": 2000
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.5,
+            "vRaw": 0.35158923197427544,
+            "filmPointWorld": {
+              "x": 0,
+              "y": 15.078534031413614,
+              "z": -94.24083769633508
+            }
+          },
+          "focusPlaneDistanceMm": 450.64226695907854,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": -0.2960505275073521,
+            "majorRadiusMm": 0.14935675647991511,
+            "minorRadiusMm": 0.1467056410822093,
+            "orientationRad": 0
+          },
+          "predictedMajorRadiusDisplayPx": 0.5644979772469233,
+          "predictedMajorRadiusInternalPx": 1.1289959544938466,
+          "edge10to90DisplayPx": 1.0385323008159713,
+          "measurementValid": true,
+          "rejection": null
+        },
+        {
+          "id": "far-edge",
+          "valid": true,
+          "firstHit": "far-edge",
+          "worldMm": {
+            "x": 1100,
+            "y": 720,
+            "z": 4000
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.2959351939646288,
+            "vRaw": 0.66696211402894,
+            "filmPointWorld": {
+              "x": -25.916230366492147,
+              "y": -16.963350785340314,
+              "z": -94.24083769633508
+            }
+          },
+          "focusPlaneDistanceMm": -1298.06129687562,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0.5820450264150975,
+            "majorRadiusMm": 0.2949179974391557,
+            "minorRadiusMm": 0.2871784832701201,
+            "orientationRad": 1.0095741883754235
+          },
+          "predictedMajorRadiusDisplayPx": 1.1146506989826357,
+          "predictedMajorRadiusInternalPx": 2.2293013979652714,
+          "edge10to90DisplayPx": 1.712472346135712,
+          "measurementValid": true,
+          "rejection": null
+        }
+      ]
+    },
+    "swing-positive": {
+      "camera": {
+        "id": "swing-positive",
+        "focus": 2000,
+        "aperture": 5.6,
+        "tilt": 0,
+        "swing": 5
+      },
+      "displayExposure": 1,
+      "frame": {
+        "status": "ready",
+        "frameId": "room-generation-6:frame:28",
+        "requestId": "room-request-24",
+        "generationId": "room-generation-6"
+      },
+      "internalWidthPx": 960,
+      "sampleCount": 32,
+      "maximumCoCRadiusPx": 60,
+      "firstNearProposalInternalPx": 7.5,
+      "features": [
+        {
+          "id": "near-edge",
+          "valid": true,
+          "firstHit": "near-edge",
+          "worldMm": {
+            "x": -350,
+            "y": 200,
+            "z": 1100
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.7361080400409254,
+            "vRaw": 0.6686486000292325,
+            "filmPointWorld": {
+              "x": 29.985721085197525,
+              "y": -17.134697762970013,
+              "z": -94.24083769633508
+            }
+          },
+          "focusPlaneDistanceMm": 835.5753713081701,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": -1.1320407901471088,
+            "majorRadiusMm": 0.5762613114874207,
+            "minorRadiusMm": 0.5559614731245344,
+            "orientationRad": 1.3420071409460468
+          },
+          "predictedMajorRadiusDisplayPx": 2.177995507983952,
+          "predictedMajorRadiusInternalPx": 4.355991015967904,
+          "edge10to90DisplayPx": 1.671873974401052,
+          "measurementValid": true,
+          "rejection": null
+        },
+        {
+          "id": "middle-edge",
+          "valid": true,
+          "firstHit": "middle-edge",
+          "worldMm": {
+            "x": 0,
+            "y": -320,
+            "z": 2000
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.5,
+            "vRaw": 0.35158923197427544,
+            "filmPointWorld": {
+              "x": 0,
+              "y": 15.078534031413614,
+              "z": -94.24083769633508
+            }
+          },
+          "focusPlaneDistanceMm": 156.95569207212122,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": -0.06391640541240755,
+            "majorRadiusMm": 0.03219045590489306,
+            "minorRadiusMm": 0.03172762520755617,
+            "orientationRad": 2.2195041571946437
+          },
+          "predictedMajorRadiusDisplayPx": 0.12166471523109189,
+          "predictedMajorRadiusInternalPx": 0.24332943046218378,
+          "edge10to90DisplayPx": 1.065046773176375,
+          "measurementValid": true,
+          "rejection": null
+        },
+        {
+          "id": "far-edge",
+          "valid": true,
+          "firstHit": "far-edge",
+          "worldMm": {
+            "x": 1100,
+            "y": 720,
+            "z": 4000
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.2959351939646288,
+            "vRaw": 0.66696211402894,
+            "filmPointWorld": {
+              "x": -25.916230366492147,
+              "y": -16.963350785340314,
+              "z": -94.24083769633508
+            }
+          },
+          "focusPlaneDistanceMm": -1646.8141045538819,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0.7251575516809405,
+            "majorRadiusMm": 0.3671931477167446,
+            "minorRadiusMm": 0.35802239096080785,
+            "orientationRad": 0.3344981154869447
+          },
+          "predictedMajorRadiusDisplayPx": 1.3878166212916332,
+          "predictedMajorRadiusInternalPx": 2.7756332425832664,
+          "edge10to90DisplayPx": 1.9112991296381132,
+          "measurementValid": true,
+          "rejection": null
+        }
+      ]
+    },
+    "swing-negative": {
+      "camera": {
+        "id": "swing-negative",
+        "focus": 2000,
+        "aperture": 5.6,
+        "tilt": 0,
+        "swing": -5
+      },
+      "displayExposure": 1,
+      "frame": {
+        "status": "ready",
+        "frameId": "room-generation-6:frame:37",
+        "requestId": "room-request-26",
+        "generationId": "room-generation-6"
+      },
+      "internalWidthPx": 960,
+      "sampleCount": 32,
+      "maximumCoCRadiusPx": 60,
+      "firstNearProposalInternalPx": 7.5,
+      "features": [
+        {
+          "id": "near-edge",
+          "valid": true,
+          "firstHit": "near-edge",
+          "worldMm": {
+            "x": -350,
+            "y": 200,
+            "z": 1100
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.7361080400409254,
+            "vRaw": 0.6686486000292325,
+            "filmPointWorld": {
+              "x": 29.985721085197525,
+              "y": -17.134697762970013,
+              "z": -94.24083769633508
+            }
+          },
+          "focusPlaneDistanceMm": 193.13598874295099,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": -0.21953787115970821,
+            "majorRadiusMm": 0.11133652810945414,
+            "minorRadiusMm": 0.10822341439000738,
+            "orientationRad": 2.845187420435814
+          },
+          "predictedMajorRadiusDisplayPx": 0.4207994763191968,
+          "predictedMajorRadiusInternalPx": 0.8415989526383936,
+          "edge10to90DisplayPx": 1.659476720936878,
+          "measurementValid": true,
+          "rejection": null
+        },
+        {
+          "id": "middle-edge",
+          "valid": true,
+          "firstHit": "middle-edge",
+          "worldMm": {
+            "x": 0,
+            "y": -320,
+            "z": 2000
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.5,
+            "vRaw": 0.35158923197427544,
+            "filmPointWorld": {
+              "x": 0,
+              "y": 15.078534031413614,
+              "z": -94.24083769633508
+            }
+          },
+          "focusPlaneDistanceMm": 156.95569207212122,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": -0.06391640541240755,
+            "majorRadiusMm": 0.03219045590489306,
+            "minorRadiusMm": 0.03172762520755617,
+            "orientationRad": 0.9220884963951494
+          },
+          "predictedMajorRadiusDisplayPx": 0.12166471523109189,
+          "predictedMajorRadiusInternalPx": 0.24332943046218378,
+          "edge10to90DisplayPx": 1.024232409381666,
+          "measurementValid": true,
+          "rejection": null
+        },
+        {
+          "id": "far-edge",
+          "valid": true,
+          "firstHit": "far-edge",
+          "worldMm": {
+            "x": 1100,
+            "y": 720,
+            "z": 4000
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.2959351939646288,
+            "vRaw": 0.66696211402894,
+            "filmPointWorld": {
+              "x": -25.916230366492147,
+              "y": -16.963350785340314,
+              "z": -94.24083769633508
+            }
+          },
+          "focusPlaneDistanceMm": 372.2810977939498,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": -0.0874990815857487,
+            "majorRadiusMm": 0.044462913736888335,
+            "minorRadiusMm": 0.04304761336411074,
+            "orientationRad": 1.823910781453337
+          },
+          "predictedMajorRadiusDisplayPx": 0.16804880782445986,
+          "predictedMajorRadiusInternalPx": 0.3360976156489197,
+          "edge10to90DisplayPx": 1.1313220547104184,
+          "measurementValid": true,
+          "rejection": null
+        }
+      ]
+    },
+    "combined": {
+      "camera": {
+        "id": "combined",
+        "focus": 2000,
+        "aperture": 5.6,
+        "tilt": 5,
+        "swing": 5
+      },
+      "displayExposure": 1,
+      "frame": {
+        "status": "ready",
+        "frameId": "room-generation-6:frame:47",
+        "requestId": "room-request-29",
+        "generationId": "room-generation-6"
+      },
+      "internalWidthPx": 960,
+      "sampleCount": 32,
+      "maximumCoCRadiusPx": 60,
+      "firstNearProposalInternalPx": 7.5,
+      "features": [
+        {
+          "id": "near-edge",
+          "valid": true,
+          "firstHit": "near-edge",
+          "worldMm": {
+            "x": -350,
+            "y": 200,
+            "z": 1100
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.7361080400409254,
+            "vRaw": 0.6686486000292325,
+            "filmPointWorld": {
+              "x": 29.985721085197525,
+              "y": -17.134697762970013,
+              "z": -94.24083769633508
+            }
+          },
+          "focusPlaneDistanceMm": 828.6127290929186,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": -1.4407594026994595,
+            "majorRadiusMm": 0.7400331721258112,
+            "minorRadiusMm": 0.7012481786809699,
+            "orientationRad": 0.8953144312262818
+          },
+          "predictedMajorRadiusDisplayPx": 2.7969757686644834,
+          "predictedMajorRadiusInternalPx": 5.593951537328967,
+          "edge10to90DisplayPx": 1.6700760310688114,
+          "measurementValid": true,
+          "rejection": null
+        },
+        {
+          "id": "middle-edge",
+          "valid": true,
+          "firstHit": "middle-edge",
+          "worldMm": {
+            "x": 0,
+            "y": -320,
+            "z": 2000
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.5,
+            "vRaw": 0.35158923197427544,
+            "filmPointWorld": {
+              "x": 0,
+              "y": 15.078534031413614,
+              "z": -94.24083769633508
+            }
+          },
+          "focusPlaneDistanceMm": 15.126950235360603,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0.1071807283889673,
+            "majorRadiusMm": 0.05399988993583337,
+            "minorRadiusMm": 0.05318394422488693,
+            "orientationRad": 1.7797645512640492
+          },
+          "predictedMajorRadiusDisplayPx": 0.20409407219842535,
+          "predictedMajorRadiusInternalPx": 0.4081881443968507,
+          "edge10to90DisplayPx": 1.3691349635990306,
+          "measurementValid": true,
+          "rejection": null
+        },
+        {
+          "id": "far-edge",
+          "valid": true,
+          "firstHit": "far-edge",
+          "worldMm": {
+            "x": 1100,
+            "y": 720,
+            "z": 4000
+          },
+          "projection": {
+            "visible": true,
+            "uRaw": 0.2959351939646288,
+            "vRaw": 0.66696211402894,
+            "filmPointWorld": {
+              "x": -25.916230366492147,
+              "y": -16.963350785340314,
+              "z": -94.24083769633508
+            }
+          },
+          "focusPlaneDistanceMm": -503.4228542415409,
+          "footprint": {
+            "valid": true,
+            "signedCoCDiameterMm": 0.3887317930754115,
+            "majorRadiusMm": 0.198251334266388,
+            "minorRadiusMm": 0.19055660773583571,
+            "orientationRad": 0.0005077290103602123
+          },
+          "predictedMajorRadiusDisplayPx": 0.7492963814792617,
+          "predictedMajorRadiusInternalPx": 1.4985927629585234,
+          "edge10to90DisplayPx": 1.5949798734905105,
+          "measurementValid": true,
+          "rejection": null
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "Display-referred edge spread is not a calibrated CoC estimate; radii and edge widths have different kernels and sampling.",
+    "Small near footprints may fall inside the first noncentral near-gather proposal; this is a plausible sampling limitation, not a proof of every mismatch.",
+    "Fixture geometry is separate from the room; results do not prove room material fidelity."
+  ]
+}

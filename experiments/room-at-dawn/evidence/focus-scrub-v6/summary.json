@@ -1,0 +1,86 @@
+{
+  "focusScrubStatus": "NOT_REPRODUCED / NEEDS_MANUAL_REVIEW",
+  "rootCause": "Not established for the reported room interaction. The controlled fixture exhibits pixel-phase variation already present in Raw scene sampling; this does not identify the cause of the user's observation.",
+  "gates": {
+    "A_rawProcessed": "PARTIAL",
+    "B_firstUnstableStage": "PARTIAL",
+    "C_nearGather": "PARTIAL / UNRESOLVED",
+    "D_classificationContinuity": "PARTIAL",
+    "E_frameOrdering": "PARTIAL",
+    "F_opticalCorrectnessAfterFix": "NOT EVALUATED; no rendering fix"
+  },
+  "baseline": {
+    "sourceCommit": "5a35420a410ad81ff29ad2199924ba70d3e2ef68",
+    "path": "baseline-neutral/",
+    "dirtySourceReason": "capture harness untracked; original app source unchanged",
+    "backend": "WebGL2 ANGLE SwiftShader",
+    "stepsMm": [
+      1200,
+      2000,
+      3000
+    ]
+  },
+  "metalSweeps": {
+    "sourceCommit": "ea4389756e2b59e9e43118504e6599ae8366c4c9",
+    "backend": "WebGL2 ANGLE Metal Apple M4 Pro",
+    "neutral": "metal-neutral/",
+    "shiftSwing": "metal-shift-swing/",
+    "stepsMm": [
+      1200,
+      1600,
+      2000,
+      2400,
+      3000
+    ],
+    "repeatabilityThreshold": "mean RGB8 <=1 and P99 <=3 for the same state",
+    "failedPairs": 0
+  },
+  "sameFrameFixture": {
+    "sourceCommit": "ea4389756e2b59e9e43118504e6599ae8366c4c9",
+    "processedStages": "fixture-stages/",
+    "raw": "fixture-raw/",
+    "comparison": "room-focus-fixture-comparison.json",
+    "gpu": "Apple M4 Pro ANGLE Metal",
+    "scope": "fixture only; screenshot and sampled stages share completed frame ID; browser compositor order not proven"
+  },
+  "interactionVideo": {
+    "sourceCommit": "33421d9788b8fdd60443097491ba5bbfa1c4851d",
+    "path": "interactive-video/focus-scrub.webm",
+    "trace": "interactive-video/interactive-manifest.json",
+    "backend": "Apple M4 Pro ANGLE Metal",
+    "trustedDragEventsPerPhase": 8,
+    "rapidDurationMs": 116.6,
+    "pacedDurationMs": 1400,
+    "sampledCompletedFrames": 218,
+    "sampledOrderRegressions": 0,
+    "limitation": "screencast and rAF telemetry are sampled and do not prove every compositor presentation"
+  },
+  "manualRecorderSmoke": {
+    "sourceCommit": "33421d9788b8fdd60443097491ba5bbfa1c4851d",
+    "path": "recorder-smoke/",
+    "limitation": "discrete automated fill events; not a human continuous drag"
+  },
+  "historicalQualification": {
+    "run": "https://github.com/chau-hm/view-camera-simulator/actions/runs/45294357715",
+    "artifact": "https://github.com/chau-hm/view-camera-simulator/actions/runs/45294357715/artifacts/14876221463",
+    "decision": "UNVERIFIED",
+    "rawResult": "ci/historical-qualification-result.json",
+    "reason": "two experiment-local test paths containing capture were classified as unmapped evidence-like dependencies",
+    "ordinaryCI": "failed prerequisite before normal validation"
+  },
+  "limitations": [
+    "No room subject has validated ROI and calibrated image-space blur.",
+    "A screen recording and Focus trace of the user's observed interaction remain needed.",
+    "Candidate gather correction, optical accuracy after a fix, and comparative GPU performance were not tested.",
+    "Full E2E and GPU-memory verification were not performed."
+  ],
+  "localValidation": {
+    "unitTests": "4324 passed",
+    "typecheck": "passed",
+    "lint": "passed",
+    "css": "passed",
+    "productionBuild": "passed; experiment/trace absent",
+    "publicDofTransitionE2e": "passed, Chromium, 1.9 minutes",
+    "fullE2e": "not run"
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "series": "human-acceptance-v9",
+  "evidenceOrigin": "User manual browser interaction reported in the closeout request",
+  "status": "observations recorded; original screenshot files were not available in the worktree or current task attachments",
+  "importedOriginals": false,
+  "replacementImagesGenerated": false,
+  "sourceRevision": null,
+  "browser": null,
+  "gpu": null,
+  "compositionOrLateralPlacement": null,
+  "captures": [
+    {
+      "id": "tilt-0-vs-9",
+      "expectedFilename": "tilt-0-vs-9.png",
+      "parametersA": {
+        "focalLengthMm": 90,
+        "focusDistanceMm": 1610,
+        "aperture": 5.6,
+        "frontTiltDeg": 0,
+        "frontSwingDeg": 0
+      },
+      "parametersB": {
+        "focalLengthMm": 90,
+        "focusDistanceMm": 1610,
+        "aperture": 5.6,
+        "frontTiltDeg": 9,
+        "frontSwingDeg": 0
+      },
+      "reportedChangedSetting": "frontTiltDeg",
+      "classification": "FRONT_TILT_VISUAL_PASS",
+      "observation": "Foreground bed-frame and floor are clearer at neutral; wall decorations and headboard are clearer with +9 degrees Front Tilt, reducing near-foreground sharpness.",
+      "limitations": [
+        "qualitative only",
+        "exact physical plane alignment and image-space blur are not measured"
+      ],
+      "captureIdentity": null
+    },
+    {
+      "id": "swing-0-vs-5",
+      "expectedFilename": "swing-0-vs-5.png",
+      "parametersA": {
+        "focalLengthMm": 90,
+        "focusDistanceMm": 1610,
+        "aperture": 5.6,
+        "frontTiltDeg": 0,
+        "frontSwingDeg": 0
+      },
+      "parametersB": {
+        "focalLengthMm": 90,
+        "focusDistanceMm": 1610,
+        "aperture": 5.6,
+        "frontTiltDeg": 0,
+        "frontSwingDeg": 5
+      },
+      "reportedChangedSetting": "frontSwingDeg",
+      "classification": "FRONT_SWING_VISUAL_PASS",
+      "observation": "Left wall map softens while right-side framed pictures and wooden headboard gain detail; sharpness redistributes horizontally.",
+      "limitations": [
+        "qualitative only",
+        "blur footprint and plane intersection are not calibrated"
+      ],
+      "captureIdentity": null
+    },
+    {
+      "id": "focus-460-vs-5520",
+      "expectedFilename": "focus-460-vs-5520.png",
+      "parametersA": {
+        "focalLengthMm": 90,
+        "focusDistanceMm": 460,
+        "aperture": 5.6,
+        "frontTiltDeg": 0,
+        "frontSwingDeg": 0
+      },
+      "parametersB": {
+        "focalLengthMm": 90,
+        "focusDistanceMm": 5520,
+        "aperture": 5.6,
+        "frontTiltDeg": 0,
+        "frontSwingDeg": 0
+      },
+      "reportedChangedSetting": "focusDistanceMm",
+      "classification": "FOCUS_DOF_BASIC_VISUAL_PASS",
+      "observation": "Near focus substantially defocuses background; far focus makes bed and wall decorations clearer and changes framing through focus breathing.",
+      "limitations": [
+        "foreground plant defocus is incomplete",
+        "thin foreground edges show ghosting",
+        "complete DOF transfer is not validated"
+      ],
+      "captureIdentity": null
+    }
+  ],
+  "foregroundGhosting": {
+    "expectedFilename": "foreground-ghosting-detail.png",
+    "observation": "Thin foreground leaves and stems show duplicated or ghost-like edges in the far-focused comparison.",
+    "parameters": {
+      "focalLengthMm": 90,
+      "aperture": 5.6,
+      "focusNearMm": 460,
+      "focusFarMm": 5520,
+      "frontTiltDeg": 0,
+      "frontSwingDeg": 0
+    },
+    "rootCause": "unresolved",
+    "captureIdentity": null
+  }
+}

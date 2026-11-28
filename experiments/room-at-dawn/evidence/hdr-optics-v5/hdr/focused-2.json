@@ -1,0 +1,457 @@
+{
+  "name": "focused-2",
+  "commit": "d6439bd5aeaa3f8bcc232e98a070ccc3807edb6c",
+  "dirtySource": false,
+  "probe": {
+    "status": "sampled",
+    "request": {
+      "requestId": "room-request-11",
+      "channelId": "default",
+      "sceneId": "architecture-rise"
+    },
+    "generation": {
+      "generationId": "room-generation-11",
+      "channelId": "default"
+    },
+    "frameId": "room-generation-11:frame:1",
+    "input": [
+      2,
+      2,
+      2
+    ],
+    "depthMetres": 2.5,
+    "physical": {
+      "dof": {
+        "model": "parallel-thin-lens",
+        "camera": {
+          "inverseProjectionMatrixElements": [
+            0.6801555555555555,
+            0,
+            0,
+            0,
+            0,
+            0.5441244444444444,
+            0,
+            0,
+            0,
+            0,
+            0,
+            -49.87500000000001,
+            0,
+            0,
+            -1,
+            50.125
+          ],
+          "worldMatrixElements": [
+            -1,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            -1,
+            0,
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        "lens": {
+          "centerWorldM": {
+            "x": 0,
+            "y": 0,
+            "z": 0
+          },
+          "planeNormal": {
+            "x": 0,
+            "y": 0,
+            "z": 1
+          },
+          "planeBasisX": {
+            "x": 1,
+            "y": 0,
+            "z": 0
+          },
+          "planeBasisY": {
+            "x": 0,
+            "y": 1,
+            "z": 0
+          }
+        },
+        "film": {
+          "planePointWorldM": {
+            "x": 0,
+            "y": 0,
+            "z": -0.09336099585062241
+          },
+          "planeNormal": {
+            "x": 0,
+            "y": 0,
+            "z": 1
+          },
+          "planeBasisX": {
+            "x": 1,
+            "y": 0,
+            "z": 0
+          },
+          "planeBasisY": {
+            "x": 0,
+            "y": 1,
+            "z": 0
+          },
+          "widthMm": 127,
+          "heightMm": 101.6,
+          "sampledWidthMm": 127,
+          "sampledHeightMm": 101.6
+        },
+        "focus": {
+          "plane": {
+            "pointWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": 2.5
+            },
+            "normal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            }
+          },
+          "nearPlane": {
+            "pointWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": 2.144842105263158
+            },
+            "normal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            }
+          },
+          "farPlane": {
+            "pointWorldM": {
+              "x": 0,
+              "y": 0,
+              "z": 2.9961181037525
+            },
+            "normal": {
+              "x": 0,
+              "y": 0,
+              "z": 1
+            }
+          }
+        },
+        "optics": {
+          "imageDistanceMm": 93.3609958506224,
+          "focalLengthMm": 90,
+          "apertureFNumber": 5.6,
+          "acceptableCoCDiameterMm": 0.1
+        },
+        "render": {
+          "widthPx": 312,
+          "heightPx": 234,
+          "maximumBlurRadiusPx": 32,
+          "displayWidthPx": 480
+        },
+        "physicalCoC": {
+          "boundaryDiameterPx": 0.2456692913385827,
+          "boundaryRadiusPx": 0.12283464566929135,
+          "visibleBoundaryRadiusPx": 0.1889763779527559
+        }
+      },
+      "coverage": {
+        "kind": "parallel-circle",
+        "active": true,
+        "geometry": {
+          "kind": "parallel-circle",
+          "radiusMm": 113.05122323725236,
+          "opticalAxisOffsetXMm": 0,
+          "opticalAxisOffsetYMm": 0
+        },
+        "edgeFeatherMm": 0.43418803418803414,
+        "filmWindow": {
+          "centerXMm": 0,
+          "centerYMm": 0,
+          "widthMm": 127,
+          "heightMm": 101.6
+        }
+      },
+      "naturalIllumination": {
+        "enabled": true,
+        "geometry": {
+          "kind": "parallel-cos4",
+          "imageDistanceMm": 93.3609958506224,
+          "opticalAxisOffsetXMm": 0,
+          "opticalAxisOffsetYMm": 0
+        },
+        "filmWindow": {
+          "centerXMm": 0,
+          "centerYMm": 0,
+          "widthMm": 127,
+          "heightMm": 101.6
+        }
+      },
+      "relativeIlluminanceGain": 3.585612755102042
+    },
+    "displayExposure": 19,
+    "renderer": {
+      "type": "WebGLRenderer",
+      "outputColorSpace": "srgb",
+      "toneMapping": 4,
+      "toneMappingExposure": 1
+    },
+    "stages": {
+      "scene": {
+        "rgba": [
+          2,
+          2,
+          2,
+          1
+        ],
+        "x": 156,
+        "y": 117,
+        "width": 312,
+        "height": 234,
+        "type": "RGBA HalfFloat",
+        "colorSpace": ""
+      },
+      "far": {
+        "rgba": [
+          2,
+          2,
+          2,
+          1
+        ],
+        "x": 78,
+        "y": 58,
+        "width": 156,
+        "height": 117,
+        "type": "RGBA HalfFloat",
+        "colorSpace": ""
+      },
+      "near": {
+        "rgba": [
+          2,
+          2,
+          2,
+          1
+        ],
+        "x": 78,
+        "y": 58,
+        "width": 156,
+        "height": 117,
+        "type": "RGBA HalfFloat",
+        "colorSpace": ""
+      },
+      "composite": {
+        "rgba": [
+          7.171875,
+          7.171875,
+          7.171875,
+          1
+        ],
+        "x": 156,
+        "y": 117,
+        "width": 312,
+        "height": 234,
+        "type": "RGBA HalfFloat",
+        "colorSpace": ""
+      }
+    },
+    "expectedComposite": [
+      7.171079801120449,
+      7.171079801120449,
+      7.171079801120449
+    ],
+    "filmPointMm": [
+      0.2035256410256403,
+      -0.21709401709401632
+    ],
+    "naturalGain": 0.9999796814249632,
+    "coverageGain": 1,
+    "readback": "GPU fixed-point RGBA8 transport, 1/4096 linear units"
+  },
+  "frame": {
+    "status": "completed",
+    "generation": {
+      "generationId": "room-generation-11",
+      "channelId": "default"
+    },
+    "request": {
+      "requestId": "room-request-11",
+      "channelId": "default",
+      "sceneId": "architecture-rise"
+    },
+    "frameId": "room-generation-11:frame:2",
+    "requiredOperations": "all-completed"
+  },
+  "camera": {
+    "focalLengthMm": 90,
+    "aperture": 5.6,
+    "focusDistanceMm": 2500,
+    "focusStandard": "front",
+    "frontRiseMm": 0,
+    "frontShiftMm": 0,
+    "frontTiltDeg": 0,
+    "frontSwingDeg": 0,
+    "rearRiseMm": 0,
+    "rearShiftMm": 0,
+    "rearTiltDeg": 0,
+    "rearSwingDeg": 0,
+    "cameraBodyPitchDeg": 0,
+    "cameraBodyPivotWorld": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "viewpointAnchor": "mid",
+    "cameraRigPlacement": {
+      "kind": "identity",
+      "rigOriginWorld": {
+        "x": 0,
+        "y": 0,
+        "z": 0
+      },
+      "basePitchDeg": 0
+    },
+    "activeSceneId": "architecture-rise",
+    "activeTaskId": null,
+    "mode": "free",
+    "groundGlassAssistEnabled": false,
+    "gridEnabled": true,
+    "geometryView": "side",
+    "focusMode": "finite",
+    "lastFiniteFocusDepthMm": 2000,
+    "mirrorShiftLessonState": {
+      "rigLateralMm": 0
+    }
+  },
+  "quality": "low",
+  "screenshotFrame": {
+    "status": "completed",
+    "generation": {
+      "generationId": "room-generation-11",
+      "channelId": "default"
+    },
+    "request": {
+      "requestId": "room-request-11",
+      "channelId": "default",
+      "sceneId": "architecture-rise"
+    },
+    "frameId": "room-generation-11:frame:10",
+    "requiredOperations": "all-completed"
+  },
+  "pixel": {
+    "width": 480,
+    "height": 361,
+    "rgba": [
+      254,
+      254,
+      254,
+      255
+    ]
+  },
+  "tolerances": {
+    "absolute": 0.002,
+    "relative": 0.0015,
+    "displayRgb8": 2
+  },
+  "checks": {
+    "scene": [
+      {
+        "expected": 2,
+        "measured": 2,
+        "absoluteError": 0,
+        "relativeError": 0,
+        "pass": true
+      },
+      {
+        "expected": 2,
+        "measured": 2,
+        "absoluteError": 0,
+        "relativeError": 0,
+        "pass": true
+      },
+      {
+        "expected": 2,
+        "measured": 2,
+        "absoluteError": 0,
+        "relativeError": 0,
+        "pass": true
+      }
+    ],
+    "far": [
+      {
+        "expected": 2,
+        "measured": 2,
+        "absoluteError": 0,
+        "relativeError": 0,
+        "pass": true
+      },
+      {
+        "expected": 2,
+        "measured": 2,
+        "absoluteError": 0,
+        "relativeError": 0,
+        "pass": true
+      },
+      {
+        "expected": 2,
+        "measured": 2,
+        "absoluteError": 0,
+        "relativeError": 0,
+        "pass": true
+      }
+    ],
+    "composite": [
+      {
+        "expected": 7.171079801120449,
+        "measured": 7.171875,
+        "absoluteError": 0.0007951988795511511,
+        "relativeError": 0.00011088969884659558,
+        "pass": true
+      },
+      {
+        "expected": 7.171079801120449,
+        "measured": 7.171875,
+        "absoluteError": 0.0007951988795511511,
+        "relativeError": 0.00011088969884659558,
+        "pass": true
+      },
+      {
+        "expected": 7.171079801120449,
+        "measured": 7.171875,
+        "absoluteError": 0.0007951988795511511,
+        "relativeError": 0.00011088969884659558,
+        "pass": true
+      }
+    ],
+    "display": [
+      {
+        "expected": 254,
+        "measured": 254,
+        "error": 0,
+        "pass": true
+      },
+      {
+        "expected": 254,
+        "measured": 254,
+        "error": 0,
+        "pass": true
+      },
+      {
+        "expected": 254,
+        "measured": 254,
+        "error": 0,
+        "pass": true
+      }
+    ]
+  },
+  "nearNote": "Near-layer alpha/coverage is recorded separately; zero is not evidence of near HDR preservation."
+}

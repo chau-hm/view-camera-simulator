@@ -1,0 +1,69 @@
+{
+  "subject": "nightstand-top candidate",
+  "captures": "neutral and individual same-focus upright HDR frames",
+  "results": [
+    {
+      "case": "rise-positive",
+      "baseCenterPx": [
+        224,
+        214
+      ],
+      "predictedCenterPx": [
+        224,
+        323
+      ],
+      "matchedCenterPx": [
+        224,
+        323
+      ],
+      "matchCorrelation": 0.95631950730333,
+      "residualPx": [
+        0,
+        0
+      ],
+      "method": "25x25 luminance patch, normalized correlation within 18 pixels; exploratory, no occlusion or uniqueness proof"
+    },
+    {
+      "case": "shift-positive",
+      "baseCenterPx": [
+        224,
+        214
+      ],
+      "predictedCenterPx": [
+        379,
+        214
+      ],
+      "matchedCenterPx": [
+        379,
+        214
+      ],
+      "matchCorrelation": 0.9904863682430508,
+      "residualPx": [
+        0,
+        0
+      ],
+      "method": "25x25 luminance patch, normalized correlation within 18 pixels; exploratory, no occlusion or uniqueness proof"
+    },
+    {
+      "case": "shift-negative",
+      "baseCenterPx": [
+        224,
+        214
+      ],
+      "predictedCenterPx": [
+        69,
+        214
+      ],
+      "matchedCenterPx": [
+        68,
+        214
+      ],
+      "matchCorrelation": 0.9930141482551306,
+      "residualPx": [
+        -1,
+        0
+      ],
+      "method": "25x25 luminance patch, normalized correlation within 18 pixels; exploratory, no occlusion or uniqueness proof"
+    }
+  ]
+}

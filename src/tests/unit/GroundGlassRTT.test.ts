@@ -9,6 +9,7 @@ import { GroundGlassRenderer } from "../../render/GroundGlassRenderer";
 import {
   GroundGlassRTT as UnconnectedGroundGlassRTT,
   type GroundGlassRTTProps,
+  type GroundGlassDevelopmentProbeFrame,
 } from "../../render/GroundGlassRTT";
 import type { GroundGlassSceneProfile } from "../../render/groundGlassSceneProfiles";
 import { synchronizeGroundGlassDofClipRange } from "../../render/groundGlassShaderBindings";
@@ -345,6 +346,33 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
 
     expect(disposeSubject).toHaveBeenCalledTimes(1);
     expect(subject.parent).toBeNull();
+  });
+
+  it("prepares renderer-owned development resources after mounting and disposes them before the subject", () => {
+    const subject = new THREE.Group();
+    const calls: string[] = [];
+    const developmentProfile: GroundGlassSceneProfile = {
+      configureRttShadowParticipation: vi.fn(),
+      mountSubject: (scene) => {
+        scene.add(subject);
+        return { group: subject, dispose: () => { calls.push("subject"); subject.removeFromParent(); } };
+      },
+      resolveRenderBounds: () => architectureRiseScene.bounds,
+    };
+    const prepare = vi.fn((scene: THREE.Scene, renderer: THREE.WebGLRenderer) => {
+      expect(scene).toBe(subject.parent);
+      expect(renderer).toBe(fiberTestState.gl);
+      return () => { expect(subject.parent).toBe(scene); calls.push("renderer-resource"); };
+    });
+    const camera = { ...DEFAULT_CAMERA_STATE, ...architectureRiseScene.cameraPreset };
+    const view = render(React.createElement(UnconnectedGroundGlassRTT, {
+      opticsState: deriveOpticsState(camera, architectureRiseScene), focalLengthMm: camera.focalLengthMm,
+      scene: architectureRiseScene, widthPx: 500, heightPx: 400,
+      developmentSceneProfileOverride: developmentProfile, developmentPrepareScene: prepare,
+    }));
+    expect(prepare).toHaveBeenCalledTimes(1);
+    view.unmount();
+    expect(calls).toEqual(["renderer-resource", "subject"]);
   });
 
   it("mounts the resolved Interior Corner practical in the RTT scene outside the subject", () => {
@@ -2249,6 +2277,50 @@ describe("GroundGlassRTT ownership and lifecycle", () => {
     expect(currentInfo?.latticeSubjectGeneration).toBeUndefined();
 
     view.unmount();
+  });
+
+  it("ties development stage observations to the completed frame and keeps CoC separate from color targets", () => {
+    const camera = { ...DEFAULT_CAMERA_STATE, ...architectureRiseScene.cameraPreset, activeSceneId: architectureRiseScene.id };
+    const generation = { generationId: "stage-generation", channelId: "default" } as const;
+    const request = { requestId: "stage-request", channelId: "default", sceneId: architectureRiseScene.id } as const;
+    const results: GroundGlassFrameResult[] = [];
+    const frames: GroundGlassDevelopmentProbeFrame[] = [];
+    const view = render(React.createElement(UnconnectedGroundGlassRTT, {
+      opticsState: deriveOpticsState(camera, architectureRiseScene), focalLengthMm: camera.focalLengthMm,
+      scene: architectureRiseScene, widthPx: 500, heightPx: 400, renderQuality: "standard", previewMode: "upright",
+      rendererGeneration: generation, acceptedRequestIdentity: request, onFrameResult: (result) => results.push(result),
+      developmentHdrColor: true, developmentProbeFrame: (frame) => frames.push(frame),
+    }));
+    act(() => fiberTestState.frameCallback?.({}, 1 / 60));
+    expect(frames).toHaveLength(1);
+    expect(Object.keys(frames[0].targets).sort()).toEqual(["composite", "far", "near", "scene"]);
+    expect(frames[0].cocTarget).toBeInstanceOf(THREE.WebGLRenderTarget);
+    expect(frames[0].camera.projectionMatrix).toHaveLength(16);
+    expect(frames[0].generation).toEqual(generation);
+    expect(frames[0].request).toEqual(request);
+    expect(results.at(-1)).toMatchObject({ status: "completed", frameId: frames[0].frameId, generation, request });
+    view.unmount();
+  });
+
+  it("reports a failing development HDR probe without aborting the photographic frame", () => {
+    const camera = { ...DEFAULT_CAMERA_STATE, ...architectureRiseScene.cameraPreset, activeSceneId: architectureRiseScene.id };
+    const generation = { generationId: "hdr-probe-generation", channelId: "default" } as const;
+    const request = { requestId: "hdr-probe-request", channelId: "default", sceneId: architectureRiseScene.id } as const;
+    const results: GroundGlassFrameResult[] = [];
+    const probe = vi.fn(() => { throw new Error("probe failure"); });
+    const report = vi.spyOn(console, "error").mockImplementation(() => {});
+    const view = render(React.createElement(UnconnectedGroundGlassRTT, {
+      opticsState: deriveOpticsState(camera, architectureRiseScene), focalLengthMm: camera.focalLengthMm,
+      scene: architectureRiseScene, widthPx: 500, heightPx: 400, renderQuality: "standard", previewMode: "upright",
+      rendererGeneration: generation, acceptedRequestIdentity: request, onFrameResult: (result) => results.push(result),
+      developmentHdrColor: true, developmentProbeFrame: probe,
+    }));
+    act(() => fiberTestState.frameCallback?.({}, 1 / 60));
+    expect(probe).toHaveBeenCalledTimes(1);
+    expect(report).toHaveBeenCalledWith("Ground Glass development probe failed:", expect.any(Error));
+    expect(results.at(-1)).toMatchObject({ status: "completed", generation, request });
+    view.unmount();
+    report.mockRestore();
   });
 
   it("does not construct placeholder pipeline targets or cameras for an RTT renderer", () => {

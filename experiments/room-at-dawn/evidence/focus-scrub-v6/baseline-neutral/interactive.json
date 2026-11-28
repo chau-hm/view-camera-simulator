@@ -1,0 +1,534 @@
+{
+  "source": {
+    "commit": "5a35420a410ad81ff29ad2199924ba70d3e2ef68",
+    "dirtySource": true
+  },
+  "variant": "neutral",
+  "gpu": {
+    "width": 480,
+    "height": 360,
+    "cssWidth": 480,
+    "cssHeight": 360,
+    "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+    "renderer": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (LLVM 10.0.0) (0x0000C0DE)), SwiftShader driver)"
+  },
+  "lastInput": 2820,
+  "trace": {
+    "events": [
+      {
+        "time": 163979.69999992847,
+        "value": 1470,
+        "trusted": true
+      },
+      {
+        "time": 166329.69999992847,
+        "value": 1770,
+        "trusted": true
+      },
+      {
+        "time": 167379.60000002384,
+        "value": 2090,
+        "trusted": true
+      },
+      {
+        "time": 168463.10000002384,
+        "value": 2160,
+        "trusted": true
+      },
+      {
+        "time": 169729.69999992847,
+        "value": 2660,
+        "trusted": true
+      },
+      {
+        "time": 171563,
+        "value": 2820,
+        "trusted": true
+      }
+    ],
+    "samples": [
+      {
+        "time": 163964.60000002384,
+        "committedFocusMm": 1200,
+        "request": {
+          "requestId": "room-request-16",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-4",
+          "channelId": "default"
+        },
+        "frame": {
+          "frameId": "room-generation-4:frame:152",
+          "status": "completed",
+          "request": {
+            "requestId": "room-request-16",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "generation": {
+            "generationId": "room-generation-4",
+            "channelId": "default"
+          }
+        },
+        "inspection": {
+          "status": "ready",
+          "frameId": "room-generation-4:frame:152",
+          "requestId": "room-request-16",
+          "generationId": "room-generation-4"
+        }
+      },
+      {
+        "time": 166321.79999995232,
+        "committedFocusMm": 1470,
+        "request": {
+          "requestId": "room-request-17",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-4",
+          "channelId": "default"
+        },
+        "frame": {
+          "frameId": "room-generation-4:frame:153",
+          "status": "completed",
+          "request": {
+            "requestId": "room-request-17",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "generation": {
+            "generationId": "room-generation-4",
+            "channelId": "default"
+          }
+        },
+        "inspection": {
+          "status": "ready",
+          "frameId": "room-generation-4:frame:153",
+          "requestId": "room-request-17",
+          "generationId": "room-generation-4"
+        }
+      },
+      {
+        "time": 166325.5,
+        "committedFocusMm": 1470,
+        "request": {
+          "requestId": "room-request-17",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-4",
+          "channelId": "default"
+        },
+        "frame": {
+          "frameId": "room-generation-4:frame:154",
+          "status": "completed",
+          "request": {
+            "requestId": "room-request-17",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "generation": {
+            "generationId": "room-generation-4",
+            "channelId": "default"
+          }
+        },
+        "inspection": {
+          "status": "ready",
+          "frameId": "room-generation-4:frame:154",
+          "requestId": "room-request-17",
+          "generationId": "room-generation-4"
+        }
+      },
+      {
+        "time": 167368.89999997616,
+        "committedFocusMm": 1770,
+        "request": {
+          "requestId": "room-request-18",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-4",
+          "channelId": "default"
+        },
+        "frame": {
+          "frameId": "room-generation-4:frame:155",
+          "status": "completed",
+          "request": {
+            "requestId": "room-request-18",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "generation": {
+            "generationId": "room-generation-4",
+            "channelId": "default"
+          }
+        },
+        "inspection": {
+          "status": "ready",
+          "frameId": "room-generation-4:frame:155",
+          "requestId": "room-request-18",
+          "generationId": "room-generation-4"
+        }
+      },
+      {
+        "time": 167373.29999995232,
+        "committedFocusMm": 1770,
+        "request": {
+          "requestId": "room-request-18",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-4",
+          "channelId": "default"
+        },
+        "frame": {
+          "frameId": "room-generation-4:frame:156",
+          "status": "completed",
+          "request": {
+            "requestId": "room-request-18",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "generation": {
+            "generationId": "room-generation-4",
+            "channelId": "default"
+          }
+        },
+        "inspection": {
+          "status": "ready",
+          "frameId": "room-generation-4:frame:156",
+          "requestId": "room-request-18",
+          "generationId": "room-generation-4"
+        }
+      },
+      {
+        "time": 168449.79999995232,
+        "committedFocusMm": 2090,
+        "request": {
+          "requestId": "room-request-19",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-4",
+          "channelId": "default"
+        },
+        "frame": {
+          "frameId": "room-generation-4:frame:157",
+          "status": "completed",
+          "request": {
+            "requestId": "room-request-19",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "generation": {
+            "generationId": "room-generation-4",
+            "channelId": "default"
+          }
+        },
+        "inspection": {
+          "status": "ready",
+          "frameId": "room-generation-4:frame:157",
+          "requestId": "room-request-19",
+          "generationId": "room-generation-4"
+        }
+      },
+      {
+        "time": 168454,
+        "committedFocusMm": 2090,
+        "request": {
+          "requestId": "room-request-19",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-4",
+          "channelId": "default"
+        },
+        "frame": {
+          "frameId": "room-generation-4:frame:158",
+          "status": "completed",
+          "request": {
+            "requestId": "room-request-19",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "generation": {
+            "generationId": "room-generation-4",
+            "channelId": "default"
+          }
+        },
+        "inspection": {
+          "status": "ready",
+          "frameId": "room-generation-4:frame:158",
+          "requestId": "room-request-19",
+          "generationId": "room-generation-4"
+        }
+      },
+      {
+        "time": 169709.60000002384,
+        "committedFocusMm": 2160,
+        "request": {
+          "requestId": "room-request-20",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-4",
+          "channelId": "default"
+        },
+        "frame": {
+          "frameId": "room-generation-4:frame:159",
+          "status": "completed",
+          "request": {
+            "requestId": "room-request-20",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "generation": {
+            "generationId": "room-generation-4",
+            "channelId": "default"
+          }
+        },
+        "inspection": {
+          "status": "ready",
+          "frameId": "room-generation-4:frame:159",
+          "requestId": "room-request-20",
+          "generationId": "room-generation-4"
+        }
+      },
+      {
+        "time": 169714,
+        "committedFocusMm": 2160,
+        "request": {
+          "requestId": "room-request-20",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-4",
+          "channelId": "default"
+        },
+        "frame": {
+          "frameId": "room-generation-4:frame:160",
+          "status": "completed",
+          "request": {
+            "requestId": "room-request-20",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "generation": {
+            "generationId": "room-generation-4",
+            "channelId": "default"
+          }
+        },
+        "inspection": {
+          "status": "ready",
+          "frameId": "room-generation-4:frame:160",
+          "requestId": "room-request-20",
+          "generationId": "room-generation-4"
+        }
+      },
+      {
+        "time": 169716.89999997616,
+        "committedFocusMm": 2160,
+        "request": {
+          "requestId": "room-request-20",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-4",
+          "channelId": "default"
+        },
+        "frame": {
+          "frameId": "room-generation-4:frame:161",
+          "status": "completed",
+          "request": {
+            "requestId": "room-request-20",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "generation": {
+            "generationId": "room-generation-4",
+            "channelId": "default"
+          }
+        },
+        "inspection": {
+          "status": "ready",
+          "frameId": "room-generation-4:frame:161",
+          "requestId": "room-request-20",
+          "generationId": "room-generation-4"
+        }
+      },
+      {
+        "time": 171552.39999997616,
+        "committedFocusMm": 2660,
+        "request": {
+          "requestId": "room-request-21",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-4",
+          "channelId": "default"
+        },
+        "frame": {
+          "frameId": "room-generation-4:frame:162",
+          "status": "completed",
+          "request": {
+            "requestId": "room-request-21",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "generation": {
+            "generationId": "room-generation-4",
+            "channelId": "default"
+          }
+        },
+        "inspection": {
+          "status": "ready",
+          "frameId": "room-generation-4:frame:162",
+          "requestId": "room-request-21",
+          "generationId": "room-generation-4"
+        }
+      },
+      {
+        "time": 171556.60000002384,
+        "committedFocusMm": 2660,
+        "request": {
+          "requestId": "room-request-21",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-4",
+          "channelId": "default"
+        },
+        "frame": {
+          "frameId": "room-generation-4:frame:163",
+          "status": "completed",
+          "request": {
+            "requestId": "room-request-21",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "generation": {
+            "generationId": "room-generation-4",
+            "channelId": "default"
+          }
+        },
+        "inspection": {
+          "status": "ready",
+          "frameId": "room-generation-4:frame:163",
+          "requestId": "room-request-21",
+          "generationId": "room-generation-4"
+        }
+      },
+      {
+        "time": 172694.19999992847,
+        "committedFocusMm": 2820,
+        "request": {
+          "requestId": "room-request-22",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-4",
+          "channelId": "default"
+        },
+        "frame": {
+          "frameId": "room-generation-4:frame:164",
+          "status": "completed",
+          "request": {
+            "requestId": "room-request-22",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "generation": {
+            "generationId": "room-generation-4",
+            "channelId": "default"
+          }
+        },
+        "inspection": {
+          "status": "ready",
+          "frameId": "room-generation-4:frame:164",
+          "requestId": "room-request-22",
+          "generationId": "room-generation-4"
+        }
+      },
+      {
+        "time": 172698.60000002384,
+        "committedFocusMm": 2820,
+        "request": {
+          "requestId": "room-request-22",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-4",
+          "channelId": "default"
+        },
+        "frame": {
+          "frameId": "room-generation-4:frame:165",
+          "status": "completed",
+          "request": {
+            "requestId": "room-request-22",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "generation": {
+            "generationId": "room-generation-4",
+            "channelId": "default"
+          }
+        },
+        "inspection": {
+          "status": "ready",
+          "frameId": "room-generation-4:frame:165",
+          "requestId": "room-request-22",
+          "generationId": "room-generation-4"
+        }
+      },
+      {
+        "time": 172702.79999995232,
+        "committedFocusMm": 2820,
+        "request": {
+          "requestId": "room-request-22",
+          "channelId": "default",
+          "sceneId": "architecture-rise"
+        },
+        "generation": {
+          "generationId": "room-generation-4",
+          "channelId": "default"
+        },
+        "frame": {
+          "frameId": "room-generation-4:frame:166",
+          "status": "completed",
+          "request": {
+            "requestId": "room-request-22",
+            "channelId": "default",
+            "sceneId": "architecture-rise"
+          },
+          "generation": {
+            "generationId": "room-generation-4",
+            "channelId": "default"
+          }
+        },
+        "inspection": {
+          "status": "ready",
+          "frameId": "room-generation-4:frame:166",
+          "requestId": "room-request-22",
+          "generationId": "room-generation-4"
+        }
+      }
+    ],
+    "running": false
+  },
+  "limitation": "rAF telemetry samples input, committed state and reported completion; it does not directly observe compositor presentation or prove absence of dropped frames."
+}
