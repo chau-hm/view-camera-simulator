@@ -205,7 +205,7 @@ const targetMessageKeys: Readonly<Record<string, SceneGeometryTargetMessageKeyMa
     "interior-wall-far": simulatorMessageKeys.geometry.interiorCornerFarWallTarget,
   },
   "macro-bellows-extension": {
-    "specimen-coin": simulatorMessageKeys.geometry.macroSpecimenTarget,
+    "tourbillon-watch-dial": simulatorMessageKeys.geometry.macroTourbillonWatchTarget,
   },
   "macro-depth-of-field": {
     "macro-depth-near": simulatorMessageKeys.geometry.macroDepthNearTarget,

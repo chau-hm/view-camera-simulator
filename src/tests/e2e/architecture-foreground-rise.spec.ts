@@ -28,7 +28,12 @@ test("Architecture + Foreground Free Practice exposes cumulative Rise, Tilt, Foc
   });
 
   await page.goto("/simulator/free/architecture-foreground?rttDiagnostics=1");
-  await expect(page).toHaveURL(/\/simulator\/free\/architecture-foreground\?rttDiagnostics=1$/);
+  await expect(page).toHaveURL((url) =>
+    url.pathname === "/simulator/free/architecture-foreground" &&
+    url.searchParams.get("rttDiagnostics") === "1" &&
+    /^\d+$/.test(url.searchParams.get("seed") ?? "") &&
+    url.searchParams.get("sv") === "1",
+  );
   await expect(page.getByRole("region", { name: "Guided lesson progress" })).not.toBeVisible();
 
   const cameraControls = page.getByRole("region", { name: "Camera Controls" });

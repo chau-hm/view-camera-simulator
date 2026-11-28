@@ -10,7 +10,7 @@ import { ARCHITECTURE_RISE_PRESENTATION } from "../../scenes/presentation/archit
 import { resolveSceneWorldIllumination } from "../../scenes/illumination/sceneWorldIllumination";
 import {
   worldIlluminationDirectionalToWorld,
-  type WorldProceduralSkyGroundEnvironment,
+  type WorldProceduralEnvironment,
 } from "../../render/worldIlluminationContract";
 import { WorldEnvironment } from "../../render/WorldEnvironment";
 
@@ -124,7 +124,7 @@ describe("Observer world illumination component", () => {
     );
     if (
       !React.isValidElement<{
-        environment: WorldProceduralSkyGroundEnvironment;
+        environment: WorldProceduralEnvironment;
         mountGeneration: number;
         createRealizationToken: typeof createRealizationToken;
         onStatusChange: typeof onEnvironmentStatusChange;

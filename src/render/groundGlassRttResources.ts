@@ -103,9 +103,11 @@ export const createGroundGlassRttResources = (input: {
       ? new DepthTextureCtor(widthPx, heightPx)
       : undefined;
     if (depthTexture) {
-      (depthTexture as { type?: number }).type =
-        (THREE as unknown as { UnsignedShortType?: number }).UnsignedShortType ??
-        (THREE as unknown as { UnsignedIntType?: number }).UnsignedIntType;
+      // The watch has 19–70 μm relief at a 300 mm object distance. A 16-bit
+      // perspective depth texture quantizes that scene by about 137 μm, so
+      // engraved dial parts can tie with the chapter-ring surface before DOF.
+      // Three.js r187 maps UnsignedIntType to DEPTH_COMPONENT24.
+      (depthTexture as { type?: number }).type = THREE.UnsignedIntType;
       (colorDepthTarget as unknown as { depthTexture?: unknown }).depthTexture =
         depthTexture;
     }

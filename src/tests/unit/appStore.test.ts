@@ -62,6 +62,51 @@ describe("app store STA-001", () => {
     expect(task.activeTaskId).toBe("tilt-01");
   });
 
+  it("increments scene reset generation only for explicit entry and reset actions", () => {
+    const store = useAppStore.getState();
+    store.setActiveScene("macro-bellows-extension");
+    const enteredGeneration = useAppStore.getState().sceneResetGeneration;
+
+    useAppStore.getState().setFocusDistance(450);
+    useAppStore.getState().setAperture(11);
+    expect(useAppStore.getState().sceneResetGeneration).toBe(enteredGeneration);
+
+    useAppStore.getState().resetMovements();
+    expect(useAppStore.getState().sceneResetGeneration).toBe(enteredGeneration + 1);
+    useAppStore.getState().setActiveScene("macro-bellows-extension");
+    expect(useAppStore.getState().sceneResetGeneration).toBe(enteredGeneration + 2);
+  });
+
+  it("restarts scene-owned animation on a fresh workspace mount without resetting free-scene controls", () => {
+    const store = useAppStore.getState();
+    store.clearSimulatorRouteInitialization();
+    store.initializeSimulatorRoute({
+      mode: "free",
+      sceneId: macroBellowsExtensionScene.id,
+      simulatorWorkspaceEntryId: "workspace-entry-1",
+    });
+    store.setFocusDistance(450);
+    const firstEntryGeneration = useAppStore.getState().sceneResetGeneration;
+
+    // StrictMode effect replay uses the same mounted-workspace identity.
+    useAppStore.getState().initializeSimulatorRoute({
+      mode: "free",
+      sceneId: macroBellowsExtensionScene.id,
+      simulatorWorkspaceEntryId: "workspace-entry-1",
+    });
+    expect(useAppStore.getState().sceneResetGeneration).toBe(firstEntryGeneration);
+
+    // Returning to the same free route mounts a new workspace. This restarts
+    // scene-owned animation while preserving the learner's optical controls.
+    useAppStore.getState().initializeSimulatorRoute({
+      mode: "free",
+      sceneId: macroBellowsExtensionScene.id,
+      simulatorWorkspaceEntryId: "workspace-entry-2",
+    });
+    expect(useAppStore.getState().sceneResetGeneration).toBe(firstEntryGeneration + 1);
+    expect(useAppStore.getState().camera.focusDistanceMm).toBe(450);
+  });
+
   it("resets only movement values with resetMovements", () => {
     const { setRise, setTilt, setSwing, setFocusDistance, setAperture, resetMovements } =
       useAppStore.getState();

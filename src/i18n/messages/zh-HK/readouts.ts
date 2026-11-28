@@ -17,7 +17,7 @@ export const readoutsMessages = {
     requiredExtension: "所需皮腔伸長",
     availableTravel: "可用皮腔行程",
     travelWarning: "正在接近可用皮腔行程。",
-    lifeSize: "已達到等大重現（1:1）。標本現在已清晰地以與實物相同的大小重現。",
+    lifeSize: "已達到等大重現（1:1）。所選焦平面現已清晰地以與實際主體相同大小重現。",
     note: "數值對應所選焦平面。曝光補償假設使用對稱薄透鏡。",
   },
   controls: {

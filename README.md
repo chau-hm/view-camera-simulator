@@ -292,3 +292,74 @@ then inspect its source/tree, pin, Preview, upload and fresh-download verificati
 result, and lack of deployment. The pilot is not a release authorization. Main-CI integration is deferred until the separate CI
 routing work stabilizes. Until then this pilot adds a separate build; it does
 not reduce the existing production CI or establish a deployable release.
+
+The exact-source historical qualification command and its non-publishing
+boundary are described in the [historical qualification guide](docs/testing/HISTORICAL_EVIDENCE_QUALIFICATION.md#exact-source-release-qualification).
+It requires the reviewed Release B preflight and rejects code missing from fetched main, untracked at HEAD, or locally modified. Neither preflight nor historical qualification authorizes
+production deployment.
+
+### Trusted artifact preflight
+
+Release B provides a **non-publishing** preflight for an explicitly selected
+source, successful main CI run and attempt, successful artifact-pilot run and
+attempt, and retained artifact ID. It neither deploys nor performs cumulative
+production release qualification. With Node 24, Python 3, authenticated `gh`
+with read access to repository contents and Actions, and a freshly fetched
+`origin/main`, run:
+
+```bash
+git fetch origin
+node scripts/release-artifact-preflight.mjs \
+  <source-commit-sha> <ci-run-id> <ci-attempt> \
+  <producer-run-id> <producer-attempt> <artifact-id>
+```
+
+Standard output is a JSON result; standard error provides the operator summary
+or a failure reason. A successful result is `RELEASE_PREFLIGHT_VERIFIED`,
+`RELEASE_QUALIFICATION_PENDING`, `NOT_DEPLOYED`. An unsuccessful preflight
+returns nonzero. No application build or production ref change takes place.
+
+The policy checks the canonical repository, authoritative main ancestry, exact
+source tree and pinned reviewed workflow definitions, exact run IDs, attempts,
+events, branches, required job and step conclusions. Workflow IDs and Git blob
+identities are intentionally narrow; an independently reviewed policy update is
+required when those workflows change. Successful jobs and main source history
+are trusted; this is not protection against a compromised GitHub service,
+runner or authorized modification of source and supporting scripts.
+
+The selected artifact must be unexpired and associated with the producer run.
+The producer's successful job log must bind its artifact ID to both the original
+pre-Preview identity and retained identity. The downloaded archive must match
+GitHub's exact size and SHA-256; a bounded temporary extraction rejects unsafe
+paths, duplicate paths, links and unsupported entries. The Release A verifier
+then compares the entire retrieved candidate with the **original logged pin**,
+including source, tree, manifest and payload digests; it checks validation
+metadata, producing run/attempt and the source lockfile. Staging is removed on
+completion. Missing logs, expired artifacts, inaccessible runs, changed workflow
+policy, main movement during verification, and any identity mismatch fail closed.
+Actions artifact retention is
+finite; this preflight is not rollback storage, cross-run deployment or release
+approval. Production continues to use the existing isolated promotion path.
+
+Archive names are preserved exactly, but before creating the extraction
+directory the extractor compares every file and directory prefix using Unicode
+NFD, case folding, and NFD again. It rejects aliases rather than renaming them,
+including file/directory collisions and differing case or Unicode spellings of
+the same directory. As a conservative Windows-compatible subset it also rejects
+reserved device names, colon and other forbidden punctuation, and trailing dots
+or spaces. This policy covers those portability hazards; it does not claim to
+model every filesystem's naming rules. Archives remain bounded to 10,000 entries,
+512 MiB expanded, and 128 MiB transport, with regular files only.
+
+Each required job must belong to the selected run, attempt and source, and all
+required steps must have succeeded within that attempt. A partial rerun without
+complete attempt-specific evidence is rejected rather than reconstructed from
+other attempts. The current policy accepts one explicitly reviewed set of
+workflow versions. Before Release D production cutover, a separately reviewed
+integration must define compatibility for multiple reviewed workflow contract
+versions so newer CI routing can be accepted without unnecessarily excluding
+eligible retained artifacts from older contracts. Never accept new workflow
+versions merely because they are current. The currently reviewed Git blob pins
+are `37490702733b5130bd9ec125e0d41102751ed004` (Pages CI),
+`3a449d8f6f896c2cc38252209362daa0778dc6d6` (historical qualification), and
+`94b7feb1e0370ac020b24103f581dbc03a2f6643` (artifact pilot).

@@ -54,7 +54,7 @@ import {
   disposeWorldIlluminationRig,
 } from "../worldIlluminationRig";
 import {
-  createProceduralSkyGroundTexture,
+  createProceduralWorldEnvironmentTexture,
 } from "../proceduralWorldEnvironment";
 import {
   createWorldEnvironmentRigFromTarget,
@@ -1802,7 +1802,7 @@ const createGroundGlassWorldEnvironment = (
   renderer: WebGpuRenderer,
   environment: NonNullable<ReturnType<typeof resolveSceneWorldIllumination>["environment"]>,
 ): WorldEnvironmentRig => {
-  const source = createProceduralSkyGroundTexture(environment);
+  const source = createProceduralWorldEnvironmentTexture(environment);
   let generator: PMREMGenerator | null = null;
   let renderTarget: THREE.RenderTarget | null = null;
   let error: unknown;

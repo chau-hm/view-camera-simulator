@@ -1,6 +1,6 @@
 import { useLayoutEffect } from "react";
 import { useThree } from "@react-three/fiber";
-import type { WorldProceduralSkyGroundEnvironment } from "./worldIlluminationContract";
+import type { WorldProceduralEnvironment } from "./worldIlluminationContract";
 import {
   createObserverWorldEnvironmentRig,
   UnsupportedObserverEnvironmentRendererError,
@@ -22,7 +22,7 @@ export const WorldEnvironment = ({
   onStatusChange,
   architectureRiseVerificationHarness = false,
 }: {
-  environment: WorldProceduralSkyGroundEnvironment;
+  environment: WorldProceduralEnvironment;
   mountGeneration: number;
   createRealizationToken: (
     rendererGeneration: number,

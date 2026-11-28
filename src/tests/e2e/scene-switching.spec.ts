@@ -1,5 +1,6 @@
 import { isKnownFiberClockDeprecation } from "./helpers/threeCompatibility";
 import { expect, test, type ElementHandle, type Page } from "@playwright/test";
+import { getSceneById } from "../../scenes/definitions";
 
 type SceneVisit = {
   sceneId: string;
@@ -47,11 +48,21 @@ const openPublicScene = async (page: Page, visit: SceneVisit) => {
   await expect(link).toHaveAttribute("href", visit.href);
   await link.click();
   const expectedRoute = new URL(visit.href, page.url());
-  await expect(page).toHaveURL(
-    (actualRoute) =>
-      actualRoute.pathname === expectedRoute.pathname &&
-      actualRoute.search === expectedRoute.search,
-  );
+  const variation = getSceneById(visit.sceneId)?.sceneVariation;
+  await expect(page).toHaveURL((actualRoute) => {
+    if (actualRoute.pathname !== expectedRoute.pathname || actualRoute.hash !== expectedRoute.hash) return false;
+    const actualParams = new URLSearchParams(actualRoute.search);
+    if (variation?.enabled) {
+      const seeds = actualParams.getAll("seed");
+      const versions = actualParams.getAll("sv");
+      if (seeds.length !== 1 || !/^(0|[1-9][0-9]*)$/.test(seeds[0]!) ||
+          Number(seeds[0]) > 0xffff_ffff || versions.length !== 1 ||
+          versions[0] !== String(variation.schemaVersion)) return false;
+      actualParams.delete("seed");
+      actualParams.delete("sv");
+    }
+    return actualParams.toString() === expectedRoute.searchParams.toString();
+  });
 };
 
 test("public SPA scene switching keeps one current scene and its RTT renderer channels without reloads", async ({ page }) => {
@@ -73,9 +84,11 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
   await page.goto("/simulator/free/architecture-rise?keep=one&seed=123&other=two");
   await expect(page).toHaveURL((url) =>
     url.pathname === "/simulator/free/architecture-rise" &&
-    url.searchParams.get("seed") === null &&
-    url.searchParams.get("keep") === "one" &&
-    url.searchParams.get("other") === "two",
+    url.searchParams.getAll("seed").join() === "123" &&
+    url.searchParams.getAll("sv").join() === "1" &&
+    url.searchParams.getAll("keep").join() === "one" &&
+    url.searchParams.getAll("other").join() === "two" &&
+    [...url.searchParams.keys()].length === 4,
   );
   await page.goto("/scenes");
   const visits = await discoverPublicSceneVisits(page);
@@ -92,6 +105,9 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
   const seenRttOwnerIds = new Set<string>();
   const seenRendererGenerationIds = new Set<string>();
   const visitedSceneIds = new Set<string>();
+  let macroBellowsVisit: SceneVisit | null = null;
+  let macroBellowsObserverHandle: ElementHandle<Element> | null = null;
+  let macroBellowsRttHandle: ElementHandle<Element> | null = null;
 
   for (const visit of visits) {
     expect(visitedSceneIds.has(visit.sceneId), `scene ${visit.sceneId} should be visited once`).toBe(false);
@@ -105,7 +121,8 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
     await page.evaluate(() => {
       const url = new URL(window.location.href);
       url.searchParams.set("rttDiagnostics", "1");
-      window.history.replaceState(window.history.state, "", url);
+      window.history.pushState(window.history.state, "", url);
+      window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
     });
     await expect
       .poll(() => page.evaluate(() => (window as Window & { __sceneSwitchDocumentToken?: string }).__sceneSwitchDocumentToken))
@@ -145,6 +162,27 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
     expect(rendererGenerationId).toBeTruthy();
     expect(seenRendererGenerationIds.has(rendererGenerationId!)).toBe(false);
     seenRendererGenerationIds.add(rendererGenerationId!);
+
+    if (visit.sceneId === "macro-bellows-extension") {
+      macroBellowsVisit = visit;
+      const observerCanvas = sceneCanvas.locator("canvas");
+      const rttCanvas = groundGlass.locator("canvas");
+      await expect(sceneCanvas).toHaveAttribute("data-observer-environment-status", "active", { timeout: 60_000 });
+      await expect.poll(async () => {
+        const value = await observerCanvas.getAttribute("data-macro-watch-cage-angle");
+        return value !== null && Number.isFinite(Number(value));
+      }, { timeout: 60_000 }).toBe(true);
+      await expect.poll(async () => {
+        const value = await rttCanvas.getAttribute("data-macro-watch-cage-angle");
+        return value !== null && Number.isFinite(Number(value));
+      }, { timeout: 60_000 }).toBe(true);
+      macroBellowsObserverHandle = await observerCanvas.elementHandle();
+      macroBellowsRttHandle = await rttCanvas.elementHandle();
+    } else if (["macro-depth-of-field", "macro-oblique-plane", "macro-compound-movements"].includes(visit.sceneId)) {
+      await expect(sceneCanvas).toHaveAttribute("data-observer-environment-status", "not-configured");
+      await expect(sceneCanvas.locator("canvas")).not.toHaveAttribute("data-macro-watch-cage-angle");
+      await expect(groundGlass.locator("canvas")).not.toHaveAttribute("data-macro-watch-cage-angle");
+    }
     const sanityState = await groundGlass.getAttribute("data-rtt-sanity-state");
     expect(sanityState).toBeTruthy();
     if (previousSceneId && previousSceneId !== visit.sceneId) {
@@ -178,6 +216,53 @@ test("public SPA scene switching keeps one current scene and its RTT renderer ch
   }
 
   expect([...visitedSceneIds].sort()).toEqual([...discoveredSceneIds].sort());
+  expect(macroBellowsVisit, "the public Macro Bellows route should have been visited").not.toBeNull();
+  if (macroBellowsObserverHandle) {
+    await expect.poll(() => page.evaluate((node) => !node.isConnected, macroBellowsObserverHandle!)).toBe(true);
+    await expect.poll(() => page.evaluate(
+      (node) => node.getAttribute("data-macro-watch-cage-angle"),
+      macroBellowsObserverHandle!,
+    )).toBeNull();
+  }
+  if (macroBellowsRttHandle) {
+    await expect.poll(() => page.evaluate((node) => !node.isConnected, macroBellowsRttHandle!)).toBe(true);
+    await expect.poll(() => page.evaluate(
+      (node) => node.getAttribute("data-macro-watch-cage-angle"),
+      macroBellowsRttHandle!,
+    )).toBeNull();
+  }
+
+  // Re-enter through the public catalog without a document reload; the
+  // renderer-owned watch and studio environment must be freshly mounted.
+  await openPublicScene(page, macroBellowsVisit!);
+  await expect.poll(() => page.evaluate(
+    () => (window as Window & { __sceneSwitchDocumentToken?: string }).__sceneSwitchDocumentToken,
+  )).toBe(documentToken);
+  const reenteredScene = page.getByTestId("scene-canvas");
+  const reenteredObserver = reenteredScene.locator("canvas");
+  const reenteredRtt = page.locator('[data-testid="ground-glass-rtt"][data-rtt-channel="default"]');
+  const reenteredRttCanvas = reenteredRtt.locator("canvas");
+  await expect(reenteredScene).toHaveAttribute("data-scene-subject-id", "macro-bellows-extension");
+  await expect(reenteredRtt).toHaveAttribute("data-rtt-scene-id", "macro-bellows-extension", { timeout: 60_000 });
+  await expect(reenteredScene).toHaveAttribute("data-observer-environment-status", "active", { timeout: 60_000 });
+  await expect(reenteredRtt).toHaveAttribute("data-rtt-resource-generation", /^[1-9]\d*$/, { timeout: 60_000 });
+  const reenteredOwnerId = await reenteredRtt.getAttribute("data-rtt-owner-id");
+  const reenteredRendererGenerationId = await reenteredRtt.getAttribute("data-renderer-generation");
+  expect(reenteredOwnerId).toBeTruthy();
+  expect(reenteredRendererGenerationId).toBeTruthy();
+  expect(seenRendererGenerationIds.has(reenteredRendererGenerationId!)).toBe(false);
+  await expect.poll(async () => {
+    const value = await reenteredObserver.getAttribute("data-macro-watch-cage-angle");
+    return value !== null && Number.isFinite(Number(value));
+  }, { timeout: 60_000 }).toBe(true);
+  await expect.poll(async () => {
+    const value = await reenteredRttCanvas.getAttribute("data-macro-watch-cage-angle");
+    return value !== null && Number.isFinite(Number(value));
+  }, { timeout: 60_000 }).toBe(true);
+  const observerPhase = Number(await reenteredObserver.getAttribute("data-macro-watch-cage-angle"));
+  const groundGlassPhase = Number(await reenteredRttCanvas.getAttribute("data-macro-watch-cage-angle"));
+  expect(Math.abs(observerPhase - groundGlassPhase)).toBeLessThan(0.18);
+
   expect(pageErrors, `Uncaught page errors: ${pageErrors.join("\n")}`).toEqual([]);
   expect(consoleProblems, `Console errors/warnings: ${consoleProblems.join("\n")}`).toEqual([]);
 });
