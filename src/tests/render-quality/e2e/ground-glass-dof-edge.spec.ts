@@ -1,4 +1,9 @@
 import { expect, test } from "@playwright/test";
+import {
+  deriveGroundGlassA1OpticalExpectation,
+  evaluateGroundGlassA1OpticalResponse,
+  GROUND_GLASS_A1_OPTICAL_REFERENCE,
+} from "../groundGlassA1OpticalAcceptance";
 
 test("Ground Glass depth-edge fixture measures production gather visibility on rendered pixels", async ({ page }) => {
   const pageErrors: string[] = [];
@@ -19,6 +24,8 @@ test("Ground Glass depth-edge fixture measures production gather visibility on r
       scene: result.scene,
       cases: result.cases,
       faults: result.faults,
+      opticalMeasurements: result.opticalMeasurements,
+      opticalSourceLuminanceRow: result.opticalSourceLuminanceRow,
     };
   });
 
@@ -29,7 +36,34 @@ test("Ground Glass depth-edge fixture measures production gather visibility on r
     backDistanceMm: 410,
     edgePixelX: 256,
   });
-  console.info("Ground Glass DOF depth-edge fixture:", JSON.stringify(proof));
+  const referenceExpectation = deriveGroundGlassA1OpticalExpectation(
+    proof.opticalSourceLuminanceRow,
+    proof.opticalMeasurements.candidate.sourceDefocusedContrast,
+  );
+  for (const measurement of Object.values(proof.opticalMeasurements)) {
+    expect(measurement.sourceDefocusedContrast).toBe(proof.opticalMeasurements.candidate.sourceDefocusedContrast);
+    expect(measurement.sourceFocusedContrast).toBe(proof.opticalMeasurements.candidate.sourceFocusedContrast);
+  }
+  const opticalDecisions = Object.fromEntries(
+    Object.entries(proof.opticalMeasurements).map(([variant, measurement]) => [
+      variant,
+      evaluateGroundGlassA1OpticalResponse(measurement, proof.opticalSourceLuminanceRow),
+    ]),
+  );
+  console.info("Ground Glass DOF depth-edge fixture:", JSON.stringify({
+    backend: proof.backend,
+    renderer: proof.renderer,
+    sourceDepthFormat: proof.sourceDepthFormat,
+    scene: proof.scene,
+    cases: proof.cases,
+    faults: proof.faults,
+    opticalMeasurements: proof.opticalMeasurements,
+    opticalReference: {
+      fixture: GROUND_GLASS_A1_OPTICAL_REFERENCE,
+      expectation: referenceExpectation,
+      decisions: opticalDecisions,
+    },
+  }));
 
   // Thin-lens reference in millimetres, calculated independently of the renderer.
   // v = fD / (D - f), and the signed blur diameter is (f / N)(v_f / v - 1).
@@ -118,6 +152,18 @@ test("Ground Glass depth-edge fixture measures production gather visibility on r
   ).toBeLessThan(focusedForeground.candidateBackgroundContrast * 0.9);
   expect(faultMeasurements.zeroBlurBackgroundContrast / faultMeasurements.sourceBackgroundContrast)
     .toBeGreaterThan(0.99);
+
+  expect(opticalDecisions.candidate?.accepted, JSON.stringify(opticalDecisions.candidate)).toBe(true);
+  expect(opticalDecisions.restored?.accepted, JSON.stringify(opticalDecisions.restored)).toBe(true);
+  expect(opticalDecisions.wrongCoc?.accepted).toBe(false);
+  expect(opticalDecisions.wrongCoc?.failureReasons).toContain("signed-coc-mismatch");
+  expect(opticalDecisions.excessiveBlur?.accepted).toBe(false);
+  expect(opticalDecisions.excessiveBlur?.failureReasons).toContain("optical-footprint-mismatch");
+  expect(opticalDecisions.excessiveBlur?.failureReasons).toContain("excessive-blur");
+  expect(opticalDecisions.zeroBlur?.accepted).toBe(false);
+  expect(opticalDecisions.zeroBlur?.failureReasons).toContain("insufficient-defocus");
+  expect(opticalDecisions.legacy?.accepted).toBe(false);
+  expect(opticalDecisions.legacy?.failureReasons).toContain("depth-rejection-contamination");
 
   const nearFar = proof.cases["focus-near-far-390-f2_8"];
   expect(nearFar.candidateEdgeRedIncrease).toBeLessThan(nearFar.legacyEdgeRedIncrease);

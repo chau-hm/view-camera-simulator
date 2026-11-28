@@ -26,9 +26,21 @@ const MAX_COC_RADIUS_PX = 16;
 const COC_STORAGE_MAX_MM = 12;
 const FOOTPRINT_STORAGE_MAX_MM = 6;
 
-type VariantName = "candidate" | "legacy" | "wrongCoc" | "excessiveBlur" | "zeroBlur";
+type VariantName = "candidate" | "legacy" | "wrongCoc" | "excessiveBlur" | "zeroBlur" | "restored";
 type FixtureCase = "focus-near-far-390-f2_8" | "focus-foreground-400-f2_8" |
   "focus-background-410-f1_4" | "stopped-down-400-f32";
+type OpticalVariantName = "candidate" | "wrongCoc" | "excessiveBlur" | "zeroBlur" | "legacy" | "restored";
+
+type OpticalMeasurement = Readonly<{
+  signedCoCDiameterMm: number;
+  majorRadiusMm: number;
+  majorRadiusPx: number;
+  sourceDefocusedContrast: number;
+  processedDefocusedContrast: number;
+  sourceFocusedContrast: number;
+  processedFocusedContrast: number;
+  edgeRedIncrease: number;
+}>;
 
 type FixtureMeasurement = {
   focusDistanceMm: number;
@@ -54,7 +66,10 @@ type FixtureMeasurement = {
   legacyPixels: Uint8Array;
   sourcePixels: Uint8Array;
 };
-type FixtureRenderedMeasurement = FixtureMeasurement & { cocPixels: Uint8Array };
+type FixtureRenderedMeasurement = FixtureMeasurement & {
+  cocPixels: Uint8Array;
+  opticalMeasurements?: Record<OpticalVariantName, OpticalMeasurement>;
+};
 
 type FaultMeasurements = Readonly<{
   wrongCocBackgroundDiameterMm: number;
@@ -79,6 +94,8 @@ declare global {
       cases: Record<FixtureCase, Omit<FixtureRenderedMeasurement,
         "candidatePixels" | "legacyPixels" | "sourcePixels" | "cocPixels">>;
       faults: FaultMeasurements;
+      opticalMeasurements: Record<OpticalVariantName, OpticalMeasurement>;
+      opticalSourceLuminanceRow: readonly number[];
       showCase: (id: FixtureCase) => void;
     };
   }
@@ -204,6 +221,7 @@ const farTargets: Record<VariantName, THREE.WebGLRenderTarget> = {
   wrongCoc: makeTarget(),
   excessiveBlur: makeTarget(),
   zeroBlur: makeTarget(),
+  restored: makeTarget(),
 };
 const nearTargets: Record<VariantName, THREE.WebGLRenderTarget> = {
   candidate: makeTarget(),
@@ -211,6 +229,7 @@ const nearTargets: Record<VariantName, THREE.WebGLRenderTarget> = {
   wrongCoc: makeTarget(),
   excessiveBlur: makeTarget(),
   zeroBlur: makeTarget(),
+  restored: makeTarget(),
 };
 const finalTargets: Record<VariantName, THREE.WebGLRenderTarget> = {
   candidate: makeTarget(),
@@ -218,6 +237,7 @@ const finalTargets: Record<VariantName, THREE.WebGLRenderTarget> = {
   wrongCoc: makeTarget(),
   excessiveBlur: makeTarget(),
   zeroBlur: makeTarget(),
+  restored: makeTarget(),
 };
 
 const colorMaterial = (fragmentShader: string): THREE.ShaderMaterial => new THREE.ShaderMaterial({
@@ -402,6 +422,7 @@ const gatherMaterials: Record<VariantName, THREE.ShaderMaterial> = {
   wrongCoc: createGatherMaterial(candidateGatherShader),
   excessiveBlur: createGatherMaterial(candidateGatherShader),
   zeroBlur: createGatherMaterial(zeroBlurFaultShader),
+  restored: createGatherMaterial(candidateGatherShader),
 };
 
 const compositeMaterial = new THREE.ShaderMaterial({
@@ -574,7 +595,9 @@ const decodeRadius = (pixels: Uint8Array, x: number, y: number): number => {
 
 const results = {} as Record<FixtureCase, FixtureRenderedMeasurement>;
 const summarizeResult = (result: FixtureRenderedMeasurement) => Object.fromEntries(
-  Object.entries(result).filter(([key]) => !key.endsWith("Pixels") && key !== "cocPixels"),
+  Object.entries(result).filter(([key]) =>
+    !key.endsWith("Pixels") && key !== "cocPixels" && key !== "opticalMeasurements",
+  ),
 );
 const caseInputs: ReadonlyArray<Readonly<{ id: FixtureCase; focus: number; fNumber: number }>> = [
   { id: "focus-near-far-390-f2_8", focus: 390, fNumber: 2.8 },
@@ -594,7 +617,7 @@ const renderCase = (
   const cocPixelsByVariant = {} as Partial<Record<VariantName, Uint8Array>>;
   const runFaultCases = focusDistanceMm === 400 && fNumber === 2.8;
   const variants: readonly VariantName[] = runFaultCases
-    ? ["candidate", "legacy", "wrongCoc", "excessiveBlur", "zeroBlur"]
+    ? ["candidate", "legacy", "wrongCoc", "excessiveBlur", "zeroBlur", "restored"]
     : ["candidate", "legacy"];
   for (const variant of variants) {
     const variantCocMaterial = faultCocMaterials[variant] ?? cocMaterial;
@@ -662,6 +685,47 @@ const renderCase = (
       sourcePixels, backgroundRoi.x0, backgroundRoi.x1, backgroundRoi.y0, backgroundRoi.y1,
     ),
   } : undefined;
+  const opticalMeasurement = (
+    pixels: Uint8Array,
+    cocPixels: Uint8Array,
+    edgePixels: Uint8Array,
+  ): OpticalMeasurement => {
+    const sampleX = FRONT_EDGE_X - 24;
+    const sampleY = HEIGHT >> 1;
+    const majorRadiusMm = decodeRadius(cocPixels, sampleX, sampleY);
+    return {
+      signedCoCDiameterMm: decodeCoC(cocPixels, sampleX, sampleY),
+      majorRadiusMm,
+      majorRadiusPx: majorRadiusMm * WIDTH / FILM_WIDTH_MM,
+      sourceDefocusedContrast: luminanceContrast(
+        sourcePixels, backgroundRoi.x0, backgroundRoi.x1, backgroundRoi.y0, backgroundRoi.y1,
+      ),
+      processedDefocusedContrast: luminanceContrast(
+        pixels, backgroundRoi.x0, backgroundRoi.x1, backgroundRoi.y0, backgroundRoi.y1,
+      ),
+      sourceFocusedContrast: luminanceContrast(
+        sourcePixels, foregroundRoi.x0, foregroundRoi.x1, foregroundRoi.y0, foregroundRoi.y1,
+      ),
+      processedFocusedContrast: luminanceContrast(
+        pixels, foregroundRoi.x0, foregroundRoi.x1, foregroundRoi.y0, foregroundRoi.y1,
+      ),
+      edgeRedIncrease: meanRedIncrease(
+        sourcePixels, edgePixels, edgeRoi.x0, edgeRoi.x1, edgeRoi.y0, edgeRoi.y1,
+      ),
+    };
+  };
+  const opticalMeasurements: Record<OpticalVariantName, OpticalMeasurement> | undefined = runFaultCases
+    ? {
+      candidate: opticalMeasurement(outputPixels.candidate!, cocPixelsByVariant.candidate!, outputPixels.candidate!),
+      wrongCoc: opticalMeasurement(outputPixels.wrongCoc!, cocPixelsByVariant.wrongCoc!, outputPixels.wrongCoc!),
+      excessiveBlur: opticalMeasurement(
+        outputPixels.excessiveBlur!, cocPixelsByVariant.excessiveBlur!, outputPixels.excessiveBlur!,
+      ),
+      zeroBlur: opticalMeasurement(outputPixels.zeroBlur!, cocPixelsByVariant.candidate!, outputPixels.zeroBlur!),
+      legacy: opticalMeasurement(outputPixels.legacy!, cocPixelsByVariant.candidate!, outputPixels.legacy!),
+      restored: opticalMeasurement(outputPixels.restored!, cocPixelsByVariant.restored!, outputPixels.restored!),
+    }
+    : undefined;
   return {
     focusDistanceMm,
     fNumber,
@@ -686,6 +750,7 @@ const renderCase = (
     sourcePixels,
     cocPixels: candidateCocPixels,
     ...(faults ? { faults } : {}),
+    ...(opticalMeasurements ? { opticalMeasurements } : {}),
   };
 };
 
@@ -713,6 +778,13 @@ const showCase = (id: FixtureCase): void => {
   measurementsElement.textContent = JSON.stringify({ caseId: id, ...summarizeResult(result) }, null, 2);
 };
 
+const opticalSourceRowY = HEIGHT >> 1;
+const opticalSourceLuminanceRow = Array.from({ length: WIDTH }, (_, x) => {
+  const offset = (opticalSourceRowY * WIDTH + x) * 4;
+  const pixels = results["focus-foreground-400-f2_8"].sourcePixels;
+  return 0.2126 * pixels[offset]! + 0.7152 * pixels[offset + 1]! + 0.0722 * pixels[offset + 2]!;
+});
+
 window.__groundGlassDofEdgeProof = {
   backend: renderer.capabilities.isWebGL2 ? "webgl2" : "webgl1",
   renderer: renderer.getContext().getParameter(renderer.getContext().RENDERER),
@@ -727,6 +799,8 @@ window.__groundGlassDofEdgeProof = {
     return [id, summarizeResult(results[id])];
   })) as Window["__groundGlassDofEdgeProof"] extends { cases: infer T } ? T : never,
   faults: results["focus-foreground-400-f2_8"].faults!,
+  opticalMeasurements: results["focus-foreground-400-f2_8"].opticalMeasurements!,
+  opticalSourceLuminanceRow,
   showCase,
 };
 
