@@ -656,6 +656,11 @@ export async function validateA1IntegratedEvidence(root, suppliedRecord) {
           d.groundGlassCoverageOffsetYMm !== 0
         )
           fail("D6 illumination or coverage mismatch");
+        for (const hit of o.d6Hits) {
+          const halo = o.d6Halo[(hit.y - 261) * 109 + hit.x - 269];
+          if (!halo || halo[1] !== hit.name || Math.abs(halo[0] - hit.depthM) > 1e-8)
+            fail("D6 ROI and halo first-hit evidence contradict");
+        }
         if (bytes.length !== 80 * 64 * 4) fail("invalid D6 depth buffer");
         for (let row = 24; row <= 26; row++)
           for (let col = 38; col <= 40; col++) {

@@ -30,6 +30,14 @@ describe("A1 integrated complete retained evidence",()=>{
     const root=fixture(),record=json(root,"record.json"),data=pairs(root);delete data[0][1].record.d6Hits;
     writePairs(root,record,data);await expect(validateA1IntegratedEvidence(root,record)).rejects.toThrow(/first-hit/);
   });
+  it("rejects a protected first hit that contradicts the retained halo",async()=>{
+    const root=fixture(),record=json(root,"record.json"),data=pairs(root);
+    data[0][1].record.d6Hits[0].name="architecture-foreground-building";
+    data[0][1].record.d6Hits[0].material={name:"architecture-foreground-plaster",type:"MeshStandardMaterial",color:"aaaaaa",roughness:0.9};
+    data[0][0].record.d6Hits[0].name="architecture-foreground-building";
+    data[0][0].record.d6Hits[0].material={name:"architecture-foreground-plaster",type:"MeshStandardMaterial",color:"aaaaaa",roughness:0.9};
+    writePairs(root,record,data);await expect(validateA1IntegratedEvidence(root,record)).rejects.toThrow(/ROI and halo/);
+  });
   it("rejects mismatched optics and duplicate sessions",async()=>{
     const root=fixture(),record=json(root,"record.json"),data=pairs(root);data[0][1].record.cameraState.focusDistanceMm=9400;
     writePairs(root,record,data);await expect(validateA1IntegratedEvidence(root,record)).rejects.toThrow(/optical state/);
