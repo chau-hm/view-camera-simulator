@@ -27,19 +27,21 @@ function fixture() {
 describe("release artifact historical qualification", () => {
   it("requires the reviewed Release B implementation to be tracked and unchanged", async () => {
     const reviewed: Record<string, string> = {
-      "scripts/release-artifact-preflight.mjs": "65cb62b2094aa4177b10927c6af148b2776f0719",
+      "scripts/release-artifact-preflight.mjs": "4396e81fd9663d07011ec1c0736ece56eb4e576b",
       "scripts/extract-pages-artifact.py": "716bdcc4e0f5ee7d74dbe68faf702672b9919914",
       "scripts/pages-artifact.mjs": "f4a6588664b2a95deef4f4b2215987d063ff3d1c",
     };
     const runGit = async (args: string[]) => {
       if (args[0] === "diff") return { status: 0, stdout: "", stderr: "" };
       const path = args.at(-1)!.replace(/^(?:HEAD|refs\/remotes\/origin\/main):/, "");
-      return { status: reviewed[path] ? 0 : 1, stdout: reviewed[path] ?? "", stderr: "" };
+      const value = reviewed[path] ?? "a".repeat(40);
+      return { status: 0, stdout: value, stderr: "" };
     };
     await expect(verifyReleaseBContract({ runGit })).resolves.toBeUndefined();
     await expect(verifyReleaseBContract({ runGit: async () => ({ status: 1, stdout: "", stderr: "" }) })).rejects.toThrow("not-on-main");
     await expect(verifyReleaseBContract({ runGit: async (args: string[]) => args.at(-1)?.startsWith("HEAD:") ? { status: 1, stdout: "", stderr: "" } : runGit(args) })).rejects.toThrow("not-integrated");
     await expect(verifyReleaseBContract({ runGit: async (args: string[]) => args[0] === "diff" ? { status: 1, stdout: "", stderr: "" } : runGit(args) })).rejects.toThrow("modified");
+    await expect(verifyReleaseBContract({ runGit: async (args: string[]) => args.at(-1) === "HEAD:scripts/release-candidate.mjs" ? { status: 1, stdout: "", stderr: "" } : runGit(args) })).rejects.toThrow("orchestration-not-canonical");
   });
   it("binds fresh preflight, source planning and completed validation without deployment authority", async () => {
     const f = fixture();

@@ -289,9 +289,9 @@ Retention is finite and does not provide rollback storage. After this workflow i
 merged to the default branch, dispatch **Pages artifact pilot (non-publishing)**
 from Actions on `main` (or run `gh workflow run pages-artifact-pilot.yml --ref main`),
 then inspect its source/tree, pin, Preview, upload and fresh-download verification,
-result, and lack of deployment. The pilot is not a release authorization. Main-CI integration is deferred until the separate CI
-routing work stabilizes. Until then this pilot adds a separate build; it does
-not reduce the existing production CI or establish a deployable release.
+result, and lack of deployment. The pilot is a diagnostic, not a release
+authorization. Main CI prepares its own candidate; neither path reduces the
+existing production CI or establishes a deployable release.
 
 The exact-source historical qualification command and its non-publishing
 boundary are described in the [historical qualification guide](docs/testing/HISTORICAL_EVIDENCE_QUALIFICATION.md#exact-source-release-qualification).

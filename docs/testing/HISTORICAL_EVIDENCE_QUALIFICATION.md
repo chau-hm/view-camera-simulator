@@ -149,10 +149,9 @@ validator passes.
 
 The exact-source executor uses a disposable detached checkout of the selected
 source, verifies HEAD and tree before and after execution, and refuses runner,
-manifest, baseline, lockfile or other qualification-contract drift. The only
-manifest compatibility exception is the explicitly listed addition of these new
-qualification source and test paths; validator families, pins, ownership policy
-and all other manifest fields must match. It installs
+manifest, baseline, lockfile or other qualification-contract drift. Narrow
+reviewed exceptions cover registered qualification paths and the pinned
+pre-consolidation command contract; arbitrary validator or pin changes fail. It installs
 that source's locked dependencies and invokes its existing historical runner.
 The shared-infrastructure path passed to the runner selects all automatic
 families; it is a scope selector, not a claim that this path changed. The actual
@@ -171,9 +170,9 @@ to the reviewed blobs. Missing,
 untracked, modified or unreviewed versions fail closed. Its versioned output records
 candidate provenance, baseline, cumulative coverage, actual validator and fetch
 outcomes, timings and `NOT_DEPLOYED`; it grants no deployment authorization.
-The current reviewed workflow-version policy remains fail-closed. A separately
-reviewed multi-version policy, durable retention and deployment authorization
-remain future integration work before Release D.
+The workflow policy explicitly recognizes the historical and integrated
+producer contracts; other versions fail closed. Durable retention and
+deployment authorization remain future work before Release D.
 
 Cumulative classification uses current reviewed ownership policy and raw Git blob bytes from the selected source for content-sensitive capture audits; missing or unreadable blobs fail closed. Source execution and the composed qualification both require the complete manifest-derived source-pin inventory, including exact commits, retained refs, verification paths and counts. M7W dynamic paths come from the selected source’s reconciliation document. Legacy archival dispositions remain unverified and qualification grants no deployment authority.
 

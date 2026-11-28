@@ -23,10 +23,14 @@ const git = async (args, cwd = root, allowFailure = false) => {
 // be tracked at HEAD and unmodified before this CLI imports them. A future
 // reviewed Release B policy update must explicitly update these identities.
 const RELEASE_B_BLOBS = Object.freeze({
-  "scripts/release-artifact-preflight.mjs": "65cb62b2094aa4177b10927c6af148b2776f0719",
+  "scripts/release-artifact-preflight.mjs": "4396e81fd9663d07011ec1c0736ece56eb4e576b",
   "scripts/extract-pages-artifact.py": "716bdcc4e0f5ee7d74dbe68faf702672b9919914",
   "scripts/pages-artifact.mjs": "f4a6588664b2a95deef4f4b2215987d063ff3d1c",
 });
+
+// Compare orchestration to canonical main without embedding this file's own
+// hash. Static Release B pins remain separate and require explicit review.
+const ORCHESTRATION_PATHS = ["scripts/release-candidate.mjs", "scripts/release-artifact-qualify.mjs", "scripts/historical-source-execution.mjs", "scripts/historical-source-pins.mjs", "scripts/historical-production-release.mjs", "scripts/historical-evidence-routing.mjs", "scripts/historical-evidence-manifest.json"];
 
 export async function verifyReleaseBContract({ runGit = git, repositoryRoot = root } = {}) {
   for (const [path, expected] of Object.entries(RELEASE_B_BLOBS)) {
@@ -38,6 +42,13 @@ export async function verifyReleaseBContract({ runGit = git, repositoryRoot = ro
     if (unchanged.status !== 0) throw new Error(`release-b-reviewed-contract-modified:${path}`);
     const actual = await runGit(["hash-object", "--", path], repositoryRoot, true);
     if (actual.status !== 0 || actual.stdout.trim() !== expected) throw new Error(`release-b-reviewed-contract-modified:${path}`);
+  }
+  for (const path of ORCHESTRATION_PATHS) {
+    const onMain = await runGit(["rev-parse", "--verify", `refs/remotes/origin/main:${path}`], repositoryRoot, true);
+    const tracked = await runGit(["rev-parse", "--verify", `HEAD:${path}`], repositoryRoot, true);
+    const unchanged = await runGit(["diff", "--quiet", "HEAD", "--", path], repositoryRoot, true);
+    const actual = await runGit(["hash-object", "--", path], repositoryRoot, true);
+    if (onMain.status !== 0 || tracked.status !== 0 || unchanged.status !== 0 || actual.status !== 0 || !sha.test(onMain.stdout.trim()) || onMain.stdout.trim() !== tracked.stdout.trim() || tracked.stdout.trim() !== actual.stdout.trim()) throw new Error(`release-orchestration-not-canonical:${path}`);
   }
 }
 

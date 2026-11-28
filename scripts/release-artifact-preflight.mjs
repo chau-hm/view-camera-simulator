@@ -40,7 +40,7 @@ export function requireJob(jobs, name, steps) {
 export function verifyArtifactMetadata(artifact, { artifactId, producerId, attempt, source, now = Date.now() }) {
   if (String(artifact.id) !== artifactId || artifact.name !== `pages-candidate-${producerId}-${attempt}` || artifact.expired !== false ||
       !Number.isSafeInteger(artifact.size_in_bytes) || artifact.size_in_bytes <= 0 || artifact.size_in_bytes > MAX_ARCHIVE ||
-      !/^sha256:[a-f0-9]{64}$/.test(artifact.digest ?? '') || !Number.isFinite(Date.parse(artifact.expires_at)) || Date.parse(artifact.expires_at) <= now ||
+      !/^sha256:[a-f0-9]{64}$/.test(artifact.digest ?? '') || !Number.isFinite(Date.parse(artifact.created_at)) || !Number.isFinite(Date.parse(artifact.expires_at)) || Date.parse(artifact.expires_at) <= now ||
       String(artifact.workflow_run?.id) !== producerId || artifact.workflow_run?.head_sha !== source || artifact.workflow_run?.head_branch !== 'main' ||
       artifact.workflow_run?.repository_id !== REPO_ID || artifact.workflow_run?.head_repository_id !== REPO_ID) fail('Untrusted, missing, expired or mismatched artifact');
 }
@@ -126,7 +126,7 @@ export function runPreflight(args, { runCommand = execFileSync, tempRoot = tmpdi
     if (manifest.workflow !== (policy === 'main-ci-integrated-v1' ? 'CI and Deploy to GitHub Pages' : 'Pages artifact pilot (non-publishing)') || manifest.buildConfiguration !== (policy === 'main-ci-integrated-v1' ? 'vite-pages-after-typecheck-v1' : 'vite-pages-v1') || manifest.runId !== producerId || manifest.runAttempt !== producerAttempt || manifest.packageLockSha256 !== sha256(lock)) fail('Manifest producer provenance mismatch');
     const finalRefs = git('ls-remote', '--heads', 'origin', 'refs/heads/main').split(/\s+/);
     if (finalRefs[0] !== main || finalRefs[1] !== 'refs/heads/main') fail('Authoritative main changed during preflight; retry after fetch');
-    const result = { status: 'RELEASE_PREFLIGHT_VERIFIED', qualification: 'RELEASE_QUALIFICATION_PENDING', deployment: 'NOT_DEPLOYED', repository: REPO, policy, source, tree, main, ci: { runId: ciId, attempt: Number(ciAttempt) }, producer: { runId: producerId, attempt: Number(producerAttempt), jobId: producerJob.id }, artifact: { id: artifactId, transportDigest: artifact.digest, transportSize: artifact.size_in_bytes, expiresAt: artifact.expires_at }, identity: actual };
+    const result = { status: 'RELEASE_PREFLIGHT_VERIFIED', qualification: 'RELEASE_QUALIFICATION_PENDING', deployment: 'NOT_DEPLOYED', repository: REPO, policy, source, tree, main, ci: { runId: ciId, attempt: Number(ciAttempt) }, producer: { runId: producerId, attempt: Number(producerAttempt), jobId: producerJob.id }, artifact: { id: artifactId, transportDigest: artifact.digest, transportSize: artifact.size_in_bytes, createdAt: artifact.created_at, expiresAt: artifact.expires_at }, identity: actual };
     return result;
   } finally { rmSync(staging, { recursive: true, force: true }); }
 }
