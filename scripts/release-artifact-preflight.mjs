@@ -50,14 +50,17 @@ export function runPreflight(args, { runCommand = execFileSync, tempRoot = tmpdi
   const main = refs[0];
   // Refuse stale or missing local source history rather than infer ancestry.
   if (git('rev-parse', '--verify', 'refs/remotes/origin/main') !== main) fail('origin/main is stale; fetch origin before preflight');
-  if (git('rev-parse', '--verify', `${source}^{commit}`) !== source) fail('Source commit unavailable');
+  try { if (git('rev-parse', '--verify', `${source}^{commit}`) !== source) fail('Source commit unavailable'); } catch { fail('UNVERIFIED: source commit unavailable'); }
   try { runCommand('git', ['merge-base', '--is-ancestor', source, main], { stdio: 'ignore' }); } catch { fail('Source is not an ancestor of authoritative main'); }
-  const tree = git('rev-parse', `${source}^{tree}`);
+  let tree;
+  try { tree = git('rev-parse', `${source}^{tree}`); } catch { fail('UNVERIFIED: source tree unavailable'); }
   const blobs = {};
-  for (const path of [...Object.keys(WORKFLOWS), ...Object.keys(INTEGRATED_SOURCE_BLOBS)]) {
-    if (path in INTEGRATED_SOURCE_BLOBS && git('rev-parse', `${source}:.github/workflows/pages.yml`) !== INTEGRATED_PAGES_BLOB) continue;
-    blobs[path] = git('rev-parse', `${source}:${path}`);
-  }
+  try {
+    for (const path of [...Object.keys(WORKFLOWS), ...Object.keys(INTEGRATED_SOURCE_BLOBS)]) {
+      if (path in INTEGRATED_SOURCE_BLOBS && git('rev-parse', `${source}:.github/workflows/pages.yml`) !== INTEGRATED_PAGES_BLOB) continue;
+      blobs[path] = git('rev-parse', `${source}:${path}`);
+    }
+  } catch { fail('UNVERIFIED: source workflow or build profile unavailable'); }
   const ciRun = api(`actions/runs/${ciId}/attempts/${ciAttempt}`);
   const ciJobs = jobs(ciId, ciAttempt, source);
   const same = ciId === producerId && ciAttempt === producerAttempt;

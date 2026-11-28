@@ -44,7 +44,7 @@ describe("complete release preflight orchestration", () => {
   it.each([
     ["feature-only source", (f: Fixture) => { f.ancestry = false; }, /not an ancestor/],
     ["unrelated source", (f: Fixture) => { f.ancestry = false; }, /not an ancestor/],
-    ["missing source", (f: Fixture) => { f.sourceExists = false; }, /missing/],
+    ["missing source", (f: Fixture) => { f.sourceExists = false; }, /UNVERIFIED.*unavailable/],
     ["incomplete ancestry", (f: Fixture) => { f.ancestry = false; }, /not an ancestor/],
     ["stale local main", (f: Fixture) => { f.localMain = f.source; }, /stale/],
     ["wrong tree", (f: Fixture) => { f.selectedTree = f.main; }, /pin source or tree/],

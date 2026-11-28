@@ -83,7 +83,7 @@ export function assessCandidateMetadata({ source, ciId, ciAttempt, producerId, p
       verifyRun(producerRun, { id: producerId, attempt: producerAttempt, source, path: '.github/workflows/pages-artifact-pilot.yml', event: 'workflow_dispatch', workflowId: 432187587 });
       producerJob = requireJob(producerJobs, 'prepare', PRODUCER_STEPS);
     }
-    if (!artifact.workflow_run || artifact.workflow_run.id == null || !artifact.workflow_run.head_sha || !artifact.workflow_run.head_branch || artifact.workflow_run.repository_id == null || artifact.workflow_run.head_repository_id == null || artifact.id == null || artifact.expired == null || !artifact.digest || artifact.size_in_bytes == null || !artifact.created_at || !artifact.expires_at) throw new Error('UNVERIFIED:incomplete artifact metadata');
+    if (!artifact.workflow_run || artifact.workflow_run.id == null || !artifact.workflow_run.head_sha || !artifact.workflow_run.head_branch || artifact.workflow_run.repository_id == null || artifact.workflow_run.head_repository_id == null || artifact.id == null || !artifact.name || artifact.expired == null || !artifact.digest || artifact.size_in_bytes == null || !artifact.created_at || !artifact.expires_at) throw new Error('UNVERIFIED:incomplete artifact metadata');
     verifyArtifactMetadata(artifact, { artifactId, producerId, attempt: producerAttempt, source, now });
     return { state: 'ELIGIBLE_FOR_PREFLIGHT', policy, producerJob };
   } catch (error) {

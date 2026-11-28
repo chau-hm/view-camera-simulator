@@ -23,7 +23,7 @@ const git = async (args, cwd = root, allowFailure = false) => {
 // be tracked at HEAD and unmodified before this CLI imports them. A future
 // reviewed Release B policy update must explicitly update these identities.
 const RELEASE_B_BLOBS = Object.freeze({
-  "scripts/release-artifact-preflight.mjs": "d52094f4d62c4df33ac02cef4207db564fce367d",
+  "scripts/release-artifact-preflight.mjs": "2d1e8c14258b5cf0d330dbdc96f9af7661ba2421",
   "scripts/extract-pages-artifact.py": "716bdcc4e0f5ee7d74dbe68faf702672b9919914",
   "scripts/pages-artifact.mjs": "2e5268c81b9ee0cc6ed9fe2b677b82aa1770667d",
 });

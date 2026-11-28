@@ -20,12 +20,9 @@ export function selectCandidate({ main, history, runs, artifacts, source, blobsB
     const producers = relevant.filter((r) => (r.path === '.github/workflows/pages.yml' && r.event === 'push') || (r.path === '.github/workflows/pages-artifact-pilot.yml' && r.event === 'workflow_dispatch'));
     for (const producer of producers) for (const artifact of artifacts) {
       if (String(artifact.workflow_run?.id) !== String(producer.id)) continue;
-      if (!Number.isSafeInteger(producer.run_attempt) || !artifact.name) throw new Error('candidate-evidence-unverified:missing-attempt-or-name');
-      if (artifact.name !== `pages-candidate-${producer.id}-${producer.run_attempt}`) continue;
       const integrated = producer.path === '.github/workflows/pages.yml';
       if (ciRuns.length === 0 && !(producer.status === 'completed' && producer.conclusion && producer.conclusion !== 'success')) throw new Error(`candidate-evidence-unverified:${sha}:missing-ci-run`);
       for (const ci of ciRuns) {
-        if (integrated && (ci.id !== producer.id || ci.run_attempt !== producer.run_attempt)) continue;
         const args = { source: sha, ciId: String(ci.id), ciAttempt: String(ci.run_attempt), producerId: String(producer.id), producerAttempt: String(producer.run_attempt), artifactId: String(artifact.id), blobs: blobsBySource?.[sha], ciRun: ci, ciJobs: ci.jobs, producerRun: producer, producerJobs: producer.jobs, artifact, now };
         const metadata = assess(args);
         if (metadata.state === 'UNVERIFIED') throw new Error(`candidate-evidence-unverified:${sha}:${metadata.reason}`);
