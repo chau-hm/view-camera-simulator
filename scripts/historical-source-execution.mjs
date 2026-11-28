@@ -13,6 +13,10 @@ const CONTRACT_PATHS = ["scripts/run-historical-qualification.mjs", "scripts/his
 const ALLOWED_ADDED_PATHS = new Set(["scripts/historical-source-execution.mjs", "scripts/release-candidate.mjs", "scripts/release-candidate-eligibility.mjs", "src/tests/unit/releaseCandidate.test.ts", "scripts/historical-source-pins.mjs", "src/tests/unit/historicalSourcePins.test.ts", "src/tests/unit/nativeWebGpuQualificationPrerequisite.test.ts", "scripts/release-artifact-qualify.mjs", "src/tests/unit/historicalSourceExecution.test.ts", "src/tests/unit/releaseArtifactQualification.test.ts"]);
 const pattern = /^[a-f0-9]{40}$/;
 
+export function compatibleSourceRouter(sourceBlob, trustedBlob) {
+  return ["3154067aa1e0de98b14b31ff7ccb513d607f5793", "f1e895f1db08b29a427c7500b24e4737b9800066"].includes(sourceBlob) && trustedBlob === "3a6800c5f91df9b7f65499b6ab428bdc83a6a3eb";
+}
+
 export function compatibleHistoricalManifest(source, trusted) {
   if (!Array.isArray(source?.sharedQualificationPaths) || !Array.isArray(trusted?.sharedQualificationPaths)) return false;
   const { sharedQualificationPaths: sourcePaths, ordinaryCiPaths: sourceCi, ...sourcePolicy } = source;
@@ -54,7 +58,7 @@ export function executeSourceValidators({ sourceSha, sourceTreeSha }, { reposito
       if (path === "scripts/historical-qualification-baseline.mjs" && sourceBlob === "2e5943399833f0d54c2457a0f3d17004364bd7e5" && trustedBlob === "987a01234db171f9795d27bd894d27200dda1c70") { contract[path] = sourceBlob; continue; }
       // The earlier audited router uses the same shared-infrastructure selector;
       // source ownership is classified separately by the current source-bound policy.
-      if (path === "scripts/historical-evidence-routing.mjs" && sourceBlob === "3154067aa1e0de98b14b31ff7ccb513d607f5793" && trustedBlob === "3a6800c5f91df9b7f65499b6ab428bdc83a6a3eb") { contract[path] = sourceBlob; continue; }
+      if (path === "scripts/historical-evidence-routing.mjs" && compatibleSourceRouter(sourceBlob, trustedBlob)) { contract[path] = sourceBlob; continue; }
       if (path !== "scripts/historical-evidence-manifest.json" || !compatibleHistoricalManifest(
         JSON.parse(call("git", ["show", `${sourceSha}:${path}`], root)),
         JSON.parse(call("git", ["show", `HEAD:${path}`], root)),

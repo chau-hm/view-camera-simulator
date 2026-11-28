@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { expectedSourcePins } from "../../../scripts/historical-source-pins.mjs";
 import { HISTORICAL_EVIDENCE_MANIFEST } from "../../../scripts/historical-evidence-routing.mjs";
 // @ts-expect-error JavaScript helper without declarations
-import { compatibleHistoricalManifest, executeSourceValidators } from "../../../scripts/historical-source-execution.mjs";
+import { compatibleHistoricalManifest, compatibleSourceRouter, executeSourceValidators } from "../../../scripts/historical-source-execution.mjs";
 
 const sourceSha = "a".repeat(40), sourceTreeSha = "b".repeat(40);
 const families = HISTORICAL_EVIDENCE_MANIFEST.families.filter(({ alwaysInOrdinaryCi }) => !alwaysInOrdinaryCi);
@@ -15,6 +15,13 @@ const validators = families.flatMap((family) => family.commands.map((command) =>
 validators.push({ family: "M7F", name: "standalone versus M7G child replay equivalence", exitCode: 0 });
 
 describe("exact-source historical validation evidence", () => {
+  it("accepts only the reviewed router versions for module-relative loading", () => {
+    const current = "3a6800c5f91df9b7f65499b6ab428bdc83a6a3eb";
+    expect(compatibleSourceRouter("3154067aa1e0de98b14b31ff7ccb513d607f5793", current)).toBe(true);
+    expect(compatibleSourceRouter("f1e895f1db08b29a427c7500b24e4737b9800066", current)).toBe(true);
+    expect(compatibleSourceRouter("0".repeat(40), current)).toBe(false);
+    expect(compatibleSourceRouter("f1e895f1db08b29a427c7500b24e4737b9800066", "0".repeat(40))).toBe(false);
+  });
   it("allows only the reviewed source-registration additions across manifest versions", () => {
     const trusted = JSON.parse(readFileSync("scripts/historical-evidence-manifest.json", "utf8")) as { sharedQualificationPaths: string[]; families: { commands: { name: string }[] }[] };
     const older = structuredClone(trusted);
