@@ -144,6 +144,7 @@ describe('shared eligibility and actual selector orchestration', () => {
     ['expired', (m: ReturnType<typeof metadataFixture>["metadata"]) => { m.artifact.expired = true; }, 'INELIGIBLE'],
     ['failed attempt', (m: ReturnType<typeof metadataFixture>["metadata"]) => { m.ciRun.conclusion = 'failure'; }, 'INELIGIBLE'],
     ['failed retention', (m: ReturnType<typeof metadataFixture>["metadata"]) => { m.producerJobs[0].steps.at(-1).conclusion = 'failure'; }, 'INELIGIBLE'],
+    ['malformed job record', (m: ReturnType<typeof metadataFixture>["metadata"]) => { m.ciJobs.push(null); }, 'UNVERIFIED'],
     ['missing retention', (m: ReturnType<typeof metadataFixture>["metadata"]) => { m.producerJobs[0].steps.pop(); }, 'UNVERIFIED'],
     ['duplicate job', (m: ReturnType<typeof metadataFixture>["metadata"]) => { m.ciJobs.push(m.ciJobs[2]); }, 'UNVERIFIED'],
     ['missing artifact identity', (m: ReturnType<typeof metadataFixture>["metadata"]) => { delete m.artifact.workflow_run.repository_id; }, 'UNVERIFIED'],
@@ -152,7 +153,7 @@ describe('shared eligibility and actual selector orchestration', () => {
     try {
       (mutate as (value: typeof metadata) => void)(metadata);
       expect(assessCandidateMetadata(metadata).state).toBe(expectedState);
-      expect(() => runPreflight(f.args, { runCommand: f.command, tempRoot: f.root })).toThrow(new RegExp(`Metadata ${expectedState}`));
+      expect(() => runPreflight(f.args, { runCommand: f.command, tempRoot: f.root })).toThrow(new RegExp(`${expectedState}`));
     } finally { f.cleanup(); }
   });
   function orchestrationFixture() {

@@ -22,10 +22,10 @@ export const INTEGRATED_SOURCE_BLOBS = Object.freeze({
 });
 export const CI_STEPS = ['Checkout', 'Require successful historical qualification and fail-open routing', 'Lint', 'Type-check', 'Unit and integration tests', 'Run ordinary Chromium application smoke', 'Verify production preview WebGL isolation', 'Validate M7R broad E2E recovery evidence integrity', 'Validate M7V E2E qualification lane and skip governance policy'];
 export const PRODUCER_STEPS = ['Test artifact and workflow contracts', 'Build and identify candidate', 'Pin original identity outside the candidate', 'Test prebuilt candidate', 'Verify unchanged payload', 'Retain candidate and identity', 'Retrieve retained candidate into a fresh directory', 'Verify retained candidate'];
-const fail = (message) => { throw new Error(message); };
+const fail = (message) => { throw new Error(message.startsWith('UNVERIFIED:') ? message : `INELIGIBLE:${message}`); };
 
 export function validateJobInventory(response, run, attempt, source) {
-  if (!Array.isArray(response?.jobs) || response.total_count !== response.jobs.length || response.jobs.some((job) => String(job.run_id) !== String(run) || job.run_attempt !== Number(attempt) || job.head_sha !== source)) throw new Error('UNVERIFIED:Incomplete or mismatched attempt job list');
+  if (!Array.isArray(response?.jobs) || response.total_count !== response.jobs.length || response.jobs.some((job) => !job || typeof job !== 'object' || String(job.run_id) !== String(run) || job.run_attempt !== Number(attempt) || job.head_sha !== source)) throw new Error('UNVERIFIED:Incomplete or mismatched attempt job list');
   return response.jobs;
 }
 
@@ -63,13 +63,13 @@ export function assessCandidateMetadata({ source, ciId, ciAttempt, producerId, p
     if (!/^[a-f0-9]{40}$/.test(source) || ![ciId, ciAttempt, producerId, producerAttempt, artifactId].every((id) => /^[1-9][0-9]{0,15}$/.test(id))) throw new Error('UNVERIFIED:invalid metadata identifiers');
     for (const path of Object.keys(WORKFLOWS)) if (typeof blobs[path] !== 'string') throw new Error('UNVERIFIED:source workflow unavailable');
     const pagesBlob = blobs['.github/workflows/pages.yml'];
-    if (pagesBlob !== WORKFLOWS['.github/workflows/pages.yml'] && pagesBlob !== INTEGRATED_PAGES_BLOB) throw new Error('unreviewed pages workflow');
+    if (pagesBlob !== WORKFLOWS['.github/workflows/pages.yml'] && pagesBlob !== INTEGRATED_PAGES_BLOB) fail('unreviewed pages workflow');
     const integratedCI = pagesBlob === INTEGRATED_PAGES_BLOB;
     if (integratedCI) for (const [path, expected] of Object.entries(INTEGRATED_SOURCE_BLOBS)) {
       if (typeof blobs[path] !== 'string') throw new Error('UNVERIFIED:source build profile unavailable');
-      if (blobs[path] !== expected) throw new Error(`unreviewed integrated build profile: ${path}`);
+      if (blobs[path] !== expected) fail(`unreviewed integrated build profile: ${path}`);
     }
-    for (const [path, expected] of Object.entries(WORKFLOWS)) if (path !== '.github/workflows/pages.yml' && blobs[path] !== expected) throw new Error(`unreviewed workflow: ${path}`);
+    for (const [path, expected] of Object.entries(WORKFLOWS)) if (path !== '.github/workflows/pages.yml' && blobs[path] !== expected) fail(`unreviewed workflow: ${path}`);
     const policy = integratedCI && ciId === producerId && ciAttempt === producerAttempt ? 'main-ci-integrated-v1' : 'historical-two-run-v1';
     if (ciRun.id == null || ciRun.run_attempt == null || !ciRun.path || ciRun.workflow_id == null || !ciRun.event || !ciRun.head_sha || !ciRun.head_branch || ciRun.status !== 'completed' || !ciRun.conclusion || !ciRun.repository?.full_name || !ciRun.head_repository?.full_name) throw new Error('UNVERIFIED:incomplete CI metadata');
     verifyRun(ciRun, { id: ciId, attempt: ciAttempt, source, path: '.github/workflows/pages.yml', event: 'push', workflowId: 304398257 });
@@ -89,7 +89,7 @@ export function assessCandidateMetadata({ source, ciId, ciAttempt, producerId, p
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     // Missing/duplicate jobs and missing steps are ambiguous, not evidence of failure.
-    const incomplete = reason.startsWith('UNVERIFIED:');
-    return { state: incomplete ? 'UNVERIFIED' : 'INELIGIBLE', reason };
+    const ineligible = reason.startsWith('INELIGIBLE:');
+    return { state: ineligible ? 'INELIGIBLE' : 'UNVERIFIED', reason };
   }
 }
