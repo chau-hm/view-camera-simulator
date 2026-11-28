@@ -4,13 +4,23 @@ import { createHash } from 'node:crypto';
 // @ts-expect-error JavaScript helper
 import { INTEGRATED_PAGES_BLOB } from '../../../scripts/release-artifact-preflight.mjs';
 // @ts-expect-error JavaScript helper
-import { selectCandidate } from '../../../scripts/release-candidate.mjs';
+import { flattenPages, selectCandidate } from '../../../scripts/release-candidate.mjs';
 
 const tip = 'a'.repeat(40), old = 'b'.repeat(40);
 const run = (id: number, source: string, integrated = true, attempt = 1) => ({ id, head_sha: source, head_branch: 'main', path: integrated ? '.github/workflows/pages.yml' : '.github/workflows/pages-artifact-pilot.yml', event: integrated ? 'push' : 'workflow_dispatch', run_attempt: attempt, status: 'completed', conclusion: 'success' });
 const artifact = (id: number, producer: number, attempt = 1) => ({ id, name: `pages-candidate-${producer}-${attempt}`, expired: false, expires_at: '2099-01-01T00:00:00Z', workflow_run: { id: producer } });
 const fixture = () => ({ main: tip, history: [tip, old], runs: [run(10, old), run(11, tip)], artifacts: [artifact(100, 10), artifact(101, 11)] });
 describe('release candidate discovery', () => {
+  it('combines every API page and fails closed on missing pages', () => {
+    const pages = [{ total_count: 2, artifacts: [{ id: 1 }] }, { total_count: 2, artifacts: [{ id: 2 }] }];
+    expect(flattenPages(pages, 'artifacts')).toEqual([{ id: 1 }, { id: 2 }]);
+    expect(() => flattenPages(pages.slice(0, 1), 'artifacts')).toThrow('pagination-incomplete');
+  });
+  it('skips candidates whose mandatory job evidence is incomplete', () => {
+    const f = fixture();
+    const incomplete = { ...f.runs[1]!, discoveryEligible: false };
+    expect(selectCandidate({ ...f, runs: [f.runs[0], incomplete] }).selectedSource).toBe(old);
+  });
   it('uses main history rather than artifact or run completion order', () => {
     const f = fixture(); f.runs.push(run(99, old)); f.artifacts.push(artifact(999, 99));
     expect(selectCandidate(f)).toMatchObject({ selectedSource: tip, isMainTip: true, candidate: { artifactId: '101' } });

@@ -43,12 +43,14 @@ export function selectCandidate({ main, history, runs, artifacts, source, now = 
 
 function gh(...args) { return execFileSync('gh', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }); }
 function git(...args) { return execFileSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).trim(); }
-function pages(path, key) {
-  const all = JSON.parse(gh('api', '--paginate', '--slurp', `repos/${REPO}/${path}`));
+export function flattenPages(all, key) {
   if (!Array.isArray(all) || all.some((page) => !Array.isArray(page[key]))) throw new Error('candidate-api-pagination-incomplete');
   const entries = all.flatMap((page) => page[key]);
   if (all.some((page) => page.total_count !== entries.length)) throw new Error('candidate-api-pagination-incomplete');
   return entries;
+}
+function pages(path, key) {
+  return flattenPages(JSON.parse(gh('api', '--paginate', '--slurp', `repos/${REPO}/${path}`)), key);
 }
 export async function main(args) {
   const [action, option, value] = args;
