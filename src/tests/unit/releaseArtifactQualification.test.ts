@@ -27,9 +27,9 @@ function fixture() {
 describe("release artifact historical qualification", () => {
   it("requires the reviewed Release B implementation to be tracked and unchanged", async () => {
     const reviewed: Record<string, string> = {
-      "scripts/release-artifact-preflight.mjs": "c9b3414d84c9b1a2e233cf27e71c6092b1fa05cd",
+      "scripts/release-artifact-preflight.mjs": "65cb62b2094aa4177b10927c6af148b2776f0719",
       "scripts/extract-pages-artifact.py": "716bdcc4e0f5ee7d74dbe68faf702672b9919914",
-      "scripts/pages-artifact.mjs": "585ac9b44a75bc2f2652247965c4cfc5c03a065a",
+      "scripts/pages-artifact.mjs": "f4a6588664b2a95deef4f4b2215987d063ff3d1c",
     };
     const runGit = async (args: string[]) => {
       if (args[0] === "diff") return { status: 0, stdout: "", stderr: "" };

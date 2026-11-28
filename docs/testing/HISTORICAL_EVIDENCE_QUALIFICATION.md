@@ -178,3 +178,12 @@ remain future integration work before Release D.
 Cumulative classification uses current reviewed ownership policy and raw Git blob bytes from the selected source for content-sensitive capture audits; missing or unreadable blobs fail closed. Source execution and the composed qualification both require the complete manifest-derived source-pin inventory, including exact commits, retained refs, verification paths and counts. M7W dynamic paths come from the selected source’s reconciliation document. Legacy archival dispositions remain unverified and qualification grants no deployment authority.
 
 The exact accepted pre-consolidation source and the integrated command-consolidation contract have explicitly pinned manifest and package blobs. The historical checkout executes its own commands; the consolidation maps those commands to the same validator targets. This is a bounded compatibility decision, not a general workflow-version policy.
+
+The release candidate selector resolves the newest retained candidate in main's
+first-parent order, or an explicit source, before invoking the same trusted
+preflight and exact-source historical execution. Selection and historical
+qualification are non-publishing. CI now has a reviewed same-run Pages producer
+profile in addition to the historical two-run pilot; old and new source
+workflows are identified by explicit Git blob policy, and incomplete attempts
+are rejected. The new release tooling policy is usable only once its exact
+reviewed blobs appear on canonical main.

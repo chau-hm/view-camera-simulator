@@ -10,13 +10,14 @@ const REPO = 'chau-hm/view-camera-simulator';
 const REPO_ID = 1283640696;
 const MAX_ARCHIVE = 128 * 1024 * 1024;
 // Updating trusted workflow definitions requires independent review of this policy.
-const WORKFLOWS = {
+export const WORKFLOWS = {
   '.github/workflows/pages.yml': '37490702733b5130bd9ec125e0d41102751ed004',
   '.github/workflows/historical-qualification.yml': '3a449d8f6f896c2cc38252209362daa0778dc6d6',
   '.github/workflows/pages-artifact-pilot.yml': '94b7feb1e0370ac020b24103f581dbc03a2f6643',
 };
-const CI_STEPS = ['Checkout', 'Require successful historical qualification and fail-open routing', 'Lint', 'Type-check', 'Unit and integration tests', 'Run ordinary Chromium application smoke', 'Verify production preview WebGL isolation', 'Validate M7R broad E2E recovery evidence integrity', 'Validate M7V E2E qualification lane and skip governance policy'];
-const PRODUCER_STEPS = ['Test artifact and workflow contracts', 'Build and identify candidate', 'Pin original identity outside the candidate', 'Test prebuilt candidate', 'Verify unchanged payload', 'Retain candidate and identity', 'Retrieve retained candidate into a fresh directory', 'Verify retained candidate'];
+export const INTEGRATED_PAGES_BLOB = '1f2f97b115ec4baf1b18ab8f3777eabe6efaa81e';
+export const CI_STEPS = ['Checkout', 'Require successful historical qualification and fail-open routing', 'Lint', 'Type-check', 'Unit and integration tests', 'Run ordinary Chromium application smoke', 'Verify production preview WebGL isolation', 'Validate M7R broad E2E recovery evidence integrity', 'Validate M7V E2E qualification lane and skip governance policy'];
+export const PRODUCER_STEPS = ['Test artifact and workflow contracts', 'Build and identify candidate', 'Pin original identity outside the candidate', 'Test prebuilt candidate', 'Verify unchanged payload', 'Retain candidate and identity', 'Retrieve retained candidate into a fresh directory', 'Verify retained candidate'];
 const sha256 = (value) => createHash('sha256').update(value).digest('hex');
 const fail = (message) => { throw new Error(message); };
 
@@ -87,15 +88,25 @@ export function runPreflight(args, { runCommand = execFileSync, tempRoot = tmpdi
   if (git('rev-parse', '--verify', `${source}^{commit}`) !== source) fail('Source commit unavailable');
   try { runCommand('git', ['merge-base', '--is-ancestor', source, main], { stdio: 'ignore' }); } catch { fail('Source is not an ancestor of authoritative main'); }
   const tree = git('rev-parse', `${source}^{tree}`);
-  for (const [path, blob] of Object.entries(WORKFLOWS)) if (git('rev-parse', `${source}:${path}`) !== blob) fail(`Unreviewed workflow definition: ${path}`);
+  const pagesBlob = git('rev-parse', `${source}:.github/workflows/pages.yml`);
+  if (pagesBlob !== WORKFLOWS['.github/workflows/pages.yml'] && pagesBlob !== INTEGRATED_PAGES_BLOB) fail('Unreviewed workflow definition: .github/workflows/pages.yml');
+  const integratedCI = pagesBlob === INTEGRATED_PAGES_BLOB;
+  const policy = integratedCI && ciId === producerId && ciAttempt === producerAttempt ? 'main-ci-integrated-v1' : 'historical-two-run-v1';
+  for (const [path, blob] of Object.entries(WORKFLOWS)) if (path !== '.github/workflows/pages.yml' && git('rev-parse', `${source}:${path}`) !== blob) fail(`Unreviewed workflow definition: ${path}`);
   verifyRun(api(`actions/runs/${ciId}/attempts/${ciAttempt}`), { id: ciId, attempt: ciAttempt, source, path: '.github/workflows/pages.yml', event: 'push', workflowId: 304398257 });
   const ciJobs = jobs(ciId, ciAttempt, source);
   requireJob(ciJobs, 'feature-push-routing', ['Allow full CI for non-feature-push events']);
   requireJob(ciJobs, 'feature-push-validation-gate', ['Allow full CI unless exact PR validation covers this push']);
-  requireJob(ciJobs, 'ci', CI_STEPS);
+  const ciJob = requireJob(ciJobs, 'ci', integratedCI ? [...CI_STEPS, ...PRODUCER_STEPS.filter((s) => s !== 'Test artifact and workflow contracts')] : CI_STEPS);
   requireJob(ciJobs, 'historical-qualification / Historical evidence decision', ['Classify changes and run required historical qualification', 'Preserve machine-readable qualification result']);
-  verifyRun(api(`actions/runs/${producerId}/attempts/${producerAttempt}`), { id: producerId, attempt: producerAttempt, source, path: '.github/workflows/pages-artifact-pilot.yml', event: 'workflow_dispatch', workflowId: 432187587 });
-  const producerJob = requireJob(jobs(producerId, producerAttempt, source), 'prepare', PRODUCER_STEPS);
+  let producerJob;
+  if (policy === 'main-ci-integrated-v1') {
+    if (ciId !== producerId || ciAttempt !== producerAttempt) fail('Integrated producer must match the CI run and attempt');
+    producerJob = ciJob;
+  } else {
+    verifyRun(api(`actions/runs/${producerId}/attempts/${producerAttempt}`), { id: producerId, attempt: producerAttempt, source, path: '.github/workflows/pages-artifact-pilot.yml', event: 'workflow_dispatch', workflowId: 432187587 });
+    producerJob = requireJob(jobs(producerId, producerAttempt, source), 'prepare', PRODUCER_STEPS);
+  }
   const artifact = api(`actions/artifacts/${artifactId}`);
   verifyArtifactMetadata(artifact, { artifactId, producerId, attempt: producerAttempt, source });
   const log = gh('run', 'view', producerId, '--repo', REPO, '--job', String(producerJob.id), '--log').toString('utf8');
@@ -112,10 +123,10 @@ export function runPreflight(args, { runCommand = execFileSync, tempRoot = tmpdi
     const actual = verifyPinned(payload, pin, { sourceCommit: source, sourceTree: tree }, true);
     const manifest = JSON.parse(readFileSync(join(payload, 'manifest.json'), 'utf8'));
     const lock = runCommand('git', ['show', `${source}:package-lock.json`], { maxBuffer: MAX_ARCHIVE });
-    if (manifest.workflow !== 'Pages artifact pilot (non-publishing)' || manifest.runId !== producerId || manifest.runAttempt !== producerAttempt || manifest.packageLockSha256 !== sha256(lock)) fail('Manifest producer provenance mismatch');
+    if (manifest.workflow !== (policy === 'main-ci-integrated-v1' ? 'CI and Deploy to GitHub Pages' : 'Pages artifact pilot (non-publishing)') || manifest.buildConfiguration !== (policy === 'main-ci-integrated-v1' ? 'vite-pages-after-typecheck-v1' : 'vite-pages-v1') || manifest.runId !== producerId || manifest.runAttempt !== producerAttempt || manifest.packageLockSha256 !== sha256(lock)) fail('Manifest producer provenance mismatch');
     const finalRefs = git('ls-remote', '--heads', 'origin', 'refs/heads/main').split(/\s+/);
     if (finalRefs[0] !== main || finalRefs[1] !== 'refs/heads/main') fail('Authoritative main changed during preflight; retry after fetch');
-    const result = { status: 'RELEASE_PREFLIGHT_VERIFIED', qualification: 'RELEASE_QUALIFICATION_PENDING', deployment: 'NOT_DEPLOYED', repository: REPO, source, tree, main, ci: { runId: ciId, attempt: Number(ciAttempt) }, producer: { runId: producerId, attempt: Number(producerAttempt), jobId: producerJob.id }, artifact: { id: artifactId, transportDigest: artifact.digest, transportSize: artifact.size_in_bytes, expiresAt: artifact.expires_at }, identity: actual };
+    const result = { status: 'RELEASE_PREFLIGHT_VERIFIED', qualification: 'RELEASE_QUALIFICATION_PENDING', deployment: 'NOT_DEPLOYED', repository: REPO, policy, source, tree, main, ci: { runId: ciId, attempt: Number(ciAttempt) }, producer: { runId: producerId, attempt: Number(producerAttempt), jobId: producerJob.id }, artifact: { id: artifactId, transportDigest: artifact.digest, transportSize: artifact.size_in_bytes, expiresAt: artifact.expires_at }, identity: actual };
     return result;
   } finally { rmSync(staging, { recursive: true, force: true }); }
 }

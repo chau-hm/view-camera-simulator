@@ -10,7 +10,7 @@ import { HISTORICAL_EVIDENCE_MANIFEST } from "./historical-evidence-routing.mjs"
 const CONTRACT_PATHS = ["scripts/run-historical-qualification.mjs", "scripts/historical-evidence-routing.mjs", "scripts/historical-evidence-manifest.json", "scripts/historical-qualification-baseline.json", "scripts/fetch-m7k-execution-source.mjs", "package.json", "package-lock.json"];
 // Narrow compatibility for this PR's routing registration only. The historical
 // source runner has the same validators and pins before these paths existed.
-const ALLOWED_ADDED_PATHS = new Set(["scripts/historical-source-execution.mjs", "scripts/historical-source-pins.mjs", "src/tests/unit/historicalSourcePins.test.ts", "src/tests/unit/nativeWebGpuQualificationPrerequisite.test.ts", "scripts/release-artifact-qualify.mjs", "src/tests/unit/historicalSourceExecution.test.ts", "src/tests/unit/releaseArtifactQualification.test.ts"]);
+const ALLOWED_ADDED_PATHS = new Set(["scripts/historical-source-execution.mjs", "scripts/release-candidate.mjs", "src/tests/unit/releaseCandidate.test.ts", "scripts/historical-source-pins.mjs", "src/tests/unit/historicalSourcePins.test.ts", "src/tests/unit/nativeWebGpuQualificationPrerequisite.test.ts", "scripts/release-artifact-qualify.mjs", "src/tests/unit/historicalSourceExecution.test.ts", "src/tests/unit/releaseArtifactQualification.test.ts"]);
 const pattern = /^[a-f0-9]{40}$/;
 
 export function compatibleHistoricalManifest(source, trusted) {
@@ -46,7 +46,7 @@ export function executeSourceValidators({ sourceSha, sourceTreeSha }, { reposito
       // source runs its own legacy npm commands; #389 retains their targets.
       const consolidatedPairs = {
         "package.json": ["15c2b4d2bc0f5e97b72ac7250b6b5f5ee445b066", "67632e46d4929703cfea38ebb7635f2f3bed58e0"],
-        "scripts/historical-evidence-manifest.json": ["93eefe0eb920838ee74cf9ee655c514b3761750d", "02d1c0ef34ab4aff8b7f23d2dd096075addeb63b"],
+        "scripts/historical-evidence-manifest.json": ["93eefe0eb920838ee74cf9ee655c514b3761750d", "d555ab00528897cda5ddbd60eee245297ee55c6a"],
       };
       if (consolidatedPairs[path]?.[0] === sourceBlob && consolidatedPairs[path]?.[1] === trustedBlob) { contract[path] = sourceBlob; continue; }
       // The earlier audited router uses the same shared-infrastructure selector;

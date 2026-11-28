@@ -28,6 +28,14 @@ afterEach(() => { for (const dir of directories.splice(0)) rmSync(dir, { force: 
 const expected = { sourceCommit: sha, sourceTree: tree };
 
 describe("Pages artifact integrity", () => {
+  it("accepts only the distinct reviewed checked and after-typecheck profiles", () => {
+    const f = fixture();
+    expect(() => verify(f.payload, f.manifest, expected)).not.toThrow();
+    f.manifest.buildConfiguration = "vite-pages-after-typecheck-v1";
+    expect(() => verify(f.payload, f.manifest, expected)).toThrow();
+    f.manifest.buildCommand = "npm run build:production-preview:after-typecheck -- --base=<basePath>";
+    expect(() => verify(f.payload, f.manifest, expected)).not.toThrow();
+  });
   it("pins and verifies a complete candidate with hidden files", () => {
     const f = fixture();
     expect(verifyPinned(f.candidate, f.pin, expected).fileCount).toBe(4);

@@ -363,3 +363,36 @@ versions merely because they are current. The currently reviewed Git blob pins
 are `37490702733b5130bd9ec125e0d41102751ed004` (Pages CI),
 `3a449d8f6f896c2cc38252209362daa0778dc6d6` (historical qualification), and
 `94b7feb1e0370ac020b24103f581dbc03a2f6643` (artifact pilot).
+
+### Main CI release candidate selection
+
+A successful canonical main push produces a Pages candidate after ordinary CI,
+using the same checked source and typecheck. Root Production Preview remains a
+separate bundle. The Pages bundle uses the after-typecheck profile, is tested
+as a prebuilt subpath payload, pinned, uploaded for 30 days and verified after
+a fresh download. Main CI does not deploy. The standalone pilot remains a checked
+diagnostic producer; older reviewed two-run candidates are still supported.
+
+```bash
+git fetch origin
+node scripts/release-candidate.mjs list
+node scripts/release-candidate.mjs qualify --latest
+node scripts/release-candidate.mjs qualify --source <full-source-sha>
+node scripts/release-artifact-qualify.mjs <source-sha> <ci-run> <ci-attempt> <producer-run> <producer-attempt> <artifact-id>
+```
+
+Selection follows first-parent main history, reports an older selection and
+uses reviewed workflow contracts. It prefers a same-run producer for a given
+source, then newer run and attempt IDs. The selected artifact is pinned before
+trusted verification; verification failure stops rather than silently choosing
+another. Unknown, expired, incomplete or mismatched evidence fails closed.
+The trusted orchestration requires the reviewed tooling on fetched main, so
+the proposed new policy cannot authorize a candidate before this PR merges.
+Neither qualification nor artifact retention authorizes publication; short-lived
+Actions retention is not a rollback strategy.
+
+After merge, dispatch no pilot for acceptance: inspect the actual main push CI,
+its run and attempt, typecheck, candidate build, original pin, browser validation,
+upload ID and fresh-download verification; run the selector and historical
+qualification against that retained artifact, and verify production is unchanged.
+Actual retained-artifact deployment and rollback remain future work.
