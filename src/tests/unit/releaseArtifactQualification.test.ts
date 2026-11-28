@@ -27,18 +27,27 @@ function fixture() {
 describe("release artifact historical qualification", () => {
   it("requires the reviewed Release B implementation to be tracked and unchanged", async () => {
     const reviewed: Record<string, string> = {
-      "scripts/release-artifact-preflight.mjs": "5d0869da6e39fdd9038f2a77c921c4ed42222dd6",
+      "scripts/release-artifact-preflight.mjs": "d52094f4d62c4df33ac02cef4207db564fce367d",
       "scripts/extract-pages-artifact.py": "716bdcc4e0f5ee7d74dbe68faf702672b9919914",
-      "scripts/pages-artifact.mjs": "f4a6588664b2a95deef4f4b2215987d063ff3d1c",
+      "scripts/pages-artifact.mjs": "2e5268c81b9ee0cc6ed9fe2b677b82aa1770667d",
     };
     const runGit = async (args: string[]) => {
+      if (args[0] === "remote") return { status: 0, stdout: "https://github.com/chau-hm/view-camera-simulator.git", stderr: "" };
+      if (args[0] === "ls-remote") return { status: 0, stdout: `${"b".repeat(40)}\trefs/heads/main`, stderr: "" };
+      if (args.at(-1) === "refs/remotes/origin/main^{commit}") return { status: 0, stdout: "b".repeat(40), stderr: "" };
       if (args[0] === "diff") return { status: 0, stdout: "", stderr: "" };
       const path = args.at(-1)!.replace(/^(?:HEAD|refs\/remotes\/origin\/main):/, "");
       const value = reviewed[path] ?? "a".repeat(40);
       return { status: 0, stdout: value, stderr: "" };
     };
     await expect(verifyReleaseBContract({ runGit })).resolves.toBeUndefined();
-    await expect(verifyReleaseBContract({ runGit: async () => ({ status: 1, stdout: "", stderr: "" }) })).rejects.toThrow("not-on-main");
+    for (const path of ["scripts/historical-qualification-baseline.mjs", "scripts/historical-qualification-baseline.json", "scripts/release-candidate-eligibility.mjs"]) {
+      await expect(verifyReleaseBContract({ runGit: async (args: string[]) => args[0] === "diff" && args.at(-1) === path ? { status: 1, stdout: "", stderr: "" } : runGit(args) })).rejects.toThrow("orchestration-not-canonical");
+      await expect(verifyReleaseBContract({ runGit: async (args: string[]) => args.at(-1) === `HEAD:${path}` ? { status: 1, stdout: "", stderr: "" } : runGit(args) })).rejects.toThrow("orchestration-not-canonical");
+      await expect(verifyReleaseBContract({ runGit: async (args: string[]) => args.at(-1) === `HEAD:${path}` ? { status: 0, stdout: "c".repeat(40), stderr: "" } : runGit(args) })).rejects.toThrow("orchestration-not-canonical");
+    }
+    await expect(verifyReleaseBContract({ runGit: async (args: string[]) => args[0] === "ls-remote" ? { status: 0, stdout: `${"c".repeat(40)}\trefs/heads/main`, stderr: "" } : runGit(args) })).rejects.toThrow("main-stale");
+    await expect(verifyReleaseBContract({ runGit: async () => ({ status: 1, stdout: "", stderr: "" }) })).rejects.toThrow("remote-mismatch");
     await expect(verifyReleaseBContract({ runGit: async (args: string[]) => args.at(-1)?.startsWith("HEAD:") ? { status: 1, stdout: "", stderr: "" } : runGit(args) })).rejects.toThrow("not-integrated");
     await expect(verifyReleaseBContract({ runGit: async (args: string[]) => args[0] === "diff" ? { status: 1, stdout: "", stderr: "" } : runGit(args) })).rejects.toThrow("modified");
     await expect(verifyReleaseBContract({ runGit: async (args: string[]) => args.at(-1) === "HEAD:scripts/release-candidate.mjs" ? { status: 1, stdout: "", stderr: "" } : runGit(args) })).rejects.toThrow("orchestration-not-canonical");

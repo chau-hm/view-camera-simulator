@@ -186,3 +186,13 @@ profile in addition to the historical two-run pilot; old and new source
 workflows are identified by explicit Git blob policy, and incomplete attempts
 are rejected. The new release tooling policy is usable only once its exact
 reviewed blobs appear on canonical main.
+
+Discovery and preflight share the same metadata eligibility verifier. Failed or
+expired evidence is ineligible; missing, incomplete or ambiguous required
+evidence is unverified and cannot silently select an older source. Full producer
+logs, transport and payload verification follow selection. Canonical tooling
+checks include the baseline verifier and immutable baseline JSON, the shared
+eligibility helper, and an authoritative-main freshness check. These checks
+detect unexpected local or committed drift; they are not a sandbox against
+arbitrary malicious executable code. The selector and explicit qualification
+commands require the same repository-root working directory.

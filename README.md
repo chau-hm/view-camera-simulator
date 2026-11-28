@@ -381,6 +381,12 @@ node scripts/release-candidate.mjs qualify --source <full-source-sha>
 node scripts/release-artifact-qualify.mjs <source-sha> <ci-run> <ci-attempt> <producer-run> <producer-attempt> <artifact-id>
 ```
 
+Selection and trusted preflight share one metadata eligibility contract. A
+demonstrably ineligible revision can be skipped; missing, incomplete or
+ambiguous required evidence is `UNVERIFIED` and stops selection. The selected
+source, run attempts, artifact and transport identity are pinned before
+preflight; any subsequent mismatch stops without fallback.
+
 Selection follows first-parent main history, reports an older selection and
 uses reviewed workflow and source build-profile blobs. Profile changes require
 independent policy review; unknown profiles fail closed. It prefers a same-run producer for a given

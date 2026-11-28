@@ -1,8 +1,9 @@
+import { fileURLToPath } from "node:url";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 
-const manifestPath = resolve(process.cwd(), "scripts/historical-evidence-manifest.json");
+const manifestPath = resolve(dirname(fileURLToPath(import.meta.url)), "historical-evidence-manifest.json");
 export const HISTORICAL_EVIDENCE_MANIFEST = JSON.parse(readFileSync(manifestPath, "utf8"));
 const supported = HISTORICAL_EVIDENCE_MANIFEST.families;
 const supportedIds = new Set(supported.map(({ id }) => id));

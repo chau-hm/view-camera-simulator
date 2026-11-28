@@ -5,7 +5,7 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repository = 'chau-hm/view-camera-simulator';
-const packageName = JSON.parse(readFileSync('package.json', 'utf8')).name;
+const packageName = JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '../package.json'), 'utf8')).name;
 if (packageName !== repository.split('/')[1]) throw new Error('Repository and package name disagree');
 const base = `/${packageName}/`;
 const sha256 = (data) => createHash('sha256').update(data).digest('hex');

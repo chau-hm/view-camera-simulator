@@ -27,6 +27,7 @@
     "src/tests/unit/historicalSourcePins.test.ts",
     "scripts/release-artifact-qualify.mjs",
     "scripts/release-candidate.mjs",
+    "scripts/release-candidate-eligibility.mjs",
     "src/tests/unit/releaseCandidate.test.ts",
     "src/tests/unit/historicalSourceExecution.test.ts",
     "src/tests/unit/releaseArtifactQualification.test.ts",

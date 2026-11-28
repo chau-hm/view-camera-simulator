@@ -1,8 +1,9 @@
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 
-const baselinePath = resolve(process.cwd(), "scripts/historical-qualification-baseline.json");
+const baselinePath = resolve(dirname(fileURLToPath(import.meta.url)), "historical-qualification-baseline.json");
 export const HISTORICAL_QUALIFICATION_BASELINE = JSON.parse(readFileSync(baselinePath, "utf8"));
 export const HISTORICAL_QUALIFICATION_BASELINE_IDENTITY = Object.freeze({
   id: "change-triggered-historical-qualification-v1",
