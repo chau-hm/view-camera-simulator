@@ -7,7 +7,7 @@ This is a **development-only photographic optics feasibility PoC**, not a produc
 - **Photographic optics feasibility:** PASS. The original procedural room renders through the canonical Ground Glass path; the user's manual comparisons show recognizable Focus/DOF, Front Tilt, and Front Swing effects.
 - **Complete renderer fidelity:** PARTIAL / NOT FULLY VALIDATED. Quantitative blur transfer, some foreground defocus, custom glass reflection parity, and native WebGPU remain incomplete.
 - **Production promotion:** DEFERRED.
-- **Development-only merge readiness:** pending exact-head GitHub validation and independent final review. The earlier M7V source-fetch ordering blocker was corrected on main by PR #373. No merge or deployment has occurred.
+- **Development-only merge readiness:** see the current PR implementation handoff for exact-head validation and review status. The earlier M7V source-fetch ordering blocker was corrected on main by PR #373. No merge or deployment has occurred.
 
 The user's Tilt, Swing, and Focus comparisons are recorded as human-observed qualitative acceptance in [human-acceptance-v9](evidence/human-acceptance-v9/README.md). The original user screenshots were not available as files in the worktree or task attachments at closeout. Their observations are recorded without inventing capture identities, browser details, source revision, or composition.
 
