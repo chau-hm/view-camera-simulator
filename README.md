@@ -386,6 +386,12 @@ demonstrably ineligible revision can be skipped; missing, incomplete or
 ambiguous required evidence is `UNVERIFIED` and stops selection. The selected
 source, run attempts, artifact and transport identity are pinned before
 preflight; any subsequent mismatch stops without fallback.
+Explicit selection acquires detailed evidence only for the requested source.
+Latest selection evaluates first-parent sources in order, stopping on relevant
+unverified evidence or on the first eligible source; unrelated older details
+are not fetched. Initial run and artifact inventories must have consistent counts
+and unique valid IDs. These checks detect pagination inconsistencies but do not
+make a concurrently changing GitHub inventory an atomic snapshot.
 
 Selection follows first-parent main history, reports an older selection and
 uses reviewed workflow and source build-profile blobs. Profile changes require

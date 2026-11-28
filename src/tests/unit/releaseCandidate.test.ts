@@ -32,6 +32,24 @@ describe('release candidate discovery', () => {
     expect(flattenPages(pages, 'artifacts')).toEqual([{ id: 1 }, { id: 2 }]);
     expect(() => flattenPages(pages.slice(0, 1), 'artifacts')).toThrow('pagination-incomplete');
   });
+  it.each([
+    ['duplicate within page', [{ total_count: 2, artifacts: [{ id: 1 }, { id: 1 }] }]],
+    ['duplicate across pages', [{ total_count: 2, artifacts: [{ id: 1 }] }, { total_count: 2, artifacts: [{ id: '1' }] }]],
+    ['conflicting duplicate', [{ total_count: 2, artifacts: [{ id: 1, name: 'a' }, { id: 1, name: 'b' }] }]],
+    ['matching count but missing unique entry', [{ total_count: 4, artifacts: [{ id: 100 }, { id: 101 }] }, { total_count: 4, artifacts: [{ id: 101 }, { id: 103 }] }]],
+    ['missing id', [{ total_count: 1, artifacts: [{}] }]],
+    ['invalid id', [{ total_count: 1, artifacts: [{ id: '1.0' }] }]],
+    ['unsafe numeric id', [{ total_count: 1, artifacts: [{ id: 9007199254740992 }] }]],
+    ['inconsistent totals', [{ total_count: 2, artifacts: [{ id: 1 }] }, { total_count: 3, artifacts: [{ id: 2 }] }]],
+    ['missing page', [{ total_count: 2, artifacts: [{ id: 1 }] }]],
+    ['malformed page', [{ total_count: 1, artifacts: null }]],
+  ])('rejects pagination with %s', (_label, pages) => {
+    expect(() => flattenPages(pages, 'artifacts')).toThrow('candidate-api-pagination-');
+  });
+  it('accepts unique single-page and empty inventories', () => {
+    expect(flattenPages([{ total_count: 2, workflow_runs: [{ id: 1 }, { id: '9007199254740993' }] }], 'workflow_runs')).toHaveLength(2);
+    expect(flattenPages([{ total_count: 0, artifacts: [] }], 'artifacts')).toEqual([]);
+  });
   it('does not downgrade when mandatory job evidence is incomplete', () => {
     const f = fixture();
     const incomplete = { ...f.runs[1]!, discoveryEligible: false };
@@ -178,6 +196,119 @@ describe('shared eligibility and actual selector orchestration', () => {
     };
     return { f, opts, preflights: () => preflights };
   }
+  function scopedFixture(newer: boolean) {
+    const base = orchestrationFixture();
+    const { f, opts } = base;
+    const other = 'b'.repeat(40);
+    const otherRun = { ...f.producerRun, id: 556, head_sha: other };
+    const otherArtifact = { ...f.artifact, id: 790, name: 'pages-candidate-556-1', workflow_run: { ...f.artifact.workflow_run, id: 556, head_sha: other } };
+    if (newer) f.main = f.localMain = f.finalMain = other;
+    const gitCalls: string[][] = [], ghCalls: string[][] = [];
+    const originalGit = opts.git, originalGh = opts.gh;
+    opts.git = (...args: string[]) => {
+      gitCalls.push(args);
+      if (args[0] === 'rev-list') return newer ? `${other}\n${f.source}` : `${f.source}\n${other}`;
+      if (args.some((arg) => arg.startsWith(`${other}:`))) throw new Error('unrelated Git object unavailable');
+      return originalGit(...args);
+    };
+    opts.gh = (...args: string[]) => {
+      ghCalls.push(args);
+      if (args.some((arg) => arg.includes('/556/'))) throw new Error('unrelated jobs unavailable');
+      return originalGh(...args);
+    };
+    opts.pages = (path: string) => path.startsWith('actions/runs') ? [f.ciRun, f.producerRun, otherRun] : [f.artifact, otherArtifact];
+    return { ...base, other, gitCalls, ghCalls };
+  }
+  it.each([
+    ['explicit current', false, '--source'],
+    ['explicit older', true, '--source'],
+    ['latest', false, '--latest'],
+  ])('%s never acquires unrelated source objects or jobs', async (_label, newer, option) => {
+    const { f, opts, other, gitCalls, ghCalls, preflights } = scopedFixture(newer);
+    try {
+      const result = await candidateMain(option === '--source' ? ['qualify', option, f.source] : ['qualify', option], opts);
+      expect(result.selection.selectedSource).toBe(f.source);
+      expect(preflights()).toBe(1);
+      expect(gitCalls.some((args) => args.some((arg) => arg.startsWith(`${other}:`)))).toBe(false);
+      expect(ghCalls.some((args) => args.some((arg) => arg.includes('/556/')))).toBe(false);
+    } finally { f.cleanup(); }
+  });
+  it('stops on unavailable newer evidence without acquiring or selecting older evidence', async () => {
+    const { f, opts, gitCalls, preflights } = scopedFixture(true);
+    try {
+      await expect(candidateMain(['qualify', '--latest'], opts)).rejects.toThrow('unrelated Git object unavailable');
+      expect(gitCalls.some((args) => args.some((arg) => arg.startsWith(`${f.source}:`)))).toBe(false);
+      expect(preflights()).toBe(0);
+    } finally { f.cleanup(); }
+  });
+  it('does not substitute another source when explicitly requested evidence is unavailable', async () => {
+    const { f, opts, other, preflights } = scopedFixture(true);
+    try {
+      await expect(candidateMain(['qualify', '--source', other], opts)).rejects.toThrow('unrelated Git object unavailable');
+      expect(preflights()).toBe(0);
+    } finally { f.cleanup(); }
+  });
+  it('continues to an older source after a newer producer is demonstrably ineligible', async () => {
+    const { f, opts, other, preflights } = scopedFixture(true);
+    const previousGit = opts.git;
+    try {
+      opts.git = (...args: string[]) => {
+        const key = args.at(-1) || '';
+        if (args[0] === 'rev-parse' && key.startsWith(`${other}:`)) return f.blobs[key.slice(41)];
+        return previousGit(...args);
+      };
+      const previousPages = opts.pages;
+      opts.pages = (path: string) => previousPages(path).map((entry: { id: number; event?: string }) => entry.id === 556 ? { ...entry, event: 'pull_request' } : entry);
+      const result = await candidateMain(['qualify', '--latest'], opts);
+      expect(result.selection).toMatchObject({ selectedSource: f.source, newerIneligible: [{ source: other, reason: 'no-supported-producer' }] });
+      expect(preflights()).toBe(1);
+    } finally { f.cleanup(); }
+  });
+  it('prefers an integrated same-source producer through actual eligibility orchestration', async () => {
+    const { f, opts } = orchestrationFixture();
+    try {
+      f.blobs['.github/workflows/pages.yml'] = INTEGRATED_PAGES_BLOB;
+      Object.assign(f.blobs, INTEGRATED_SOURCE_BLOBS);
+      f.ciJobs[2].steps.push(...PRODUCER_STEPS.filter((name: string) => name !== 'Test artifact and workflow contracts').map((name: string) => ({ name, status: 'completed', conclusion: 'success' })));
+      const integrated = { ...f.artifact, id: 790, name: 'pages-candidate-123-2', workflow_run: { ...f.artifact.workflow_run, id: 123 } };
+      opts.pages = (path: string) => path.startsWith('actions/runs') ? [f.ciRun, f.producerRun] : [f.artifact, integrated];
+      let selected: string[] = [];
+      opts.qualify = async (args: string[]) => { selected = args; throw new Error('selected for test'); };
+      await expect(candidateMain(['qualify', '--latest'], opts)).rejects.toThrow('selected for test');
+      expect(selected.slice(1)).toEqual(['123', '2', '123', '2', '790']);
+    } finally { f.cleanup(); }
+  });
+  it('does not substitute an older source for an explicitly ineligible source', async () => {
+    const { f, opts, preflights } = scopedFixture(false);
+    try {
+      const previousPages = opts.pages;
+      opts.pages = (path: string) => previousPages(path).map((entry: { id: number }) => entry.id === 456 ? { ...entry, event: 'pull_request' } : entry);
+      await expect(candidateMain(['qualify', '--source', f.source], opts)).rejects.toThrow('no-retained-candidate');
+      expect(preflights()).toBe(0);
+    } finally { f.cleanup(); }
+  });
+  it('treats unavailable relevant job evidence as unverified without fallback', async () => {
+    const { f, opts, preflights, ghCalls } = scopedFixture(false);
+    try {
+      const previousGh = opts.gh;
+      opts.gh = (...args: string[]) => {
+        if (args.some((arg) => arg.includes('/456/attempts/1/jobs'))) throw new Error('jobs unavailable');
+        return previousGh(...args);
+      };
+      await expect(candidateMain(['qualify', '--latest'], opts)).rejects.toThrow('candidate-evidence-unverified');
+      expect(ghCalls.some((args) => args.some((arg) => arg.includes('/556/')))).toBe(false);
+      expect(preflights()).toBe(0);
+    } finally { f.cleanup(); }
+  });
+  it('rejects duplicate initial inventory before source evaluation', async () => {
+    const { f, opts, gitCalls, preflights } = scopedFixture(false);
+    try {
+      opts.pages = (path: string) => path.startsWith('actions/runs') ? [f.ciRun, f.ciRun] : [f.artifact];
+      await expect(candidateMain(['qualify', '--latest'], opts)).rejects.toThrow('pagination-duplicate-id');
+      expect(gitCalls.some((args) => args.some((arg) => arg.includes(':')))).toBe(false);
+      expect(preflights()).toBe(0);
+    } finally { f.cleanup(); }
+  });
   it('resolves an exact candidate through real metadata and real preflight without a build or push', async () => {
     const { f, opts, preflights } = orchestrationFixture();
     try {
