@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { evaluateGroundGlassA1OpticalResponse } from "../groundGlassA1OpticalAcceptance";
 
 const fixtureUrl = "/src/tests/e2e/fixtures/ground-glass-dof-edge.html";
 
@@ -28,6 +29,8 @@ async function capture(page: Page) {
       scene: proof.scene,
       measurement: proof.cases["focus-foreground-400-f2_8"],
       faults: proof.faults,
+      opticalMeasurements: proof.opticalMeasurements,
+      opticalSourceLuminanceRow: proof.opticalSourceLuminanceRow,
       variance: sumSquares / count - (sum / count) ** 2,
       sourcePixels: Array.from(pixels),
     };
@@ -60,6 +63,16 @@ test("Ground Glass optical response tolerates rendered background variation", as
 
   const first = baseline.measurement;
   const second = varied.measurement;
+  const evaluate = (capture: typeof baseline, variant: "candidate" | "zeroBlur" | "excessiveBlur") =>
+    evaluateGroundGlassA1OpticalResponse(capture.opticalMeasurements[variant], capture.opticalSourceLuminanceRow);
+  expect(evaluate(baseline, "candidate").accepted).toBe(true);
+  expect(evaluate(varied, "candidate").accepted).toBe(true);
+  const zero = evaluate(varied, "zeroBlur");
+  const excessive = evaluate(varied, "excessiveBlur");
+  expect(zero.accepted).toBe(false);
+  expect(zero.failureReasons).toContain("insufficient-defocus");
+  expect(excessive.accepted).toBe(false);
+  expect(excessive.failureReasons).toContain("optical-footprint-mismatch");
   for (const key of [
     "foregroundCoCDiameterMm", "backgroundCoCDiameterMm",
     "candidateForegroundContrast", "candidateBackgroundContrast", "candidateEdgeRedIncrease",
@@ -80,5 +93,6 @@ test("Ground Glass optical response tolerates rendered background variation", as
     variedVariance: varied.variance,
     baseline: first,
     varied: second,
+    decisions: { baseline: evaluate(baseline, "candidate"), varied: evaluate(varied, "candidate"), zero, excessive },
   }));
 });
